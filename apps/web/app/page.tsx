@@ -321,7 +321,7 @@ export default function LandingPage() {
             Investasi Terukur untuk Skala Jaringan Tanpa Batas
           </h2>
           <p className="mt-4 text-gray-500 text-base leading-relaxed">
-            Pilihan paket transparan berbasis kapasitas pelanggan aktif. Dirancang khusus untuk Internet Service Provider (ISP) berlisensi dan operator jaringan FTTH.
+            Pilihan paket transparan berbasis kapasitas riil pelanggan dan infrastruktur Anda. Ditambah opsi Add-Ons fleksibel kapan pun jaringan Anda bertumbuh pesat.
           </p>
         </div>
 
@@ -340,7 +340,8 @@ export default function LandingPage() {
                   <span className="text-3xl font-black text-gray-900">2.500.000</span>
                   <span className="text-xs text-gray-500">/ bln</span>
                 </div>
-                <div className="text-[11px] text-blue-600 mt-1 font-medium">Hingga 1.500 Pelanggan Aktif</div>
+                <div className="text-[11px] text-blue-600 mt-1 font-bold">Hingga 1.500 Pelanggan Aktif</div>
+                <div className="text-[10px] text-gray-400 mt-0.5">Ledger (Billing &amp; AAA) + Nexus Dasar</div>
               </div>
               <ul className="space-y-3 text-xs text-gray-600">
                 <li className="flex items-start gap-2">
@@ -353,25 +354,29 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <span>Otomasi Isolir &amp; Payment Gateway (VA/QRIS)</span>
+                  <span>Otomasi Isolir CoA &amp; Payment (VA/QRIS)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <span>Web Management Backoffice &amp; CRM Dasar</span>
+                  <span>Web Backoffice &amp; Form Registrasi Ritel</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
                   <span>WhatsApp Gateway Notifikasi Tagihan</span>
                 </li>
                 <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                  <span>Maks. 5 Akun Staf (NOC, CS, Kasir)</span>
+                </li>
+                <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" />
-                  <span className="text-slate-400">Dukungan Jam Kerja Reguler</span>
+                  <span className="text-gray-400">Dukungan Jam Kerja Reguler</span>
                 </li>
               </ul>
             </div>
             <div className="mt-8">
               <Link
-                href="/login"
+                href="/member/login"
                 className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold text-xs transition-all border border-gray-200"
               >
                 <span>Pilih Paket Starter</span>
@@ -387,49 +392,54 @@ export default function LandingPage() {
             </div>
             <div>
               <div className="text-xs font-bold uppercase tracking-wider text-blue-200 mb-2">FTTH Multi-POP</div>
-              <h3 className="text-2xl font-black text-gray-900">Professional</h3>
-              <p className="text-xs text-gray-500 mt-2 min-h-[36px]">
+              <h3 className="text-2xl font-black text-white">Professional</h3>
+              <p className="text-xs text-blue-100 mt-2 min-h-[36px]">
                 Standar emas untuk ISP berlisensi aktif dengan ekspansi jaringan fiber.
               </p>
-              <div className="mt-6 mb-6 pb-6 border-b border-cyan-500/20">
+              <div className="mt-6 mb-6 pb-6 border-b border-blue-400">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-xs font-bold text-gray-500">Rp</span>
-                  <span className="text-3xl font-black text-gray-900">6.500.000</span>
-                  <span className="text-xs text-gray-500">/ bln</span>
+                  <span className="text-xs font-bold text-blue-200">Rp</span>
+                  <span className="text-3xl font-black text-white">6.500.000</span>
+                  <span className="text-xs text-blue-200">/ bln</span>
                 </div>
-                <div className="text-[11px] text-cyan-300 mt-1 font-bold">Hingga 5.000 Pelanggan Aktif</div>
+                <div className="text-[11px] text-cyan-200 mt-1 font-bold">Hingga 5.000 Pelanggan Aktif</div>
+                <div className="text-[10px] text-blue-200 mt-0.5">Ledger + Nexus Penuh (SPK HP) + FiberGrid</div>
               </div>
-              <ul className="space-y-3 text-xs text-white/90">
+              <ul className="space-y-3 text-xs text-white">
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <span>Unlimited Router BRAS &amp; MikroTik</span>
+                  <CheckCircle2 className="w-4 h-4 text-cyan-300 flex-shrink-0 mt-0.5" />
+                  <span>5 Router BRAS / Gateway MikroTik</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <span>PostGIS Spasial (ODP, ODC &amp; Jalur Fiber)</span>
+                  <CheckCircle2 className="w-4 h-4 text-cyan-300 flex-shrink-0 mt-0.5" />
+                  <span>Hingga 500 Tiang ODP/ODC di Peta GIS</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <span>Mobile POS Android Kasir &amp; Struk Thermal</span>
+                  <CheckCircle2 className="w-4 h-4 text-cyan-300 flex-shrink-0 mt-0.5" />
+                  <span>SPK &amp; BAST Digital (Tanda Tangan HP)</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <span>Multi-Role RBAC (NOC, Finance, Support, Loket)</span>
+                  <CheckCircle2 className="w-4 h-4 text-cyan-300 flex-shrink-0 mt-0.5" />
+                  <span>Cek Coverage 250m &amp; Komisi Referral</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <span>Auto Split Revenue &amp; Rekonsiliasi Komisi</span>
+                  <CheckCircle2 className="w-4 h-4 text-cyan-300 flex-shrink-0 mt-0.5" />
+                  <span>Android POS Thermal Kasir Lapangan</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <span className="font-semibold text-blue-700">Dukungan Prioritas 24/7 (WhatsApp Dedicated)</span>
+                  <CheckCircle2 className="w-4 h-4 text-cyan-300 flex-shrink-0 mt-0.5" />
+                  <span>15 Akun Staf (NOC, Teknisi, CS, Sales)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-cyan-300 flex-shrink-0 mt-0.5" />
+                  <span className="font-semibold text-white">Dukungan Prioritas 24/7 (WhatsApp)</span>
                 </li>
               </ul>
             </div>
             <div className="mt-8">
               <Link
-                href="/login"
-                className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs shadow-lg shadow-cyan-500/25 transition-all transform hover:scale-105"
+                href="/member/login"
+                className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-white hover:bg-blue-50 text-blue-700 font-black text-xs shadow-lg transition-all transform hover:scale-105"
               >
                 <span>Pilih Paket Professional</span>
                 <ArrowRight className="w-4 h-4" />
@@ -451,38 +461,43 @@ export default function LandingPage() {
                   <span className="text-3xl font-black text-gray-900">14.500.000</span>
                   <span className="text-xs text-gray-500">/ bln</span>
                 </div>
-                <div className="text-[11px] text-indigo-300 mt-1 font-medium">Hingga 15.000 Pelanggan Aktif</div>
+                <div className="text-[11px] text-indigo-600 mt-1 font-bold">Hingga 15.000 Pelanggan Aktif</div>
+                <div className="text-[10px] text-gray-400 mt-0.5">Full 3 Engine + Wholesale Jartaplok</div>
               </div>
               <ul className="space-y-3 text-xs text-gray-600">
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
-                  <span>Dedicated Database PostgreSQL (Isolasi Total)</span>
+                  <span>Unlimited Router BRAS &amp; Gateway</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
-                  <span>Auto-Provisioning OLT (ZTE / Huawei / Fiberhome)</span>
+                  <span>Unlimited Tiang ODP / ODC &amp; Rute Fiber</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
-                  <span>Audit Trail Kepatuhan Regulasi Telekomunikasi</span>
+                  <span>Hingga 8 Unit OLT Auto-Config (ZTE/Huawei)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
-                  <span>High-Availability Redis &amp; CoA Sync &lt; 5ms</span>
+                  <span>TR-069 ACS Remote Modem &amp; Redaman dBm</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
-                  <span>Dedicated Account Manager &amp; Onboarding Tim</span>
+                  <span>Modul Wholesale Jartaplok (Sewa Port)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
-                  <span className="font-semibold text-indigo-700">SLA Garansi Uptime 99.9%</span>
+                  <span>Unlimited Akun Staf &amp; Multi-Branch RBAC</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
+                  <span className="font-semibold text-indigo-700">Dedicated SLA Garansi Uptime 99.9%</span>
                 </li>
               </ul>
             </div>
             <div className="mt-8">
               <Link
-                href="/login"
+                href="/member/login"
                 className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold text-xs transition-all border border-gray-200"
               >
                 <span>Pilih Paket Enterprise</span>
@@ -505,7 +520,8 @@ export default function LandingPage() {
                   <span className="text-3xl font-black text-gray-900">65.000.000</span>
                   <span className="text-xs text-gray-500">/ thn</span>
                 </div>
-                <div className="text-[11px] text-rose-600 mt-1 font-medium">Kapasitas Unlimited Pelanggan</div>
+                <div className="text-[11px] text-rose-600 mt-1 font-bold">Kapasitas Unlimited Total</div>
+                <div className="text-[10px] text-gray-400 mt-0.5">Full 3 Engine On-Premise 100% Milik Anda</div>
               </div>
               <ul className="space-y-3 text-xs text-gray-600">
                 <li className="flex items-start gap-2">
@@ -522,11 +538,11 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
-                  <span>Full API Access &amp; Custom Integration</span>
+                  <span>Unlimited Router BRAS, OLT &amp; ODP GIS</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
-                  <span>Security Hardening &amp; Pen-Testing Assured</span>
+                  <span>Full API Access &amp; Custom Integration Telco</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
@@ -539,11 +555,92 @@ export default function LandingPage() {
                 href="https://wa.me/6281100000000?text=Halo%20Tim%20ISPSYNC,%20saya%20tertarik%20konsultasi%20paket%20Private%20Telco%20On-Premise"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 font-bold text-xs transition-all"
+                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs transition-all"
               >
                 <span>Konsultasi Private Telco</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </a>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Scale-As-You-Grow Add-Ons ────────────────────────────── */}
+        <div className="mt-16 rounded-3xl bg-slate-50 border border-slate-200/80 p-8 sm:p-10">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-slate-200">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold mb-2">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Fleksibilitas Tanpa Batas</span>
+              </div>
+              <h3 className="text-2xl font-black text-gray-900 tracking-tight">
+                Ekspansi Kuota Fleksibel (Scale-As-You-Grow Add-Ons)
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1 max-w-2xl">
+                Butuh kapasitas tambahan di tengah masa pertumbuhan tanpa harus langsung upgrade ke tier di atasnya? Kombinasikan add-ons sesuai kebutuhan riil jaringan Anda.
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <Link
+                href="/member/login"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-all"
+              >
+                <span>Kustomisasi Kuota</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-sm hover:border-blue-300 transition-all">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+                <Users className="w-5 h-5" />
+              </div>
+              <div className="text-xs font-bold text-gray-900 mb-1">Ekstra 500 Pelanggan Aktif</div>
+              <div className="text-lg font-black text-blue-600 mb-2">
+                +Rp 500.000 <span className="text-xs font-normal text-gray-500">/ bln</span>
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Tambah kuota FreeRADIUS &amp; billing secara bertahap saat ekspansi klaster baru tanpa loncat paket.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-sm hover:border-blue-300 transition-all">
+              <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center mb-3">
+                <Server className="w-5 h-5" />
+              </div>
+              <div className="text-xs font-bold text-gray-900 mb-1">Ekstra 1 Unit OLT (Auto-Config)</div>
+              <div className="text-lg font-black text-blue-600 mb-2">
+                +Rp 750.000 <span className="text-xs font-normal text-gray-500">/ bln</span>
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Kelola tambahan perangkat OLT ZTE / Huawei / BDCOM dengan auto-provisioning dan monitoring redaman.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-sm hover:border-blue-300 transition-all">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
+                <Layers className="w-5 h-5" />
+              </div>
+              <div className="text-xs font-bold text-gray-900 mb-1">Ekstra 250 Titik ODP / GIS</div>
+              <div className="text-lg font-black text-blue-600 mb-2">
+                +Rp 350.000 <span className="text-xs font-normal text-gray-500">/ bln</span>
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Perluas batas pemetaan tiang ODP, ODC, enclosure, dan tracing jalur kabel optik pada peta spasial PostGIS.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-sm hover:border-blue-300 transition-all">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div className="text-xs font-bold text-gray-900 mb-1">Ekstra 5 Akun Teknisi &amp; Staf</div>
+              <div className="text-lg font-black text-blue-600 mb-2">
+                +Rp 250.000 <span className="text-xs font-normal text-gray-500">/ bln</span>
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Lisensi staf lapangan tambahan untuk aplikasi Android SPK pemasangan, BAST digital, dan kasir loket.
+              </p>
             </div>
           </div>
         </div>
@@ -556,11 +653,11 @@ export default function LandingPage() {
             </div>
             <div>
               <div className="font-bold text-white text-base">Hemat Hingga 2 Bulan dengan Pembayaran Tahunan</div>
-              <div className="text-xs text-gray-500 mt-0.5">Dapatkan garansi harga tetap, prioritas fitur baru, dan gratis biaya onboarding migrasi database.</div>
+              <div className="text-xs text-blue-100 mt-0.5">Dapatkan garansi harga tetap, prioritas fitur baru, dan gratis biaya onboarding migrasi database.</div>
             </div>
           </div>
           <Link
-            href="/login"
+            href="/member/login"
             className="flex-shrink-0 px-6 py-2.5 rounded-xl bg-white hover:bg-blue-50 text-blue-700 font-black text-xs transition-all"
           >
             Aktivasi Paket Tahunan

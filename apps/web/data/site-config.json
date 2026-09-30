@@ -6,16 +6,133 @@
     "title": "Kuasai Seluruh Ekosistem Broadband & Operasional ISP dalam",
     "titleHighlight": "Satu Detak Sinkronisasi.",
     "description": "Dirancang untuk stabilitas skala telekomunikasi dan kepatuhan audit. ISPSYNC mengintegrasikan Core Engine Telekomunikasi Berkecepatan Tinggi, Enterprise Web Portal, dan Point-of-Sales Mobile Lapangan dalam satu ekosistem realtime berkeandalan tinggi.",
-    "ctaDemo": "Buka Dashboard Demo",
-    "ctaDemoUrl": "https://cms.ispku.ispsync.id",
+    "ctaDemo": "Buka Portal Member",
+    "ctaDemoUrl": "/member/login",
     "ctaWA": "Konsultasi Enterprise via WhatsApp",
     "ctaWAPhone": "6281100000000"
   },
   "pricing": [
-    {"id":"starter","label":"ISP Regional","name":"Starter","description":"Untuk ISP regional berkembang atau operator mandiri berlisensi.","price":"2.500.000","period":"bln","capacity":"Hingga 1.500 Pelanggan Aktif","color":"blue","featured":false,"features":["2 Router BRAS / MikroTik Gateway","FreeRADIUS 3.2 AAA Terintegrasi","Otomasi Isolir & Payment Gateway (VA/QRIS)","Web Management Backoffice & CRM Dasar","WhatsApp Gateway Notifikasi Tagihan"]},
-    {"id":"professional","label":"FTTH Multi-POP","name":"Professional","description":"Untuk ISP FTTH skala kota dengan multiple Point-of-Presence.","price":"6.500.000","period":"bln","capacity":"Hingga 5.000 Pelanggan Aktif","color":"blue","featured":true,"featuredLabel":"Paling Diminati","features":["Unlimited Router BRAS / Gateway","GIS Mapping Fiber ODP, ODC & Splice Box","Android POS Thermal Struk Lapangan","Multi-Role RBAC (NOC, CS, Teknisi)","24/7 Prioritas WhatsApp & Phone Support"]},
-    {"id":"enterprise","label":"Carrier-Grade","name":"Enterprise","description":"Untuk ISP dengan puluhan ribu pelanggan dan SLA tinggi.","price":"14.500.000","period":"bln","capacity":"Hingga 15.000 Pelanggan Aktif","color":"indigo","featured":false,"features":["Dedicated PostgreSQL Instance","OLT ZTE/Huawei Auto-Provisioning","High-Availability Redis & CoA Sync < 5ms","Dedicated Account Manager & Onboarding","SLA Garansi Uptime 99.9%"]},
-    {"id":"private","label":"Data Sovereignty","name":"Private Telco","description":"On-Premise deployment di data center atau server internal milik klien.","price":"65.000.000","period":"thn","capacity":"Kapasitas Unlimited Pelanggan","color":"rose","featured":false,"features":["100% On-Site Server / Data Center Klien","Kedaulatan Data Total (Zero Data Sharing)","High-Availability & Disaster Recovery Setup","Full API Access & Custom Integration","Dedicated SLA 99.95% & NOC Escalation"]}
+    {
+      "id": "starter",
+      "label": "ISP Regional",
+      "name": "Starter",
+      "description": "Untuk ISP regional berkembang atau operator mandiri berlisensi.",
+      "price": "2.500.000",
+      "period": "bln",
+      "capacity": "Hingga 1.500 Pelanggan Aktif",
+      "engine": "Ledger (Billing & AAA) + Nexus Ritel Dasar",
+      "color": "blue",
+      "featured": false,
+      "features": [
+        "Hingga 1.500 Pelanggan Aktif",
+        "2 Router BRAS / MikroTik Gateway",
+        "FreeRADIUS 3.2 AAA Terintegrasi",
+        "Otomasi Isolir CoA & Payment Gateway (VA/QRIS)",
+        "Web Backoffice & Form Registrasi Ritel",
+        "WhatsApp Gateway Notifikasi Tagihan",
+        "Maks. 5 Akun Staf (NOC, CS, Kasir)"
+      ]
+    },
+    {
+      "id": "professional",
+      "label": "FTTH Multi-POP",
+      "name": "Professional",
+      "description": "Standar emas untuk ISP berlisensi aktif dengan ekspansi jaringan fiber.",
+      "price": "6.500.000",
+      "period": "bln",
+      "capacity": "Hingga 5.000 Pelanggan Aktif",
+      "engine": "Ledger + Nexus Penuh (SPK/BAST HP) + FiberGrid Dasar",
+      "color": "blue",
+      "featured": true,
+      "featuredLabel": "Paling Diminati",
+      "features": [
+        "Hingga 5.000 Pelanggan Aktif",
+        "5 Router BRAS / Gateway MikroTik",
+        "Hingga 500 Tiang ODP/ODC di Peta GIS",
+        "SPK & BAST Digital Teknisi (Tanda Tangan HP)",
+        "Cek Coverage 250m & Komisi Sales Referral",
+        "Android POS Thermal Kasir Lapangan",
+        "15 Akun Staf (NOC, Teknisi, CS, Sales)",
+        "Dukungan Prioritas 24/7 (WhatsApp Dedicated)"
+      ]
+    },
+    {
+      "id": "enterprise",
+      "label": "Carrier-Grade",
+      "name": "Enterprise",
+      "description": "Kapasitas besar untuk ISP Metropolitan & Telco Regional.",
+      "price": "14.500.000",
+      "period": "bln",
+      "capacity": "Hingga 15.000 Pelanggan Aktif",
+      "engine": "Full 3 Engine + Wholesale Jartaplok",
+      "color": "indigo",
+      "featured": false,
+      "features": [
+        "Hingga 15.000 Pelanggan Aktif",
+        "Unlimited Router BRAS & Gateway",
+        "Unlimited Tiang ODP / ODC & Rute Kabel Fiber",
+        "Hingga 8 Unit OLT Auto-Config (ZTE/Huawei/BDCOM)",
+        "TR-069 ACS Remote Modem & Monitoring dBm",
+        "Modul Wholesale Jartaplok (Sewa Port B2B)",
+        "Unlimited Akun Staf & RBAC Multi-Branch",
+        "Dedicated SLA Garansi Uptime 99.9%"
+      ]
+    },
+    {
+      "id": "private",
+      "label": "Data Sovereignty",
+      "name": "Private Telco",
+      "description": "On-Premise deployment di data center atau server internal milik klien.",
+      "price": "65.000.000",
+      "period": "thn",
+      "capacity": "Kapasitas Unlimited Pelanggan",
+      "engine": "Full 3 Engine On-Premise 100% di Server Klien",
+      "color": "rose",
+      "featured": false,
+      "features": [
+        "Kapasitas Unlimited Total (Tanpa Batas)",
+        "100% On-Site Server / Data Center Klien",
+        "Kedaulatan Data Total (Zero Data Sharing)",
+        "High-Availability & Disaster Recovery Setup",
+        "Unlimited Router BRAS, OLT & ODP GIS",
+        "Full API Access & Custom Integration Telco",
+        "Dedicated SLA 99.95% & Direct NOC Escalation"
+      ]
+    }
+  ],
+  "addons": [
+    {
+      "id": "addon_users",
+      "name": "Ekstra 500 Pelanggan Aktif",
+      "price": "500.000",
+      "period": "bln",
+      "description": "Tambah kapasitas AAA RADIUS & tagihan tanpa perlu migrasi tier paket.",
+      "icon": "Users"
+    },
+    {
+      "id": "addon_olt",
+      "name": "Ekstra 1 Unit OLT Auto-Config",
+      "price": "750.000",
+      "period": "bln",
+      "description": "Otomasi registrasi ONU & pemantauan redaman sinyal OLT tambahan.",
+      "icon": "Server"
+    },
+    {
+      "id": "addon_odp",
+      "name": "Ekstra 250 Titik ODP / GIS",
+      "price": "350.000",
+      "period": "bln",
+      "description": "Perluas jangkauan pemetaan tiang, kabel fiber, dan splice box di GIS.",
+      "icon": "Layers"
+    },
+    {
+      "id": "addon_staff",
+      "name": "Ekstra 5 Akun Teknisi & Staf",
+      "price": "250.000",
+      "period": "bln",
+      "description": "Tambah lisensi staf lapangan untuk SPK mobile & kasir POS.",
+      "icon": "ShieldCheck"
+    }
   ],
   "adminPassword": "ISPAdmin2024!"
 }
