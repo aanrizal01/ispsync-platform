@@ -84,7 +84,7 @@ export default function LandingPage() {
 
         <p className="mt-6 text-lg sm:text-xl text-gray-500 max-w-3xl mx-auto leading-relaxed">
           Dirancang untuk stabilitas skala telekomunikasi dan kepatuhan audit.
-          <strong className="text-slate-800"> ISPSYNC</strong> mengintegrasikan Backend Go berkecepatan tinggi,
+          <strong className="text-slate-800"> ISPSYNC</strong> mengintegrasikan Core Engine Telekomunikasi Berkecepatan Tinggi,
           Enterprise Web Portal, dan Point-of-Sales Mobile Lapangan dalam satu ekosistem realtime berkeandalan tinggi.
         </p>
 
@@ -153,7 +153,7 @@ export default function LandingPage() {
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-3">ISPSYNC FiberGrid</h3>
             <p className="text-sm text-gray-500 leading-relaxed mb-6">
-              Mesin infrastruktur dan fisik (Port 8082). Mengurus semua aset jaringan pasif dan aktif dari tower OLT hingga tiang ODP di jalanan.
+              Mesin infrastruktur dan aset fisik. Mengurus semua aset jaringan pasif dan aktif dari tower OLT hingga tiang ODP di jalanan.
             </p>
             <ul className="space-y-2.5 text-xs text-gray-600">
               <li className="flex items-center gap-2">
@@ -185,7 +185,7 @@ export default function LandingPage() {
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-3">ISPSYNC Nexus</h3>
             <p className="text-sm text-gray-500 leading-relaxed mb-6">
-              Mesin operasional dan lapangan (Port 8081). Melayani kebutuhan pelanggan ritel mulai dari prospek, pendaftaran, hingga pemasangan baru.
+              Mesin operasional ritel dan lapangan. Melayani kebutuhan pelanggan ritel mulai dari prospek, pendaftaran, hingga pemasangan baru.
             </p>
             <ul className="space-y-2.5 text-xs text-gray-600">
               <li className="flex items-center gap-2">
@@ -217,7 +217,7 @@ export default function LandingPage() {
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-3">ISPSYNC Ledger</h3>
             <p className="text-sm text-gray-500 leading-relaxed mb-6">
-              Mesin finansial dan AAA (Port 8080). Mengurus perputaran uang, penagihan, izin akses jaringan, dan bagi hasil Jartaplok secara presisi.
+              Mesin finansial dan otentikasi AAA. Mengurus perputaran uang, penagihan, izin akses jaringan, dan bagi hasil Jartaplok secara presisi.
             </p>
             <ul className="space-y-2.5 text-xs text-gray-600">
               <li className="flex items-center gap-2">
