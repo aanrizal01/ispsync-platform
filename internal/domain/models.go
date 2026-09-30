@@ -1,0 +1,233 @@
+package domain
+
+import (
+	"time"
+)
+
+// AppType merepresentasikan peran portal berdasarkan subdomain
+// Contoh: cms.ispku.ispsync.id -> CMS
+//         portal.ispku.ispsync.id -> PORTAL
+//         noc.ispku.ispsync.id -> NOC
+//         sales.ispku.ispsync.id -> SALES
+//         teknisi.ispku.ispsync.id -> TEKNISI
+type AppType string
+
+const (
+	AppCMS       AppType = "cms"
+	AppPortal    AppType = "portal"
+	AppNOC       AppType = "noc"
+	AppSales     AppType = "sales"
+	AppTeknisi   AppType = "teknisi"
+	AppPlatform  AppType = "platform" // Admin master SaaS ISPSYNC
+)
+
+// Tenant merepresentasikan ISP / Provider yang berlangganan platform SaaS ISPSYNC
+type Tenant struct {
+	ID           string    `json:"id"`
+	Slug         string    `json:"slug"`         // "ispku", "nusantara", dll.
+	Name         string    `json:"name"`         // "PT. ISP Kita Nusantara"
+	ShortName    string    `json:"short_name"`   // "ISPKU"
+	PrefixID     string    `json:"prefix_id"`    // Prefix untuk Subscriber No, misal "ISPKU"
+	LogoURL      string    `json:"logo_url"`
+	BrandColor   string    `json:"brand_color"`  // Hex color, misal "#1e40af"
+	ContactPhone string    `json:"contact_phone"`
+	ContactEmail string    `json:"contact_email"`
+	Address      string    `json:"address"`
+	CustomDomain string    `json:"custom_domain,omitempty"`
+	Status       string    `json:"status"`       // "ACTIVE", "SUSPENDED"
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+// User merepresentasikan staf atau akun pada masing-masing Tenant
+type User struct {
+	ID           string    `json:"id"`
+	TenantID     string    `json:"tenant_id"`
+	Username     string    `json:"username"`
+	PasswordHash string    `json:"-"`
+	FullName     string    `json:"full_name"`
+	Email        string    `json:"email"`
+	Phone        string    `json:"phone"`
+	Role         string    `json:"role"` // "OWNER", "NOC", "SALES", "TECHNICIAN", "FINANCE"
+	Status       string    `json:"status"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+// Plan paket internet tenant
+type Plan struct {
+	ID            string  `json:"id"`
+	TenantID      string  `json:"tenant_id"`
+	Code          string  `json:"code"`
+	Name          string  `json:"name"`
+	SpeedDownMbps int     `json:"speed_down_mbps"`
+	SpeedUpMbps   int     `json:"speed_up_mbps"`
+	MonthlyPrice  float64 `json:"monthly_price"`
+	Description   string  `json:"description"`
+	IsActive      bool    `json:"is_active"`
+}
+
+// ODP titik distribusi fiber optik
+type ODP struct {
+	ID                string  `json:"id"`
+	TenantID          string  `json:"tenant_id"`
+	Code              string  `json:"code"` // "ODP-PYK-001"
+	Name              string  `json:"name"`
+	Latitude          float64 `json:"latitude"`
+	Longitude         float64 `json:"longitude"`
+	TotalPorts        int     `json:"total_ports"`
+	UsedPorts         int     `json:"used_ports"`
+	Status            string  `json:"status"`
+	IsSharedJartaplok bool    `json:"is_shared_jartaplok,omitempty"`
+	OwnerTenantSlug   string  `json:"owner_tenant_slug,omitempty"`
+	OwnerTenantName   string  `json:"owner_tenant_name,omitempty"`
+}
+
+// JartaplokAgreement merepresentasikan perjanjian bagi pakai infrastruktur jaringan tetap lokal (ODP/Feeder) antar-ISP tenant
+type JartaplokAgreement struct {
+	ID                    string    `json:"id"`
+	AgreementNo           string    `json:"agreement_no"`
+	ProviderTenantID      string    `json:"provider_tenant_id"`
+	ProviderTenantSlug    string    `json:"provider_tenant_slug"`
+	ProviderTenantName    string    `json:"provider_tenant_name"`
+	ClientTenantID        string    `json:"client_tenant_id"`
+	ClientTenantSlug      string    `json:"client_tenant_slug"`
+	ClientTenantName      string    `json:"client_tenant_name"`
+	ScopeArea             string    `json:"scope_area"`
+	TotalSharedODPs       int       `json:"total_shared_odps"`
+	AllocatedPorts        int       `json:"allocated_ports"`
+	UsedPorts             int       `json:"used_ports"`
+	SettlementRatePerPort float64   `json:"settlement_rate_per_port"`
+	MonthlyBill           float64   `json:"monthly_bill"`
+	Status                string    `json:"status"`
+	CreatedAt             time.Time `json:"created_at"`
+}
+
+// OLT perangkat OLT di jaringan tenant
+type OLT struct {
+	ID        string `json:"id"`
+	TenantID  string `json:"tenant_id"`
+	Name      string `json:"name"`
+	Vendor    string `json:"vendor"` // "HUAWEI", "ZTE", "VSOL", "JOLINK", "FIBERHOME"
+	HostIP    string `json:"host_ip"`
+	Port      int    `json:"port"`
+	Username  string `json:"username"`
+	Password  string `json:"-"`
+	Status    string `json:"status"`
+	TotalPONs int    `json:"total_pons"`
+}
+
+// Subscriber data pelanggan dengan ID mandiri yang mencakup layer profil, fisik FTTX, dan logika network
+type Subscriber struct {
+	ID               string     `json:"id"`
+	TenantID         string     `json:"tenant_id"`
+	SubscriberNo     string     `json:"subscriber_no"` // Universal Tenant-Scoped ID: "ISPKU-2026-0001"
+	FullName         string     `json:"full_name"`
+	IdentityNumber   string     `json:"identity_number"` // KTP / NIK
+	Email            string     `json:"email"`
+	Phone            string     `json:"phone"`
+	Address          string     `json:"address"`
+	Latitude         float64    `json:"latitude"`
+	Longitude        float64    `json:"longitude"`
+	DistanceToODP    float64    `json:"distance_to_odp"`
+	SelectedPlanID   string     `json:"selected_plan_id"`
+	SelectedPlanName string     `json:"selected_plan_name"`
+	NearestODPID     string     `json:"nearest_odp_id"`
+	NearestODPCode   string     `json:"nearest_odp_code"`
+	OLTID            *string    `json:"olt_id,omitempty"`
+	PONPort          *string    `json:"pon_port,omitempty"`
+	ONUID            *int       `json:"onu_id,omitempty"`
+	SerialNumber     *string    `json:"serial_number,omitempty"` // ONT SN
+	MACAddress       *string    `json:"mac_address,omitempty"`
+	RxOpticalPower   *float64   `json:"rx_optical_power,omitempty"` // dBm
+	PPPoEUsername    *string    `json:"pppoe_username,omitempty"`
+	PPPoEPassword    *string    `json:"pppoe_password,omitempty"`
+	VLANID           *int       `json:"vlan_id,omitempty"`
+	IPAddress        *string    `json:"ip_address,omitempty"`
+	Status           string     `json:"status"` // "REGISTERED", "SURVEY_SCHEDULED", "INSTALLATION_SCHEDULED", "ACTIVE", "RESTRICTED", "TERMINATED"
+	ActivatedAt      *time.Time `json:"activated_at,omitempty"`
+	SuspendedAt      *time.Time `json:"suspended_at,omitempty"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
+}
+
+// WorkOrder surat perintah kerja teknisi lapangan
+type WorkOrder struct {
+	ID               string     `json:"id"`
+	TenantID         string     `json:"tenant_id"`
+	OrderNo          string     `json:"order_no"` // "SPK-2026-0001"
+	SubscriberID     string     `json:"subscriber_id"`
+	SubscriberNo     string     `json:"subscriber_no"`
+	CustomerName     string     `json:"customer_name"`
+	CustomerPhone    string     `json:"customer_phone"`
+	CustomerAddress  string     `json:"customer_address"`
+	CustomerLat      float64    `json:"customer_lat"`
+	CustomerLng      float64    `json:"customer_lng"`
+	ODPCode          string     `json:"odp_code"`
+	PlanName         string     `json:"plan_name"`
+	OrderType        string     `json:"order_type"` // "SURVEY", "INSTALLATION", "REPAIR"
+	TechnicianID     *string    `json:"technician_id,omitempty"`
+	TechnicianName   string     `json:"technician_name"`
+	Status           string     `json:"status"` // "PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"
+	RxPowerDBM       *float64   `json:"rx_power_dbm,omitempty"`
+	SerialNumber     string     `json:"serial_number,omitempty"`
+	MACAddress       string     `json:"mac_address,omitempty"`
+	Notes            string     `json:"notes"`
+	BASTCompletedAt  *time.Time `json:"bast_completed_at,omitempty"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
+}
+
+// Invoice tagihan siklus bulanan pelanggan
+type Invoice struct {
+	ID           string     `json:"id"`
+	TenantID     string     `json:"tenant_id"`
+	InvoiceNo    string     `json:"invoice_no"` // "INV-202609-0001"
+	SubscriberID string     `json:"subscriber_id"`
+	SubscriberNo string     `json:"subscriber_no"`
+	CustomerName string     `json:"customer_name"`
+	PlanName     string     `json:"plan_name"`
+	Amount       float64    `json:"amount"`
+	Status       string     `json:"status"` // "UNPAID", "PAID", "OVERDUE", "CANCELLED"
+	DueDate      time.Time  `json:"due_date"`
+	PaidAt       *time.Time `json:"paid_at,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
+}
+
+// VoucherBatch kumpulan voucher cetak fisik / loket kasir
+type VoucherBatch struct {
+	ID            string    `json:"id"`
+	TenantID      string    `json:"tenant_id"`
+	BatchNo       string    `json:"batch_no"` // "BATCH-2026-01"
+	ProfileName   string    `json:"profile_name"` // "5JAM-5000", "24JAM-10000"
+	SpeedDownMbps int       `json:"speed_down_mbps"`
+	SpeedUpMbps   int       `json:"speed_up_mbps"`
+	Price         float64   `json:"price"`
+	TotalVouchers int       `json:"total_vouchers"`
+	UsedVouchers  int       `json:"used_vouchers"`
+	CreatedAt     time.Time `json:"created_at"`
+}
+
+// Voucher item voucher internet hotspot
+type Voucher struct {
+	ID          string     `json:"id"`
+	TenantID    string     `json:"tenant_id"`
+	BatchID     string     `json:"batch_id"`
+	Code        string     `json:"code"` // Kode unik voucher
+	Password    string     `json:"password"`
+	Price       float64    `json:"price"`
+	ProfileName string     `json:"profile_name"`
+	Status      string     `json:"status"` // "AVAILABLE", "SOLD", "USED", "EXPIRED"
+	UsedAt      *time.Time `json:"used_at,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
+}
+
+// TenantContext konteks tenant yang dilewatkan di HTTP request context
+type TenantContext struct {
+	Tenant    *Tenant
+	AppType   AppType
+	Subdomain string
+	Host      string
+	IsMaster  bool
+}
+

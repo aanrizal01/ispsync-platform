@@ -29,17 +29,14 @@ export default function InternationalLandingPage() {
 
       {/* ── Navbar ─────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-black text-sm tracking-tight">IS</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0">
+              <span className="text-white font-black text-xs sm:text-sm tracking-tight">IS</span>
             </div>
             <div>
-              <span className="text-2xl font-black tracking-wider text-gray-900">
+              <span className="text-xl sm:text-2xl font-black tracking-wider text-gray-900">
                 ISPSYNC
-              </span>
-              <span className="hidden sm:inline-block ml-2 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                CARRIER-GRADE SAAS
               </span>
             </div>
           </div>
@@ -56,24 +53,25 @@ export default function InternationalLandingPage() {
             </a>
           </nav>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center text-xs font-semibold bg-gray-100 p-1 rounded-lg border border-gray-200">
-              <span className="px-2 py-1 rounded bg-white text-blue-600 shadow-sm font-bold">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center text-[10px] sm:text-xs font-semibold bg-gray-100 p-0.5 sm:p-1 rounded-lg border border-gray-200">
+              <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-white text-blue-600 shadow-sm font-bold">
                 EN
               </span>
               <Link
                 href="/id"
-                className="px-2 py-1 text-gray-500 hover:text-gray-900 transition-colors"
+                className="px-1.5 sm:px-2 py-0.5 sm:py-1 text-gray-500 hover:text-gray-900 transition-colors"
               >
                 ID
               </Link>
             </div>
             <Link
               href="/member/login"
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all"
+              className="inline-flex items-center gap-1 sm:gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl shadow-md hover:shadow-lg transition-all"
             >
-              <span>Member Portal</span>
-              <ArrowRight className="w-4 h-4" />
+              <span className="hidden sm:inline">Member Portal</span>
+              <span className="inline sm:hidden">Portal</span>
+              <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </Link>
           </div>
         </div>
@@ -671,17 +669,68 @@ export default function InternationalLandingPage() {
       </section>
 
       {/* ── Footer ─────────────────────────────────────────────────── */}
-      <footer className="relative z-10 border-t border-gray-200 bg-white py-12 px-4 sm:px-6 lg:px-8 text-center text-xs text-gray-500">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
-              S
+      <footer className="relative z-10 border-t border-gray-200 bg-white pt-16 pb-12 px-4 sm:px-6 lg:px-8 text-xs text-gray-500">
+        <div className="max-w-7xl mx-auto flex flex-col gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="col-span-1 lg:col-span-2">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
+                  IS
+                </div>
+                <span className="font-bold text-gray-800 text-lg tracking-wider">ISPSYNC</span>
+              </div>
+              <p className="max-w-xs text-gray-500 text-xs leading-relaxed mb-6">
+                The Triple-Engine Platform for ISPs & Telecom Network Operators. Carrier-grade infrastructure to automate billing, radius, and CRM.
+              </p>
+              
+              <div className="space-y-4">
+                <div>
+                  <div className="text-gray-900 font-semibold mb-2">International Payments</div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-2.5 py-1 bg-gray-50 border border-gray-200 rounded font-medium text-gray-700">Stripe</span>
+                    <span className="px-2.5 py-1 bg-gray-50 border border-gray-200 rounded font-medium text-gray-700">PayPal</span>
+                    <span className="px-2.5 py-1 bg-gray-50 border border-gray-200 rounded font-medium text-gray-700">Visa</span>
+                    <span className="px-2.5 py-1 bg-gray-50 border border-gray-200 rounded font-medium text-gray-700">Mastercard</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-gray-900 font-semibold mb-2">Local Payments (Indonesia)</div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-2.5 py-1 bg-gray-50 border border-gray-200 rounded font-medium text-gray-700">QRIS</span>
+                    <span className="px-2.5 py-1 bg-gray-50 border border-gray-200 rounded font-medium text-gray-700">BCA</span>
+                    <span className="px-2.5 py-1 bg-gray-50 border border-gray-200 rounded font-medium text-gray-700">Mandiri</span>
+                    <span className="px-2.5 py-1 bg-gray-50 border border-gray-200 rounded font-medium text-gray-700">BNI</span>
+                    <span className="px-2.5 py-1 bg-gray-50 border border-gray-200 rounded font-medium text-gray-700">Virtual Account</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <span className="font-bold text-gray-800">ISPSYNC Enterprise</span>
-            <span>— The Triple-Engine Platform for ISPs &amp; Telecom Network Operators.</span>
+            
+            <div>
+              <div className="text-gray-900 font-semibold mb-4 text-sm">Platform</div>
+              <ul className="space-y-3">
+                <li><a href="#architecture" className="hover:text-blue-600 transition-colors">Triple-Engine Architecture</a></li>
+                <li><a href="#features" className="hover:text-blue-600 transition-colors">Core Features</a></li>
+                <li><a href="#pricing" className="hover:text-blue-600 transition-colors">Pricing & Plans</a></li>
+                <li><a href="#" className="hover:text-blue-600 transition-colors">Developer API</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <div className="text-gray-900 font-semibold mb-4 text-sm">Company</div>
+              <ul className="space-y-3">
+                <li><a href="#" className="hover:text-blue-600 transition-colors">About Us</a></li>
+                <li><a href="#" className="hover:text-blue-600 transition-colors">Contact Sales</a></li>
+                <li><a href="#" className="hover:text-blue-600 transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-blue-600 transition-colors">Terms of Service</a></li>
+              </ul>
+            </div>
           </div>
-          <div>
-            <span>© {new Date().getFullYear()} ISPSYNC Enterprise. All rights reserved.</span>
+
+          <div className="pt-8 border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+              <span>© {new Date().getFullYear()} ISPSYNC Enterprise. All rights reserved.</span>
+            </div>
           </div>
         </div>
       </footer>

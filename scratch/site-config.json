@@ -1,0 +1,21 @@
+{
+  "logo": { "type": "text", "text": "IS", "url": "" },
+  "navbar": { "brand": "ISPSYNC", "badge": "ENTERPRISE SAAS" },
+  "hero": {
+    "badge": "Enterprise Telecom Infrastructure & ISP Operations Orchestration Platform",
+    "title": "Kuasai Seluruh Ekosistem Broadband & Operasional ISP dalam",
+    "titleHighlight": "Satu Detak Sinkronisasi.",
+    "description": "Dirancang untuk stabilitas skala telekomunikasi dan kepatuhan audit. ISPSYNC mengintegrasikan Backend Go berkecepatan tinggi, Enterprise Web Portal, dan Point-of-Sales Mobile Lapangan dalam satu ekosistem realtime berkeandalan tinggi.",
+    "ctaDemo": "Buka Dashboard Demo",
+    "ctaDemoUrl": "https://cms.ispku.ispsync.id",
+    "ctaWA": "Konsultasi Enterprise via WhatsApp",
+    "ctaWAPhone": "6281100000000"
+  },
+  "pricing": [
+    {"id":"starter","label":"ISP Regional","name":"Starter","description":"Untuk ISP regional berkembang atau operator mandiri berlisensi.","price":"2.500.000","period":"bln","capacity":"Hingga 1.500 Pelanggan Aktif","color":"blue","featured":false,"features":["2 Router BRAS / MikroTik Gateway","FreeRADIUS 3.2 AAA Terintegrasi","Otomasi Isolir & Payment Gateway (VA/QRIS)","Web Management Backoffice & CRM Dasar","WhatsApp Gateway Notifikasi Tagihan"]},
+    {"id":"professional","label":"FTTH Multi-POP","name":"Professional","description":"Untuk ISP FTTH skala kota dengan multiple Point-of-Presence.","price":"6.500.000","period":"bln","capacity":"Hingga 5.000 Pelanggan Aktif","color":"blue","featured":true,"featuredLabel":"Paling Diminati","features":["Unlimited Router BRAS / Gateway","GIS Mapping Fiber ODP, ODC & Splice Box","Android POS Thermal Struk Lapangan","Multi-Role RBAC (NOC, CS, Teknisi)","24/7 Prioritas WhatsApp & Phone Support"]},
+    {"id":"enterprise","label":"Carrier-Grade","name":"Enterprise","description":"Untuk ISP dengan puluhan ribu pelanggan dan SLA tinggi.","price":"14.500.000","period":"bln","capacity":"Hingga 15.000 Pelanggan Aktif","color":"indigo","featured":false,"features":["Dedicated PostgreSQL Instance","OLT ZTE/Huawei Auto-Provisioning","High-Availability Redis & CoA Sync < 5ms","Dedicated Account Manager & Onboarding","SLA Garansi Uptime 99.9%"]},
+    {"id":"private","label":"Data Sovereignty","name":"Private Telco","description":"On-Premise deployment di data center atau server internal milik klien.","price":"65.000.000","period":"thn","capacity":"Kapasitas Unlimited Pelanggan","color":"rose","featured":false,"features":["100% On-Site Server / Data Center Klien","Kedaulatan Data Total (Zero Data Sharing)","High-Availability & Disaster Recovery Setup","Full API Access & Custom Integration","Dedicated SLA 99.95% & NOC Escalation"]}
+  ],
+  "adminPassword": "ISPAdmin2024!"
+}

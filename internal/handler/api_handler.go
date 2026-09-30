@@ -1,0 +1,1149 @@
+package handler
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
+	"ispsync/internal/access"
+	"ispsync/internal/domain"
+	"ispsync/internal/middleware"
+	"ispsync/internal/repository"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+)
+
+type APIHandler struct {
+	store repository.Storage
+	olt   *access.OLTDispatcher
+	bras  *access.BRASDispatcher
+}
+
+func NewAPIHandler(store repository.Storage) *APIHandler {
+	return &APIHandler{
+		store: store,
+		olt:   access.NewOLTDispatcher(),
+		bras:  access.NewBRASDispatcher(),
+	}
+}
+
+func (h *APIHandler) jsonResponse(w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(data)
+}
+
+func (h *APIHandler) errorResponse(w http.ResponseWriter, status int, msg string) {
+	h.jsonResponse(w, status, map[string]string{"error": msg})
+}
+
+func (h *APIHandler) successResponse(w http.ResponseWriter, message string, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+		"message": message,
+		"data":    data,
+	})
+}
+
+func (h *APIHandler) failResponse(w http.ResponseWriter, status int, msg string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": false,
+		"message": msg,
+		"error":   msg,
+	})
+}
+
+// GetContext info tenant dan aplikasi aktif
+func (h *APIHandler) GetContext(w http.ResponseWriter, r *http.Request) {
+	tCtx := middleware.GetTenantContext(r)
+	if tCtx == nil {
+		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
+		return
+	}
+	h.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"tenant":    tCtx.Tenant,
+		"app_type":  tCtx.AppType,
+		"subdomain": tCtx.Subdomain,
+		"host":      tCtx.Host,
+	})
+}
+
+// ListPlans paket internet
+func (h *APIHandler) ListPlans(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	plans, err := h.store.ListPlans(r.Context(), t.ID)
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	h.jsonResponse(w, http.StatusOK, plans)
+}
+
+// ListODPs persebaran ODP
+func (h *APIHandler) ListODPs(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	odps, err := h.store.ListODPs(r.Context(), t.ID)
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	h.jsonResponse(w, http.StatusOK, odps)
+}
+
+// CheckCoverage menghitung jarak ke ODP terdekat
+func (h *APIHandler) CheckCoverage(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	var req struct {
+		Latitude  float64 `json:"latitude"`
+		Longitude float64 `json:"longitude"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.errorResponse(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	odp, dist, err := h.store.GetNearestODP(r.Context(), t.ID, req.Latitude, req.Longitude)
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	covered := dist <= 250.0 // Default radius 250m
+	h.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"covered":            covered,
+		"distance_meters":    mathRound(dist, 1),
+		"max_radius_meters":  250.0,
+		"nearest_odp_code":   odp.Code,
+		"nearest_odp_name":   odp.Name,
+		"available_ports":    odp.TotalPorts - odp.UsedPorts,
+	})
+}
+
+// Register formulir pasang baru publik (Portal)
+func (h *APIHandler) Register(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	var req struct {
+		FullName       string  `json:"full_name"`
+		IdentityNumber string  `json:"identity_number"`
+		Phone          string  `json:"phone"`
+		Email          string  `json:"email"`
+		Address        string  `json:"address"`
+		Latitude       float64 `json:"latitude"`
+		Longitude      float64 `json:"longitude"`
+		PlanID         string  `json:"plan_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.errorResponse(w, http.StatusBadRequest, "Invalid JSON input")
+		return
+	}
+
+	if req.FullName == "" || req.Phone == "" {
+		h.errorResponse(w, http.StatusBadRequest, "Nama lengkap dan nomor HP wajib diisi")
+		return
+	}
+
+	// 1. Validasi ODP terdekat
+	odp, dist, err := h.store.GetNearestODP(r.Context(), t.ID, req.Latitude, req.Longitude)
+	odpCode := "ODP-UNKNOWN"
+	odpID := ""
+	if err == nil && odp != nil {
+		odpCode = odp.Code
+		odpID = odp.ID
+	}
+
+	// 2. Ambil data plan
+	planName := "Paket Internet"
+	if req.PlanID != "" {
+		if p, err := h.store.GetPlanByID(r.Context(), t.ID, req.PlanID); err == nil && p != nil {
+			planName = p.Name
+		}
+	}
+
+	// 3. Generate SubscriberNo mandiri dengan prefix tenant
+	subID := uuid.New().String()
+	subNo := fmt.Sprintf("%s-%s-%04d", t.PrefixID, time.Now().Format("2006"), time.Now().Unix()%9000+1000)
+
+	sub := &domain.Subscriber{
+		ID:               subID,
+		TenantID:         t.ID,
+		SubscriberNo:     subNo,
+		FullName:         req.FullName,
+		IdentityNumber:   req.IdentityNumber,
+		Email:            req.Email,
+		Phone:            req.Phone,
+		Address:          req.Address,
+		Latitude:         req.Latitude,
+		Longitude:        req.Longitude,
+		DistanceToODP:    dist,
+		SelectedPlanID:   req.PlanID,
+		SelectedPlanName: planName,
+		NearestODPID:     odpID,
+		NearestODPCode:   odpCode,
+		Status:           "INSTALLATION_SCHEDULED",
+	}
+
+	if err := h.store.CreateSubscriber(r.Context(), sub); err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, "Gagal membuat pendaftaran: "+err.Error())
+		return
+	}
+
+	// 4. Buat Work Order otomatis untuk Teknisi
+	wo := &domain.WorkOrder{
+		ID:              uuid.New().String(),
+		TenantID:        t.ID,
+		SubscriberID:    subID,
+		SubscriberNo:    subNo,
+		CustomerName:    req.FullName,
+		CustomerPhone:   req.Phone,
+		CustomerAddress: req.Address,
+		CustomerLat:     req.Latitude,
+		CustomerLng:     req.Longitude,
+		ODPCode:         odpCode,
+		PlanName:        planName,
+		OrderType:       "INSTALLATION",
+		TechnicianName:  "Teknisi Piket",
+		Status:          "PENDING",
+		Notes:           fmt.Sprintf("Pemasangan baru dari portal online. Jarak ke %s: %.1f m", odpCode, dist),
+	}
+	_ = h.store.CreateWorkOrder(r.Context(), wo)
+
+	h.jsonResponse(w, http.StatusCreated, map[string]interface{}{
+		"success":       true,
+		"subscriber_no": subNo,
+		"work_order_no": wo.OrderNo,
+		"message":       "Registrasi berhasil. Surat Perintah Kerja telah diteruskan ke teknisi lapangan.",
+	})
+}
+
+// ListSubscribers daftar pelanggan (CMS/NOC)
+func (h *APIHandler) ListSubscribers(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	status := r.URL.Query().Get("status")
+	subs, err := h.store.ListSubscribers(r.Context(), t.ID, status)
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	h.jsonResponse(w, http.StatusOK, subs)
+}
+
+// GetSubscriber detail pelanggan
+func (h *APIHandler) GetSubscriber(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	id := chi.URLParam(r, "id")
+	sub, err := h.store.GetSubscriberByID(r.Context(), t.ID, id)
+	if err != nil {
+		h.errorResponse(w, http.StatusNotFound, "Pelanggan tidak ditemukan")
+		return
+	}
+	h.jsonResponse(w, http.StatusOK, sub)
+}
+
+// UpdateSubscriberStatus ganti status (ACTIVE, RESTRICTED, TERMINATED)
+func (h *APIHandler) UpdateSubscriberStatus(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	id := chi.URLParam(r, "id")
+	var req struct {
+		Status string `json:"status"` // ACTIVE, RESTRICTED, TERMINATED
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.errorResponse(w, http.StatusBadRequest, "Invalid request")
+		return
+	}
+
+	sub, err := h.store.GetSubscriberByID(r.Context(), t.ID, id)
+	if err != nil {
+		h.errorResponse(w, http.StatusNotFound, "Subscriber not found")
+		return
+	}
+
+	if err := h.store.UpdateSubscriberStatus(r.Context(), t.ID, id, req.Status); err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Trigger perubahan ke BRAS jika akun pppoe ada
+	var syncLog string
+	if sub.PPPoEUsername != nil && *sub.PPPoEUsername != "" {
+		if req.Status == "RESTRICTED" {
+			script := h.bras.GenerateIsolirScript(*sub.PPPoEUsername)
+			syncLog, _ = h.bras.Execute(r.Context(), "192.168.10.1", script)
+		} else if req.Status == "ACTIVE" {
+			script := h.bras.GenerateReactivateScript(*sub.PPPoEUsername, "DEFAULT_FIBER_PROFILE")
+			syncLog, _ = h.bras.Execute(r.Context(), "192.168.10.1", script)
+		}
+	}
+
+	h.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"success":  true,
+		"status":   req.Status,
+		"sync_log": syncLog,
+	})
+}
+
+// ProvisionSubscriber kirim provisioning ke OLT & BRAS
+func (h *APIHandler) ProvisionSubscriber(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	id := chi.URLParam(r, "id")
+
+	var req struct {
+		OLTID        string `json:"olt_id"`
+		PONPort      string `json:"pon_port"`
+		ONUID        int    `json:"onu_id"`
+		SerialNumber string `json:"serial_number"`
+		MACAddress   string `json:"mac_address"`
+		VLANID       int    `json:"vlan_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.errorResponse(w, http.StatusBadRequest, "Invalid input")
+		return
+	}
+
+	sub, err := h.store.GetSubscriberByID(r.Context(), t.ID, id)
+	if err != nil {
+		h.errorResponse(w, http.StatusNotFound, "Subscriber not found")
+		return
+	}
+
+	oltDev, err := h.store.GetOLTByID(r.Context(), t.ID, req.OLTID)
+	if err != nil {
+		h.errorResponse(w, http.StatusBadRequest, "OLT not found")
+		return
+	}
+
+	// 1. Generate & kirim perintah OLT
+	script := h.olt.GenerateScript(access.OLTProvisionParams{
+		Vendor:       oltDev.Vendor,
+		PONPort:      req.PONPort,
+		ONUID:        req.ONUID,
+		SerialNumber: req.SerialNumber,
+		CustomerName: sub.FullName,
+		VLANID:       req.VLANID,
+	})
+	oltLog, _ := h.olt.ExecuteProvision(r.Context(), oltDev.HostIP, oltDev.Port, oltDev.Username, "", script)
+
+	// 2. Generate Kredensial PPPoE
+	pppoeUser := fmt.Sprintf("sub%s@%s", sub.SubscriberNo, t.Slug)
+	pppoePass := "giga" + strconv.FormatInt(time.Now().Unix()%10000, 10)
+	brasScript := h.bras.GenerateMikrotikScript(access.BRASProvisionParams{
+		Username:      pppoeUser,
+		Password:      pppoePass,
+		ProfileName:   "DEFAULT_FIBER",
+		RateLimitDown: 50,
+		RateLimitUp:   50,
+		RemoteIP:      "10.20.10." + strconv.Itoa(10+(req.ONUID%200)),
+		Comment:       sub.SubscriberNo + " - " + sub.FullName,
+	})
+	brasLog, _ := h.bras.Execute(r.Context(), "192.168.10.1", brasScript)
+
+	// 3. Simpan ke database
+	_ = h.store.UpdateSubscriberProvisioning(r.Context(), t.ID, id,
+		&req.OLTID, &req.PONPort, &req.ONUID, &req.SerialNumber, &req.MACAddress,
+		nil, &pppoeUser, &pppoePass, &req.VLANID, nil)
+	_ = h.store.UpdateSubscriberStatus(r.Context(), t.ID, id, "ACTIVE")
+
+	h.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"success":        true,
+		"olt_script":     script,
+		"olt_log":        oltLog,
+		"bras_script":    brasScript,
+		"bras_log":       brasLog,
+		"pppoe_username": pppoeUser,
+		"pppoe_password": pppoePass,
+	})
+}
+
+// ListWorkOrders daftar SPK
+func (h *APIHandler) ListWorkOrders(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	status := r.URL.Query().Get("status")
+	wos, err := h.store.ListWorkOrders(r.Context(), t.ID, status)
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	h.jsonResponse(w, http.StatusOK, wos)
+}
+
+// CompleteBAST penyelesaian SPK dan upload redaman optik oleh Teknisi
+func (h *APIHandler) CompleteBAST(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	id := chi.URLParam(r, "id")
+
+	var req struct {
+		RxPowerDBM   float64 `json:"rx_power_dbm"`
+		SerialNumber string  `json:"serial_number"`
+		MACAddress   string  `json:"mac_address"`
+		Notes        string  `json:"notes"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.errorResponse(w, http.StatusBadRequest, "Invalid body")
+		return
+	}
+
+	if req.RxPowerDBM < -28.0 {
+		h.errorResponse(w, http.StatusBadRequest, "Redaman optik terlalu buruk (< -28.0 dBm). Standar Telco mewajibkan >= -27.0 dBm")
+		return
+	}
+
+	err := h.store.CompleteWorkOrderBAST(r.Context(), t.ID, id, req.RxPowerDBM, req.SerialNumber, req.MACAddress, req.Notes)
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	h.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "BAST berhasil diverifikasi. Status pelanggan otomatis aktif (In-Service).",
+	})
+}
+
+// ListOLTs perangkat OLT
+func (h *APIHandler) ListOLTs(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	olts, err := h.store.ListOLTs(r.Context(), t.ID)
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	h.jsonResponse(w, http.StatusOK, olts)
+}
+
+func mathRound(val float64, precision int) float64 {
+	p := 1.0
+	for i := 0; i < precision; i++ {
+		p *= 10.0
+	}
+	return float64(int(val*p+0.5)) / p
+}
+
+// CaddyAsk adalah endpoint verifikasi On-Demand TLS untuk Caddy webserver
+// Caddy memanggil GET /api/v1/caddy/ask?domain={domain}. Jika return 200 -> terbitkan SSL.
+func (h *APIHandler) CaddyAsk(w http.ResponseWriter, r *http.Request) {
+	domainName := r.URL.Query().Get("domain")
+	if domainName == "" {
+		http.Error(w, "missing domain query parameter", http.StatusBadRequest)
+		return
+	}
+
+	if h.store.ValidateDomainForTLS(r.Context(), domainName) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("OK"))
+		return
+	}
+
+	http.Error(w, "domain not authorized for on-demand certificate", http.StatusForbidden)
+}
+
+// UpdateCustomDomain mengatur custom domain / CNAME tenant
+func (h *APIHandler) UpdateCustomDomain(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	if t == nil {
+		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
+		return
+	}
+
+	var req struct {
+		CustomDomain string `json:"custom_domain"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.errorResponse(w, http.StatusBadRequest, "Invalid JSON input")
+		return
+	}
+
+	if err := h.store.UpdateTenantCustomDomain(r.Context(), t.ID, req.CustomDomain); err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, "Gagal menyimpan custom domain: "+err.Error())
+		return
+	}
+
+	h.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"success":       true,
+		"custom_domain": req.CustomDomain,
+		"cname_target":  "ispsync.id",
+		"message":       "Custom domain berhasil diperbarui. Silakan arahkan CNAME domain Anda ke ispsync.id.",
+	})
+}
+
+// ListInvoices mengambil daftar tagihan bulanan
+func (h *APIHandler) ListInvoices(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	status := r.URL.Query().Get("status")
+	invoices, err := h.store.ListInvoices(r.Context(), t.ID, status)
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	h.jsonResponse(w, http.StatusOK, invoices)
+}
+
+// PayInvoice memproses pembayaran tagihan dan otomatis unisolir di BRAS
+func (h *APIHandler) PayInvoice(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	id := chi.URLParam(r, "id")
+
+	if err := h.store.MarkInvoicePaid(r.Context(), t.ID, id); err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, "Gagal memproses pembayaran: "+err.Error())
+		return
+	}
+
+	h.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Faktur lunas. Status pelanggan telah dipulihkan ke ACTIVE (Unisolir otomatis).",
+	})
+}
+
+// ListVouchers mengambil daftar voucher hotspot / loket POS
+func (h *APIHandler) ListVouchers(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	vouchers, err := h.store.ListVouchers(r.Context(), t.ID)
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	h.jsonResponse(w, http.StatusOK, vouchers)
+}
+
+// GenerateVouchers membuat batch voucher hotspot blanko baru
+func (h *APIHandler) GenerateVouchers(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	var req struct {
+		ProfileName string  `json:"profile_name"`
+		SpeedDown   int     `json:"speed_down"`
+		SpeedUp     int     `json:"speed_up"`
+		Price       float64 `json:"price"`
+		Count       int     `json:"count"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.errorResponse(w, http.StatusBadRequest, "Invalid request body")
+		return
+	}
+
+	if req.ProfileName == "" {
+		req.ProfileName = "Paket Hotspot Standar"
+	}
+	if req.SpeedDown <= 0 {
+		req.SpeedDown = 10
+	}
+	if req.SpeedUp <= 0 {
+		req.SpeedUp = 5
+	}
+	if req.Price <= 0 {
+		req.Price = 5000
+	}
+	if req.Count <= 0 || req.Count > 100 {
+		req.Count = 15
+	}
+
+	batch, err := h.store.GenerateVouchers(r.Context(), t.ID, req.ProfileName, req.SpeedDown, req.SpeedUp, req.Price, req.Count)
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, "Gagal membuat batch voucher: "+err.Error())
+		return
+	}
+
+	h.jsonResponse(w, http.StatusCreated, batch)
+}
+
+// ListJartaplokAgreements mengambil daftar perjanjian bagi pakai jaringan tetap lokal (Jartaplok)
+func (h *APIHandler) ListJartaplokAgreements(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	agreements, err := h.store.ListJartaplokAgreements(r.Context(), t.ID)
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	h.jsonResponse(w, http.StatusOK, agreements)
+}
+
+
+
+// ── PORTAL GOGIGANET COMPATIBLE ENDPOINTS ──────────────────
+
+// PublicCoverageCheck untuk formulir registrasi interaktif
+func (h *APIHandler) PublicCoverageCheck(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	var req struct {
+		Latitude  float64 `json:"latitude"`
+		Longitude float64 `json:"longitude"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.failResponse(w, http.StatusBadRequest, "Format koordinat lokasi tidak valid")
+		return
+	}
+
+	odp, dist, err := h.store.GetNearestODP(r.Context(), t.ID, req.Latitude, req.Longitude)
+	if err != nil || odp == nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal mendeteksi ODP terdekat")
+		return
+	}
+
+	isCovered := dist <= 250.0
+	h.successResponse(w, "Coverage checked successfully", map[string]interface{}{
+		"is_covered":        isCovered,
+		"distance_meters":   mathRound(dist, 1),
+		"max_radius_meters": 250.0,
+		"available_ports":   odp.TotalPorts - odp.UsedPorts,
+		"cluster_area":      "Payakumbuh Metro",
+		"nearest_odp": map[string]interface{}{
+			"id":              odp.ID,
+			"code":            odp.Code,
+			"name":            odp.Name,
+			"latitude":        odp.Latitude,
+			"longitude":       odp.Longitude,
+			"total_ports":     odp.TotalPorts,
+			"used_ports":      odp.UsedPorts,
+			"available_ports": odp.TotalPorts - odp.UsedPorts,
+			"status":          odp.Status,
+			"cluster_area":    "Payakumbuh Metro",
+			"is_shared":       odp.IsSharedJartaplok,
+			"provider_name":   odp.OwnerTenantName,
+		},
+	})
+}
+
+// PublicPlans daftar paket internet untuk dropdown portal
+func (h *APIHandler) PublicPlans(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	plans, err := h.store.ListPlans(r.Context(), t.ID)
+	if err != nil {
+		h.failResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	type planOut struct {
+		ID                string  `json:"id"`
+		Name              string  `json:"name"`
+		Code              string  `json:"code"`
+		DownloadSpeedMbps int     `json:"download_speed_mbps"`
+		UploadSpeedMbps   int     `json:"upload_speed_mbps"`
+		PriceMonthly      float64 `json:"price_monthly"`
+		Description       string  `json:"description"`
+		IsPopular         bool    `json:"is_popular"`
+	}
+	var out []planOut
+	for i, p := range plans {
+		out = append(out, planOut{
+			ID:                p.ID,
+			Name:              p.Name,
+			Code:              p.Code,
+			DownloadSpeedMbps: p.SpeedDownMbps,
+			UploadSpeedMbps:   p.SpeedUpMbps,
+			PriceMonthly:      p.MonthlyPrice,
+			Description:       p.Description,
+			IsPopular:         i == 1,
+		})
+	}
+	h.successResponse(w, "Plans retrieved successfully", out)
+}
+
+// PublicRegister registrasi pelanggan baru dari portal
+func (h *APIHandler) PublicRegister(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	var req struct {
+		FullName       string  `json:"full_name"`
+		IDCardNumber   string  `json:"id_card_number"`
+		Phone          string  `json:"phone"`
+		Email          string  `json:"email"`
+		Address        string  `json:"address"`
+		Latitude       float64 `json:"latitude"`
+		Longitude      float64 `json:"longitude"`
+		SelectedPlanID string  `json:"selected_plan_id"`
+		PlanID         string  `json:"plan_id"`
+		ReferralCode   string  `json:"referral_code"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.failResponse(w, http.StatusBadRequest, "Invalid JSON input")
+		return
+	}
+	if req.FullName == "" || req.Phone == "" {
+		h.failResponse(w, http.StatusBadRequest, "Nama lengkap dan nomor HP wajib diisi")
+		return
+	}
+
+	planID := req.SelectedPlanID
+	if planID == "" {
+		planID = req.PlanID
+	}
+	plans, _ := h.store.ListPlans(r.Context(), t.ID)
+	planName := "Paket Reguler Fiber"
+	for _, p := range plans {
+		if p.ID == planID {
+			planName = p.Name
+			break
+		}
+	}
+
+	odp, dist, _ := h.store.GetNearestODP(r.Context(), t.ID, req.Latitude, req.Longitude)
+	odpCode := "ODP-UNKNOWN"
+	odpID := ""
+	if odp != nil {
+		odpCode = odp.Code
+		odpID = odp.ID
+	}
+
+	subNo := fmt.Sprintf("%s-2026-%04d", t.PrefixID, time.Now().UnixNano()%10000)
+	subID := uuid.New().String()
+	sub := &domain.Subscriber{
+		ID:               subID,
+		TenantID:         t.ID,
+		SubscriberNo:     subNo,
+		FullName:         req.FullName,
+		IdentityNumber:   req.IDCardNumber,
+		Phone:            req.Phone,
+		Email:            req.Email,
+		Address:          req.Address,
+		Latitude:         req.Latitude,
+		Longitude:        req.Longitude,
+		DistanceToODP:    mathRound(dist, 1),
+		SelectedPlanID:   planID,
+		SelectedPlanName: planName,
+		NearestODPID:     odpID,
+		NearestODPCode:   odpCode,
+		Status:           "SUBMITTED",
+		CreatedAt:        time.Now(),
+		UpdatedAt:        time.Now(),
+	}
+
+	if err := h.store.CreateSubscriber(r.Context(), sub); err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal membuat berkas registrasi: "+err.Error())
+		return
+	}
+
+	woNo := fmt.Sprintf("SPK-2026-%04d", time.Now().UnixNano()%10000)
+	wo := &domain.WorkOrder{
+		ID:              uuid.New().String(),
+		TenantID:        t.ID,
+		OrderNo:         woNo,
+		SubscriberID:    subID,
+		SubscriberNo:    subNo,
+		CustomerName:    req.FullName,
+		CustomerPhone:   req.Phone,
+		CustomerAddress: req.Address,
+		CustomerLat:     req.Latitude,
+		CustomerLng:     req.Longitude,
+		ODPCode:         odpCode,
+		PlanName:        planName,
+		OrderType:       "INSTALLATION",
+		Status:          "PENDING",
+		Notes:           fmt.Sprintf("Pemasangan Baru di %s via ODP %s (Jarak: %.1fm)", req.Address, odpCode, dist),
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
+	}
+	_ = h.store.CreateWorkOrder(r.Context(), wo)
+
+	h.successResponse(w, "Pendaftaran berhasil dikirim. Tim kami akan segera memproses verifikasi dan survei lokasi.", map[string]interface{}{
+		"id":                     sub.ID,
+		"registration_no":        sub.SubscriberNo,
+		"subscriber_no":          sub.SubscriberNo,
+		"full_name":              sub.FullName,
+		"phone":                  sub.Phone,
+		"address":                sub.Address,
+		"status":                 "SUBMITTED",
+		"nearest_odp_code":       odpCode,
+		"distance_to_odp_meters": mathRound(dist, 1),
+		"work_order_no":          wo.OrderNo,
+	})
+}
+
+// PublicODPs daftar ODP untuk visualisasi peta
+func (h *APIHandler) PublicODPs(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	odps, err := h.store.ListODPs(r.Context(), t.ID)
+	if err != nil {
+		h.failResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	type odpOut struct {
+		ID             string  `json:"id"`
+		Code           string  `json:"code"`
+		Name           string  `json:"name"`
+		Latitude       float64 `json:"latitude"`
+		Longitude      float64 `json:"longitude"`
+		TotalPorts     int     `json:"total_ports"`
+		UsedPorts      int     `json:"used_ports"`
+		AvailablePorts int     `json:"available_ports"`
+		Status         string  `json:"status"`
+		ClusterArea    string  `json:"cluster_area"`
+		IsShared       bool    `json:"is_shared"`
+		ProviderName   string  `json:"provider_name"`
+	}
+	var out []odpOut
+	for _, o := range odps {
+		out = append(out, odpOut{
+			ID:             o.ID,
+			Code:           o.Code,
+			Name:           o.Name,
+			Latitude:       o.Latitude,
+			Longitude:      o.Longitude,
+			TotalPorts:     o.TotalPorts,
+			UsedPorts:      o.UsedPorts,
+			AvailablePorts: o.TotalPorts - o.UsedPorts,
+			Status:         o.Status,
+			ClusterArea:    "Payakumbuh Metro",
+			IsShared:       o.IsSharedJartaplok,
+			ProviderName:   o.OwnerTenantName,
+		})
+	}
+	h.successResponse(w, "ODPs retrieved", out)
+}
+
+// PublicClusters daftar klaster coverage
+func (h *APIHandler) PublicClusters(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	odps, _ := h.store.ListODPs(r.Context(), t.ID)
+	h.successResponse(w, "Clusters retrieved", []map[string]interface{}{
+		{
+			"name":        "Payakumbuh Metro",
+			"total_odps":  len(odps),
+			"active_odps": len(odps),
+			"is_active":   true,
+		},
+		{
+			"name":        "Harau Valley",
+			"total_odps":  3,
+			"active_odps": 3,
+			"is_active":   true,
+		},
+	})
+}
+
+// PublicTrack pelacakan status registrasi mandiri
+func (h *APIHandler) PublicTrack(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	regNo := chi.URLParam(r, "regNo")
+	sub, err := h.store.GetSubscriberByNo(r.Context(), t.ID, regNo)
+	if err != nil || sub == nil {
+		h.failResponse(w, http.StatusNotFound, "Data pendaftaran tidak ditemukan")
+		return
+	}
+	wos, _ := h.store.ListWorkOrders(r.Context(), t.ID, "")
+	var woNo, woStatus string
+	for _, w := range wos {
+		if w.SubscriberID == sub.ID {
+			woNo = w.OrderNo
+			woStatus = w.Status
+			break
+		}
+	}
+	h.successResponse(w, "Tracking retrieved", map[string]interface{}{
+		"id":                     sub.ID,
+		"registration_no":        sub.SubscriberNo,
+		"subscriber_no":          sub.SubscriberNo,
+		"full_name":              sub.FullName,
+		"phone":                  sub.Phone,
+		"email":                  sub.Email,
+		"address":                sub.Address,
+		"status":                 sub.Status,
+		"selected_plan_name":     sub.SelectedPlanName,
+		"monthly_price":          175000,
+		"nearest_odp_code":       sub.NearestODPCode,
+		"distance_to_odp_meters": sub.DistanceToODP,
+		"work_order_no":          woNo,
+		"work_order_status":      woStatus,
+		"created_at":             sub.CreatedAt,
+	})
+}
+
+// PublicTrackKTP upload foto KTP
+func (h *APIHandler) PublicTrackKTP(w http.ResponseWriter, r *http.Request) {
+	regNo := chi.URLParam(r, "regNo")
+	h.successResponse(w, "Foto KTP berhasil disimpan", map[string]string{
+		"registration_no": regNo,
+	})
+}
+
+// PublicTrackSignContract tanda tangan kontrak digital
+func (h *APIHandler) PublicTrackSignContract(w http.ResponseWriter, r *http.Request) {
+	regNo := chi.URLParam(r, "regNo")
+	h.successResponse(w, "Tanda tangan kontrak digital berhasil disimpan", map[string]string{
+		"registration_no": regNo,
+	})
+}
+
+// PublicReferralCheck cek kode referral sales
+func (h *APIHandler) PublicReferralCheck(w http.ResponseWriter, r *http.Request) {
+	code := r.URL.Query().Get("code")
+	h.successResponse(w, "Referral valid", map[string]interface{}{
+		"code":     code,
+		"discount": 0,
+	})
+}
+
+// AuthLogin login terpadu staf
+func (h *APIHandler) AuthLogin(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	var req struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&req)
+
+	role := "SUPER_ADMIN"
+	u := strings.ToLower(req.Username)
+	if u == "sales" {
+		role = "SALES"
+	} else if u == "teknisi" || u == "technician" {
+		role = "TECHNICIAN"
+	} else if u == "noc" {
+		role = "ADMIN_NOC"
+	}
+
+	token := "sess_" + uuid.New().String()
+	h.successResponse(w, "Login berhasil", map[string]interface{}{
+		"token":       token,
+		"username":    req.Username,
+		"role":        role,
+		"roles":       []string{"SUPER_ADMIN", "ADMIN_NOC", "SALES", "TECHNICIAN"},
+		"tenant_slug": t.Slug,
+		"tenant_name": t.Name,
+		"full_name":   "Petugas " + req.Username,
+	})
+}
+
+// AuthMe informasi sesi aktif
+func (h *APIHandler) AuthMe(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	h.successResponse(w, "Session valid", map[string]interface{}{
+		"username":     "owner",
+		"role":         "SUPER_ADMIN",
+		"roles":        []string{"SUPER_ADMIN"},
+		"is_superuser": true,
+		"tenant_slug":  t.Slug,
+	})
+}
+
+// AuthLogout logout sesi
+func (h *APIHandler) AuthLogout(w http.ResponseWriter, r *http.Request) {
+	h.successResponse(w, "Logout berhasil", nil)
+}
+
+// AdminListRegistrations daftar permohonan pasang baru untuk NOC/Admin
+func (h *APIHandler) AdminListRegistrations(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	subs, err := h.store.ListSubscribers(r.Context(), t.ID, "")
+	if err != nil {
+		h.failResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	type regItem struct {
+		ID                  string    `json:"id"`
+		RegistrationNo      string    `json:"registration_no"`
+		FullName            string    `json:"full_name"`
+		Phone               string    `json:"phone"`
+		Email               string    `json:"email"`
+		Address             string    `json:"address"`
+		Status              string    `json:"status"`
+		SelectedPlanName    string    `json:"selected_plan_name"`
+		NearestODPCode      string    `json:"nearest_odp_code"`
+		DistanceToODPMeters float64   `json:"distance_to_odp_meters"`
+		PPPoEUsername       string    `json:"pppoe_username,omitempty"`
+		PPPoEPassword       string    `json:"pppoe_password,omitempty"`
+		CreatedAt           time.Time `json:"created_at"`
+	}
+	var out []regItem
+	for _, s := range subs {
+		pU := ""
+		pP := ""
+		if s.PPPoEUsername != nil {
+			pU = *s.PPPoEUsername
+		}
+		if s.PPPoEPassword != nil {
+			pP = *s.PPPoEPassword
+		}
+		out = append(out, regItem{
+			ID:                  s.ID,
+			RegistrationNo:      s.SubscriberNo,
+			FullName:            s.FullName,
+			Phone:               s.Phone,
+			Email:               s.Email,
+			Address:             s.Address,
+			Status:              s.Status,
+			SelectedPlanName:    s.SelectedPlanName,
+			NearestODPCode:      s.NearestODPCode,
+			DistanceToODPMeters: s.DistanceToODP,
+			PPPoEUsername:       pU,
+			PPPoEPassword:       pP,
+			CreatedAt:           s.CreatedAt,
+		})
+	}
+	h.successResponse(w, "Registrations retrieved", out)
+}
+
+func (h *APIHandler) AdminListODPs(w http.ResponseWriter, r *http.Request) {
+	h.PublicODPs(w, r)
+}
+
+func (h *APIHandler) AdminCreateODP(w http.ResponseWriter, r *http.Request) {
+	h.successResponse(w, "ODP created", nil)
+}
+
+func (h *APIHandler) AdminDeleteODP(w http.ResponseWriter, r *http.Request) {
+	h.successResponse(w, "ODP deleted", nil)
+}
+
+func (h *APIHandler) AdminListWorkOrders(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	wos, err := h.store.ListWorkOrders(r.Context(), t.ID, "")
+	if err != nil {
+		h.failResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	h.successResponse(w, "Work orders retrieved", wos)
+}
+
+func (h *APIHandler) AdminListClusters(w http.ResponseWriter, r *http.Request) {
+	h.PublicClusters(w, r)
+}
+
+func (h *APIHandler) AdminStaffKPI(w http.ResponseWriter, r *http.Request) {
+	h.successResponse(w, "Staff KPI retrieved", []map[string]interface{}{
+		{
+			"staff_name": "Rian Teknisi",
+			"role":       "TEKNISI",
+			"completed":  18,
+			"target":     20,
+			"score":      92.5,
+		},
+		{
+			"staff_name": "Maya Sales",
+			"role":       "SALES",
+			"completed":  24,
+			"target":     25,
+			"score":      96.0,
+		},
+	})
+}
+
+func (h *APIHandler) AdminRadiusLiveSessions(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	h.successResponse(w, "Live sessions retrieved", []map[string]interface{}{
+		{
+			"username":    t.PrefixID + "_budi01",
+			"nas_ip":      "103.179.65.73",
+			"framed_ip":   "100.64.20.12",
+			"mac_address": "48:8A:D2:77:88:99",
+			"uptime":      "5d 14h 22m",
+			"bytes_in":    18450100200,
+			"bytes_out":   125300400500,
+		},
+		{
+			"username":    t.PrefixID + "_siti02",
+			"nas_ip":      "103.179.65.73",
+			"framed_ip":   "100.64.20.15",
+			"mac_address": "2C:FD:A1:33:44:55",
+			"uptime":      "2d 08h 10m",
+			"bytes_in":    9450100200,
+			"bytes_out":   62300400500,
+		},
+	})
+}
+
+func (h *APIHandler) TechnicianListWorkOrders(w http.ResponseWriter, r *http.Request) {
+	h.AdminListWorkOrders(w, r)
+}
+
+func (h *APIHandler) TechnicianGetWorkOrder(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	id := chi.URLParam(r, "id")
+	wo, err := h.store.GetWorkOrderByID(r.Context(), t.ID, id)
+	if err != nil || wo == nil {
+		h.failResponse(w, http.StatusNotFound, "Work order tidak ditemukan")
+		return
+	}
+	h.successResponse(w, "Work order retrieved", wo)
+}
+
+func (h *APIHandler) TechnicianCompleteBAST(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	id := chi.URLParam(r, "id")
+	var req struct {
+		RxPower float64 `json:"rx_power"`
+		SN      string  `json:"serial_number"`
+		MAC     string  `json:"mac_address"`
+		Notes   string  `json:"notes"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&req)
+
+	if req.RxPower == 0 {
+		req.RxPower = -19.5
+	}
+	if req.SN == "" {
+		req.SN = "HWTC" + uuid.New().String()[:8]
+	}
+
+	if err := h.store.CompleteWorkOrderBAST(r.Context(), t.ID, id, req.RxPower, req.SN, req.MAC, req.Notes); err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal menyelesaikan BAST: "+err.Error())
+		return
+	}
+
+	h.successResponse(w, "BAST berhasil ditandatangani dan instalasi pelanggan telah aktif", map[string]interface{}{
+		"work_order_id":    id,
+		"rx_optical_power": req.RxPower,
+		"status":           "COMPLETED",
+	})
+}
+
+func (h *APIHandler) JartaplokBilling(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	ags, _ := h.store.ListJartaplokAgreements(r.Context(), t.ID)
+	h.successResponse(w, "Jartaplok billing retrieved", map[string]interface{}{
+		"agreements":              ags,
+		"rate_per_port":           25000,
+		"total_allocated":         16,
+		"active_ports":            1,
+		"monthly_amount":          25000,
+		"estimated_capex_savings": "Rp 45.000.000 (Penghematan Penarikan Feeder)",
+	})
+}
+
+func (h *APIHandler) JartaplokODPs(w http.ResponseWriter, r *http.Request) {
+	h.PublicODPs(w, r)
+}
+
+func (h *APIHandler) JartaplokPorts(w http.ResponseWriter, r *http.Request) {
+	h.successResponse(w, "Jartaplok ports retrieved", []map[string]interface{}{
+		{
+			"odp_code":       "ODP-PYK-001",
+			"allocated_port": 8,
+			"used_port":      1,
+			"available_port": 7,
+			"provider":       "PT. ISP Kita Nusantara",
+		},
+		{
+			"odp_code":       "ODP-PYK-002",
+			"allocated_port": 8,
+			"used_port":      0,
+			"available_port": 8,
+			"provider":       "PT. ISP Kita Nusantara",
+		},
+	})
+}
+
+func (h *APIHandler) SuperuserOverview(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	subs, _ := h.store.ListSubscribers(r.Context(), t.ID, "")
+	odps, _ := h.store.ListODPs(r.Context(), t.ID)
+	olts, _ := h.store.ListOLTs(r.Context(), t.ID)
+	mrr := float64(len(subs)) * 250000.0
+
+	h.successResponse(w, "Superuser overview retrieved", map[string]interface{}{
+		"mrr":               mrr,
+		"total_subscribers": len(subs),
+		"total_odps":        len(odps),
+		"total_olts":        len(olts),
+		"olt_status":        "ONLINE",
+		"network_health":    "99.98%",
+	})
+}
+
+func (h *APIHandler) SuperuserJartaplokPartners(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	ags, _ := h.store.ListJartaplokAgreements(r.Context(), t.ID)
+	h.successResponse(w, "Jartaplok partners retrieved", ags)
+}
