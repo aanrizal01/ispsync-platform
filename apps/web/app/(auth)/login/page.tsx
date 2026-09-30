@@ -30,6 +30,10 @@ export default function LoginPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const h = window.location.hostname.toLowerCase();
+      if (h === "ispsync.id" || h === "www.ispsync.id" || h === "dev.ispsync.id") {
+        window.location.href = "/member/login";
+        return;
+      }
       const demo = h.includes("ispku") || h.startsWith("billing.");
       setIsTenantDemo(demo);
     }
