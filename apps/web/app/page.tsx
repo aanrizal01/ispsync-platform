@@ -54,24 +54,16 @@ export default function LandingPage() {
             <a href="#harga" className="hover:text-blue-600 transition-colors">
               Paket &amp; Investasi
             </a>
-            <a href="https://cms.ispku.ispsync.id" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">
-              Live Demo
-            </a>
           </nav>
 
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-medium text-slate-300 hover:text-blue-600 transition-colors">
-              Portal Member
-            </Link>
-            <a
-              href="https://cms.ispku.ispsync.id"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow transition-all"
+            <Link
+              href="/member/login"
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all"
             >
-              <span>Buka Demo ISPKU</span>
+              <span>Portal Member</span>
               <ArrowRight className="w-4 h-4" />
-            </a>
+            </Link>
           </div>
         </div>
       </header>
@@ -92,20 +84,18 @@ export default function LandingPage() {
 
         <p className="mt-6 text-lg sm:text-xl text-gray-500 max-w-3xl mx-auto leading-relaxed">
           Dirancang untuk stabilitas skala telekomunikasi dan kepatuhan audit.
-          <strong className="text-slate-200"> ISPSYNC</strong> mengintegrasikan Backend Go berkecepatan tinggi,
+          <strong className="text-slate-800"> ISPSYNC</strong> mengintegrasikan Backend Go berkecepatan tinggi,
           Enterprise Web Portal, dan Point-of-Sales Mobile Lapangan dalam satu ekosistem realtime berkeandalan tinggi.
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <a
-            href="https://cms.ispku.ispsync.id"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/member/login"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base px-8 py-4 rounded-xl shadow-lg transition-all"
           >
-            <span>Buka Dashboard Demo</span>
+            <span>Masuk ke Portal Member</span>
             <ArrowRight className="w-5 h-5" />
-          </a>
+          </Link>
           <a
             href="https://wa.me/6281100000000?text=Halo%20Admin%20ISPSYNC,%20saya%20tertarik%20konsultasi%20platform%20ISPSYNC"
             target="_blank"
