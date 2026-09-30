@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     template: "%s | ISPSYNC",
   },
   description:
-    "ISPSYNC — Platform Orkestrasi Jaringan, RADIUS AAA & Operasional ISP Berlisensi Skala Enterprise",
+    "ISPSYNC — Carrier-Grade Network Orchestration, RADIUS AAA & Telecom Operations Platform for Licensed Operators",
   icons: {
     icon: [
       { url: "/logo.png", type: "image/png" },
@@ -38,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className={geist.variable}>
+    <html lang="en" className={geist.variable}>
       <body className="antialiased bg-slate-50 text-slate-900">
         <AuthProvider>{children}</AuthProvider>
       </body>
