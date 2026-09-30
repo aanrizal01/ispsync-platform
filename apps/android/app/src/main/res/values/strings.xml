@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">GOGIGA Agent</string>
+    <string name="portal_url">https://hot.gogiga.net.id/agent/dashboard</string>
+    <string name="printer_settings">Pengaturan Printer Thermal</string>
+    <string name="no_paired_printers">Tidak ditemukan printer Bluetooth yang sudah dipasangkan. Silakan pasangkan (pair) printer di menu Bluetooth Android terlebih dahulu.</string>
+</resources>

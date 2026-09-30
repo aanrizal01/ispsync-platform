@@ -1,0 +1,42 @@
+# Caddyfile — Development Reverse Proxy
+# 
+# Local development: routes /api/* to Go API, everything else to Next.js
+# For production, replace localhost with actual domain and remove tls internal
+
+localhost {
+    # TLS for local dev (self-signed, not for production)
+    tls internal
+
+    # Route API calls to Go backend
+    handle /api/* {
+        reverse_proxy api:8080
+    }
+
+    # Route webhook callbacks
+    handle /webhooks/* {
+        reverse_proxy api:8080
+    }
+
+    # Health check endpoints
+    handle /health {
+        reverse_proxy api:8080
+    }
+    handle /ready {
+        reverse_proxy api:8080
+    }
+
+    # All other traffic to Next.js
+    handle {
+        reverse_proxy web:3000
+    }
+}
+
+# Production example (replace with actual domain):
+# isp.yourdomain.com {
+#     reverse_proxy /api/* api:8080
+#     reverse_proxy /* web:3000
+#     encode gzip
+#     header {
+#         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+#     }
+# }

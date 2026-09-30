@@ -1,0 +1,189 @@
+{
+    email admin@ispsync.id
+    on_demand_tls {
+        ask http://172.18.0.1:8081/api/v1/caddy/ask
+    }
+}
+
+# Main SaaS Landing & Platform App
+ispsync.id, www.ispsync.id, dev.ispsync.id {
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 50mb
+            roll_keep 10
+            roll_keep_for 720h
+        }
+        format json
+    }
+
+    encode zstd gzip
+
+    header {
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        -Server
+    }
+
+    @no_cache {
+        path / /login /index.html
+    }
+    header @no_cache {
+        -Cache-Control
+        Cache-Control "no-cache, no-store, must-revalidate"
+        Pragma "no-cache"
+    }
+
+    handle /api/* {
+        reverse_proxy api:8080 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    handle /health {
+        reverse_proxy api:8080
+    }
+
+    handle /ready {
+        reverse_proxy api:8080
+    }
+
+    handle /api/v1/passpoint/credentials/*/apple-profile {
+        reverse_proxy api:8080 {
+            header_down Content-Type "application/x-apple-aspen-config"
+        }
+    }
+
+    handle {
+        reverse_proxy web:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_down Cache-Control "no-cache, no-store, must-revalidate"
+        }
+    }
+}
+
+# Multi-Tenant Subdomains (On-Demand TLS for *.ispsync.id and *.*.ispsync.id)
+https:// {
+    tls {
+        on_demand
+    }
+    encode zstd gzip
+
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        -Server
+    }
+
+    @no_cache_sub {
+        path / /login
+    }
+    header @no_cache_sub {
+        -Cache-Control
+        Cache-Control "no-cache, no-store, must-revalidate"
+        Pragma "no-cache"
+    }
+
+    # 0. Block & Reject Deprecated Non-Tenant Subdomains
+    @deprecated_domains {
+        header_regexp Host ^(cms|portal|sales|teknisi|billing|noc|fttx)\.ispsync\.id$
+    }
+    handle @deprecated_domains {
+        respond "404 Not Found - Subdomain non-aktif. Format URL resmi: {modul}.{tenant}.ispsync.id" 404 {
+            close
+        }
+    }
+
+    
+    # 0.5. Block legacy cms.* subdomain
+    @legacy_cms {
+        header_regexp Host ^cms\.
+    }
+    handle @legacy_cms {
+        respond "Subdomain 'cms' sudah diganti! Gunakan billing.*, portal.*, atau fttx.* sesuai arsitektur 3 Engine ISPSYNC." 403 {
+            close
+        }
+    }
+
+    # 1. CMS & Billing Backoffice App (Next.js & API)
+    @billing_api {
+        header_regexp Host ^(billing\.|dev\.billing\.)
+        path /api/* /health /ready
+    }
+    handle @billing_api {
+        reverse_proxy api:8080 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    # Redirect root to /login on CMS & Billing backoffice
+    @billing_root {
+        header_regexp Host ^(billing\.|dev\.billing\.)
+        path /
+    }
+    redir @billing_root /login temporary
+
+    @billing {
+        header_regexp Host ^(billing\.|dev\.billing\.)
+    }
+    handle @billing {
+        reverse_proxy web:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_down Cache-Control "no-cache, no-store, must-revalidate"
+        }
+    }
+
+    # 2. FTTX NOC Command Center & Wholesale (fttx.* and noc.*)
+    @fttx {
+        header_regexp Host ^((fttx|noc)\.|dev\.(fttx|noc)\.)
+    }
+    handle @fttx {
+        reverse_proxy 172.18.0.1:8082 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    # 3. Customer & Field Operational Portals (portal.*, sales.*, teknisi.*, rekan.*) -> ISPSYNC Core
+    handle {
+        reverse_proxy 172.18.0.1:8081 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+}
+
+# HTTP Fallback
+http:// {
+    @deprecated_http {
+        header_regexp Host ^(cms|portal|sales|teknisi|billing|noc|fttx)\.ispsync\.id$
+    }
+    handle @deprecated_http {
+        respond "404 Not Found - Subdomain non-aktif. Format URL resmi: {modul}.{tenant}.ispsync.id" 404 {
+            close
+        }
+    }
+
+    handle /api/* {
+        reverse_proxy 172.18.0.1:8081 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+    handle {
+        redir https://{host}{uri} permanent
+    }
+}

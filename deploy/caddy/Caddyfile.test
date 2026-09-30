@@ -1,0 +1,127 @@
+{
+    email admin@ispsync.id
+    on_demand_tls {
+        ask http://172.18.0.1:8082/api/v1/caddy/ask
+    }
+}
+
+# Main SaaS Landing & Platform App
+ispsync.id, www.ispsync.id {
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 50mb
+            roll_keep 10
+            roll_keep_for 720h
+        }
+        format json
+    }
+
+    encode zstd gzip
+
+    header {
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        -Server
+    }
+
+    handle /api/* {
+        reverse_proxy api:8080 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    handle /health {
+        reverse_proxy api:8080
+    }
+
+    handle /ready {
+        reverse_proxy api:8080
+    }
+
+    handle /api/v1/passpoint/credentials/*/apple-profile {
+        reverse_proxy api:8080 {
+            header_down Content-Type "application/x-apple-aspen-config"
+        }
+    }
+
+    handle {
+        reverse_proxy web:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+}
+
+# Multi-Tenant Subdomains (On-Demand TLS for *.ispsync.id and *.*.ispsync.id)
+https:// {
+    tls {
+        on_demand
+    }
+    encode zstd gzip
+
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        -Server
+    }
+
+    # 1. CMS & Billing Backoffice App (Next.js & API)
+    @billing_api {
+        header_regexp Host ^(cms|billing)\.
+        path /api/*
+    }
+    handle @billing_api {
+        reverse_proxy api:8080 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    @billing {
+        header_regexp Host ^(cms|billing)\.
+    }
+    handle @billing {
+        reverse_proxy web:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # 2. Operational & Customer Portals (Portal GIS, Sales, Teknisi, NOC) -> ISPSYNC Core
+    handle {
+        reverse_proxy 172.18.0.1:8082 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+}
+
+# HTTP Fallback
+http:// {
+    handle /api/* {
+        reverse_proxy 172.18.0.1:8082 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+    handle {
+        redir https://{host}{uri} permanent
+    }
+}

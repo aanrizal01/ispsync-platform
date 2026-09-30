@@ -1,0 +1,3 @@
+ALTER TABLE plans DROP COLUMN IF EXISTS package_group;
+ALTER TABLE plans DROP COLUMN IF EXISTS group_id;
+DROP TABLE IF EXISTS plan_groups;

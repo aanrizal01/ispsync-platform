@@ -1,0 +1,49 @@
+# FreeRADIUS PostgreSQL Configuration (rlm_sql)
+sql {
+    dialect = "postgresql"
+    driver = "rlm_sql_postgresql"
+
+    # Connection parameters
+    server = "$ENV{DB_HOST}"
+    port = "$ENV{DB_PORT}"
+    login = "$ENV{DB_USER}"
+    password = "$ENV{DB_PASSWORD}"
+    radius_db = "$ENV{DB_NAME}"
+
+    # Connection pool
+    pool {
+        start = 5
+        min = 4
+        max = 30
+        spare = 3
+        uses = 0
+        retry_delay = 30
+        lifetime = 0
+        idle_timeout = 60
+    }
+
+    # Table mappings
+    client_table = "nas"
+    read_clients = yes
+
+    authcheck_table = "radcheck"
+    authreply_table = "radreply"
+
+    groupcheck_table = "radgroupcheck"
+    groupreply_table = "radgroupreply"
+    usergroup_table = "radusergroup"
+    group_attribute = "SQL-Group"
+
+    read_groups = yes
+    read_profiles = yes
+
+    acct_table1 = "radius_sessions"
+    acct_table2 = "radius_sessions"
+
+    postauth_table = "radpostauth"
+
+    delete_stale_sessions = yes
+
+    # Read database-specific queries
+    $INCLUDE ${modconfdir}/${.:name}/main/${dialect}/queries.conf
+}

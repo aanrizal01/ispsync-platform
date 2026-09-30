@@ -1,0 +1,263 @@
+# ISP Billing & Network Access Management Platform
+# Docker Compose — Development Environment
+# 
+# Usage:
+#   cp .env.example .env
+#   docker compose up -d
+#   docker compose logs -f api
+
+name: isp-billing
+
+services:
+  # ──────────────────────────────────────────────
+  # PostgreSQL 16 with PostGIS
+  # ──────────────────────────────────────────────
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: isp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: isp_billing
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_dev_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d isp_billing"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ──────────────────────────────────────────────
+  # Redis 7
+  # ──────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: isp-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-redis_dev_password}
+      --appendonly yes
+      --appendfsync everysec
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_dev_password}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ──────────────────────────────────────────────
+  # FreeRADIUS 3.2
+  # ──────────────────────────────────────────────
+  freeradius:
+    build:
+      context: ./docker/freeradius
+      dockerfile: Dockerfile
+    container_name: isp-freeradius
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: isp_billing
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres_dev_password}
+      RADIUS_SECRET: ${RADIUS_SECRET:-testing123}
+    ports:
+      - "1812:1812/udp"
+      - "1813:1813/udp"
+      - "1814:1814/udp"
+    networks:
+      - internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ──────────────────────────────────────────────
+  # Go API Server
+  # ──────────────────────────────────────────────
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+      target: dev      # use dev stage for hot reload (see Dockerfile)
+    container_name: isp-api
+    restart: unless-stopped
+    environment:
+      ENV: development
+      SERVER_PORT: 8080
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres_dev_password}@postgres:5432/isp_billing?sslmode=disable
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_dev_password}@redis:6379/0
+      JWT_PRIVATE_KEY_PATH: /app/keys/private.pem
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      JWT_ACCESS_TOKEN_TTL: 15m
+      JWT_REFRESH_TOKEN_TTL: 168h
+      ALLOWED_ORIGINS: http://localhost:3000
+      LOG_LEVEL: debug
+      LOG_FORMAT: console
+      MIGRATIONS_PATH: /app/migrations
+      APP_NAME: ISP Billing Platform
+      APP_BASE_URL: http://localhost:8080
+    volumes:
+      - ./apps/api:/app
+      - ./keys:/app/keys:ro
+    ports:
+      - "8080:8080"
+    networks:
+      - internal
+      - public
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ──────────────────────────────────────────────
+  # Go Background Worker
+  # ──────────────────────────────────────────────
+  worker:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+      target: dev
+    container_name: isp-worker
+    restart: unless-stopped
+    command: ["/go/bin/air", "-c", ".air.worker.toml"]
+    environment:
+      ENV: development
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres_dev_password}@postgres:5432/isp_billing?sslmode=disable
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_dev_password}@redis:6379/0
+      LOG_LEVEL: debug
+      LOG_FORMAT: console
+    volumes:
+      - ./apps/api:/app
+    networks:
+      - internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ──────────────────────────────────────────────
+  # Next.js Web Application
+  # ──────────────────────────────────────────────
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      target: dev
+    container_name: isp-web
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-dev_nextauth_secret_change_in_prod}
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    networks:
+      - public
+    depends_on:
+      - api
+
+  # ──────────────────────────────────────────────
+  # Caddy — Reverse Proxy
+  # ──────────────────────────────────────────────
+  # MongoDB 6.0 (Storage for GenieACS TR-069)
+  # ──────────────────────────────────────────────
+  mongo:
+    image: mongo:6.0
+    container_name: isp-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - internal
+
+  # ──────────────────────────────────────────────
+  # GenieACS TR-069 Server (CWMP & NBI REST API)
+  # ──────────────────────────────────────────────
+  genieacs:
+    image: drumsergio/genieacs:latest
+    container_name: isp-genieacs
+    restart: unless-stopped
+    environment:
+      GENIEACS_MONGODB_CONNECTION_URL: mongodb://mongo:27017/genieacs
+      GENIEACS_CWMP_PORT: 7547
+      GENIEACS_NBI_PORT: 7557
+      GENIEACS_FS_PORT: 7567
+      GENIEACS_UI_PORT: 7558
+    ports:
+      - "7547:7547"      # CWMP protocol for ONT CPEs
+      - "7557:7557"      # NBI REST API for GigaBill
+      - "7558:7558"      # GenieACS Web UI
+      - "7567:7567"      # Firmware File Server
+    networks:
+      - internal
+      - public
+    depends_on:
+      - mongo
+
+  # ──────────────────────────────────────────────
+  # Caddy Reverse Proxy
+  # ──────────────────────────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    container_name: isp-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - public
+    depends_on:
+      - api
+      - web
+
+# ──────────────────────────────────────────────
+# Named Volumes
+# ──────────────────────────────────────────────
+volumes:
+  postgres_data:
+    name: isp_postgres_data
+  redis_data:
+    name: isp_redis_data
+  caddy_data:
+    name: isp_caddy_data
+  caddy_config:
+    name: isp_caddy_config
+  mongo_data:
+    name: isp_mongo_data
+
+# ──────────────────────────────────────────────
+# Networks
+# ──────────────────────────────────────────────
+networks:
+  internal:
+    name: isp_internal
+    driver: bridge
+    internal: false  # set to true in production to isolate from external
+  public:
+    name: isp_public
+    driver: bridge

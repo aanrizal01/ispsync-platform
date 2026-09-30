@@ -1,0 +1,848 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import {
+  Server,
+  Plus,
+  Activity,
+  Cpu,
+  HardDrive,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  RefreshCw,
+  Trash2,
+  Shield,
+  Clock,
+  Wifi,
+  Radio,
+  Signal,
+  Power,
+} from "lucide-react";
+import {
+  networkApi,
+  NetworkDevice,
+  CreateDeviceInput,
+  TestConnectionResponse,
+} from "@/lib/api/network";
+import { acsApi, CustomerONT } from "@/lib/api/acs";
+
+export default function AdminNetworkPage() {
+  const [networkTab, setNetworkTab] = useState<"routers" | "onts">("routers");
+  const [devices, setDevices] = useState<NetworkDevice[]>([]);
+  const [onts, setOnts] = useState<CustomerONT[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingOnts, setLoadingOnts] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Modals
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [testResult, setTestResult] = useState<TestConnectionResponse | null>(null);
+  const [testingDeviceId, setTestingDeviceId] = useState<string | null>(null);
+
+  // Edit WiFi Modal for ONT
+  const [selectedOnt, setSelectedOnt] = useState<CustomerONT | null>(null);
+  const [showEditWifiModal, setShowEditWifiModal] = useState(false);
+  const [editWifiForm, setEditWifiForm] = useState({ ssid: "", password: "" });
+  const [savingWifi, setSavingWifi] = useState(false);
+
+  // Form State
+  const [form, setForm] = useState<CreateDeviceInput>({
+    name: "",
+    vendor: "MIKROTIK",
+    model: "CCR2004-1G-12S+2XS",
+    ip_address: "",
+    api_port: 8728,
+    auth_type: "BASIC",
+    username: "admin",
+    password: "",
+    use_tls: false,
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  const fetchDevices = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await networkApi.list();
+      setDevices(res.data || []);
+    } catch (err: any) {
+      setError(err.message || "Gagal memuat daftar perangkat");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchONTs = async () => {
+    setLoadingOnts(true);
+    try {
+      const res = await acsApi.list();
+      setOnts(res || []);
+    } catch (err: any) {
+      console.error("Gagal memuat daftar ONT:", err);
+    } finally {
+      setLoadingOnts(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDevices();
+    fetchONTs();
+  }, []);
+
+  const handleRebootOnt = async (id: string) => {
+    if (!confirm("Kirim perintah restart ke modem ONT pelanggan via TR-069?")) return;
+    try {
+      await acsApi.reboot(id);
+      alert("Perintah reboot berhasil dikirim via TR-069!");
+      fetchONTs();
+    } catch (err: any) {
+      alert(err.message || "Gagal mengirim perintah reboot");
+    }
+  };
+
+  const handleSaveOntWifi = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOnt) return;
+    setSavingWifi(true);
+    try {
+      await acsApi.updateWiFi(selectedOnt.id, editWifiForm);
+      alert("Konfigurasi WiFi berhasil dikirim ke ONT via TR-069 SetParameterValues!");
+      setShowEditWifiModal(false);
+      fetchONTs();
+    } catch (err: any) {
+      alert(err.message || "Gagal memperbarui WiFi ONT");
+    } finally {
+      setSavingWifi(false);
+    }
+  };
+
+  const handleVendorChange = (vendor: "MIKROTIK" | "JUNIPER" | "GENERIC") => {
+    if (vendor === "JUNIPER") {
+      setForm({
+        ...form,
+        vendor,
+        model: "MX204-BNG",
+        api_port: 3443,
+        username: "admin",
+        use_tls: true,
+      });
+    } else if (vendor === "MIKROTIK") {
+      setForm({
+        ...form,
+        vendor,
+        model: "CCR2004-1G-12S+2XS",
+        api_port: 8728,
+        username: "admin",
+        use_tls: false,
+      });
+    } else {
+      setForm({
+        ...form,
+        vendor,
+        model: "Generic-Gateway",
+        api_port: 443,
+        use_tls: true,
+      });
+    }
+  };
+
+  const handleCreateDevice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await networkApi.create(form);
+      setShowAddModal(false);
+      setForm({
+        name: "",
+        vendor: "MIKROTIK",
+        model: "CCR2004-1G-12S+2XS",
+        ip_address: "",
+        api_port: 8728,
+        auth_type: "BASIC",
+        username: "admin",
+        password: "",
+        use_tls: false,
+      });
+      fetchDevices();
+    } catch (err: any) {
+      alert(err.message || "Gagal menambahkan router");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleTestConnection = async (id: string) => {
+    setTestingDeviceId(id);
+    setTestResult(null);
+    try {
+      const res = await networkApi.testConnection(id);
+      setTestResult(res);
+      fetchDevices();
+    } catch (err: any) {
+      setTestResult({
+        success: false,
+        message: err.message || "Uji koneksi gagal",
+        latency_ms: 0,
+      });
+    } finally {
+      setTestingDeviceId(null);
+    }
+  };
+
+  const handleDeleteDevice = async (id: string) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus router ini dari platform?")) return;
+    try {
+      await networkApi.delete(id);
+      fetchDevices();
+    } catch (err: any) {
+      alert(err.message || "Gagal menghapus router");
+    }
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return "0 MB";
+    const mb = bytes / (1024 * 1024);
+    if (mb > 1024) {
+      return (mb / 1024).toFixed(1) + " GB";
+    }
+    return mb.toFixed(1) + " MB";
+  };
+
+  const onlineCount = devices.filter((d) => d.status === "ONLINE").length;
+  const offlineCount = devices.filter((d) => d.status === "OFFLINE" || d.status === "ERROR").length;
+
+  return (
+    <div className="space-y-6">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <Server className="w-6 h-6 text-blue-600" />
+            Perangkat Jaringan & Router
+          </h1>
+          <p className="text-sm text-slate-500">
+            Adapter vendor-neutral untuk MikroTik RouterOS v7 REST API, Simple Queues, dan sinkronisasi PPPoE.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={fetchDevices}
+            className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition"
+            title="Segarkan data"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition flex items-center gap-2 shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Tambah Router
+          </button>
+        </div>
+      </div>
+
+      {/* Metrics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <Server className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Router</p>
+            <p className="text-2xl font-bold text-slate-900">{devices.length}</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Router Online</p>
+            <p className="text-2xl font-bold text-emerald-600">{onlineCount}</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+            <XCircle className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Offline / Masalah</p>
+            <p className="text-2xl font-bold text-rose-600">{offlineCount}</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+            <Shield className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Vendor &amp; Versi</p>
+            <p className="text-lg font-bold text-slate-900 truncate">
+              {devices.length === 0 ? "MikroTik" : Array.from(new Set(devices.map(d => d.model || d.vendor))).join(", ")}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Tab Switcher: Router Gateway vs Modem ONT Pelanggan */}
+      <div className="flex border-b border-slate-200 gap-2">
+        <button
+          type="button"
+          onClick={() => setNetworkTab("routers")}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 transition ${
+            networkTab === "routers"
+              ? "border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl"
+              : "border-transparent text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <Server className="w-4 h-4" />
+          <span>Router Utama & BNG (MikroTik / Juniper)</span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold">
+            {devices.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setNetworkTab("onts")}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 transition ${
+            networkTab === "onts"
+              ? "border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl"
+              : "border-transparent text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <Radio className="w-4 h-4" />
+          <span>Modem ONT Pelanggan (GenieACS TR-069)</span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-bold">
+            {onts.length}
+          </span>
+        </button>
+      </div>
+
+      {/* Main Table Card (Routers) */}
+      {networkTab === "routers" && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-slate-800">Daftar Router Gateway & Core</h2>
+            <span className="text-xs text-slate-400">{devices.length} perangkat terdaftar</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-slate-700">
+              <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase text-slate-500">
+                <tr>
+                  <th className="px-6 py-3">Nama Perangkat</th>
+                  <th className="px-6 py-3">Vendor / Model</th>
+                  <th className="px-6 py-3">Alamat IP & Port</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">Terakhir Dilihat</th>
+                  <th className="px-6 py-3 text-right">Aksi</th>
+                </tr>
+              </thead>
+            <tbody className="divide-y divide-slate-200">
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-slate-400">
+                    Memuat daftar router...
+                  </td>
+                </tr>
+              ) : devices.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-slate-400">
+                    Belum ada router yang ditambahkan. Silakan klik tombol "+ Tambah Router".
+                  </td>
+                </tr>
+              ) : (
+                devices.map((d) => (
+                  <tr key={d.id} className="hover:bg-slate-50/50 transition">
+                    <td className="px-6 py-4">
+                      <div className="font-semibold text-slate-900 flex items-center gap-2">
+                        <Server className="w-4 h-4 text-blue-600 shrink-0" />
+                        {d.name}
+                      </div>
+                      <div className="text-xs text-slate-400 font-mono">User: {d.username}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-2 py-0.5 rounded text-xs font-bold mr-2 ${
+                          d.vendor === "MIKROTIK"
+                            ? "bg-blue-100 text-blue-800"
+                            : d.vendor === "JUNIPER"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-slate-100 text-slate-800"
+                        }`}
+                      >
+                        {d.vendor}
+                      </span>
+                      <span className="text-xs text-slate-600">{d.model || "-"}</span>
+                    </td>
+                    <td className="px-6 py-4 font-mono text-xs">
+                      <div>
+                        {d.ip_address}:{d.api_port}
+                      </div>
+                      <div className="text-slate-400">
+                        {d.api_port === 8728 || d.api_port === 8729
+                          ? (d.use_tls ? "RouterOS API (SSL)" : "RouterOS API (TCP)")
+                          : (d.use_tls ? "HTTPS (TLS)" : "HTTP")}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          d.status === "ONLINE"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : d.status === "OFFLINE"
+                            ? "bg-rose-100 text-rose-800"
+                            : d.status === "ERROR"
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-slate-100 text-slate-700"
+                        }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            d.status === "ONLINE"
+                              ? "bg-emerald-500 animate-pulse"
+                              : d.status === "OFFLINE"
+                              ? "bg-rose-500"
+                              : "bg-slate-400"
+                          }`}
+                        />
+                        {d.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-xs text-slate-500">
+                      {d.last_seen_at ? new Date(d.last_seen_at).toLocaleString("id-ID") : "-"}
+                    </td>
+                    <td className="px-6 py-4 text-right space-x-2">
+                      <button
+                        onClick={() => handleTestConnection(d.id)}
+                        disabled={testingDeviceId === d.id}
+                        className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded border border-blue-200 transition disabled:opacity-50"
+                      >
+                        <Activity className={`w-3.5 h-3.5 ${testingDeviceId === d.id ? "animate-spin" : ""}`} />
+                        {testingDeviceId === d.id ? "Menguji..." : "Test Koneksi"}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteDevice(d.id)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded border border-rose-200 transition"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Hapus
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      )}
+
+      {/* Main Table Card (Customer ONTs via GenieACS TR-069) */}
+      {networkTab === "onts" && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-slate-800">Daftar Modem ONT Pelanggan (TR-069 CWMP)</h2>
+              <p className="text-xs text-slate-500">
+                Terhubung ke GenieACS Server (Mendukung ZTE, Huawei, Fiberhome, VSOL, XPON).
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={fetchONTs}
+              className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition flex items-center gap-1 text-xs font-bold"
+              title="Segarkan data ONT"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loadingOnts ? "animate-spin text-blue-600" : ""}`} />
+              <span>Segarkan</span>
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-slate-700">
+              <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase text-slate-500">
+                <tr>
+                  <th className="px-6 py-3">Pelanggan</th>
+                  <th className="px-6 py-3">PON Serial / Model</th>
+                  <th className="px-6 py-3">Vendor</th>
+                  <th className="px-6 py-3">Sinyal Fiber (RX)</th>
+                  <th className="px-6 py-3">Status CWMP</th>
+                  <th className="px-6 py-3">WiFi SSID</th>
+                  <th className="px-6 py-3 text-right">Aksi TR-069</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {loadingOnts ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-8 text-center text-slate-400">
+                      Memuat data ONT pelanggan...
+                    </td>
+                  </tr>
+                ) : onts.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-8 text-center text-slate-400">
+                      Belum ada modem ONT yang terdaftar atau mengirim Inform ke GenieACS.
+                    </td>
+                  </tr>
+                ) : (
+                  onts.map((o) => (
+                    <tr key={o.id} className="hover:bg-slate-50/50 transition">
+                      <td className="px-6 py-4">
+                        <span className="font-bold text-slate-900 block">{o.customer_name || "Pelanggan"}</span>
+                        <span className="text-xs text-slate-400 font-mono">{o.customer_phone || "-"}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="font-mono font-bold text-blue-700 block">{o.serial_number}</span>
+                        <span className="text-xs text-slate-500">{o.model}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-xs font-black uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                          {o.vendor}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1.5 font-mono text-xs font-bold">
+                          <Signal className={`w-3.5 h-3.5 ${o.rx_optical_power > -24 ? "text-emerald-500" : o.rx_optical_power > -27 ? "text-amber-500" : "text-rose-500"}`} />
+                          <span className={o.rx_optical_power > -24 ? "text-emerald-700" : o.rx_optical_power > -27 ? "text-amber-700" : "text-rose-700"}>
+                            {o.rx_optical_power} dBm
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                          ONLINE
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 font-mono text-xs text-slate-800">
+                        {o.wifi_ssid}
+                      </td>
+                      <td className="px-6 py-4 text-right space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedOnt(o);
+                            setEditWifiForm({ ssid: o.wifi_ssid, password: o.wifi_password || "" });
+                            setShowEditWifiModal(true);
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded border border-blue-200 transition"
+                        >
+                          <Wifi className="w-3.5 h-3.5" />
+                          Set WiFi
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRebootOnt(o.id)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded border border-slate-300 transition"
+                        >
+                          <Power className="w-3.5 h-3.5" />
+                          Reboot
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit ONT WiFi via TR-069 */}
+      {showEditWifiModal && selectedOnt && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200">
+            <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+              <Wifi className="w-5 h-5 text-blue-600" />
+              Ubah Konfigurasi WiFi ONT
+            </h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Push parameter TR-069 <b>SetParameterValues</b> ke modem {selectedOnt.vendor} ({selectedOnt.serial_number}).
+            </p>
+
+            <form onSubmit={handleSaveOntWifi} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Nama SSID WiFi</label>
+                <input
+                  type="text"
+                  required
+                  value={editWifiForm.ssid}
+                  onChange={(e) => setEditWifiForm({ ...editWifiForm, ssid: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Kata Sandi (WPA2 PreSharedKey)</label>
+                <input
+                  type="text"
+                  required
+                  minLength={8}
+                  value={editWifiForm.password}
+                  onChange={(e) => setEditWifiForm({ ...editWifiForm, password: e.target.value })}
+                  className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditWifiModal(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingWifi}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition disabled:opacity-50"
+                >
+                  {savingWifi ? "Mengirim TR-069..." : "Terapkan ke Modem"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Test Result Details */}
+      {testResult && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                {testResult.success ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-rose-600" />
+                )}
+                Hasil Uji Koneksi Router
+              </h3>
+              <span className="text-xs font-mono text-slate-400">Latency: {testResult.latency_ms}ms</span>
+            </div>
+
+            <div
+              className={`p-3 rounded-xl mb-4 text-sm ${
+                testResult.success
+                  ? "bg-emerald-50 border border-emerald-200 text-emerald-800"
+                  : "bg-rose-50 border border-rose-200 text-rose-800"
+              }`}
+            >
+              {testResult.message}
+            </div>
+
+            {testResult.system_info && (
+              <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
+                <div className="flex justify-between border-b pb-1">
+                  <span className="text-slate-500">Board Name:</span>
+                  <span className="font-semibold text-slate-800">{testResult.system_info.board_name || "MikroTik"}</span>
+                </div>
+                <div className="flex justify-between border-b pb-1">
+                  <span className="text-slate-500">RouterOS Version:</span>
+                  <span className="font-semibold text-blue-700">{testResult.system_info.version || "v7.x"}</span>
+                </div>
+                <div className="flex justify-between border-b pb-1">
+                  <span className="text-slate-500">CPU Usage:</span>
+                  <span className="font-semibold text-slate-800">{testResult.system_info.cpu_load}%</span>
+                </div>
+                <div className="flex justify-between border-b pb-1">
+                  <span className="text-slate-500">Free / Total RAM:</span>
+                  <span className="font-semibold text-slate-800">
+                    {formatBytes(testResult.system_info.free_memory)} / {formatBytes(testResult.system_info.total_memory)}
+                  </span>
+                </div>
+                <div className="flex justify-between border-b pb-1">
+                  <span className="text-slate-500">Free / Total Storage:</span>
+                  <span className="font-semibold text-slate-800">
+                    {formatBytes(testResult.system_info.free_hdd)} / {formatBytes(testResult.system_info.total_hdd)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Uptime:</span>
+                  <span className="font-semibold text-slate-800">{testResult.system_info.uptime || "-"}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-4">
+              <button
+                onClick={() => setTestResult(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-lg"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Add Device */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Tambah Router Jaringan</h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Konfigurasi router MikroTik RouterOS v6/v7 menggunakan antarmuka RouterOS API (Port 8728) atau REST API.
+            </p>
+
+            <form onSubmit={handleCreateDevice} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Perangkat</label>
+                  <input
+                    type="text"
+                    placeholder="Core-CCR2004-Edge"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Vendor</label>
+                  <select
+                    value={form.vendor}
+                    onChange={(e) => handleVendorChange(e.target.value as any)}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                  >
+                    <option value="MIKROTIK">MikroTik RouterOS</option>
+                    <option value="JUNIPER">Juniper Junos</option>
+                    <option value="GENERIC">Generic Router</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Alamat IP Router</label>
+                  <input
+                    type="text"
+                    placeholder="192.168.88.1"
+                    value={form.ip_address}
+                    onChange={(e) => setForm({ ...form, ip_address: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg font-mono text-xs"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Port API</label>
+                  <input
+                    type="number"
+                    value={form.api_port}
+                    onChange={(e) => setForm({ ...form, api_port: parseInt(e.target.value) || 443 })}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg font-mono text-xs"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Username API</label>
+                  <input
+                    type="text"
+                    placeholder="admin"
+                    value={form.username}
+                    onChange={(e) => setForm({ ...form, username: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg text-xs"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg text-xs"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="use_tls"
+                  checked={form.use_tls}
+                  onChange={(e) => setForm({ ...form, use_tls: e.target.checked })}
+                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <label htmlFor="use_tls" className="text-xs font-medium text-slate-700">
+                  Gunakan Protokol Aman (HTTPS / TLS)
+                </label>
+              </div>
+
+              {/* RADIUS NAS Unified Attach Section */}
+              <div className="mt-3 p-3 bg-blue-50/60 rounded-xl border border-blue-100 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="enable_radius"
+                      checked={form.enable_radius ?? true}
+                      onChange={(e) => setForm({ ...form, enable_radius: e.target.checked })}
+                      className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="enable_radius" className="text-xs font-bold text-blue-900 cursor-pointer">
+                      Hubungkan ke FreeRADIUS (Otomatis Tambah ke NAS)
+                    </label>
+                  </div>
+                  <span className="text-[10px] font-semibold bg-blue-200/70 text-blue-800 px-2 py-0.5 rounded-full">
+                    Rekomendasi
+                  </span>
+                </div>
+                <p className="text-[11px] text-blue-700 leading-relaxed">
+                  Router ini akan langsung didaftarkan ke server FreeRADIUS AAA untuk menangani login Hotspot, PPPoE, Passpoint, dan eksekusi isolir otomatis.
+                </p>
+
+                {(form.enable_radius ?? true) && (
+                  <div className="pt-1">
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      RADIUS Shared Secret:
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: testing123"
+                      value={form.radius_shared_secret ?? "testing123"}
+                      onChange={(e) => setForm({ ...form, radius_shared_secret: e.target.value })}
+                      className="w-full px-3 py-1.5 text-xs font-mono border border-slate-300 rounded-lg bg-white"
+                      required
+                    />
+                    <span className="text-[10px] text-slate-400 mt-0.5 block">
+                      *Kunci rahasia ini yang dimasukkan pada menu <code>/radius add secret=...</code> di MikroTik Anda.
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg disabled:opacity-50"
+                >
+                  {submitting ? "Menyimpan..." : "Simpan Router"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

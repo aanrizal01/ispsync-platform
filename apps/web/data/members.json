@@ -1,0 +1,89 @@
+{
+  "members": [
+    {
+      "id": "mbr_001",
+      "email": "admin@gogiga.net.id",
+      "password": "Gogiga2024!",
+      "company": "PT Gogiga Media Teknologi",
+      "picName": "Administrator Gogiga",
+      "phone": "081166012345",
+      "address": "Jl. Pulutan, Koto Tuo, Kec. Harau, Kab. 50 Kota, Sumatera Barat 26271",
+      "npwp": "03.882.194.5-014.000",
+      "plan": "private",
+      "planName": "Private Telco",
+      "planPrice": "65000000",
+      "planCapacity": "Unlimited Pelanggan",
+      "status": "active",
+      "subscribedAt": "2024-01-01",
+      "expiresAt": "2099-12-31",
+      "autoRenew": true,
+      "domain": "gogiga.net.id",
+      "note": "Pelanggan #001 — Pendiri & Pemilik Platform ISPSYNC. On-premise di server sendiri.",
+      "invoices": [
+        {
+          "id": "INV-2024-001",
+          "date": "2024-01-01",
+          "dueDate": "2024-01-01",
+          "period": "Seumur Hidup (Founder License)",
+          "amount": "0",
+          "status": "paid",
+          "paymentDate": "2024-01-01",
+          "paymentMethod": "Founder License"
+        }
+      ],
+      "tickets": []
+    },
+    {
+      "id": "mbr_002",
+      "email": "demo@ispclient.id",
+      "password": "Demo1234!",
+      "company": "PT Demo Internet Nusantara",
+      "picName": "Budi Santoso",
+      "phone": "081234567890",
+      "address": "Jl. Sudirman No. 1, Jakarta",
+      "npwp": "12.345.678.9-012.000",
+      "plan": "professional",
+      "planName": "Professional",
+      "planPrice": "6500000",
+      "planCapacity": "5.000 Pelanggan",
+      "status": "active",
+      "subscribedAt": "2025-01-15",
+      "expiresAt": "2026-01-15",
+      "autoRenew": true,
+      "domain": "cms.demo.ispsync.id",
+      "invoices": [
+        {
+          "id": "INV-2025-001",
+          "date": "2025-01-15",
+          "dueDate": "2025-01-20",
+          "period": "Januari 2025",
+          "amount": "6500000",
+          "status": "paid",
+          "paymentDate": "2025-01-18",
+          "paymentMethod": "Transfer BCA"
+        },
+        {
+          "id": "INV-2025-002",
+          "date": "2025-02-15",
+          "dueDate": "2025-02-20",
+          "period": "Februari 2025",
+          "amount": "6500000",
+          "status": "paid",
+          "paymentDate": "2025-02-17",
+          "paymentMethod": "Transfer BCA"
+        },
+        {
+          "id": "INV-2025-003",
+          "date": "2025-03-15",
+          "dueDate": "2025-03-20",
+          "period": "Maret 2025",
+          "amount": "6500000",
+          "status": "pending",
+          "paymentDate": null,
+          "paymentMethod": null
+        }
+      ],
+      "tickets": []
+    }
+  ]
+}
