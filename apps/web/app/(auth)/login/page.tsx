@@ -30,12 +30,8 @@ export default function LoginPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const h = window.location.hostname.toLowerCase();
-      const demo = h.includes("ispku") || h.startsWith("cms.") || h.startsWith("billing.");
+      const demo = h.includes("ispku") || h.startsWith("billing.");
       setIsTenantDemo(demo);
-      if (demo) {
-        setEmail("admin@isp.local");
-        setPassword("Admin123456!");
-      }
     }
   }, []);
 
