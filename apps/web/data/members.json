@@ -18,7 +18,7 @@
       "expiresAt": "2099-12-31",
       "autoRenew": true,
       "domain": "gogiga.net.id",
-      "note": "Pelanggan #001 — Pendiri & Pemilik Platform ISPSYNC. On-premise di server sendiri.",
+      "note": "Pelanggan #001 \u2014 Pendiri & Pemilik Platform ISPSYNC. On-premise di server sendiri.",
       "invoices": [
         {
           "id": "INV-2024-001",
@@ -83,6 +83,94 @@
           "paymentMethod": null
         }
       ],
+      "tickets": []
+    },
+    {
+      "id": "mbr_003",
+      "email": "admin@ispku.ispsync.id",
+      "password": "Ispku2026!",
+      "company": "PT. ISP Kita Nusantara",
+      "picName": "Budi Santoso",
+      "phone": "081288889999",
+      "address": "Jalan Merdeka No. 12, Padang, Sumatera Barat",
+      "npwp": "04.112.334.5-015.000",
+      "plan": "professional",
+      "planName": "Professional",
+      "planPrice": "6500000",
+      "planCapacity": "5.000 Pelanggan",
+      "status": "active",
+      "subscribedAt": "2026-02-01",
+      "expiresAt": "2027-02-01",
+      "autoRenew": true,
+      "domain": "ispku.ispsync.id",
+      "note": "Tenant Resmi Demo 1 \u2014 Jartaplok Partner ISPSYNC",
+      "invoices": [
+        {
+          "id": "INV-2026-ISPKU-01",
+          "date": "2026-02-01",
+          "dueDate": "2026-02-05",
+          "period": "Februari 2026",
+          "amount": "6500000",
+          "status": "paid",
+          "paymentDate": "2026-02-03",
+          "paymentMethod": "Virtual Account Mandiri"
+        }
+      ],
+      "tickets": []
+    },
+    {
+      "id": "mbr_004",
+      "email": "admin@ispmu.ispsync.id",
+      "password": "Ispmu2026!",
+      "company": "PT. ISP Mitra Utama",
+      "picName": "Rahmat Hidayat",
+      "phone": "081377778888",
+      "address": "Jalan Sudirman No. 88, Bukittinggi, Sumatera Barat",
+      "npwp": "05.223.445.6-016.000",
+      "plan": "starter",
+      "planName": "Starter",
+      "planPrice": "2500000",
+      "planCapacity": "1.500 Pelanggan",
+      "status": "active",
+      "subscribedAt": "2026-03-01",
+      "expiresAt": "2027-03-01",
+      "autoRenew": true,
+      "domain": "ispmu.ispsync.id",
+      "note": "Tenant Resmi Demo 2 \u2014 Jartaplok Client ISPSYNC",
+      "invoices": [
+        {
+          "id": "INV-2026-ISPMU-01",
+          "date": "2026-03-01",
+          "dueDate": "2026-03-05",
+          "period": "Maret 2026",
+          "amount": "2500000",
+          "status": "paid",
+          "paymentDate": "2026-03-02",
+          "paymentMethod": "QRIS Real-Time"
+        }
+      ],
+      "tickets": []
+    },
+    {
+      "id": "mbr_005",
+      "email": "admin@dev.ispsync.id",
+      "password": "DevLab2026!",
+      "company": "ISPSYNC Staging Lab",
+      "picName": "Lead QA Engineer",
+      "phone": "081100000000",
+      "address": "Payakumbuh Staging Lab, Sumatera Barat",
+      "npwp": "99.999.999.9-999.000",
+      "plan": "enterprise",
+      "planName": "Carrier-Grade Enterprise",
+      "planPrice": "14500000",
+      "planCapacity": "15.000 Pelanggan",
+      "status": "active",
+      "subscribedAt": "2026-01-01",
+      "expiresAt": "2099-12-31",
+      "autoRenew": true,
+      "domain": "dev.ispsync.id",
+      "note": "Lingkungan Pengujian & QA Internal Staging",
+      "invoices": [],
       "tickets": []
     }
   ]
