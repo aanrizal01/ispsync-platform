@@ -1,12 +1,12 @@
 # BUKU MASTER STANDAR OPERASIONAL PROSEDUR (SOP)
 ## EKOSISTEM DIGITAL TERPADU TELEKOMUNIKASI (3 ENGINE)
-**ISPSYNC ENTERPRISE TELECOM PLATFORM (PT GOGIGA MEDIA TEKNOLOGI)**
+**ISPSYNC ENTERPRISE TELECOM PLATFORM (PT Inovasi Sistem Pintar)**
 
 * **Nomor Dokumen**: `ISPSYNC/MASTER-SOP/2026/10/001`
 * **Klasifikasi**: Dokumen Resmi Operasional, Finansial & Teknis Telekomunikasi
 * **Versi / Edisi**: `2.0 (Master Integrated Edition)`
 * **Tanggal Ditetapkan**: 26 September 2026
-* **Otoritas Pengesahan**: **Aan Rizal S.Kom (Direktur Utama / Owner PT GOGIGA MEDIA TEKNOLOGI)**
+* **Otoritas Pengesahan**: **Aan Rizal S.Kom (Direktur Utama / Owner PT Inovasi Sistem Pintar)**
 * **Penanggung Jawab Teknis**: **Nando Azkia Putra S.Kom (Kepala NOC & Core FO)**
 * **Wilayah Operasional**: Kota Payakumbuh, Kab. Lima Puluh Kota, Bukittinggi, Agam, & Sekitarnya (Sumatera Barat)
 
@@ -284,7 +284,7 @@ Sistem FTTX menjalankan daemon SNMP Poller secara otomatis setiap **5 menit** un
 
 ## BAB VII: LEMBAR PENGESAHAN DOKUMEN
 
-Dokumen Master Standar Operasional Prosedur (SOP) ini berlaku mengikat bagi seluruh jajaran Direksi, Karyawan, Tim NOC, Teknisi Lapangan, Account Executive, serta Rekanan PT GOGIGA MEDIA TEKNOLOGI terhitung sejak tanggal ditetapkan.
+Dokumen Master Standar Operasional Prosedur (SOP) ini berlaku mengikat bagi seluruh jajaran Direksi, Karyawan, Tim NOC, Teknisi Lapangan, Account Executive, serta Rekanan PT Inovasi Sistem Pintar terhitung sejak tanggal ditetapkan.
 
 Ditetapkan di : **Payakumbuh, Sumatera Barat**  
 Pada Tanggal  : **26 September 2026**  
@@ -293,4 +293,4 @@ Pada Tanggal  : **26 September 2026**
 
 | Disusun & Diverifikasi Oleh: | Disetujui & Disahkan Oleh: |
 | :---: | :---: |
-| <br><br><br>**Nando Azkia Putra S.Kom**<br>Kepala NOC & Koordinator Core FO | <br><br><br>**Aan Rizal S.Kom**<br>Direktur Utama / Owner PT GOGIGA MEDIA TEKNOLOGI |
+| <br><br><br>**Nando Azkia Putra S.Kom**<br>Kepala NOC & Koordinator Core FO | <br><br><br>**Aan Rizal S.Kom**<br>Direktur Utama / Owner PT Inovasi Sistem Pintar |

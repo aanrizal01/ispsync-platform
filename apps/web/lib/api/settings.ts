@@ -31,8 +31,8 @@ export interface InvoiceTemplateSettings {
 }
 
 export const defaultInvoiceTemplateSettings: InvoiceTemplateSettings = {
-  brand_name: "GOGIGANET",
-  company_name: "PT GOGIGA MEDIA TEKNOLOGI",
+  brand_name: "ISPSYNC",
+  company_name: "PT Inovasi Sistem Pintar",
   license_no: "Izin Penyelenggaraan Jasa Telekomunikasi & Jaringan Internet (ISP)",
   tax_id: "03.882.194.5-014.000",
   address: "Jl. Pulutan, Koto Tuo, Kec. Harau, Kab. 50 Kota, Sumatera Barat 26271",
@@ -42,12 +42,12 @@ export const defaultInvoiceTemplateSettings: InvoiceTemplateSettings = {
   logo_url: "/logo.png",
   bank_name: "Bank Central Asia (BCA)",
   bank_account_number: "8001234567",
-  bank_account_holder: "PT GOGIGA MEDIA TEKNOLOGI",
+  bank_account_holder: "PT Inovasi Sistem Pintar",
   bank_accounts: [
     {
       bank_name: "Bank Central Asia (BCA)",
       bank_account_number: "8001234567",
-      bank_account_holder: "PT GOGIGA MEDIA TEKNOLOGI",
+      bank_account_holder: "PT Inovasi Sistem Pintar",
       branch: "KCU Harau",
     },
   ],

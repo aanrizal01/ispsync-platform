@@ -37,23 +37,23 @@ type InvoiceTemplateSettings struct {
 
 func DefaultInvoiceTemplateSettings() InvoiceTemplateSettings {
     return InvoiceTemplateSettings{
-        BrandName:            "GOGIGANET",
-        CompanyName:          "PT GOGIGA MEDIA TEKNOLOGI",
+        BrandName:            "ISPSYNC",
+        CompanyName:          "PT Inovasi Sistem Pintar",
         LicenseNo:            "Izin Penyelenggaraan Jasa Telekomunikasi & Jaringan Internet (ISP)",
         TaxID:                "03.882.194.5-014.000",
         Address:              "Jl. Pulutan, Koto Tuo, Kec. Harau, Kab. 50 Kota, Sumatera Barat 26271",
         Phone:                "+62 811-660-1234",
         Email:                "info@ispsync.id",
-        Website:              "https://billing.gogiga.net.id",
+        Website:              "https://ledger.ispsync.id",
         LogoURL:              "/logo.png",
         BankName:             "Bank Central Asia (BCA)",
         BankAccountNumber:    "8001234567",
-        BankAccountHolder:    "PT GOGIGA MEDIA TEKNOLOGI",
+        BankAccountHolder:    "PT Inovasi Sistem Pintar",
         BankAccounts: []BankAccountItem{
             {
                 BankName:          "Bank Central Asia (BCA)",
                 BankAccountNumber: "8001234567",
-                BankAccountHolder: "PT GOGIGA MEDIA TEKNOLOGI",
+                BankAccountHolder: "PT Inovasi Sistem Pintar",
                 Branch:            "KCU Harau",
             },
         },
@@ -95,7 +95,7 @@ func DefaultSecuritySettings() SecuritySettings {
         EnableIPWhitelist:  false,
         AllowedNOCSubnets:  "10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 127.0.0.1/32",
         EnableWalledGarden: false,
-        WalledGardenHosts:  "billing.gogiga.net.id, portal.gogiga.net.id, api.midtrans.com, app.midtrans.com",
+        WalledGardenHosts:  "ledger.ispsync.id, nexus.ispsync.id, fibergrid.ispsync.id, api.midtrans.com, app.midtrans.com",
         EnableMACLock:      true,
     }
 }

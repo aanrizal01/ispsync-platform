@@ -829,11 +829,11 @@ export function InvoicePrintDocument({
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-2xl font-black tracking-tight" style={{ color: accentColor }}>
-                  {template.brand_name || "GOGIGANET"}
+                  {template.brand_name || "ISPSYNC"}
                 </span>
               </div>
               <p className="text-xs font-semibold text-slate-700 mt-0.5">
-                {template.company_name || "PT GOGIGA MEDIA TEKNOLOGI"}
+                {template.company_name || "PT Inovasi Sistem Pintar"}
               </p>
               <p className="text-[11px] text-slate-500 mt-1 max-w-sm leading-relaxed">
                 {template.license_no && (

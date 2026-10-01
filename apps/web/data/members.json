@@ -4,8 +4,8 @@
       "id": "mbr_001",
       "email": "admin@gogiga.net.id",
       "password": "Gogiga2024!",
-      "company": "PT Gogiga Media Teknologi",
-      "picName": "Administrator Gogiga",
+      "company": "PT Inovasi Sistem Pintar",
+      "picName": "Administrator ISPSYNC",
       "phone": "081166012345",
       "address": "Jl. Pulutan, Koto Tuo, Kec. Harau, Kab. 50 Kota, Sumatera Barat 26271",
       "npwp": "03.882.194.5-014.000",
@@ -17,7 +17,7 @@
       "subscribedAt": "2024-01-01",
       "expiresAt": "2099-12-31",
       "autoRenew": true,
-      "domain": "gogiga.net.id",
+      "domain": "ispsync.id",
       "note": "Pelanggan #001 \u2014 Pendiri & Pemilik Platform ISPSYNC. On-premise di server sendiri.",
       "invoices": [
         {

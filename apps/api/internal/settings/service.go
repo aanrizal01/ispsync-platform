@@ -20,10 +20,10 @@ func (s *Service) GetInvoiceTemplate(ctx context.Context) (*InvoiceTemplateSetti
 
 func (s *Service) UpdateInvoiceTemplate(ctx context.Context, input InvoiceTemplateSettings) (*InvoiceTemplateSettings, error) {
 	if input.BrandName == "" {
-		input.BrandName = "GOGIGANET"
+		input.BrandName = "ISPSYNC"
 	}
 	if input.CompanyName == "" {
-		input.CompanyName = "PT GOGIGA MEDIA TEKNOLOGI"
+		input.CompanyName = "PT Inovasi Sistem Pintar"
 	}
 	if input.AccentColor == "" {
 		input.AccentColor = "#2563eb"
@@ -64,7 +64,7 @@ func (s *Service) UpdateSecuritySettings(ctx context.Context, input SecuritySett
 		input.AllowedNOCSubnets = "10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 127.0.0.1/32"
 	}
 	if input.WalledGardenHosts == "" {
-		input.WalledGardenHosts = "billing.gogiga.net.id, portal.gogiga.net.id, api.midtrans.com, app.midtrans.com"
+		input.WalledGardenHosts = "ledger.ispsync.id, nexus.ispsync.id, fibergrid.ispsync.id, api.midtrans.com, app.midtrans.com"
 	}
 
 	if err := s.repo.SaveSecuritySettings(ctx, &input); err != nil {

@@ -144,10 +144,10 @@ export function ReceiptPrintDocument({
               </div>
             )}
             <h1 className="text-sm sm:text-base font-black tracking-wider uppercase text-slate-950">
-              {template.brand_name || "GOGIGANET"}
+              {template.brand_name || "ISPSYNC"}
             </h1>
             <p className="text-[10px] font-bold text-slate-800 uppercase leading-snug">
-              {template.company_name || "PT GOGIGA MEDIA TEKNOLOGI"}
+              {template.company_name || "PT Inovasi Sistem Pintar"}
             </p>
             <p className="text-[9px] text-slate-600 mt-0.5 leading-tight">
               {template.address}
@@ -273,10 +273,10 @@ export function ReceiptPrintDocument({
             </div>
             <div>
               <span className="text-2xl font-black tracking-tight" style={{ color: accentColor }}>
-                {template.brand_name || "GOGIGANET"}
+                {template.brand_name || "ISPSYNC"}
               </span>
               <p className="text-xs font-semibold text-slate-700 mt-0.5">
-                {template.company_name || "PT GOGIGA MEDIA TEKNOLOGI"}
+                {template.company_name || "PT Inovasi Sistem Pintar"}
               </p>
               <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed max-w-sm">
                 {template.address} &bull; WA: {template.phone} &bull; Email: {template.email}
@@ -396,7 +396,7 @@ export function ReceiptPrintDocument({
         <div className="flex justify-between items-end text-xs">
           <div className="max-w-sm text-[10px] text-slate-500 space-y-1">
             <p className="font-bold text-slate-700">Ketentuan &amp; Keabsahan:</p>
-            <p>1. Kwitansi ini merupakan bukti pembayaran yang sah dan mengikat yang diterbitkan oleh sistem penagihan {template.brand_name || "GOGIGANET"}.</p>
+            <p>1. Kwitansi ini merupakan bukti pembayaran yang sah dan mengikat yang diterbitkan oleh sistem penagihan {template.brand_name || "ISPSYNC"}.</p>
             <p>2. Pembayaran yang telah lunas tidak dapat dibatalkan atau ditarik kembali kecuali atas persetujuan manajemen.</p>
           </div>
 
@@ -404,7 +404,7 @@ export function ReceiptPrintDocument({
             <p className="text-[11px] text-slate-600 mb-1">
               Diterima &amp; Diverifikasi Oleh,
             </p>
-            <p className="text-xs font-bold text-slate-900">{template.company_name || "PT GOGIGA MEDIA TEKNOLOGI"}</p>
+            <p className="text-xs font-bold text-slate-900">{template.company_name || "PT Inovasi Sistem Pintar"}</p>
             <div className="h-16 flex items-center justify-center">
               <div className="border border-emerald-600 text-emerald-700 font-extrabold text-[10px] px-3 py-1 rounded rotate-[-5deg] uppercase tracking-wider bg-emerald-50/50">
                 LUNAS &bull; {payment.payment_number}
