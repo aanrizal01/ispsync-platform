@@ -36,13 +36,15 @@ export default function MemberNav({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       <aside className="w-60 bg-white border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 z-40">
         {/* Logo */}
-        <div className="h-16 flex items-center gap-3 px-5 border-b border-gray-100">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-black text-xs">IS</span>
-          </div>
+        <div className="h-16 flex items-center gap-2.5 px-5 border-b border-gray-100">
+          <img
+            src="/logo-prism.png"
+            alt="ISPSYNC"
+            className="h-8 w-auto object-contain"
+          />
           <div>
-            <div className="font-black text-gray-900 text-sm">ISPSYNC</div>
-            <div className="text-[10px] text-gray-400">Member Portal</div>
+            <div className="font-black text-gray-900 text-sm tracking-wider">ISPSYNC</div>
+            <div className="text-[10px] text-gray-400 font-medium">Member Portal</div>
           </div>
         </div>
 

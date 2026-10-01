@@ -30,16 +30,16 @@ export default function InternationalLandingPage() {
       {/* ── Navbar ─────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-black text-xs sm:text-sm tracking-tight">IS</span>
-            </div>
-            <div>
-              <span className="text-xl sm:text-2xl font-black tracking-wider text-gray-900">
-                ISPSYNC
-              </span>
-            </div>
-          </div>
+          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
+            <img
+              src="/logo-prism.png"
+              alt="ISPSYNC"
+              className="h-8 sm:h-10 w-auto object-contain transition-transform group-hover:scale-105"
+            />
+            <span className="text-xl sm:text-2xl font-black tracking-wider text-gray-900 font-sans">
+              ISPSYNC
+            </span>
+          </Link>
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
             <a href="#architecture" className="hover:text-blue-600 transition-colors">
@@ -673,11 +673,13 @@ export default function InternationalLandingPage() {
         <div className="max-w-7xl mx-auto flex flex-col gap-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="col-span-1 lg:col-span-2">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
-                  IS
-                </div>
-                <span className="font-bold text-gray-800 text-lg tracking-wider">ISPSYNC</span>
+              <div className="flex items-center gap-2.5 mb-4">
+                <img
+                  src="/logo-prism.png"
+                  alt="ISPSYNC"
+                  className="h-8 w-auto object-contain"
+                />
+                <span className="font-black text-gray-900 text-lg tracking-wider">ISPSYNC</span>
               </div>
               <p className="max-w-xs text-gray-500 text-xs leading-relaxed mb-6">
                 The Triple-Engine Platform for ISPs & Telecom Network Operators. Carrier-grade infrastructure to automate billing, radius, and CRM.

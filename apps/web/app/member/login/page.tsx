@@ -27,11 +27,13 @@ export default function MemberLoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-200">
-              <span className="text-white font-black text-lg">IS</span>
-            </div>
+            <img
+              src="/logo-prism.png"
+              alt="ISPSYNC"
+              className="h-12 w-auto object-contain"
+            />
             <div className="text-left">
-              <div className="text-2xl font-black text-gray-900">ISPSYNC</div>
+              <div className="text-2xl font-black text-gray-900 tracking-wider">ISPSYNC</div>
               <div className="text-xs text-gray-500 font-medium">Member Portal</div>
             </div>
           </div>
