@@ -105,7 +105,7 @@ https:// {
 
     # 1. CMS & Billing Backoffice App (Next.js & API)
     @billing_api {
-        host billing.ispsync.id *.billing.ispsync.id ledger.ispsync.id *.ledger.ispsync.id
+        header_regexp Host (^(ledger|billing)\.|\.(ledger|billing)\.)
         path /api/* /health /ready
     }
     handle @billing_api {
@@ -117,13 +117,13 @@ https:// {
 
     # Redirect root to /login on CMS & Billing backoffice
     @billing_root {
-        host billing.ispsync.id *.billing.ispsync.id ledger.ispsync.id *.ledger.ispsync.id
+        header_regexp Host (^(ledger|billing)\.|\.(ledger|billing)\.)
         path /
     }
     redir @billing_root /login temporary
 
     @billing {
-        host billing.ispsync.id *.billing.ispsync.id ledger.ispsync.id *.ledger.ispsync.id
+        header_regexp Host (^(ledger|billing)\.|\.(ledger|billing)\.)
     }
     handle @billing {
         reverse_proxy web:3000 {
@@ -135,7 +135,7 @@ https:// {
 
     # 2. FTTX NOC Command Center & FiberGrid (fttx.*, noc.*, fibergrid.*)
     @fttx {
-        host fttx.ispsync.id noc.ispsync.id fibergrid.ispsync.id *.fttx.ispsync.id *.noc.ispsync.id *.fibergrid.ispsync.id
+        header_regexp Host (^(fttx|noc|fibergrid)\.|\.(fttx|noc|fibergrid)\.)
     }
     handle @fttx {
         reverse_proxy 172.18.0.1:8082 {
