@@ -26,6 +26,7 @@ services:
       - "127.0.0.1:5432:5432"
     networks:
       - internal_net
+      - public_net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-isp_admin} -d ${POSTGRES_DB:-isp_billing}"]
       interval: 10s
