@@ -11,6 +11,22 @@ const navItems = [
   { href: "/member/support", label: "Support", icon: "💬" },
 ];
 
+function getEngineUrls(domain?: string) {
+  const d = domain ? domain.trim() : "";
+  if (!d || d === "ispsync.id" || d === "dev.ispsync.id" || d.includes("demo")) {
+    return {
+      ledger: "https://ledger.ispsync.id",
+      nexus: "https://nexus.ispsync.id",
+      fibergrid: "https://fibergrid.ispsync.id",
+    };
+  }
+  return {
+    ledger: `https://ledger.${d}`,
+    nexus: `https://nexus.${d}`,
+    fibergrid: `https://fibergrid.${d}`,
+  };
+}
+
 export default function MemberNav({ children }: { children: React.ReactNode }) {
   const { member, loading, logout } = useMember();
   const router = useRouter();
@@ -71,6 +87,45 @@ export default function MemberNav({ children }: { children: React.ReactNode }) {
             </Link>
           ))}
         </nav>
+
+        {/* 3 Engine Fast Launcher in Sidebar */}
+        <div className="mx-3 my-2 pt-2 border-t border-gray-100">
+          <div className="px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5 flex items-center justify-between">
+            <span>Akses 3 Engine</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          </div>
+          {(() => {
+            const urls = getEngineUrls(member.domain);
+            return (
+              <div className="space-y-0.5">
+                <a href={urls.ledger} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors group">
+                  <span className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded bg-blue-100 text-blue-700 text-[10px] flex items-center justify-center font-bold">L</span>
+                    <span>Ledger</span>
+                  </span>
+                  <span className="text-[10px] text-gray-400 group-hover:text-blue-600 transition-colors">↗</span>
+                </a>
+                <a href={urls.nexus} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-colors group">
+                  <span className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded bg-purple-100 text-purple-700 text-[10px] flex items-center justify-center font-bold">N</span>
+                    <span>Nexus</span>
+                  </span>
+                  <span className="text-[10px] text-gray-400 group-hover:text-purple-600 transition-colors">↗</span>
+                </a>
+                <a href={urls.fibergrid} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors group">
+                  <span className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded bg-emerald-100 text-emerald-700 text-[10px] flex items-center justify-center font-bold">F</span>
+                    <span>FiberGrid</span>
+                  </span>
+                  <span className="text-[10px] text-gray-400 group-hover:text-emerald-600 transition-colors">↗</span>
+                </a>
+              </div>
+            );
+          })()}
+        </div>
 
         {/* User */}
         <div className="p-4 border-t border-gray-100">

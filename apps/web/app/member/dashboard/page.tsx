@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import MemberNav from "../_nav";
 import { useMember } from "../context";
 
@@ -6,8 +7,26 @@ function fmt(n: string) {
   return "Rp " + Number(n).toLocaleString("id-ID");
 }
 
+function getEngineUrls(domain?: string) {
+  const d = domain ? domain.trim() : "";
+  if (!d || d === "ispsync.id" || d === "dev.ispsync.id" || d.includes("demo")) {
+    return {
+      ledger: "https://ledger.ispsync.id",
+      nexus: "https://nexus.ispsync.id",
+      fibergrid: "https://fibergrid.ispsync.id",
+    };
+  }
+  return {
+    ledger: `https://ledger.${d}`,
+    nexus: `https://nexus.${d}`,
+    fibergrid: `https://fibergrid.${d}`,
+  };
+}
+
 export default function MemberDashboard() {
   const { member } = useMember();
+  const [copiedEmail, setCopiedEmail] = useState(false);
+
   if (!member) return null;
 
   const expires = new Date(member.expiresAt);
@@ -15,10 +34,11 @@ export default function MemberDashboard() {
   const daysLeft = Math.ceil((expires.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   const pendingInvoice = member.invoices.find(i => i.status === "pending");
   const paidCount = member.invoices.filter(i => i.status === "paid").length;
+  const urls = getEngineUrls(member.domain);
 
   return (
     <MemberNav>
-      <div className="max-w-4xl">
+      <div className="max-w-5xl">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-black text-gray-900">Selamat datang, {member.picName.split(" ")[0]}!</h1>
@@ -57,6 +77,200 @@ export default function MemberDashboard() {
               {card.sub && <div className="text-[11px] text-gray-400 mt-0.5">{card.sub}</div>}
             </div>
           ))}
+        </div>
+
+        {/* 🚀 Quick Launchpad: 3 Engines ISPSYNC */}
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">⚡</span>
+                <h2 className="text-xl font-black text-gray-900 tracking-tight">
+                  Akses Cepat 3 Engine Platform
+                </h2>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Luncurkan seluruh modul operasional ISP Anda secara terpusat dalam satu klik.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                Semua Engine Online
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Engine 1: Ledger */}
+            <div className="bg-white rounded-2xl border border-blue-200 p-5 shadow-sm hover:shadow-md hover:border-blue-400 transition-all flex flex-col justify-between group">
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-100 text-blue-800">
+                    Engine 1
+                  </span>
+                  <span className="text-[11px] font-bold text-blue-600">Core Billing</span>
+                </div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center text-lg font-bold shadow-md shadow-blue-200 group-hover:scale-105 transition-transform">
+                    💳
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-black text-gray-900 text-base truncate">ISPSYNC Ledger</h3>
+                    <p className="text-[11px] text-gray-400 font-mono truncate">{urls.ledger.replace("https://", "")}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+                  Billing otomatis, AAA Radius PPPoE/Hotspot, manajemen tagihan pelanggan, akuntansi &amp; QRIS gateway.
+                </p>
+                <div className="space-y-1.5 mb-4 text-[11px] text-gray-500">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-emerald-500 font-bold">✓</span>
+                    <span>FreeRADIUS AAA Mikrotik &amp; Juniper</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-emerald-500 font-bold">✓</span>
+                    <span>Invoice Otomatis WhatsApp &amp; Email</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-gray-100">
+                <a
+                  href={urls.ledger}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-2 transition-all shadow-sm shadow-blue-200"
+                >
+                  <span>Buka ISPSYNC Ledger</span>
+                  <span className="text-sm font-normal">↗</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Engine 2: Nexus */}
+            <div className="bg-white rounded-2xl border border-purple-200 p-5 shadow-sm hover:shadow-md hover:border-purple-400 transition-all flex flex-col justify-between group">
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-800">
+                    Engine 2
+                  </span>
+                  <span className="text-[11px] font-bold text-purple-600">Customer &amp; Ops</span>
+                </div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center text-lg font-bold shadow-md shadow-purple-200 group-hover:scale-105 transition-transform">
+                    🌐
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-black text-gray-900 text-base truncate">ISPSYNC Nexus</h3>
+                    <p className="text-[11px] text-gray-400 font-mono truncate">{urls.nexus.replace("https://", "")}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+                  Portal mandiri pelanggan (Self-care), aplikasi mobile teknisi lapangan, tiket gangguan &amp; agen mitra.
+                </p>
+                <div className="space-y-1.5 mb-4 text-[11px] text-gray-500">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-emerald-500 font-bold">✓</span>
+                    <span>Portal Tiket &amp; Work Order Teknisi</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-emerald-500 font-bold">✓</span>
+                    <span>Captive Portal Hotspot &amp; Beli Voucher</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-gray-100">
+                <a
+                  href={urls.nexus}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-2 transition-all shadow-sm shadow-purple-200"
+                >
+                  <span>Buka ISPSYNC Nexus</span>
+                  <span className="text-sm font-normal">↗</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Engine 3: FiberGrid */}
+            <div className="bg-white rounded-2xl border border-emerald-200 p-5 shadow-sm hover:shadow-md hover:border-emerald-400 transition-all flex flex-col justify-between group">
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">
+                    Engine 3
+                  </span>
+                  <span className="text-[11px] font-bold text-emerald-600">FTTX &amp; NOC Center</span>
+                </div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg font-bold shadow-md shadow-emerald-200 group-hover:scale-105 transition-transform">
+                    📡
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-black text-gray-900 text-base truncate">ISPSYNC FiberGrid</h3>
+                    <p className="text-[11px] text-gray-400 font-mono truncate">{urls.fibergrid.replace("https://", "")}</p>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-600 mb-4 leading-relaxed">
+                  NOC Command Center pemantauan OLT GPON/EPON, auto-provisioning TR-069 ACS ONT &amp; topologi kabel fiber.
+                </p>
+                <div className="space-y-1.5 mb-4 text-[11px] text-gray-500">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-emerald-500 font-bold">✓</span>
+                    <span>Monitoring OLT &amp; Redaman Optik (dBm)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-emerald-500 font-bold">✓</span>
+                    <span>GenieACS Zero-Touch Provisioning</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-gray-100">
+                <a
+                  href={urls.fibergrid}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-2 transition-all shadow-sm shadow-emerald-200"
+                >
+                  <span>Buka ISPSYNC FiberGrid</span>
+                  <span className="text-sm font-normal">↗</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Credential Bar */}
+          <div className="mt-4 p-4 bg-slate-900 text-white rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-sm border border-slate-800">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                🔑
+              </div>
+              <div>
+                <div className="font-bold text-xs text-slate-200">
+                  Kredensial Akses Engine
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">
+                  Email Administrator Anda: <span className="font-mono text-blue-300 font-semibold">{member.email}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(member.email);
+                  setCopiedEmail(true);
+                  setTimeout(() => setCopiedEmail(false), 2000);
+                }}
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5"
+              >
+                <span>{copiedEmail ? "✓ Tersalin!" : "📋 Salin Email"}</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Subscription detail */}
