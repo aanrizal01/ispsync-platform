@@ -146,7 +146,7 @@ https:// {
 
     # 3. Customer & Field Operational Portals - ISPSYNC Nexus (nexus.*, portal.*, sales.*, teknisi.*, rekan.*)
     @nexus {
-        host nexus.ispsync.id *.nexus.ispsync.id portal.ispsync.id *.portal.ispsync.id sales.ispsync.id *.sales.ispsync.id teknisi.ispsync.id *.teknisi.ispsync.id rekan.ispsync.id *.rekan.ispsync.id
+        header_regexp Host (^(nexus|portal|sales|teknisi|rekan)\.|\.(nexus|portal|sales|teknisi|rekan)\.)
     }
     handle @nexus {
         reverse_proxy 172.18.0.1:8081 {

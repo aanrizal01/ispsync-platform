@@ -8,14 +8,20 @@ function fmt(n: string) {
 }
 
 function getEngineUrls(domain?: string) {
-  const d = domain ? domain.trim() : "";
-  if (!d || d === "ispsync.id" || d === "dev.ispsync.id" || d.includes("demo")) {
-    return {
-      ledger: "https://ledger.ispsync.id",
-      nexus: "https://nexus.ispsync.id",
-      fibergrid: "https://fibergrid.ispsync.id",
-    };
+  let d = domain ? domain.trim() : "";
+  d = d.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+
+  if (!d) {
+    if (typeof window !== "undefined") {
+      d = window.location.hostname;
+    } else {
+      d = "ispsync.id";
+    }
   }
+
+  // Strip existing engine subdomains if present
+  d = d.replace(/^(ledger|billing|nexus|portal|fibergrid|fttx)\./, "");
+
   return {
     ledger: `https://ledger.${d}`,
     nexus: `https://nexus.${d}`,
