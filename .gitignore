@@ -61,3 +61,5 @@ apps/api/*-linux*
 apps/api/gogigabill-*
 *.db
 *.sqlite
+scratch/
+
