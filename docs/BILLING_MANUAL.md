@@ -1,11 +1,11 @@
-# 📘 Dokumentasi Lengkap & Buku Manual Billing Sistem GigaBill ISP
+# 📘 Dokumentasi Lengkap & Buku Manual ISPSYNC Ledger (Engine 3)
 
 Dokumen ini berisi panduan komprehensif mengenai **Arsitektur Sistem Billing**, **Siklus Hidup Faktur (Invoice Lifecycle)**, rumus perhitungan keuangan (Proration, PPN, Denda), serta **Buku Manual Operasional (User Manual)** untuk staf Administrasi dan Finance ISP.
 
 ---
 
 ## 📑 DAFTAR ISI
-1. [Ringkasan & Filosofi Billing GigaBill](#1-ringkasan--filosofi-billing-gigabill)
+1. [Ringkasan & Filosofi ISPSYNC Ledger](#1-ringkasan--filosofi-ispsync-ledger)
 2. [Arsitektur & Model Data Billing](#2-arsitektur--model-data-billing)
 3. [Siklus Hidup Faktur (Invoice Lifecycle)](#3-siklus-hidup-faktur-invoice-lifecycle)
 4. [Rumus & Ketentuan Finansial (Engine Rules)](#4-rumus--ketentuan-finansial-engine-rules)
@@ -28,9 +28,9 @@ Dokumen ini berisi panduan komprehensif mengenai **Arsitektur Sistem Billing**, 
 
 ---
 
-## 1. Ringkasan & Filosofi Billing GigaBill
+## 1. Ringkasan & Filosofi ISPSYNC Ledger
 
-Modul Billing GigaBill dirancang khusus untuk memenuhi standar operasional **Internet Service Provider (ISP)** dan **RT/RW Net** di Indonesia:
+Modul ISPSYNC Ledger dirancang khusus untuk memenuhi standar operasional **Internet Service Provider (ISP)** dan **RT/RW Net** di Indonesia:
 - **Zero Rounding Loss (Mata Uang Integer Rupiah)**: Seluruh perhitungan nominal uang disimpan dalam satuan `int64` (Rupiah murni tanpa desimal pecahan floating point) untuk menjamin akurasi pembukuan finansial 100%.
 - **Otomatisasi Berulang (Recurring Billing Engine)**: Menerbitkan tagihan bulanan secara otomatis berdasarkan siklus langganan pelanggan, tanggal jatuh tempo, dan masa tenggang (*grace period*).
 - **Integrasi Jaringan Nyata (RADIUS & AAA Synchronization)**: Pelanggan yang menunggak melewati *grace period* akan otomatis ditandai `OVERDUE` dan langganannya di-*suspend* (isolir) pada MikroTik / FreeRADIUS.
@@ -133,7 +133,7 @@ $$\text{AmountDue} = \text{TotalAmount} - \text{AmountPaid}$$
 
 ## 5. Automated Worker & Scheduler (Otomatisasi Tagihan)
 
-GigaBill memiliki cron-job / background worker berkala:
+ISPSYNC Ledger memiliki cron-job / background worker berkala:
 
 1. **Invoice Generation Job (`RunInvoiceGenerationJob`)**:
    - Berjalan setiap malam (00:01 WIB).
@@ -204,14 +204,14 @@ Jika terjadi salah entri atau pelanggan membatalkan pesanan tambahan:
 
 ### 6.6. Menghubungkan Tagihan dengan Isolir / Suspend Radius
 - Ketika pelanggan memiliki faktur yang melewati `due_date` + `grace_period`, modul billing menandai akun tersebut sebagai `OVERDUE`.
-- Radius Engine GigaBill secara otomatis memindahkan *group profile* akun pelanggan ke profil isolir (*Speed drop ke 64 Kbps* atau *Redirect ke halaman notifikasi isolir*).
+- Radius Engine ISPSYNC Ledger secara otomatis memindahkan *group profile* akun pelanggan ke profil isolir (*Speed drop ke 64 Kbps* atau *Redirect ke halaman notifikasi isolir*).
 - Begitu pelanggan membayar dan status faktur berubah menjadi `PAID`, sistem secara *realtime* melakukan **Unsuspend**, mengembalikan bandwidth internet pelanggan ke profil semula tanpa perlu restart router.
 
 ---
 
 ## 7. Panduan Portal Publik Pelanggan Cek & Bayar Tagihan (/billing/check)
 
-GigaBill menyediakan portal mandiri (*Self-Service Portal*) yang dapat diakses oleh pelanggan publik tanpa perlu login rumit:
+ISPSYNC Ledger menyediakan portal mandiri (*Self-Service Portal*) yang dapat diakses oleh pelanggan publik tanpa perlu login rumit:
 - **URL Akses**: `http://localhost:3000/billing/check` (atau domain publik ISP `https://billing.ispanda.net.id/billing/check`)
 
 ### 7.1. Alur Pencarian Tagihan
@@ -229,7 +229,7 @@ GigaBill menyediakan portal mandiri (*Self-Service Portal*) yang dapat diakses o
 
 ### 7.2. Pembayaran Instan via QRIS Dinamis
 1. Jika tagihan belum lunas, pelanggan mengklik tombol **"Bayar Sekarang via QRIS"**.
-2. Gateway GigaBill akan langsung men-generate QRIS Dinamis standar Bank Indonesia (ASPI / EMVCo).
+2. Gateway ISPSYNC Ledger akan langsung men-generate QRIS Dinamis standar Bank Indonesia (ASPI / EMVCo).
 3. Pelanggan memindai (*scan*) QRIS menggunakan aplikasi e-Wallet (GoPay, OVO, Dana, ShopeePay) atau Mobile Banking (BCA, Mandiri, BRI, BNI, dll).
 4. Gateway memverifikasi pembayaran secara otomatis melalui webhook real-time:
    - Status tagihan seketika berubah menjadi **PAID (Lunas)**.
@@ -244,7 +244,7 @@ Modul **Partner & Reseller** dirancang untuk ISP yang bekerja sama dengan agen l
 
 ```mermaid
 flowchart TD
-    Customer[Pelanggan Mitra] -->|Membayar Tagihan Rp 200.000 + PPN| Billing[Engine Billing GigaBill]
+    Customer[Pelanggan Mitra] -->|Membayar Tagihan Rp 200.000 + PPN| Billing[Engine ISPSYNC Ledger]
     Billing -->|Invoice Lunas| SplitEngine[Revenue Sharing Engine]
     SplitEngine -->|50% = Rp 100.000| PartnerWallet[(Saldo Mitra Bertambah)]
     SplitEngine -->|50% = Rp 100.000| ISPWallet[(Kas Utama Core ISP)]
@@ -289,7 +289,7 @@ Sistem mendukung skema bagi hasil yang dikonfigurasi per profil mitra:
 
 ## 9. Integrasi Router (MikroTik & Juniper) & RADIUS
 
-GigaBill menggabungkan efisiensi AAA FreeRADIUS terpusat dengan fleksibilitas manajemen router modern (MikroTik RouterOS & Juniper Junos).
+ISPSYNC Ledger menggabungkan efisiensi AAA FreeRADIUS terpusat dengan fleksibilitas manajemen router modern (MikroTik RouterOS & Juniper Junos).
 
 ### 9.1. Pendaftaran Router Terpadu (All-in-One Router Onboarding)
 Pada menu **Admin ➔ Jaringan & Router**, proses pendaftaran router telah disatukan:
@@ -298,7 +298,7 @@ Pada menu **Admin ➔ Jaringan & Router**, proses pendaftaran router telah disat
 - **Hasil**: Sistem secara otomatis memasukkan router ke inventaris perangkat (`devices`) sekaligus mendaftarkannya ke tabel AAA RADIUS (`nas`). Router langsung siap menerima request autentikasi PPPoE / IPoE / Hotspot.
 
 ### 9.2. Mekanisme Isolir Otomatis & Pemulihan (Suspend & Unsuspend)
-Sistem isolir GigaBill bekerja secara multi-layer (*Hybrid Protection*):
+Sistem isolir ISPSYNC Ledger bekerja secara multi-layer (*Hybrid Protection*):
 
 | Komponen | Saat Pelanggan Jatuh Tempo (Isolir) | Saat Pelanggan Melakukan Pembayaran (Unsuspend) |
 | :--- | :--- | :--- |
@@ -310,7 +310,7 @@ Sistem isolir GigaBill bekerja secara multi-layer (*Hybrid Protection*):
 
 ## 10. Modul ACS (TR-069 / CWMP) Manajemen Modem ONT & Portal Mandiri Pelanggan
 
-GigaBill terintegrasi dengan **GenieACS** (NBI REST API port `7557` & CWMP port `7547`) untuk mengelola armada Optical Network Terminal (ONT) multi-vendor pelanggan secara terpusat tanpa perlu login satu per satu ke web UI modem di lapangan.
+ISPSYNC Ledger terintegrasi dengan **GenieACS** (NBI REST API port `7557` & CWMP port `7547`) untuk mengelola armada Optical Network Terminal (ONT) multi-vendor pelanggan secara terpusat tanpa perlu login satu per satu ke web UI modem di lapangan.
 
 ### 10.1. Dukungan Multi-Vendor ONT
 Sistem mendukung ONT populer di Indonesia:
@@ -353,7 +353,7 @@ Pada tab **"Modem ONT Pelanggan (TR-069 ACS)"**, tim NOC dapat:
 Format nomor faktur tersusun dari kode domain `INV`, tahun berjalan `2026`, bulan berjalan `09`, dan nomor urut sekuens database `10001`. Hal ini menjamin nomor faktur unik dan urut sesuai standar akuntansi perpajakan.
 
 #### Q: Bagaimana jika pelanggan menunggak dan terisolir, bagaimana mereka bisa membayar?
-Pelanggan yang terisolir tetap dapat mengakses DNS dan alamat IP server GigaBill (Whitelisted Walled Garden). Saat membuka peramban web, mereka otomatis diarahkan ke `/billing/check` untuk langsung melakukan pembayaran QRIS. Setelah scan berhasil, koneksi internet normal kembali dalam < 5 detik.
+Pelanggan yang terisolir tetap dapat mengakses DNS dan alamat IP server ISPSYNC Ledger (Whitelisted Walled Garden). Saat membuka peramban web, mereka otomatis diarahkan ke `/billing/check` untuk langsung melakukan pembayaran QRIS. Setelah scan berhasil, koneksi internet normal kembali dalam < 5 detik.
 
 #### Q: Bagaimana jika mitra ingin mendaftarkan pelanggannya sendiri?
 Akun admin dengan role `partner_admin` dapat login ke dashboard dan hanya memiliki akses ke menu pelanggan, router, dan data keuangan miliknya sendiri tanpa melihat data mitra lain ataupun data inti ISP.
@@ -362,5 +362,5 @@ Akun admin dengan role `partner_admin` dapat login ke dashboard dan hanya memili
 Hanya akun admin yang memiliki izin (*permission*) `invoices:void` yang dapat melakukan pembatalan. Setiap pembatalan wajib menyertakan alasan tertulis dan tercatat di audit log sistem secara permanen.
 
 #### Q: Bagaimana jika GenieACS server mati atau belum running saat pelanggan ganti password WiFi?
-Sistem GigaBill memiliki mekanisme toleransi gangguan (*offline graceful fallback*). Perubahan password WiFi pelanggan akan tetap dicatat ke database GigaBill dan sistem mencatat peringatan log tanpa menyebabkan crash/error fatal pada halaman portal pelanggan. Saat GenieACS online kembali, konfigurasi disinkronisasikan ke modem fisik.
+ISPSYNC Ledger memiliki mekanisme toleransi gangguan (*offline graceful fallback*). Perubahan password WiFi pelanggan akan tetap dicatat ke database ISPSYNC Ledger dan sistem mencatat peringatan log tanpa menyebabkan crash/error fatal pada halaman portal pelanggan. Saat GenieACS online kembali, konfigurasi disinkronisasikan ke modem fisik.
 
