@@ -1,5 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Lock, ArrowRight, ShieldCheck, Activity, Server, Globe, Zap } from "lucide-react";
 
 type PricingPlan = {
   id: string; label: string; name: string; description: string;
@@ -96,26 +98,200 @@ export default function SiteAdminPage() {
   }
 
   if (!authed) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
-            <span className="text-white font-black text-sm">IS</span>
-          </div>
-          <div><div className="font-black text-gray-900">ISPSYNC</div><div className="text-xs text-gray-500">Website Admin</div></div>
+    <div className="min-h-screen flex flex-col lg:flex-row bg-white">
+      {/* ── Left Column: Clean Admin Login Form ─────────────────────── */}
+      <div className="w-full lg:w-1/2 min-h-screen flex flex-col justify-between p-6 sm:p-12 lg:p-16">
+        {/* Top: Brand */}
+        <div className="flex items-center justify-between">
+          <Link href="/" className="inline-flex items-center gap-3 group">
+            <img
+              src="/logo-prism.png"
+              alt="ISPSYNC"
+              className="h-9 sm:h-10 w-auto object-contain transition-transform group-hover:scale-105"
+            />
+            <span className="text-2xl font-black tracking-wider text-slate-900 font-sans">
+              ISPSYNC
+            </span>
+          </Link>
+          <span className="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-semibold border border-slate-200">
+            CMS Admin Console
+          </span>
         </div>
-        <h1 className="text-xl font-bold text-gray-900 mb-1">Admin Panel</h1>
-        <p className="text-sm text-gray-500 mb-6">Masukkan password untuk mengelola konten website.</p>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password Admin</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password..." className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" required />
-            {authError && <p className="text-red-500 text-xs mt-1">{authError}</p>}
+
+        {/* Center: Auth Form */}
+        <div className="w-full max-w-md mx-auto my-auto py-8">
+          <div className="mb-8">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold mb-3 border border-blue-200">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Restricted Management Area</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              Website Admin Panel
+            </h1>
+            <p className="text-sm text-slate-500 mt-2">
+              Masukkan master security password untuk mengelola konfigurasi landing page, paket harga, dan konten platform.
+            </p>
           </div>
-          <button type="submit" className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm">Masuk</button>
-        </form>
-        <p className="text-xs text-gray-400 mt-4 text-center">Hanya untuk pengelola ISPSYNC</p>
+
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                Master Security Password
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Lock className="w-4 h-4" />
+                </div>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Masukkan password admin..."
+                  required
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm transition-all text-slate-900 placeholder:text-slate-400"
+                />
+              </div>
+              {authError && (
+                <div className="mt-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-xs text-red-600 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-600 flex-shrink-0" />
+                  <span>{authError}</span>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-sm transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>Masuk ke Panel Konten</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </form>
+
+          <p className="text-xs text-slate-400 text-center mt-8">
+            Akses hanya diizinkan untuk administrator resmi ISPSYNC.
+          </p>
+        </div>
+
+        {/* Bottom */}
+        <div className="text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2 pt-6">
+          <span>&copy; {new Date().getFullYear()} ISPSYNC Platform Core.</span>
+          <Link href="/" className="hover:text-slate-600">
+            ← Kembali ke Beranda
+          </Link>
+        </div>
+      </div>
+
+      {/* ── Right Column: Dark Telemetry & Infrastructure ──────────── */}
+      <div className="hidden lg:flex lg:w-1/2 min-h-screen bg-slate-950 text-white flex-col justify-between p-12 lg:p-16 relative overflow-hidden border-l border-slate-900">
+        <div className="absolute -top-32 -right-32 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Top Status */}
+        <div className="relative z-10 flex items-center justify-between">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-emerald-400 text-xs font-semibold backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>CMS Edge Sync: Operational</span>
+          </div>
+          <span className="text-xs text-slate-400 font-mono">Build ID: 2.4.0-prod</span>
+        </div>
+
+        {/* Center: Live Telemetry Cards */}
+        <div className="relative z-10 my-auto py-8 space-y-5">
+          <div className="grid grid-cols-5 gap-4">
+            {/* Traffic Card */}
+            <div className="col-span-3 bg-slate-900/70 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-md">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <div className="text-xs font-bold text-slate-200">Global Content Sync</div>
+                  <div className="text-[11px] text-emerald-400 flex items-center gap-1 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    <span>Real-time Multi-Region Propagation</span>
+                  </div>
+                </div>
+                <Activity className="w-4 h-4 text-cyan-400" />
+              </div>
+
+              <div className="h-24 w-full flex items-end gap-1.5 pt-4">
+                {[55, 70, 45, 80, 60, 95, 75, 85, 70, 100, 90, 85, 70, 95, 92].map((h, i) => (
+                  <div key={i} className="flex-1 flex flex-col justify-end h-full">
+                    <div
+                      style={{ height: `${h}%` }}
+                      className="w-full rounded-t-sm bg-gradient-to-t from-blue-600/40 via-cyan-500/70 to-cyan-400 transition-all duration-500"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between text-[10px] text-slate-500 font-mono mt-2 pt-2 border-t border-slate-800/60">
+                <span>Landing Page</span>
+                <span>Pricing API</span>
+                <span>CDN Cache</span>
+                <span>Live</span>
+              </div>
+            </div>
+
+            {/* Status Card */}
+            <div className="col-span-2 bg-slate-900/70 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-md flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-200">Uptime SLA</span>
+                <Server className="w-4 h-4 text-cyan-400" />
+              </div>
+
+              <div className="my-auto py-2 text-center">
+                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full border-4 border-cyan-400/20 border-t-cyan-400 text-center mx-auto my-1">
+                  <span className="text-base font-black text-white font-mono">99.98%</span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1">Docker Containers</div>
+              </div>
+
+              <div className="text-[10px] text-emerald-400 font-medium text-center bg-emerald-950/40 py-1 rounded-lg border border-emerald-900/40">
+                All 6 Services Up
+              </div>
+            </div>
+          </div>
+
+          {/* Core Info */}
+          <div className="bg-slate-900/70 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-md">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-cyan-400" />
+                <span className="text-xs font-bold text-slate-200">
+                  Infrastructure Engine Status
+                </span>
+              </div>
+              <span className="text-xs font-mono text-cyan-400 font-semibold">
+                Triple-Engine Active
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 pt-2">
+              <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/60">
+                <div className="text-[10px] text-slate-400">Billing Engine</div>
+                <div className="text-sm font-bold text-emerald-400 font-mono mt-0.5">Online</div>
+              </div>
+              <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/60">
+                <div className="text-[10px] text-slate-400">Radius AAA</div>
+                <div className="text-sm font-bold text-cyan-400 font-mono mt-0.5">Connected</div>
+              </div>
+              <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/60">
+                <div className="text-[10px] text-slate-400">CRM Engine</div>
+                <div className="text-sm font-bold text-white font-mono mt-0.5">Synced</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="relative z-10 pt-4 border-t border-slate-900 flex items-center justify-between text-xs text-slate-400">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-cyan-400" />
+            <span>Encrypted Session Management</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-slate-500">
+            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            <span>High-Availability Cluster</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -136,12 +312,16 @@ export default function SiteAdminPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-              <span className="text-white font-black text-xs">IS</span>
-            </div>
-            <span className="font-black text-gray-900 text-sm">ISPSYNC</span>
-            <span className="text-xs text-gray-400">Website Admin</span>
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/logo-prism.png"
+              alt="ISPSYNC"
+              className="h-8 w-auto object-contain"
+            />
+            <span className="font-black text-gray-900 text-sm tracking-wider">ISPSYNC</span>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+              CMS Admin
+            </span>
           </div>
           <div className="flex items-center gap-3">
             {saveMsg && (
