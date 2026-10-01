@@ -14,7 +14,7 @@
 * **Source Reference**: Proyek `FTTX` / `ispsync-fttx`
 * **Lokasi Server VPS**: `/home/anri01/ispsync-fttx`
 * **Service Systemd**: `ispsync-fttx.service` (Port 8082)
-* **Database Engine**: SQLite `fttx.db` (`fttx_olt_devices`, `fttx_odc_nodes`, `fttx_odp_nodes`, `fttx_fiber_routes`, `wholesale_contracts`, `fttx_acs_cpe_data`)
+* **Database Engine**: Central PostgreSQL 16 + PostGIS (Port `5432`, Host: `127.0.0.1`, Database: `ispsync` / `isp_billing` - `fttx_olt_devices`, `fttx_odc_nodes`, `fttx_odp_nodes`, `fttx_fiber_routes`, `wholesale_contracts`, `fttx_acs_cpe_data`)
 * **Koneksi Antar-Engine**: Terhubung ke Nexus di `ISP_BASE_URL=http://127.0.0.1:8081`
 
 ---

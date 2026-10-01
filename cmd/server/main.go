@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -24,10 +26,8 @@ func main() {
 		port = "8082" // Port 8082 agar tidak bentrok dengan 8080 (GOGIGABILL) atau 8081 (ISP Onboarding)
 	}
 
+	dbURL := os.Getenv("DATABASE_URL")
 	dbPath := os.Getenv("DATABASE_PATH")
-	if dbPath == "" {
-		dbPath = "ispsync.db"
-	}
 
 	baseDomain := os.Getenv("BASE_DOMAIN")
 	if baseDomain == "" {
@@ -36,12 +36,57 @@ func main() {
 
 	log.Printf("[ISPSYNC CORE] Starting SaaS Multi-Tenant Engine on port %s...", port)
 	log.Printf("[ISPSYNC CORE] Base SaaS Domain: %s", baseDomain)
-	log.Printf("[ISPSYNC CORE] Database File: %s", dbPath)
 
-	// 1. Inisialisasi Database SQLite Multi-Tenant
-	store, err := repository.NewSQLiteStorage(dbPath)
-	if err != nil {
-		log.Fatalf("Fatal: Gagal inisialisasi database: %v", err)
+	// 1. Inisialisasi Database Storage (PostgreSQL Primary / SQLite Fallback)
+	var store repository.Storage
+	if dbURL != "" && (strings.HasPrefix(dbURL, "postgres://") || strings.HasPrefix(dbURL, "postgresql://")) {
+		log.Printf("[ISPSYNC CORE] Initializing Central PostgreSQL Storage...")
+		pgStore, err := repository.NewPostgresStorage(dbURL)
+		if err != nil {
+			log.Fatalf("Fatal: Gagal inisialisasi PostgreSQL: %v", err)
+		}
+		store = pgStore
+	} else if os.Getenv("POSTGRES_HOST") != "" {
+		host := os.Getenv("POSTGRES_HOST")
+		pgPort := os.Getenv("POSTGRES_PORT")
+		if pgPort == "" {
+			pgPort = "5432"
+		}
+		user := os.Getenv("POSTGRES_USER")
+		pass := os.Getenv("POSTGRES_PASSWORD")
+		dbname := os.Getenv("POSTGRES_DB")
+		if dbname == "" {
+			dbname = "ispsync"
+		}
+		connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, pass, host, pgPort, dbname)
+		log.Printf("[ISPSYNC CORE] Initializing PostgreSQL Storage from ENV (%s:%s/%s)...", host, pgPort, dbname)
+		pgStore, err := repository.NewPostgresStorage(connStr)
+		if err != nil {
+			log.Fatalf("Fatal: Gagal inisialisasi PostgreSQL: %v", err)
+		}
+		store = pgStore
+	} else if dbPath != "" {
+		log.Printf("[ISPSYNC CORE] Initializing SQLite Storage: %s", dbPath)
+		sStore, err := repository.NewSQLiteStorage(dbPath)
+		if err != nil {
+			log.Fatalf("Fatal: Gagal inisialisasi SQLite: %v", err)
+		}
+		store = sStore
+	} else {
+		defaultPG := "postgres://isp_admin:IspsyncPgPass2026!Sec@127.0.0.1:5432/ispsync?sslmode=disable"
+		log.Printf("[ISPSYNC CORE] Attempting default PostgreSQL connection (%s)...", "127.0.0.1:5432/ispsync")
+		pgStore, err := repository.NewPostgresStorage(defaultPG)
+		if err == nil {
+			store = pgStore
+		} else {
+			log.Printf("[ISPSYNC CORE] Default PostgreSQL unavailable (%v), falling back to SQLite...", err)
+			dbPath = "ispsync.db"
+			sStore, sErr := repository.NewSQLiteStorage(dbPath)
+			if sErr != nil {
+				log.Fatalf("Fatal: Gagal inisialisasi database: %v", sErr)
+			}
+			store = sStore
+		}
 	}
 	defer store.Close()
 
