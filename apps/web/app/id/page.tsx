@@ -16,8 +16,15 @@ import {
   Users,
   Sparkles,
 } from "lucide-react";
+import { getSiteConfig } from "@/lib/config";
+
+export const dynamic = "force-dynamic";
 
 export default function LandingPage() {
+  const config = getSiteConfig();
+  const hero = config?.hero;
+  const pricingPlans = config?.pricing || [];
+  const addons = config?.addons || [];
   return (
     <div className="min-h-screen bg-white text-gray-900 selection:bg-blue-600 selection:text-white">
       {/* ── Background Glow ────────────────────────────────────────── */}
@@ -78,38 +85,37 @@ export default function LandingPage() {
       <section className="relative z-10 pt-20 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center bg-gradient-to-b from-blue-50 to-white">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-100 border border-blue-200 text-blue-700 text-xs font-semibold mb-8">
           <Layers className="w-3.5 h-3.5" />
-          <span>Enterprise Telecom Infrastructure & ISP Operations Orchestration Platform</span>
+          <span>{hero?.badge || "Enterprise Telecom Infrastructure & ISP Operations Orchestration Platform"}</span>
         </div>
 
         <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight max-w-5xl mx-auto leading-tight sm:leading-none text-gray-900">
-          Kuasai Seluruh Ekosistem Broadband & Operasional ISP dalam{" "}
+          {hero?.title || "Kuasai Seluruh Ekosistem Broadband & Operasional ISP dalam"}{" "}
           <span className="text-blue-600">
-            Satu Detak Sinkronisasi.
+            {hero?.titleHighlight || "Satu Detak Sinkronisasi."}
           </span>
         </h1>
 
         <p className="mt-6 text-lg sm:text-xl text-gray-500 max-w-3xl mx-auto leading-relaxed">
-          Dirancang untuk stabilitas skala telekomunikasi dan kepatuhan audit.
-          <strong className="text-slate-800"> ISPSYNC</strong> mengintegrasikan Core Engine Telekomunikasi Berkecepatan Tinggi,
-          Enterprise Web Portal, dan Point-of-Sales Mobile Lapangan dalam satu ekosistem realtime berkeandalan tinggi.
+          {hero?.description ||
+            "Dirancang untuk stabilitas skala telekomunikasi dan kepatuhan audit. ISPSYNC mengintegrasikan Core Engine Telekomunikasi Berkecepatan Tinggi, Enterprise Web Portal, dan Point-of-Sales Mobile Lapangan dalam satu ekosistem realtime berkeandalan tinggi."}
         </p>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
-            href="/member/login"
+            href={hero?.ctaDemoUrl || "/member/login"}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base px-8 py-4 rounded-xl shadow-lg transition-all"
           >
-            <span>Masuk ke Portal Member</span>
+            <span>{hero?.ctaDemo || "Masuk ke Portal Member"}</span>
             <ArrowRight className="w-5 h-5" />
           </Link>
           <a
-            href="https://wa.me/6281100000000?text=Halo%20Admin%20ISPSYNC,%20saya%20tertarik%20konsultasi%20platform%20ISPSYNC"
+            href={`https://wa.me/${hero?.ctaWAPhone || "6281100000000"}?text=Halo%20Admin%20ISPSYNC,%20saya%20tertarik%20konsultasi%20platform%20ISPSYNC`}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-800 border border-gray-300 font-semibold text-base px-8 py-4 rounded-xl shadow-sm transition-all"
           >
             <MessageSquare className="w-5 h-5 text-emerald-400" />
-            <span>Konsultasi Enterprise via WhatsApp</span>
+            <span>{hero?.ctaWA || "Konsultasi Enterprise via WhatsApp"}</span>
           </a>
         </div>
 
@@ -331,243 +337,122 @@ export default function LandingPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Plan 1: Starter */}
-          <div className="rounded-2xl bg-white border border-gray-200 p-7 flex flex-col justify-between hover:shadow-lg transition-all">
-            <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">ISP Regional</div>
-              <h3 className="text-2xl font-black text-gray-900">Starter</h3>
-              <p className="text-xs text-gray-500 mt-2 min-h-[36px]">
-                Untuk ISP regional berkembang atau operator mandiri berlisensi.
-              </p>
-              <div className="mt-6 mb-6 pb-6 border-b border-gray-100">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-xs font-bold text-gray-500">Rp</span>
-                  <span className="text-3xl font-black text-gray-900">2.500.000</span>
-                  <span className="text-xs text-gray-500">/ bln</span>
-                </div>
-                <div className="text-[11px] text-blue-600 mt-1 font-bold">Hingga 1.500 Pelanggan Aktif</div>
-                <div className="text-[10px] text-gray-400 mt-0.5">Ledger (Billing &amp; AAA) + Nexus Dasar</div>
-              </div>
-              <ul className="space-y-3 text-xs text-gray-600">
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <span>2 Router BRAS / MikroTik Gateway</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <span>FreeRADIUS 3.2 AAA Terintegrasi</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <span>Otomasi Isolir CoA &amp; Payment (VA/QRIS)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <span>Web Backoffice &amp; Form Registrasi Ritel</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <span>WhatsApp Gateway Notifikasi Tagihan</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                  <span>Maks. 5 Akun Staf (NOC, CS, Kasir)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-400">Dukungan Jam Kerja Reguler</span>
-                </li>
-              </ul>
-            </div>
-            <div className="mt-8">
-              <Link
-                href="/member/login"
-                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold text-xs transition-all border border-gray-200"
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {pricingPlans.map((plan) => {
+            const isFeatured = plan.featured;
+            const isPrivate = plan.id === "private";
+            return (
+              <div
+                key={plan.id}
+                className={
+                  isFeatured
+                    ? "relative rounded-2xl bg-blue-600 border-2 border-blue-600 p-7 flex flex-col justify-between shadow-2xl transform lg:-translate-y-2 text-white"
+                    : "rounded-2xl bg-white border border-gray-200 p-7 flex flex-col justify-between hover:shadow-lg transition-all"
+                }
               >
-                <span>Pilih Paket Starter</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Plan 2: Professional (Featured) */}
-          <div className="relative rounded-2xl bg-blue-600 border-2 border-blue-600 p-7 flex flex-col justify-between shadow-2xl transform lg:-translate-y-2">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-white text-blue-700 font-black text-[10px] uppercase tracking-wider shadow-md whitespace-nowrap border border-blue-200">
-              Paling Diminati
-            </div>
-            <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-blue-200 mb-2">FTTH Multi-POP</div>
-              <h3 className="text-2xl font-black text-white">Professional</h3>
-              <p className="text-xs text-blue-100 mt-2 min-h-[36px]">
-                Standar emas untuk ISP berlisensi aktif dengan ekspansi jaringan fiber.
-              </p>
-              <div className="mt-6 mb-6 pb-6 border-b border-blue-400">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-xs font-bold text-blue-200">Rp</span>
-                  <span className="text-3xl font-black text-white">6.500.000</span>
-                  <span className="text-xs text-blue-200">/ bln</span>
+                {isFeatured && (
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-white text-blue-700 font-black text-[10px] uppercase tracking-wider shadow-md whitespace-nowrap border border-blue-200">
+                    {plan.featuredLabel || "Paling Diminati"}
+                  </div>
+                )}
+                <div>
+                  <div
+                    className={`text-xs font-bold uppercase tracking-wider mb-2 ${
+                      isFeatured ? "text-blue-200" : isPrivate ? "text-rose-600" : "text-gray-500"
+                    }`}
+                  >
+                    {plan.label}
+                  </div>
+                  <h3 className={`text-2xl font-black ${isFeatured ? "text-white" : "text-gray-900"}`}>
+                    {plan.name}
+                  </h3>
+                  <p
+                    className={`text-xs mt-2 min-h-[36px] ${
+                      isFeatured ? "text-blue-100" : "text-gray-500"
+                    }`}
+                  >
+                    {plan.description}
+                  </p>
+                  <div
+                    className={`mt-6 mb-6 pb-6 border-b ${
+                      isFeatured ? "border-blue-400" : "border-gray-100"
+                    }`}
+                  >
+                    <div className="flex items-baseline gap-1">
+                      <span className={`text-xs font-bold ${isFeatured ? "text-blue-200" : "text-gray-500"}`}>
+                        Rp
+                      </span>
+                      <span className={`text-3xl font-black ${isFeatured ? "text-white" : "text-gray-900"}`}>
+                        {plan.price}
+                      </span>
+                      <span className={`text-xs ${isFeatured ? "text-blue-200" : "text-gray-500"}`}>
+                        / {plan.period}
+                      </span>
+                    </div>
+                    <div
+                      className={`text-[11px] mt-1 font-bold ${
+                        isFeatured ? "text-cyan-200" : isPrivate ? "text-rose-600" : "text-blue-600"
+                      }`}
+                    >
+                      {plan.capacity}
+                    </div>
+                    {plan.engine && (
+                      <div
+                        className={`text-[10px] mt-0.5 ${
+                          isFeatured ? "text-blue-200" : "text-gray-400"
+                        }`}
+                      >
+                        {plan.engine}
+                      </div>
+                    )}
+                  </div>
+                  <ul className={`space-y-3 text-xs ${isFeatured ? "text-white" : "text-gray-600"}`}>
+                    {plan.features.map((feature, fi) => (
+                      <li key={fi} className="flex items-start gap-2">
+                        <CheckCircle2
+                          className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
+                            isFeatured
+                              ? "text-cyan-300"
+                              : isPrivate
+                              ? "text-rose-500"
+                              : "text-blue-500"
+                          }`}
+                        />
+                        <span className={isPrivate && fi === plan.features.length - 1 ? "font-semibold text-rose-700" : ""}>
+                          {feature}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <div className="text-[11px] text-cyan-200 mt-1 font-bold">Hingga 5.000 Pelanggan Aktif</div>
-                <div className="text-[10px] text-blue-200 mt-0.5">Ledger + Nexus Penuh (SPK HP) + FiberGrid</div>
-              </div>
-              <ul className="space-y-3 text-xs text-white">
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-cyan-300 flex-shrink-0 mt-0.5" />
-                  <span>5 Router BRAS / Gateway MikroTik</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-cyan-300 flex-shrink-0 mt-0.5" />
-                  <span>Hingga 500 Tiang ODP/ODC di Peta GIS</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-cyan-300 flex-shrink-0 mt-0.5" />
-                  <span>SPK &amp; BAST Digital (Tanda Tangan HP)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-cyan-300 flex-shrink-0 mt-0.5" />
-                  <span>Cek Coverage 250m &amp; Komisi Referral</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-cyan-300 flex-shrink-0 mt-0.5" />
-                  <span>Android POS Thermal Kasir Lapangan</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-cyan-300 flex-shrink-0 mt-0.5" />
-                  <span>15 Akun Staf (NOC, Teknisi, CS, Sales)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-cyan-300 flex-shrink-0 mt-0.5" />
-                  <span className="font-semibold text-white">Dukungan Prioritas 24/7 (WhatsApp)</span>
-                </li>
-              </ul>
-            </div>
-            <div className="mt-8">
-              <Link
-                href="/member/login"
-                className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-white hover:bg-blue-50 text-blue-700 font-black text-xs shadow-lg transition-all transform hover:scale-105"
-              >
-                <span>Pilih Paket Professional</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Plan 3: Enterprise */}
-          <div className="rounded-2xl bg-white border border-gray-200 p-7 flex flex-col justify-between hover:shadow-lg transition-all">
-            <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-indigo-600 mb-2">Carrier-Grade</div>
-              <h3 className="text-2xl font-black text-gray-900">Enterprise</h3>
-              <p className="text-xs text-gray-500 mt-2 min-h-[36px]">
-                Kapasitas besar untuk ISP Metropolitan &amp; Telco Regional.
-              </p>
-              <div className="mt-6 mb-6 pb-6 border-b border-gray-100">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-xs font-bold text-gray-500">Rp</span>
-                  <span className="text-3xl font-black text-gray-900">14.500.000</span>
-                  <span className="text-xs text-gray-500">/ bln</span>
+                <div className="mt-8">
+                  {isPrivate ? (
+                    <a
+                      href={`https://wa.me/${hero?.ctaWAPhone || "6281100000000"}?text=Halo%20Tim%20ISPSYNC,%20saya%20tertarik%20konsultasi%20paket%20Private%20Telco%20On-Premise`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs transition-all"
+                    >
+                      <span>Konsultasi Private Telco</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </a>
+                  ) : (
+                    <Link
+                      href="/member/login"
+                      className={
+                        isFeatured
+                          ? "w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-white hover:bg-blue-50 text-blue-700 font-black text-xs shadow-lg transition-all transform hover:scale-105"
+                          : "w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold text-xs transition-all border border-gray-200"
+                      }
+                    >
+                      <span>Pilih Paket {plan.name}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  )}
                 </div>
-                <div className="text-[11px] text-indigo-600 mt-1 font-bold">Hingga 15.000 Pelanggan Aktif</div>
-                <div className="text-[10px] text-gray-400 mt-0.5">Full 3 Engine + Wholesale Jartaplok</div>
               </div>
-              <ul className="space-y-3 text-xs text-gray-600">
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
-                  <span>Unlimited Router BRAS &amp; Gateway</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
-                  <span>Unlimited Tiang ODP / ODC &amp; Rute Fiber</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
-                  <span>Hingga 8 Unit OLT Auto-Config (ZTE/Huawei)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
-                  <span>TR-069 ACS Remote Modem &amp; Redaman dBm</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
-                  <span>Modul Wholesale Jartaplok (Sewa Port)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
-                  <span>Unlimited Akun Staf &amp; Multi-Branch RBAC</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" />
-                  <span className="font-semibold text-indigo-700">Dedicated SLA Garansi Uptime 99.9%</span>
-                </li>
-              </ul>
-            </div>
-            <div className="mt-8">
-              <Link
-                href="/member/login"
-                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold text-xs transition-all border border-gray-200"
-              >
-                <span>Pilih Paket Enterprise</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Plan 4: Private On-Premise */}
-          <div className="rounded-2xl bg-white border border-gray-200 p-7 flex flex-col justify-between hover:shadow-lg transition-all">
-            <div>
-              <div className="text-xs font-bold uppercase tracking-wider text-rose-600 mb-2">Data Sovereignty</div>
-              <h3 className="text-2xl font-black text-gray-900">Private Telco</h3>
-              <p className="text-xs text-gray-500 mt-2 min-h-[36px]">
-                On-Premise deployment di data center atau server internal milik klien.
-              </p>
-              <div className="mt-6 mb-6 pb-6 border-b border-gray-100">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-xs font-bold text-gray-500">Rp</span>
-                  <span className="text-3xl font-black text-gray-900">65.000.000</span>
-                  <span className="text-xs text-gray-500">/ thn</span>
-                </div>
-                <div className="text-[11px] text-rose-600 mt-1 font-bold">Kapasitas Unlimited Total</div>
-                <div className="text-[10px] text-gray-400 mt-0.5">Full 3 Engine On-Premise 100% Milik Anda</div>
-              </div>
-              <ul className="space-y-3 text-xs text-gray-600">
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
-                  <span>100% On-Site Server / Data Center Klien</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
-                  <span>Kedaulatan Data Total (Zero Data Sharing)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
-                  <span>High-Availability &amp; Disaster Recovery Setup</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
-                  <span>Unlimited Router BRAS, OLT &amp; ODP GIS</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
-                  <span>Full API Access &amp; Custom Integration Telco</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
-                  <span className="font-semibold text-rose-700">Dedicated SLA 99.95% &amp; NOC Escalation</span>
-                </li>
-              </ul>
-            </div>
-            <div className="mt-8">
-              <a
-                href="https://wa.me/6281100000000?text=Halo%20Tim%20ISPSYNC,%20saya%20tertarik%20konsultasi%20paket%20Private%20Telco%20On-Premise"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs transition-all"
-              >
-                <span>Konsultasi Private Telco</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </a>
-            </div>
-          </div>
+            );
+          })}
         </div>
 
         {/* ── Scale-As-You-Grow Add-Ons ────────────────────────────── */}
@@ -597,57 +482,32 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-sm hover:border-blue-300 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
-                <Users className="w-5 h-5" />
-              </div>
-              <div className="text-xs font-bold text-gray-900 mb-1">Ekstra 500 Pelanggan Aktif</div>
-              <div className="text-lg font-black text-blue-600 mb-2">
-                +Rp 500.000 <span className="text-xs font-normal text-gray-500">/ bln</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                Tambah kuota FreeRADIUS &amp; billing secara bertahap saat ekspansi klaster baru tanpa loncat paket.
-              </p>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-sm hover:border-blue-300 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center mb-3">
-                <Server className="w-5 h-5" />
-              </div>
-              <div className="text-xs font-bold text-gray-900 mb-1">Ekstra 1 Unit OLT (Auto-Config)</div>
-              <div className="text-lg font-black text-blue-600 mb-2">
-                +Rp 750.000 <span className="text-xs font-normal text-gray-500">/ bln</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                Kelola tambahan perangkat OLT ZTE / Huawei / BDCOM dengan auto-provisioning dan monitoring redaman.
-              </p>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-sm hover:border-blue-300 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
-                <Layers className="w-5 h-5" />
-              </div>
-              <div className="text-xs font-bold text-gray-900 mb-1">Ekstra 250 Titik ODP / GIS</div>
-              <div className="text-lg font-black text-blue-600 mb-2">
-                +Rp 350.000 <span className="text-xs font-normal text-gray-500">/ bln</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                Perluas batas pemetaan tiang ODP, ODC, enclosure, dan tracing jalur kabel optik pada peta spasial PostGIS.
-              </p>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-sm hover:border-blue-300 transition-all">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <div className="text-xs font-bold text-gray-900 mb-1">Ekstra 5 Akun Teknisi &amp; Staf</div>
-              <div className="text-lg font-black text-blue-600 mb-2">
-                +Rp 250.000 <span className="text-xs font-normal text-gray-500">/ bln</span>
-              </div>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                Lisensi staf lapangan tambahan untuk aplikasi Android SPK pemasangan, BAST digital, dan kasir loket.
-              </p>
-            </div>
+            {addons.map((addon) => {
+              const IconComponent =
+                addon.icon === "Users"
+                  ? Users
+                  : addon.icon === "Server"
+                  ? Server
+                  : addon.icon === "Layers"
+                  ? Layers
+                  : ShieldCheck;
+              return (
+                <div
+                  key={addon.id}
+                  className="p-5 rounded-2xl bg-white border border-gray-200/80 shadow-sm hover:border-blue-300 transition-all"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+                    <IconComponent className="w-5 h-5" />
+                  </div>
+                  <div className="text-xs font-bold text-gray-900 mb-1">{addon.name}</div>
+                  <div className="text-lg font-black text-blue-600 mb-2">
+                    +Rp {addon.price}{" "}
+                    <span className="text-xs font-normal text-gray-500">/ {addon.period}</span>
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed">{addon.description}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
 
