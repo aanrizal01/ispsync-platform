@@ -45,25 +45,33 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   async function login(email: string, password: string) {
-    const res = await fetch("/api/member/auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "login", email, password }),
-    });
-    const data = await res.json();
-    if (data.success) {
-      localStorage.setItem("member-token", data.token);
-      setToken(data.token);
-      // Fetch full member data
-      const r2 = await fetch("/api/member/auth", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "verify", token: data.token }),
+    try {
+      const res = await fetch("/api/member/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "login", email, password }),
       });
-      const d2 = await r2.json();
-      if (d2.success) setMember(d2.member);
-      return { success: true };
+      const data = await res.json().catch(() => ({ success: false, error: "Respons server tidak valid" }));
+      if (data.success) {
+        localStorage.setItem("member-token", data.token);
+        setToken(data.token);
+        // Fetch full member data
+        try {
+          const r2 = await fetch("/api/member/auth", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "verify", token: data.token }),
+          });
+          const d2 = await r2.json();
+          if (d2.success) setMember(d2.member);
+        } catch {
+          // Non-blocking if verify fails, member token is already stored
+        }
+        return { success: true };
+      }
+      return { success: false, error: data.error || "Gagal masuk" };
+    } catch (err: any) {
+      return { success: false, error: err?.message || "Koneksi ke server gagal. Periksa koneksi internet Anda." };
     }
-    return { success: false, error: data.error };
   }
 
   function logout() {

@@ -27,10 +27,18 @@ export default function MemberLoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    const result = await login(email, password);
-    setLoading(false);
-    if (result.success) router.push("/member/dashboard");
-    else setError(result.error || "Autentikasi gagal. Silakan periksa kembali email & password Anda.");
+    try {
+      const result = await login(email, password);
+      if (result.success) {
+        router.push("/member/dashboard");
+      } else {
+        setError(result.error || "Autentikasi gagal. Silakan periksa kembali email & password Anda.");
+      }
+    } catch (err: any) {
+      setError(err?.message || "Terjadi kesalahan saat masuk. Silakan coba lagi.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

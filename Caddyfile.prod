@@ -37,7 +37,7 @@ ispsync.id, www.ispsync.id, dev.ispsync.id {
         Pragma "no-cache"
     }
 
-    handle /api/* {
+    handle /api/v1/* {
         reverse_proxy api:8080 {
             header_up Host {host}
             header_up X-Real-IP {remote_host}
@@ -106,7 +106,7 @@ https:// {
     # 1. CMS & Billing Backoffice App (Next.js & API)
     @billing_api {
         header_regexp Host (^(ledger|billing)\.|\.(ledger|billing)\.)
-        path /api/* /health /ready
+        path /api/v1/* /health /ready
     }
     handle @billing_api {
         reverse_proxy api:8080 {
