@@ -233,16 +233,16 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 p-0.5 flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
               <div className="w-full h-full bg-[#0B1120] rounded-[10px] flex items-center justify-center p-1">
-                <img src="/logo.png" alt="GoGiga Logo" className="w-full h-full object-contain" />
+                <img src="/logo.png" alt="ISPSYNC Logo" className="w-full h-full object-contain" />
               </div>
             </div>
 
             {!isMini && (
               <div className="min-w-0">
                 <div className="leading-tight">
-                  <p className="text-sm font-bold tracking-tight text-white truncate">GOGIGACMS</p>
+                  <p className="text-sm font-bold tracking-tight text-white truncate">ISPSYNC LEDGER</p>
                   <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase truncate">
-                    ISP Core Engine
+                    ISP Billing & Core Engine
                   </p>
                 </div>
               </div>

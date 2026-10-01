@@ -129,7 +129,7 @@ func (s *Service) CheckAll(ctx context.Context) (*SystemStatusResponse, error) {
 
 	services = append(services, ServiceStatus{
 		ID:          "billing-api",
-		Name:        "GoGigaBill Core API",
+		Name:        "ISPSYNC Ledger API",
 		Category:    "core",
 		Status:      "OPERATIONAL",
 		LatencyMs:   0.4,
