@@ -30,7 +30,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const h = window.location.hostname.toLowerCase();
-      if (h === "ispsync.id" || h === "www.ispsync.id" || h === "dev.ispsync.id") {
+      if (h === "ispsync.id" || h === "www.ispsync.id") {
         window.location.href = "/member/login";
         return;
       }

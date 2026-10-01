@@ -6,7 +6,7 @@
 }
 
 # Main SaaS Landing & Platform App
-ispsync.id, www.ispsync.id, dev.ispsync.id {
+ispsync.id, www.ispsync.id {
     log {
         output file /var/log/caddy/access.log {
             roll_size 50mb
@@ -100,6 +100,18 @@ https:// {
     handle @legacy_cms {
         respond "Subdomain 'cms' sudah diganti! Gunakan billing.*, portal.*, atau fttx.* sesuai arsitektur 3 Engine ISPSYNC." 403 {
             close
+        }
+    }
+
+    # 0.5. Member Portal routes on tenant domains (e.g. dev.ispsync.id/member)
+    @member_portal {
+        path /member* /api/member*
+    }
+    handle @member_portal {
+        reverse_proxy web:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_down Cache-Control "no-cache, no-store, must-revalidate"
         }
     }
 
