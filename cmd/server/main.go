@@ -190,10 +190,14 @@ func main() {
 			part.Route("/jartaplok", func(j chi.Router) {
 				j.Get("/billing", apiH.JartaplokBilling)
 				j.Get("/odps", apiH.JartaplokODPs)
+				j.Post("/odps", apiH.SyncODPFromFiberGrid)
 				j.Get("/ports", apiH.JartaplokPorts)
 			})
 			part.Get("/registrations", apiH.AdminListRegistrations)
+			part.Get("/registrations/{regNo}", apiH.PublicTrack)
 		})
+		api.Get("/registrations/{regNo}", apiH.PublicTrack)
+
 
 		api.Route("/superuser", func(sup chi.Router) {
 			sup.Get("/overview", apiH.SuperuserOverview)

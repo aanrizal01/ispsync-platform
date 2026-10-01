@@ -23,6 +23,7 @@ type Storage interface {
 	// ODPs
 	ListODPs(ctx context.Context, tenantID string) ([]domain.ODP, error)
 	GetNearestODP(ctx context.Context, tenantID string, lat, lng float64) (*domain.ODP, float64, error)
+	UpsertODP(ctx context.Context, odp *domain.ODP) error
 
 	// OLTs
 	ListOLTs(ctx context.Context, tenantID string) ([]domain.OLT, error)

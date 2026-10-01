@@ -1106,6 +1106,58 @@ func (h *APIHandler) JartaplokODPs(w http.ResponseWriter, r *http.Request) {
 	h.PublicODPs(w, r)
 }
 
+// SyncODPFromFiberGrid menerima sinkronisasi data titik ODP dari Engine 1 (FiberGrid)
+func (h *APIHandler) SyncODPFromFiberGrid(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+
+	var req struct {
+		Code        string  `json:"code"`
+		Name        string  `json:"name"`
+		Latitude    float64 `json:"latitude"`
+		Longitude   float64 `json:"longitude"`
+		TotalPorts  int     `json:"total_ports"`
+		UsedPorts   int     `json:"used_ports"`
+		Status      string  `json:"status"`
+		ClusterArea string  `json:"cluster_area"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.failResponse(w, http.StatusBadRequest, "Invalid JSON payload")
+		return
+	}
+
+	if req.Code == "" {
+		h.failResponse(w, http.StatusBadRequest, "Kode ODP wajib diisi")
+		return
+	}
+
+	if req.TotalPorts <= 0 {
+		req.TotalPorts = 8
+	}
+	if req.Status == "" {
+		req.Status = "ACTIVE"
+	}
+
+	odp := &domain.ODP{
+		TenantID:   t.ID,
+		Code:       strings.ToUpper(strings.TrimSpace(req.Code)),
+		Name:       req.Name,
+		Latitude:   req.Latitude,
+		Longitude:  req.Longitude,
+		TotalPorts: req.TotalPorts,
+		UsedPorts:  req.UsedPorts,
+		Status:     req.Status,
+	}
+
+	if err := h.store.UpsertODP(r.Context(), odp); err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal menyimpan ODP: "+err.Error())
+		return
+	}
+
+	h.successResponse(w, fmt.Sprintf("ODP %s berhasil disinkronkan ke Maps Coverage Nexus", odp.Code), odp)
+}
+
+
 func (h *APIHandler) JartaplokPorts(w http.ResponseWriter, r *http.Request) {
 	h.successResponse(w, "Jartaplok ports retrieved", []map[string]interface{}{
 		{

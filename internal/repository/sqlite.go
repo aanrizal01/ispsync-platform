@@ -874,6 +874,24 @@ func (s *SQLiteStorage) GetNearestODP(ctx context.Context, tenantID string, lat,
 	return best, minDist, nil
 }
 
+func (s *SQLiteStorage) UpsertODP(ctx context.Context, odp *domain.ODP) error {
+	if odp.ID == "" {
+		odp.ID = uuid.New().String()
+	}
+	_, err := s.db.ExecContext(ctx, `
+		INSERT INTO odps (id, tenant_id, code, name, latitude, longitude, total_ports, used_ports, status)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(tenant_id, code) DO UPDATE SET
+			name = excluded.name,
+			latitude = excluded.latitude,
+			longitude = excluded.longitude,
+			total_ports = excluded.total_ports,
+			used_ports = excluded.used_ports,
+			status = excluded.status
+	`, odp.ID, odp.TenantID, odp.Code, odp.Name, odp.Latitude, odp.Longitude, odp.TotalPorts, odp.UsedPorts, odp.Status)
+	return err
+}
+
 // ── OLT Methods ────────────────────────────────────────────────────────────────
 
 func (s *SQLiteStorage) ListOLTs(ctx context.Context, tenantID string) ([]domain.OLT, error) {

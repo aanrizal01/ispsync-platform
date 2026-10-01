@@ -810,6 +810,24 @@ func (s *PostgresStorage) GetNearestODP(ctx context.Context, tenantID string, la
 	return best, minDist, nil
 }
 
+func (s *PostgresStorage) UpsertODP(ctx context.Context, odp *domain.ODP) error {
+	if odp.ID == "" {
+		odp.ID = uuid.New().String()
+	}
+	_, err := s.db.ExecContext(ctx, `
+		INSERT INTO odps (id, tenant_id, code, name, latitude, longitude, total_ports, used_ports, status)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		ON CONFLICT (tenant_id, code) DO UPDATE SET
+			name = EXCLUDED.name,
+			latitude = EXCLUDED.latitude,
+			longitude = EXCLUDED.longitude,
+			total_ports = EXCLUDED.total_ports,
+			used_ports = EXCLUDED.used_ports,
+			status = EXCLUDED.status
+	`, odp.ID, odp.TenantID, odp.Code, odp.Name, odp.Latitude, odp.Longitude, odp.TotalPorts, odp.UsedPorts, odp.Status)
+	return err
+}
+
 // ── OLT Methods ────────────────────────────────────────────────────────────────
 
 func (s *PostgresStorage) ListOLTs(ctx context.Context, tenantID string) ([]domain.OLT, error) {
