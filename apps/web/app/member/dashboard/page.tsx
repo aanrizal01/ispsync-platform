@@ -121,11 +121,11 @@ export default function MemberDashboard() {
                 <span>↗</span>
               </a>
               <Link
-                href="/member/domain"
+                href="/member/engine/nexus"
                 className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold rounded-xl border border-slate-700 transition-colors flex items-center gap-1.5"
-                title="Kelola Domain & White-Label"
+                title="Pengaturan Domain Portal & Engine Nexus"
               >
-                <span>🏷️ Domain &amp; DNS</span>
+                <span>⚙️ Pengaturan Portal &amp; Nexus</span>
               </Link>
             </div>
           </div>

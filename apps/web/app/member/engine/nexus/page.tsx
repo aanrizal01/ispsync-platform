@@ -18,6 +18,8 @@ function getEngineUrls(domain?: string) {
   d = d.replace(/^(ledger|billing|nexus|portal|fibergrid|fttx)\./, "");
 
   return {
+    root: `https://${d}`,
+    baseHost: d,
     ledger: `https://ledger.${d}`,
     nexus: `https://nexus.${d}`,
     fibergrid: `https://fibergrid.${d}`,
@@ -50,14 +52,18 @@ export default function EngineNexusSettings() {
   if (!member) return null;
 
   const urls = getEngineUrls(member.domain);
-  const defaultDomain = urls.nexus.replace("https://", "");
+  const activeRootDomain = customDomain.trim() ? customDomain.trim() : urls.baseHost;
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setSaveSuccess(false);
+
+    let clean = customDomain.trim().toLowerCase();
+    clean = clean.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+
     const res = await updateEngineConfig("nexus", {
-      customDomain: customDomain.trim(),
+      customDomain: clean,
       brandName: brandName.trim(),
       supportPhone: supportPhone.trim(),
       captiveUrl: captiveUrl.trim(),
@@ -90,22 +96,33 @@ export default function EngineNexusSettings() {
               <span className="text-xs font-semibold text-purple-600">Customer &amp; Field Operations</span>
             </div>
             <h1 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-              <span>🌐</span> Pengaturan ISPSYNC Nexus
+              <span>🌐</span> Pengaturan ISPSYNC Nexus &amp; Portal
             </h1>
             <p className="text-xs text-gray-500 mt-1">
-              Kelola domain portal pelanggan, aplikasi mobile teknisi lapangan, dan branding mandiri.
+              Kelola domain Landing Portal Pelanggan, aplikasi teknisi lapangan, dan branding mandiri.
             </p>
           </div>
 
-          <a
-            href={urls.nexus}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm shadow-purple-200 flex items-center gap-2 self-start sm:self-auto"
-          >
-            <span>Buka Dashboard Nexus</span>
-            <span className="text-sm font-normal">↗</span>
-          </a>
+          <div className="flex items-center gap-2 flex-wrap">
+            <a
+              href={`https://${activeRootDomain}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm shadow-blue-200 flex items-center gap-1.5"
+            >
+              <span>🏠 Buka Landing Portal</span>
+              <span className="text-xs font-normal">↗</span>
+            </a>
+            <a
+              href={urls.nexus}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm shadow-purple-200 flex items-center gap-1.5"
+            >
+              <span>🌐 Buka Operasional Nexus</span>
+              <span className="text-xs font-normal">↗</span>
+            </a>
+          </div>
         </div>
 
         {/* Status bar */}
@@ -116,7 +133,9 @@ export default function EngineNexusSettings() {
             </div>
             <div>
               <div className="text-xs font-bold text-gray-900">Status Server Nexus: Operasional</div>
-              <div className="text-[11px] text-gray-400">Portal Pelanggan, Modul Teknisi, &amp; Captive Hotspot Gateway Aktif</div>
+              <div className="text-[11px] text-gray-400">
+                Landing Portal Pelanggan (Registrasi &amp; Cek Tagihan) + Operasional Lapangan Aktif
+              </div>
             </div>
           </div>
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -130,71 +149,125 @@ export default function EngineNexusSettings() {
           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-5">
             <div>
               <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <span>🌐</span> Domain Portal Pelanggan &amp; Teknisi
+                <span>🌐</span> Domain Landing Portal &amp; Operasional
               </h2>
               <p className="text-xs text-gray-500 mt-1">
-                Alamat web yang dikunjungi pelanggan untuk cek tagihan, lapor gangguan, dan teknisi untuk work order.
+                Alamat web yang dikunjungi pelanggan umum (pendaftaran/cek tagihan) serta tim sales &amp; teknisi ISP Anda.
               </p>
             </div>
 
-            {/* Subdomain Bawaan */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
-                Subdomain Bawaan Platform (Default)
-              </label>
+            {/* Landing Portal Pelanggan (Root) */}
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <span>🏠</span> 1. Landing Portal Pelanggan (Publik)
+                </span>
+                <span className="text-[10px] bg-blue-100 text-blue-800 font-semibold px-2 py-0.5 rounded">
+                  Customer Self-Service
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Halaman utama yang dibuka masyarakat untuk mendaftar pasang baru, cek jangkauan fiber, dan pembayaran tagihan.
+              </p>
               <div className="flex items-center gap-2">
                 <input
                   type="text"
                   readOnly
-                  value={defaultDomain}
-                  className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2 text-xs font-mono text-gray-700 cursor-not-allowed select-all"
+                  value={`https://${activeRootDomain}`}
+                  className="flex-1 bg-white border border-gray-200 rounded-xl px-3.5 py-2 text-xs font-mono font-semibold text-blue-600 cursor-not-allowed select-all"
                 />
                 <button
                   type="button"
-                  onClick={() => copyText(`https://${defaultDomain}`, "defaultDomain")}
+                  onClick={() => copyText(`https://${activeRootDomain}`, "root_url")}
                   className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-medium transition-colors"
                 >
-                  {copiedField === "defaultDomain" ? "✓ Tersalin" : "Salin URL"}
+                  {copiedField === "root_url" ? "✓ Tersalin" : "Salin URL"}
                 </button>
+                <a
+                  href={`https://${activeRootDomain}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors"
+                >
+                  Buka ↗
+                </a>
+              </div>
+            </div>
+
+            {/* Operasional Nexus */}
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <span>🌐</span> 2. Portal Operasional Nexus (Internal)
+                </span>
+                <span className="text-[10px] bg-purple-100 text-purple-800 font-semibold px-2 py-0.5 rounded">
+                  Sales &amp; Teknisi
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Aplikasi internal untuk login tim marketing/sales, teknisi instalasi &amp; maintenance, dan manajemen captive hotspot.
+              </p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={urls.nexus}
+                  className="flex-1 bg-white border border-gray-200 rounded-xl px-3.5 py-2 text-xs font-mono font-semibold text-purple-600 cursor-not-allowed select-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => copyText(urls.nexus, "nexus_url")}
+                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-medium transition-colors"
+                >
+                  {copiedField === "nexus_url" ? "✓ Tersalin" : "Salin URL"}
+                </button>
+                <a
+                  href={urls.nexus}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-colors"
+                >
+                  Buka ↗
+                </a>
               </div>
             </div>
 
             {/* Custom Domain Input */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
-                Domain Kustom Pribadi / White-Label (Opsional)
+                Kustom Domain Sendiri (White-Label)
               </label>
               <div className="flex items-center gap-2">
+                <span className="px-3 py-2 bg-gray-100 border border-r-0 border-gray-300 rounded-l-xl text-xs font-mono text-gray-500">
+                  https://
+                </span>
                 <input
                   type="text"
                   value={customDomain}
                   onChange={e => setCustomDomain(e.target.value)}
-                  placeholder="contoh: portal.perusahaanisp.net.id"
-                  className="flex-1 bg-white border border-gray-300 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-xl px-3.5 py-2 text-xs font-medium text-gray-800 transition-colors"
+                  placeholder={`kosongkan untuk tetap pakai: ${urls.baseHost}`}
+                  className="flex-1 bg-white border border-gray-300 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-r-xl px-3.5 py-2 text-xs font-mono font-medium text-gray-800 transition-colors"
                 />
               </div>
               <p className="text-[11px] text-gray-400 mt-1">
-                Arahkan CNAME <code>portal</code> ke <code>103.179.65.73</code> pada DNS Anda.
+                Contoh: <span className="font-mono text-purple-600">ispku.net.id</span> atau <span className="font-mono text-purple-600">portal.ispku.id</span>.
               </p>
             </div>
 
             {/* DNS Helper */}
             <div className="bg-slate-900 text-slate-200 rounded-xl p-4 text-xs space-y-2">
-              <div className="font-bold text-white flex items-center gap-2">
-                <span>📋</span> Konfigurasi DNS Kustom Nexus:
+              <div className="font-bold text-white flex items-center justify-between">
+                <span>📋 Panduan DNS Jika Menggunakan Domain Sendiri:</span>
+                <span className="text-[10px] text-purple-300 font-mono">Auto-SSL Let's Encrypt Aktif</span>
               </div>
-              <div className="grid grid-cols-3 gap-2 bg-slate-800 p-2.5 rounded-lg font-mono text-[11px]">
-                <div>
-                  <span className="text-slate-400 text-[10px] block font-sans">Type</span>
-                  <span className="text-amber-400 font-bold">CNAME</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                <div className="bg-slate-800 p-2.5 rounded-lg space-y-1">
+                  <span className="text-slate-400 text-[10px] block font-sans font-bold">1. A Record (Landing Portal):</span>
+                  <div className="font-mono text-emerald-400 font-bold">Host: @ &rarr; 103.179.65.73</div>
                 </div>
-                <div>
-                  <span className="text-slate-400 text-[10px] block font-sans">Host / Subdomain</span>
-                  <span className="text-purple-300 font-bold">{customDomain ? customDomain.split(".")[0] : "portal"}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 text-[10px] block font-sans">Target IP</span>
-                  <span className="text-emerald-400 font-bold">103.179.65.73</span>
+                <div className="bg-slate-800 p-2.5 rounded-lg space-y-1">
+                  <span className="text-slate-400 text-[10px] block font-sans font-bold">2. CNAME Record (Operasional):</span>
+                  <div className="font-mono text-amber-400 font-bold">Host: nexus &rarr; {urls.baseHost}</div>
                 </div>
               </div>
             </div>
@@ -220,67 +293,55 @@ export default function EngineNexusSettings() {
                   type="text"
                   value={brandName}
                   onChange={e => setBrandName(e.target.value)}
-                  placeholder="Nama Brand ISP"
-                  className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2 text-xs text-gray-800"
+                  placeholder="contoh: CepatNet Fiber"
+                  className="w-full bg-white border border-gray-300 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-xl px-3.5 py-2 text-xs font-medium text-gray-800 transition-colors"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
-                  Nomor WhatsApp Bantuan / CS
+                  Nomor WhatsApp Call Center
                 </label>
                 <input
                   type="text"
                   value={supportPhone}
                   onChange={e => setSupportPhone(e.target.value)}
-                  placeholder="0812xxxxxxxx"
-                  className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2 text-xs text-gray-800"
+                  placeholder="contoh: 081234567890"
+                  className="w-full bg-white border border-gray-300 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-xl px-3.5 py-2 text-xs font-medium text-gray-800 transition-colors"
                 />
               </div>
             </div>
-          </div>
 
-          {/* Captive Portal Hotspot */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
             <div>
-              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <span>📡</span> Integrasi Captive Portal Hotspot MikroTik
-              </h2>
-              <p className="text-xs text-gray-500 mt-1">
-                Halaman login voucher dan redirect hotspot untuk pelanggan publik atau cafe/resto.
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                URL Login Captive Hotspot Pelanggan (MikroTik)
+              </label>
+              <input
+                type="text"
+                value={captiveUrl}
+                onChange={e => setCaptiveUrl(e.target.value)}
+                placeholder="contoh: https://wifi.ispku.net.id/login"
+                className="w-full bg-white border border-gray-300 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-xl px-3.5 py-2 text-xs font-mono text-gray-800 transition-colors"
+              />
+              <p className="text-[11px] text-gray-400 mt-1">
+                Digunakan untuk integrasi halaman login voucher pada MikroTik RouterBoard.
               </p>
             </div>
-
-            <div className="p-3 bg-purple-50/50 border border-purple-100 rounded-xl flex items-center justify-between text-xs">
-              <div>
-                <span className="font-bold text-purple-900 block">URL Login Captive Portal Hotspot:</span>
-                <span className="font-mono text-purple-700 text-[11px]">https://{defaultDomain}/hotspot</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => copyText(`https://${defaultDomain}/hotspot`, "hotspotUrl")}
-                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold transition-colors"
-              >
-                {copiedField === "hotspotUrl" ? "✓ Tersalin" : "Salin URL"}
-              </button>
-            </div>
           </div>
 
-          {/* Save Button */}
-          <div className="flex items-center justify-between pt-2">
-            <div>
-              {saveSuccess && (
-                <span className="text-xs font-bold text-emerald-600 flex items-center gap-1.5 animate-bounce">
-                  <span>✓</span> Pengaturan Engine Nexus berhasil disimpan!
-                </span>
-              )}
-            </div>
+          {/* Action buttons */}
+          <div className="flex items-center justify-end gap-3 pt-2">
+            {saveSuccess && (
+              <span className="text-xs font-bold text-emerald-600 animate-fade-in flex items-center gap-1">
+                <span>✓</span> Pengaturan Nexus &amp; Portal berhasil disimpan!
+              </span>
+            )}
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-purple-200 disabled:opacity-50"
+              className="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition-all shadow-sm shadow-purple-200"
             >
-              {saving ? "Menyimpan..." : "Simpan Pengaturan Nexus"}
+              {saving ? "Menyimpan..." : "Simpan Pengaturan"}
             </button>
           </div>
         </form>
