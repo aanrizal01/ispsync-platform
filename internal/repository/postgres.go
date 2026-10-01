@@ -994,9 +994,7 @@ func (s *PostgresStorage) ValidateDomainForTLS(ctx context.Context, domainName s
 	if d == "" {
 		return false
 	}
-	switch d {
-	case "cms.ispsync.id", "portal.ispsync.id", "sales.ispsync.id", "teknisi.ispsync.id",
-		"billing.ispsync.id", "noc.ispsync.id", "fttx.ispsync.id":
+	if d == "cms.ispsync.id" {
 		return false
 	}
 	if d == "ispsync.id" || strings.HasSuffix(d, ".ispsync.id") {

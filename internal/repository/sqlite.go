@@ -1077,9 +1077,7 @@ func (s *SQLiteStorage) ValidateDomainForTLS(ctx context.Context, domainName str
 		return false
 	}
 	// Reject non-tenant subdomains that have been deactivated
-	switch d {
-	case "cms.ispsync.id", "portal.ispsync.id", "sales.ispsync.id", "teknisi.ispsync.id",
-		"billing.ispsync.id", "noc.ispsync.id", "fttx.ispsync.id":
+	if d == "cms.ispsync.id" {
 		return false
 	}
 	if d == "ispsync.id" || strings.HasSuffix(d, ".ispsync.id") {
