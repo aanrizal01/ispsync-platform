@@ -56,7 +56,10 @@ export async function POST(req: NextRequest) {
     }
 
     db.members[idx] = member;
-    saveMembers(db);
+    const saved = saveMembers(db);
+    if (!saved) {
+      return NextResponse.json({ error: "Gagal menyimpan perubahan ke disk server" }, { status: 500 });
+    }
 
     const { password: _, ...safeMember } = member;
     return NextResponse.json({ success: true, member: safeMember });
