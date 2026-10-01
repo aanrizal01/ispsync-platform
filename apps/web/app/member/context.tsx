@@ -7,7 +7,7 @@ type Member = {
   phone?: string; address?: string; npwp?: string;
   plan: string; planName: string; planPrice: string;
   planCapacity: string; status: string; subscribedAt: string; expiresAt: string;
-  autoRenew: boolean; domain: string;
+  autoRenew: boolean; domain: string; customDomain?: string;
   invoices: { id: string; date: string; dueDate: string; period: string; amount: string; status: string; paymentDate: string | null; paymentMethod: string | null; }[];
   tickets: any[];
   engines?: {
@@ -23,7 +23,7 @@ type MemberContextType = {
   loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  updateEngineConfig: (engine: "ledger" | "nexus" | "fibergrid", config: any) => Promise<{ success: boolean; error?: string }>;
+  updateEngineConfig: (engine: "ledger" | "nexus" | "fibergrid" | "primary", config: any) => Promise<{ success: boolean; error?: string }>;
 };
 
 const MemberContext = createContext<MemberContextType | null>(null);
@@ -80,7 +80,7 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  async function updateEngineConfig(engine: "ledger" | "nexus" | "fibergrid", config: any) {
+  async function updateEngineConfig(engine: "ledger" | "nexus" | "fibergrid" | "primary", config: any) {
     if (!member) return { success: false, error: "Not authenticated" };
     try {
       const res = await fetch("/api/member/engine-config", {

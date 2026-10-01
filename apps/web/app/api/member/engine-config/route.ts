@@ -35,15 +35,25 @@ export async function POST(req: NextRequest) {
     }
 
     const member = db.members[idx];
-    if (!member.engines) {
-      member.engines = {};
-    }
+    if (engine === "primary" || engine === "domain") {
+      if (config.customDomain !== undefined) {
+        member.customDomain = config.customDomain.trim();
+      }
+      if (config.domain) {
+        member.domain = config.domain.trim();
+      }
+      member.updatedAt = new Date().toISOString();
+    } else {
+      if (!member.engines) {
+        member.engines = {};
+      }
 
-    member.engines[engine] = {
-      ...(member.engines[engine] || {}),
-      ...(config || {}),
-      updatedAt: new Date().toISOString(),
-    };
+      member.engines[engine] = {
+        ...(member.engines[engine] || {}),
+        ...(config || {}),
+        updatedAt: new Date().toISOString(),
+      };
+    }
 
     db.members[idx] = member;
     saveMembers(db);

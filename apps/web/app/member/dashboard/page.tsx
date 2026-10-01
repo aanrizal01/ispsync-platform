@@ -88,6 +88,48 @@ export default function MemberDashboard() {
 
         {/* 🚀 Quick Launchpad: 3 Engines ISPSYNC */}
         <div className="mb-8">
+          {/* Customer Landing Portal Banner */}
+          <div className="mb-6 p-4 sm:p-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm border border-slate-800">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-lg flex-shrink-0 border border-blue-400/30">
+                🏠
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-sm text-white">Landing Portal Pelanggan ISP Anda</span>
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    Live Portal
+                  </span>
+                </div>
+                <div className="text-xs text-blue-300 mt-0.5 font-mono font-semibold">
+                  https://{urls.ledger.replace("https://ledger.", "")}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Portal publik pendaftaran pelanggan baru, tracking invoice ritel, dan info paket internet ISP Anda.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <a
+                href={`https://${urls.ledger.replace("https://ledger.", "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm shadow-blue-900/50"
+              >
+                <span>Buka Portal</span>
+                <span>↗</span>
+              </a>
+              <Link
+                href="/member/domain"
+                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold rounded-xl border border-slate-700 transition-colors flex items-center gap-1.5"
+                title="Kelola Domain & White-Label"
+              >
+                <span>🏷️ Domain &amp; DNS</span>
+              </Link>
+            </div>
+          </div>
+
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
             <div>
               <div className="flex items-center gap-2">

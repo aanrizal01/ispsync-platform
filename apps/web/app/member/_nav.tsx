@@ -6,6 +6,7 @@ import { useMember } from "./context";
 
 const mainNavItems = [
   { href: "/member/dashboard", label: "Dashboard", icon: "▦" },
+  { href: "/member/domain", label: "Domain & White-Label", icon: "🏷️" },
   { href: "/member/invoices", label: "Invoice & Billing", icon: "🧾" },
 ];
 
