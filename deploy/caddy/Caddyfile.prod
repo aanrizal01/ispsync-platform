@@ -105,7 +105,7 @@ https:// {
 
     # 1. CMS & Billing Backoffice App (Next.js & API)
     @billing_api {
-        host billing.ispsync.id *.billing.ispsync.id
+        host billing.ispsync.id *.billing.ispsync.id ledger.ispsync.id *.ledger.ispsync.id
         path /api/* /health /ready
     }
     handle @billing_api {
@@ -117,13 +117,13 @@ https:// {
 
     # Redirect root to /login on CMS & Billing backoffice
     @billing_root {
-        host billing.ispsync.id *.billing.ispsync.id
+        host billing.ispsync.id *.billing.ispsync.id ledger.ispsync.id *.ledger.ispsync.id
         path /
     }
     redir @billing_root /login temporary
 
     @billing {
-        host billing.ispsync.id *.billing.ispsync.id
+        host billing.ispsync.id *.billing.ispsync.id ledger.ispsync.id *.ledger.ispsync.id
     }
     handle @billing {
         reverse_proxy web:3000 {
