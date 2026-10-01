@@ -13,13 +13,21 @@
         var urlParams = new URLSearchParams(window.location.search);
         var param = (urlParams.get('domain') || urlParams.get('subdomain') || '').toLowerCase();
         var host = window.location.hostname.toLowerCase();
-        var mode = 'unified';
-        if (param === 'sales' || host.startsWith('sales.') || host.includes('sales.')) mode = 'sales';
-        else if (param === 'noc-fo' || param === 'noc' || host.startsWith('noc-fo.') || host.startsWith('noc.') || host.includes('noc-fo.') || host.includes('noc.')) mode = 'noc-fo';
-        else if (param === 'rekan' || param === 'mitra' || host.startsWith('rekan.') || host.startsWith('mitra.') || host.includes('rekan.') || host.includes('mitra.')) mode = 'rekan';
-        else if (param === 'technician' || param === 'teknisi' || host.startsWith('teknisi.') || host.includes('teknisi.')) mode = 'technician';
-        else if (param === 'portal' || host.startsWith('portal.') || host.includes('portal.')) mode = 'portal';
-        else if (param === 'cms' || host.startsWith('cms.')) mode = 'noc-fo';
+        var mode = 'portal';
+        if (window.__ISPSYNC_TENANT__ && window.__ISPSYNC_TENANT__.appType) {
+          var app = String(window.__ISPSYNC_TENANT__.appType).toLowerCase();
+          if (app === 'sales') mode = 'sales';
+          else if (app === 'technician' || app === 'teknisi') mode = 'technician';
+          else if (app === 'noc' || app === 'noc-fo' || app === 'admin') mode = 'noc-fo';
+          else if (app === 'rekan' || app === 'mitra') mode = 'rekan';
+          else mode = 'portal';
+        } else {
+          if (param === 'sales' || host.startsWith('sales.') || host.includes('sales.')) mode = 'sales';
+          else if (param === 'noc-fo' || param === 'noc' || host.startsWith('noc-fo.') || host.startsWith('noc.')) mode = 'noc-fo';
+          else if (param === 'rekan' || param === 'mitra' || host.startsWith('rekan.') || host.startsWith('mitra.')) mode = 'rekan';
+          else if (param === 'technician' || param === 'teknisi' || host.startsWith('teknisi.') || host.includes('teknisi.')) mode = 'technician';
+          else mode = 'portal';
+        }
 
         document.documentElement.setAttribute('data-subdomain', mode);
 
@@ -21369,12 +21377,12 @@
 
     function switchTab(tabId) {
       if (tabId === 'portal' || tabId === 'unified-portal') {
-        const curMode = currentSubdomainMode || (typeof detectActiveSubdomain === 'function' ? detectActiveSubdomain() : 'noc-fo');
+        const curMode = currentSubdomainMode || (typeof detectActiveSubdomain === 'function' ? detectActiveSubdomain() : 'portal');
         if (curMode === 'noc-fo') tabId = 'admin';
         else if (curMode === 'sales') tabId = 'sales';
         else if (curMode === 'technician') tabId = 'technician';
         else if (curMode === 'rekan') tabId = 'jartaplok';
-        else tabId = 'track';
+        else tabId = 'register';
       }
       document.documentElement.setAttribute('data-active-tab', tabId);
 
@@ -23041,8 +23049,16 @@
     let currentSubdomainMode = 'unified'; // 'portal', 'sales', 'noc-fo', 'rekan', 'unified'
 
     function detectActiveSubdomain() {
+      if (window.__ISPSYNC_TENANT__ && window.__ISPSYNC_TENANT__.appType) {
+        const app = String(window.__ISPSYNC_TENANT__.appType).toLowerCase();
+        if (app === 'sales') return 'sales';
+        if (app === 'technician' || app === 'teknisi') return 'technician';
+        if (app === 'noc' || app === 'noc-fo' || app === 'admin') return 'noc-fo';
+        if (app === 'rekan' || app === 'mitra') return 'rekan';
+        if (app === 'portal' || app === 'nexus') return 'portal';
+      }
+
       const urlParams = new URLSearchParams(window.location.search);
-      // Mendukung simulasi URL di localhost: ?domain=portal | ?domain=sales | ?domain=noc-fo | ?domain=rekan
       const paramDomain = urlParams.get('domain') || urlParams.get('subdomain');
       if (paramDomain) return paramDomain.toLowerCase();
 
@@ -23051,9 +23067,9 @@
       if (host.startsWith('noc-fo.') || host.startsWith('noc.') || host.includes('noc-fo.gogiga')) return 'noc-fo';
       if (host.startsWith('rekan.') || host.startsWith('mitra.') || host.includes('rekan.gogiga')) return 'rekan';
       if (host.startsWith('teknisi.') || host.startsWith('technician.') || host.includes('teknisi.gogiga') || host.includes('technician.gogiga')) return 'technician';
-      if (host.startsWith('portal.') || host.includes('portal.gogiga')) return 'portal';
+      if (host.startsWith('portal.') || host.startsWith('nexus.') || host.includes('portal.gogiga')) return 'portal';
 
-      return 'noc-fo';
+      return 'portal';
     }
 
     function handleBrandLogoClick() {

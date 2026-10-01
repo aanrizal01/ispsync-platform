@@ -125,8 +125,9 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 	// Inject script into <head>
 	html = strings.Replace(html, "<head>", "<head>\n"+tenantScript, 1)
 
-	// Inject topbar into <body>
-	if strings.Contains(html, "<body") {
+	// Inject topbar into <body> only if explicitly requested via ?demo=1 or ?switcher=1
+	showSwitcher := r.URL.Query().Get("demo") == "1" || r.URL.Query().Get("switcher") == "1"
+	if showSwitcher && strings.Contains(html, "<body") {
 		idx := strings.Index(html, "<body")
 		closeTag := strings.Index(html[idx:], ">")
 		if closeTag != -1 {
@@ -139,6 +140,7 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 	html = strings.Replace(html, "GOGIGANET Broadband • Registrasi & Jangkauan Fiber Optik", tCtx.Tenant.Name+" • Registrasi & Jangkauan Fiber Optik", -1)
 	html = strings.Replace(html, ">GOGIGA<span class=\"text-sky-600\">NET</span><", ">"+tCtx.Tenant.PrefixID+"<span style=\"color:"+tCtx.Tenant.BrandColor+"\"> FIBER</span><", -1)
 	html = strings.Replace(html, "id=\"navbar-brand-subtitle\" class=\"text-[11px] text-slate-500 font-medium mt-1\">Fiber Broadband &amp; Telco<", "id=\"navbar-brand-subtitle\" class=\"text-[11px] text-slate-500 font-medium mt-1\">"+tCtx.Tenant.Name+"<", -1)
+	html = strings.Replace(html, "GOGIGANET", tCtx.Tenant.Name, -1)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
