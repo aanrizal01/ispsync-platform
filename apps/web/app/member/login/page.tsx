@@ -81,10 +81,6 @@ export default function MemberLoginPage() {
           </div>
         </div>
 
-        {/* Demo note */}
-        <div className="mt-4 bg-blue-50 border border-blue-100 rounded-xl p-4 text-xs text-blue-700">
-          <strong>Demo:</strong> email: <code>demo@ispclient.id</code> / password: <code>Demo1234!</code>
-        </div>
 
         <div className="text-center mt-6">
           <Link href="/" className="text-xs text-gray-400 hover:text-gray-600">← Kembali ke ispsync.id</Link>
