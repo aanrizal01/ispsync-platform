@@ -4451,28 +4451,28 @@
   <footer id="main-footer" class="mt-auto border-t border-slate-200 bg-white py-6 text-xs text-slate-600">
     <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4 font-sans text-xs">
       <div class="flex items-center gap-3">
-        <img src="/logo.png" alt="GOGIGA" class="h-8 w-auto object-contain" />
+        <img id="footer-logo-img" src="/logo.png" alt="ISP Logo" class="h-8 w-auto object-contain" />
         <span class="text-slate-300 hidden sm:inline">•</span>
         <div class="flex flex-wrap items-center gap-4">
-          <a href="https://wa.me/6285186866164" target="_blank" class="flex items-center gap-1.5 text-slate-800 hover:text-blue-600 font-bold">
+          <a id="footer-phone-link" href="https://wa.me/6285186866164" target="_blank" class="flex items-center gap-1.5 text-slate-800 hover:text-blue-600 font-bold">
             <i data-lucide="phone-call" class="w-4 h-4 text-emerald-600"></i>
-            <span>0851-8686-6164</span>
+            <span id="footer-phone-text">0851-8686-6164</span>
           </a>
           <span class="text-slate-300">•</span>
-          <a href="https://www.gogiga.net.id" target="_blank" class="flex items-center gap-1.5 text-slate-800 hover:text-blue-600 font-semibold">
+          <a id="footer-web-link" href="https://www.gogiga.net.id" target="_blank" class="flex items-center gap-1.5 text-slate-800 hover:text-blue-600 font-semibold">
             <i data-lucide="globe" class="w-4 h-4 text-blue-600"></i>
-            <span>www.gogiga.net.id</span>
+            <span id="footer-web-text">www.gogiga.net.id</span>
           </a>
           <span class="text-slate-300">•</span>
-          <span class="flex items-center gap-1.5 text-slate-700">
-            <i data-lucide="instagram" class="w-4 h-4 text-pink-600"></i>
-            <span>@gogiga_isp</span>
-          </span>
+          <a id="footer-email-link" href="mailto:info@ispsync.id" class="flex items-center gap-1.5 text-slate-700 hover:text-blue-600">
+            <i data-lucide="mail" class="w-4 h-4 text-sky-600"></i>
+            <span id="footer-email-text">info@ispsync.id</span>
+          </a>
         </div>
       </div>
       <div class="flex items-center gap-3 font-mono text-[11px] text-slate-400">
         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-        <span>&copy; 2026 PT Inovasi Sistem Pintar &bull; GOGIGANET FIBER BROADBAND &bull; BILLING SYNCED</span>
+        <span id="footer-copyright">&copy; 2026 PT Inovasi Sistem Pintar &bull; <span id="footer-tenant-name">GOGIGANET FIBER BROADBAND</span> &bull; BILLING SYNCED</span>
       </div>
     </div>
   </footer>
@@ -23216,6 +23216,38 @@
       lucide.createIcons();
     }
 
+    function applyDynamicFooter() {
+      try {
+        if (!window.__ISPSYNC_TENANT__) return;
+        const t = window.__ISPSYNC_TENANT__;
+        const phone = t.contact_phone || '081100002026';
+        let waPhone = phone.replace(/[^0-9]/g, '');
+        if (waPhone.startsWith('0')) waPhone = '62' + waPhone.substring(1);
+
+        const phoneLink = document.getElementById('footer-phone-link');
+        const phoneText = document.getElementById('footer-phone-text');
+        if (phoneLink) phoneLink.href = `https://wa.me/${waPhone}`;
+        if (phoneText) phoneText.innerText = phone;
+
+        const webLink = document.getElementById('footer-web-link');
+        const webText = document.getElementById('footer-web-text');
+        const host = window.location.host;
+        if (webLink) webLink.href = `https://${host}`;
+        if (webText) webText.innerText = host;
+
+        const emailLink = document.getElementById('footer-email-link');
+        const emailText = document.getElementById('footer-email-text');
+        const email = t.contact_email || `info@${host}`;
+        if (emailLink) emailLink.href = `mailto:${email}`;
+        if (emailText) emailText.innerText = email;
+
+        const footerTenant = document.getElementById('footer-tenant-name');
+        if (footerTenant && t.name) footerTenant.innerText = t.name;
+      } catch (err) {
+        console.warn('applyDynamicFooter error:', err);
+      }
+    }
+
     // Close dropdown when clicking outside
     window.addEventListener('click', (e) => {
       const container = document.getElementById('nav-portal-container');
@@ -23230,6 +23262,7 @@
       loadPlans();
       initCustomerPortal();
       applySubdomainRouting();
+      applyDynamicFooter();
       syncSSOSession();
       if (typeof updatePortalAuthChromeVisibility === 'function') updatePortalAuthChromeVisibility();
 

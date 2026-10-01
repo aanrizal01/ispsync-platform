@@ -98,6 +98,37 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 </div>
 `, tCtx.Tenant.BrandColor, tCtx.Tenant.Name, tCtx.Tenant.PrefixID, strings.ToUpper(string(tCtx.AppType)), switcherBtns.String())
 
+	phoneRaw := tCtx.Tenant.ContactPhone
+	if phoneRaw == "" {
+		phoneRaw = "081100002026"
+	}
+	phoneWA := phoneRaw
+	if strings.HasPrefix(phoneWA, "0") {
+		phoneWA = "62" + phoneWA[1:]
+	} else if strings.HasPrefix(phoneWA, "+62") {
+		phoneWA = phoneWA[1:]
+	}
+	phoneDisplay := phoneRaw
+	if len(phoneRaw) == 12 && strings.HasPrefix(phoneRaw, "08") {
+		phoneDisplay = fmt.Sprintf("%s-%s-%s", phoneRaw[:4], phoneRaw[4:8], phoneRaw[8:])
+	} else if len(phoneRaw) == 11 && strings.HasPrefix(phoneRaw, "08") {
+		phoneDisplay = fmt.Sprintf("%s-%s-%s", phoneRaw[:4], phoneRaw[4:7], phoneRaw[7:])
+	} else if len(phoneRaw) == 13 && strings.HasPrefix(phoneRaw, "08") {
+		phoneDisplay = fmt.Sprintf("%s-%s-%s", phoneRaw[:4], phoneRaw[4:8], phoneRaw[8:])
+	}
+
+	websiteURL := "https://" + tCtx.Host
+	if tCtx.Tenant.CustomDomain != "" {
+		websiteURL = "https://" + tCtx.Tenant.CustomDomain
+	}
+	websiteDisplay := strings.TrimPrefix(websiteURL, "https://")
+	websiteDisplay = strings.TrimPrefix(websiteDisplay, "http://")
+
+	email := tCtx.Tenant.ContactEmail
+	if email == "" {
+		email = "info@" + tCtx.Host
+	}
+
 	// 2. Injected Early Tenant Context Script
 	tenantScript := fmt.Sprintf(`
   <!-- DYNAMIC ISPSYNC TENANT INJECTION -->
@@ -108,6 +139,9 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
       name: %q,
       short_name: %q,
       brand_color: %q,
+      contact_phone: %q,
+      contact_email: %q,
+      address: %q,
       appType: %q,
       subdomain: %q,
       host: %q,
@@ -120,7 +154,7 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
       } catch (e) {}
     })();
   </script>
-`, tCtx.Tenant.ID, tCtx.Tenant.Slug, tCtx.Tenant.Name, tCtx.Tenant.PrefixID, tCtx.Tenant.BrandColor, tCtx.AppType, tCtx.Subdomain, tCtx.Host, string(allTenantsJSON), mode, tCtx.Tenant.Name)
+`, tCtx.Tenant.ID, tCtx.Tenant.Slug, tCtx.Tenant.Name, tCtx.Tenant.PrefixID, tCtx.Tenant.BrandColor, tCtx.Tenant.ContactPhone, tCtx.Tenant.ContactEmail, tCtx.Tenant.Address, tCtx.AppType, tCtx.Subdomain, tCtx.Host, string(allTenantsJSON), mode, tCtx.Tenant.Name)
 
 	// Inject script into <head>
 	html = strings.Replace(html, "<head>", "<head>\n"+tenantScript, 1)
@@ -140,6 +174,16 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 	html = strings.Replace(html, "GOGIGANET Broadband • Registrasi & Jangkauan Fiber Optik", tCtx.Tenant.Name+" • Registrasi & Jangkauan Fiber Optik", -1)
 	html = strings.Replace(html, ">GOGIGA<span class=\"text-sky-600\">NET</span><", ">"+tCtx.Tenant.PrefixID+"<span style=\"color:"+tCtx.Tenant.BrandColor+"\"> FIBER</span><", -1)
 	html = strings.Replace(html, "id=\"navbar-brand-subtitle\" class=\"text-[11px] text-slate-500 font-medium mt-1\">Fiber Broadband &amp; Telco<", "id=\"navbar-brand-subtitle\" class=\"text-[11px] text-slate-500 font-medium mt-1\">"+tCtx.Tenant.Name+"<", -1)
+
+	// Dynamic Footer & Contact replacements
+	html = strings.Replace(html, "https://wa.me/6285186866164", "https://wa.me/"+phoneWA, -1)
+	html = strings.Replace(html, "0851-8686-6164", phoneDisplay, -1)
+	html = strings.Replace(html, "https://www.gogiga.net.id", websiteURL, -1)
+	html = strings.Replace(html, "www.gogiga.net.id", websiteDisplay, -1)
+	html = strings.Replace(html, "@gogiga_isp", email, -1)
+	html = strings.Replace(html, "info@ispsync.id", email, -1)
+	html = strings.Replace(html, "mailto:info@ispsync.id", "mailto:"+email, -1)
+
 	html = strings.Replace(html, "GOGIGANET", tCtx.Tenant.Name, -1)
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
