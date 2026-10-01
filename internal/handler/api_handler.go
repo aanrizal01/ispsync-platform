@@ -1147,3 +1147,238 @@ func (h *APIHandler) SuperuserJartaplokPartners(w http.ResponseWriter, r *http.R
 	ags, _ := h.store.ListJartaplokAgreements(r.Context(), t.ID)
 	h.successResponse(w, "Jartaplok partners retrieved", ags)
 }
+
+// ── Staff Quota & Add-on Handlers ──────────────────────────────────────────
+
+// GetStaffQuota mengembalikan informasi kuota staf aktif, add-on, dan sisa kursi
+func (h *APIHandler) GetStaffQuota(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	quota, err := h.store.GetStaffQuotaStatus(r.Context(), t.ID)
+	if err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal mengambil kuota staf: "+err.Error())
+		return
+	}
+	h.successResponse(w, "Status kuota staf berhasil diambil", quota)
+}
+
+// ListStaffUsers menampilkan seluruh akun user di tenant ini beserta status kuota
+func (h *APIHandler) ListStaffUsers(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	users, err := h.store.ListUsersByTenant(r.Context(), t.ID)
+	if err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal mengambil daftar staf: "+err.Error())
+		return
+	}
+
+	quota, _ := h.store.GetStaffQuotaStatus(r.Context(), t.ID)
+
+	type userResp struct {
+		ID        string    `json:"id"`
+		TenantID  string    `json:"tenant_id"`
+		Username  string    `json:"username"`
+		FullName  string    `json:"full_name"`
+		Email     string    `json:"email"`
+		Phone     string    `json:"phone"`
+		Role      string    `json:"role"`
+		Status    string    `json:"status"`
+		CreatedAt time.Time `json:"created_at"`
+	}
+
+	var sanitized []userResp
+	for _, u := range users {
+		sanitized = append(sanitized, userResp{
+			ID:        u.ID,
+			TenantID:  u.TenantID,
+			Username:  u.Username,
+			FullName:  u.FullName,
+			Email:     u.Email,
+			Phone:     u.Phone,
+			Role:      u.Role,
+			Status:    u.Status,
+			CreatedAt: u.CreatedAt,
+		})
+	}
+
+	h.successResponse(w, "Daftar staf berhasil diambil", map[string]interface{}{
+		"quota": quota,
+		"users": sanitized,
+	})
+}
+
+// CreateStaffUser menambahkan akun staf baru dengan validasi batas kuota & addon
+func (h *APIHandler) CreateStaffUser(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+
+	var req struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+		FullName string `json:"full_name"`
+		Email    string `json:"email"`
+		Phone    string `json:"phone"`
+		Role     string `json:"role"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.failResponse(w, http.StatusBadRequest, "Payload request tidak valid")
+		return
+	}
+
+	req.Username = strings.TrimSpace(strings.ToLower(req.Username))
+	if req.Username == "" || req.Password == "" {
+		h.failResponse(w, http.StatusBadRequest, "Username dan password wajib diisi")
+		return
+	}
+
+	role := strings.ToUpper(strings.TrimSpace(req.Role))
+	if role == "" {
+		role = "TECHNICIAN"
+	}
+
+	// Validasi kuota jika bukan Owner
+	if role != "OWNER" {
+		quota, err := h.store.GetStaffQuotaStatus(r.Context(), t.ID)
+		if err != nil {
+			h.failResponse(w, http.StatusInternalServerError, "Gagal validasi kuota: "+err.Error())
+			return
+		}
+		if !quota.CanAddStaff {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"success":    false,
+				"error_code": "STAFF_LIMIT_REACHED",
+				"message":    fmt.Sprintf("Batas kuota staf (%d/%d akun aktif) telah tercapai. Silakan beli Add-on Staf untuk menambah petugas baru.", quota.UsedStaffCount, quota.TotalQuota),
+				"quota":      quota,
+			})
+			return
+		}
+	}
+
+	newUser := &domain.User{
+		TenantID: t.ID,
+		Username: req.Username,
+		FullName: req.FullName,
+		Email:    req.Email,
+		Phone:    req.Phone,
+		Role:     role,
+		Status:   "ACTIVE",
+	}
+
+	if err := h.store.CreateUser(r.Context(), newUser, req.Password); err != nil {
+		h.failResponse(w, http.StatusBadRequest, "Gagal membuat akun staf: "+err.Error())
+		return
+	}
+
+	updatedQuota, _ := h.store.GetStaffQuotaStatus(r.Context(), t.ID)
+
+	h.successResponse(w, "Akun staf berhasil dibuat", map[string]interface{}{
+		"user":  newUser,
+		"quota": updatedQuota,
+	})
+}
+
+// ListAddons menampilkan add-on aktif tenant dan katalog paket addon yang tersedia
+func (h *APIHandler) ListAddons(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+
+	activeAddons, err := h.store.ListTenantAddons(r.Context(), t.ID)
+	if err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal mengambil daftar addon: "+err.Error())
+		return
+	}
+
+	quota, _ := h.store.GetStaffQuotaStatus(r.Context(), t.ID)
+
+	catalog := []map[string]interface{}{
+		{
+			"code":          "ADDON_STAFF_3",
+			"name":          "Starter Staff Pack (+3 Akun)",
+			"type":          "STAFF_SEAT",
+			"quantity":      3,
+			"monthly_price": 35000,
+			"description":   "Tambahan 3 akun staf teknisi/NOC/sales",
+		},
+		{
+			"code":          "ADDON_STAFF_5",
+			"name":          "Growth Staff Pack (+5 Akun)",
+			"type":          "STAFF_SEAT",
+			"quantity":      5,
+			"monthly_price": 50000,
+			"description":   "Paket paling laris: Tambahan 5 akun staf lapangan & administrasi",
+		},
+		{
+			"code":          "ADDON_STAFF_10",
+			"name":          "Scale Staff Pack (+10 Akun)",
+			"type":          "STAFF_SEAT",
+			"quantity":      10,
+			"monthly_price": 90000,
+			"description":   "Hemat Rp 10.000: Tambahan 10 akun staf untuk ISP berkembang cepat",
+		},
+	}
+
+	h.successResponse(w, "Katalog addon berhasil diambil", map[string]interface{}{
+		"quota":         quota,
+		"active_addons": activeAddons,
+		"catalog":       catalog,
+	})
+}
+
+// PurchaseAddon aktivasi add-on baru untuk tenant
+func (h *APIHandler) PurchaseAddon(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+
+	var req struct {
+		AddonCode string `json:"addon_code"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.AddonCode == "" {
+		h.failResponse(w, http.StatusBadRequest, "Pilih addon_code yang valid")
+		return
+	}
+
+	var name string
+	var quantity int
+	var price float64
+
+	switch req.AddonCode {
+	case "ADDON_STAFF_3":
+		name = "Starter Staff Pack (+3 Akun)"
+		quantity = 3
+		price = 35000
+	case "ADDON_STAFF_5":
+		name = "Growth Staff Pack (+5 Akun)"
+		quantity = 5
+		price = 50000
+	case "ADDON_STAFF_10":
+		name = "Scale Staff Pack (+10 Akun)"
+		quantity = 10
+		price = 90000
+	default:
+		h.failResponse(w, http.StatusBadRequest, "Kode paket addon tidak dikenali")
+		return
+	}
+
+	expires := time.Now().AddDate(0, 1, 0) // Berlaku 1 bulan
+	addon := &domain.TenantAddon{
+		TenantID:     t.ID,
+		AddonCode:    req.AddonCode,
+		AddonType:    "STAFF_SEAT",
+		Name:         name,
+		Quantity:     quantity,
+		MonthlyPrice: price,
+		Status:       "ACTIVE",
+		ExpiresAt:    &expires,
+	}
+
+	if err := h.store.CreateTenantAddon(r.Context(), addon); err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal mengaktifkan addon: "+err.Error())
+		return
+	}
+
+	newQuota, _ := h.store.GetStaffQuotaStatus(r.Context(), t.ID)
+
+	h.successResponse(w, fmt.Sprintf("Add-on %s berhasil diaktifkan. Kuota staf bertambah +%d!", name, quantity), map[string]interface{}{
+		"addon": addon,
+		"quota": newQuota,
+	})
+}
+

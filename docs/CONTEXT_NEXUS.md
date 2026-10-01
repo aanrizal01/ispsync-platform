@@ -4,8 +4,9 @@
 * **Nama Resmi**: ISPSYNC Nexus
 * **Peran Arsitektur**: Engine 2 (Retail Operations, Field & CRM)
 * **Port Standar**: `8081`
-* **Subdomain Template**: `portal.{tenant}.ispsync.id`, `sales.{tenant}.ispsync.id`, `teknisi.{tenant}.ispsync.id`
-* **Domain Staging**: `https://portal.dev.ispsync.id`
+* **Canonical Gateway**: `https://nexus.ispsync.id`
+* **Subdomain Template**: `nexus.{tenant}.ispsync.id`, `portal.{tenant}.ispsync.id`, `sales.{tenant}.ispsync.id`, `teknisi.{tenant}.ispsync.id`
+* **Domain Staging**: `https://portal.dev.ispsync.id` & `https://nexus.dev.ispsync.id`
 * **Target Pengguna**: Calon Pelanggan Ritel, Tim Sales (AE), Teknisi Lapangan, Staff NOC.
 
 ---

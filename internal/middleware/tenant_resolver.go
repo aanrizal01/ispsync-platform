@@ -46,7 +46,7 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 
 			if qApp != "" {
 				switch strings.ToLower(qApp) {
-				case "portal":
+				case "portal", "nexus":
 					appType = domain.AppPortal
 				case "noc":
 					appType = domain.AppNOC
@@ -62,13 +62,13 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 			// 2. Jika belum ditentukan dari query/header, parse subdomain dari host
 			if tenantSlug == "" {
 				parts := strings.Split(host, ".")
-				// Format A: {app}.{tenant}.ispsync.id (contoh: cms.ispku.ispsync.id)
+				// Format A: {app}.{tenant}.ispsync.id (contoh: cms.ispku.ispsync.id, nexus.ispku.ispsync.id)
 				if len(parts) >= 4 && strings.HasSuffix(host, baseDomain) {
 					appPart := parts[0]
 					tenantPart := parts[1]
 
 					switch appPart {
-					case "portal":
+					case "portal", "nexus":
 						appType = domain.AppPortal
 					case "noc":
 						appType = domain.AppNOC
@@ -87,9 +87,9 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 						subParts := strings.SplitN(sub, "-", 2)
 						p1, p2 := subParts[0], subParts[1]
 						switch p1 {
-						case "cms", "portal", "noc", "sales", "teknisi":
+						case "cms", "portal", "nexus", "noc", "sales", "teknisi":
 							switch p1 {
-							case "portal":
+							case "portal", "nexus":
 								appType = domain.AppPortal
 							case "noc":
 								appType = domain.AppNOC
@@ -105,7 +105,7 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 							// Coba format {tenant}-{app}
 							tenantSlug = p1
 							switch p2 {
-							case "portal":
+							case "portal", "nexus":
 								appType = domain.AppPortal
 							case "noc":
 								appType = domain.AppNOC
@@ -118,16 +118,28 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 							}
 						}
 					} else {
-						// Subdomain murni tenant: ispku.ispsync.id
-						tenantSlug = sub
-						appType = domain.AppPortal
+						// Subdomain tunggal level 1 (contoh: nexus.ispsync.id, portal.ispsync.id, ispku.ispsync.id)
+						if sub == "nexus" || sub == "portal" {
+							tenantSlug = "ispku"
+							appType = domain.AppPortal
+						} else if sub == "sales" {
+							tenantSlug = "ispku"
+							appType = domain.AppSales
+						} else if sub == "teknisi" {
+							tenantSlug = "ispku"
+							appType = domain.AppTeknisi
+						} else {
+							// Subdomain murni tenant: ispku.ispsync.id
+							tenantSlug = sub
+							appType = domain.AppPortal
+						}
 					}
 				} else if len(parts) >= 3 && (parts[len(parts)-1] == "localhost" || parts[len(parts)-1] == "test") {
 					// {app}.{tenant}.localhost
 					appPart := parts[0]
 					tenantPart := parts[1]
 					switch appPart {
-					case "portal":
+					case "portal", "nexus":
 						appType = domain.AppPortal
 					case "noc":
 						appType = domain.AppNOC

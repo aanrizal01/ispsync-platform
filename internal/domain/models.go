@@ -33,11 +33,39 @@ type Tenant struct {
 	ContactPhone string    `json:"contact_phone"`
 	ContactEmail string    `json:"contact_email"`
 	Address      string    `json:"address"`
-	CustomDomain string    `json:"custom_domain,omitempty"`
-	Status       string    `json:"status"`       // "ACTIVE", "SUSPENDED"
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	CustomDomain   string    `json:"custom_domain,omitempty"`
+	BaseStaffQuota int       `json:"base_staff_quota,omitempty"` // Batas dasar akun staf (default 3)
+	Status         string    `json:"status"`                     // "ACTIVE", "SUSPENDED"
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
 }
+
+// TenantAddon merepresentasikan add-on berbayar milik tenant (misal: kuota staf, slot OLT, dll)
+type TenantAddon struct {
+	ID           string     `json:"id"`
+	TenantID     string     `json:"tenant_id"`
+	AddonCode    string     `json:"addon_code"`     // e.g. "ADDON_STAFF_5"
+	AddonType    string     `json:"addon_type"`     // "STAFF_SEAT", "OLT_SLOT", "ODP_LIMIT"
+	Name         string     `json:"name"`           // e.g. "Add-on +5 Akun Staf"
+	Quantity     int        `json:"quantity"`       // 5
+	MonthlyPrice float64    `json:"monthly_price"`  // 50000
+	Status       string     `json:"status"`         // "ACTIVE", "EXPIRED", "SUSPENDED"
+	ExpiresAt    *time.Time `json:"expires_at,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
+}
+
+// StaffQuotaStatus merepresentasikan status dan penggunaan kuota akun staf tenant
+type StaffQuotaStatus struct {
+	TenantID       string `json:"tenant_id"`
+	BaseQuota      int    `json:"base_quota"`       // Default 3
+	AddonQuota     int    `json:"addon_quota"`      // Sum dari ACTIVE addon quantity
+	TotalQuota     int    `json:"total_quota"`      // BaseQuota + AddonQuota
+	UsedStaffCount int    `json:"used_staff_count"` // Jumlah akun staf aktif (role != 'OWNER')
+	RemainingQuota int    `json:"remaining_quota"`  // TotalQuota - UsedStaffCount
+	CanAddStaff    bool   `json:"can_add_staff"`    // RemainingQuota > 0
+}
+
 
 // User merepresentasikan staf atau akun pada masing-masing Tenant
 type User struct {

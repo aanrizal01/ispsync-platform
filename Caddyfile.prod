@@ -144,7 +144,18 @@ https:// {
         }
     }
 
-    # 3. Customer & Field Operational Portals (portal.*, sales.*, teknisi.*, rekan.*) -> ISPSYNC Core
+    # 3. Customer & Field Operational Portals - ISPSYNC Nexus (nexus.*, portal.*, sales.*, teknisi.*, rekan.*)
+    @nexus {
+        host nexus.ispsync.id *.nexus.ispsync.id portal.ispsync.id *.portal.ispsync.id sales.ispsync.id *.sales.ispsync.id teknisi.ispsync.id *.teknisi.ispsync.id rekan.ispsync.id *.rekan.ispsync.id
+    }
+    handle @nexus {
+        reverse_proxy 172.18.0.1:8081 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    # 4. Fallback handler -> ISPSYNC Core (Port 8081)
     handle {
         reverse_proxy 172.18.0.1:8081 {
             header_up Host {host}

@@ -199,7 +199,19 @@ func main() {
 			sup.Get("/overview", apiH.SuperuserOverview)
 			sup.Get("/jartaplok-partners", apiH.SuperuserJartaplokPartners)
 		})
+
+		// Staff Quota & Add-on Management
+		api.Route("/staff", func(st chi.Router) {
+			st.Get("/quota", apiH.GetStaffQuota)
+			st.Get("/users", apiH.ListStaffUsers)
+			st.Post("/users", apiH.CreateStaffUser)
+		})
+		api.Route("/addons", func(ad chi.Router) {
+			ad.Get("/", apiH.ListAddons)
+			ad.Post("/purchase", apiH.PurchaseAddon)
+		})
 	})
+
 
 	// Static Assets (Logo, Documents, Web files)
 	r.Get("/logo.png", func(w http.ResponseWriter, r *http.Request) {

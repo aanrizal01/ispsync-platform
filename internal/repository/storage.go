@@ -58,6 +58,13 @@ type Storage interface {
 	// Jartaplok (Local Fixed Network Sharing)
 	ListJartaplokAgreements(ctx context.Context, tenantID string) ([]domain.JartaplokAgreement, error)
 
+	// Add-ons & Staff Quota
+	GetStaffQuotaStatus(ctx context.Context, tenantID string) (*domain.StaffQuotaStatus, error)
+	ListTenantAddons(ctx context.Context, tenantID string) ([]domain.TenantAddon, error)
+	CreateTenantAddon(ctx context.Context, addon *domain.TenantAddon) error
+	CreateUser(ctx context.Context, user *domain.User, rawPassword string) error
+
 	// Close
 	Close() error
 }
+

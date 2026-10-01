@@ -266,10 +266,30 @@ func (s *SQLiteStorage) migrate() error {
 		FOREIGN KEY (odp_id) REFERENCES odps(id) ON DELETE CASCADE,
 		UNIQUE(agreement_id, odp_id)
 	);
+
+	CREATE TABLE IF NOT EXISTS tenant_addons (
+		id TEXT PRIMARY KEY,
+		tenant_id TEXT NOT NULL,
+		addon_code TEXT NOT NULL,
+		addon_type TEXT NOT NULL,
+		name TEXT NOT NULL DEFAULT '',
+		quantity INTEGER DEFAULT 5,
+		monthly_price REAL DEFAULT 0,
+		status TEXT DEFAULT 'ACTIVE',
+		expires_at DATETIME,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_tenant_addons_tenant ON tenant_addons(tenant_id, status);
 	`
 	_, err := s.db.Exec(schema)
+	_ = s.db.QueryRow("SELECT base_staff_quota FROM tenants LIMIT 1").Scan(new(interface{}))
+	_, _ = s.db.Exec("ALTER TABLE tenants ADD COLUMN base_staff_quota INTEGER DEFAULT 3")
 	return err
 }
+
 
 func (s *SQLiteStorage) seedDefaultTenant() error {
 	ctx := context.Background()
@@ -504,12 +524,12 @@ func (s *SQLiteStorage) seedDefaultTenant() error {
 
 func (s *SQLiteStorage) GetTenantBySlug(ctx context.Context, slug string) (*domain.Tenant, error) {
 	row := s.db.QueryRowContext(ctx, `
-		SELECT id, slug, name, short_name, prefix_id, logo_url, brand_color, contact_phone, contact_email, address, custom_domain, status, created_at, updated_at
+		SELECT id, slug, name, short_name, prefix_id, logo_url, brand_color, contact_phone, contact_email, address, custom_domain, COALESCE(base_staff_quota, 3), status, created_at, updated_at
 		FROM tenants WHERE slug = ?
 	`, strings.ToLower(slug))
 
 	var t domain.Tenant
-	err := row.Scan(&t.ID, &t.Slug, &t.Name, &t.ShortName, &t.PrefixID, &t.LogoURL, &t.BrandColor, &t.ContactPhone, &t.ContactEmail, &t.Address, &t.CustomDomain, &t.Status, &t.CreatedAt, &t.UpdatedAt)
+	err := row.Scan(&t.ID, &t.Slug, &t.Name, &t.ShortName, &t.PrefixID, &t.LogoURL, &t.BrandColor, &t.ContactPhone, &t.ContactEmail, &t.Address, &t.CustomDomain, &t.BaseStaffQuota, &t.Status, &t.CreatedAt, &t.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -518,12 +538,12 @@ func (s *SQLiteStorage) GetTenantBySlug(ctx context.Context, slug string) (*doma
 
 func (s *SQLiteStorage) GetTenantByCustomDomain(ctx context.Context, domainName string) (*domain.Tenant, error) {
 	row := s.db.QueryRowContext(ctx, `
-		SELECT id, slug, name, short_name, prefix_id, logo_url, brand_color, contact_phone, contact_email, address, custom_domain, status, created_at, updated_at
+		SELECT id, slug, name, short_name, prefix_id, logo_url, brand_color, contact_phone, contact_email, address, custom_domain, COALESCE(base_staff_quota, 3), status, created_at, updated_at
 		FROM tenants WHERE custom_domain = ?
 	`, strings.ToLower(domainName))
 
 	var t domain.Tenant
-	err := row.Scan(&t.ID, &t.Slug, &t.Name, &t.ShortName, &t.PrefixID, &t.LogoURL, &t.BrandColor, &t.ContactPhone, &t.ContactEmail, &t.Address, &t.CustomDomain, &t.Status, &t.CreatedAt, &t.UpdatedAt)
+	err := row.Scan(&t.ID, &t.Slug, &t.Name, &t.ShortName, &t.PrefixID, &t.LogoURL, &t.BrandColor, &t.ContactPhone, &t.ContactEmail, &t.Address, &t.CustomDomain, &t.BaseStaffQuota, &t.Status, &t.CreatedAt, &t.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -532,7 +552,7 @@ func (s *SQLiteStorage) GetTenantByCustomDomain(ctx context.Context, domainName 
 
 func (s *SQLiteStorage) ListTenants(ctx context.Context) ([]domain.Tenant, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, slug, name, short_name, prefix_id, logo_url, brand_color, contact_phone, contact_email, address, custom_domain, status, created_at, updated_at
+		SELECT id, slug, name, short_name, prefix_id, logo_url, brand_color, contact_phone, contact_email, address, custom_domain, COALESCE(base_staff_quota, 3), status, created_at, updated_at
 		FROM tenants ORDER BY created_at DESC
 	`)
 	if err != nil {
@@ -543,7 +563,7 @@ func (s *SQLiteStorage) ListTenants(ctx context.Context) ([]domain.Tenant, error
 	var list []domain.Tenant
 	for rows.Next() {
 		var t domain.Tenant
-		if err := rows.Scan(&t.ID, &t.Slug, &t.Name, &t.ShortName, &t.PrefixID, &t.LogoURL, &t.BrandColor, &t.ContactPhone, &t.ContactEmail, &t.Address, &t.CustomDomain, &t.Status, &t.CreatedAt, &t.UpdatedAt); err != nil {
+		if err := rows.Scan(&t.ID, &t.Slug, &t.Name, &t.ShortName, &t.PrefixID, &t.LogoURL, &t.BrandColor, &t.ContactPhone, &t.ContactEmail, &t.Address, &t.CustomDomain, &t.BaseStaffQuota, &t.Status, &t.CreatedAt, &t.UpdatedAt); err != nil {
 			return nil, err
 		}
 		list = append(list, t)
@@ -558,11 +578,14 @@ func (s *SQLiteStorage) CreateTenant(ctx context.Context, tenant *domain.Tenant)
 	}
 	tenant.CreatedAt = now
 	tenant.UpdatedAt = now
+	if tenant.BaseStaffQuota <= 0 {
+		tenant.BaseStaffQuota = 3
+	}
 
 	_, err := s.db.ExecContext(ctx, `
-		INSERT INTO tenants (id, slug, name, short_name, prefix_id, logo_url, brand_color, contact_phone, contact_email, address, custom_domain, status, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, tenant.ID, strings.ToLower(tenant.Slug), tenant.Name, tenant.ShortName, tenant.PrefixID, tenant.LogoURL, tenant.BrandColor, tenant.ContactPhone, tenant.ContactEmail, tenant.Address, tenant.CustomDomain, tenant.Status, tenant.CreatedAt, tenant.UpdatedAt)
+		INSERT INTO tenants (id, slug, name, short_name, prefix_id, logo_url, brand_color, contact_phone, contact_email, address, custom_domain, base_staff_quota, status, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, tenant.ID, strings.ToLower(tenant.Slug), tenant.Name, tenant.ShortName, tenant.PrefixID, tenant.LogoURL, tenant.BrandColor, tenant.ContactPhone, tenant.ContactEmail, tenant.Address, tenant.CustomDomain, tenant.BaseStaffQuota, tenant.Status, tenant.CreatedAt, tenant.UpdatedAt)
 	return err
 }
 
@@ -602,6 +625,125 @@ func (s *SQLiteStorage) ListUsersByTenant(ctx context.Context, tenantID string) 
 	}
 	return list, nil
 }
+
+func (s *SQLiteStorage) CreateUser(ctx context.Context, user *domain.User, rawPassword string) error {
+	if strings.ToUpper(user.Role) != "OWNER" {
+		quota, err := s.GetStaffQuotaStatus(ctx, user.TenantID)
+		if err != nil {
+			return err
+		}
+		if !quota.CanAddStaff {
+			return fmt.Errorf("batas kuota staf tercapai (%d/%d akun aktif), silakan beli add-on staf", quota.UsedStaffCount, quota.TotalQuota)
+		}
+	}
+
+	if user.ID == "" {
+		user.ID = uuid.New().String()
+	}
+	now := time.Now()
+	user.CreatedAt = now
+	pwHash, err := bcrypt.GenerateFromPassword([]byte(rawPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	user.PasswordHash = string(pwHash)
+	if user.Status == "" {
+		user.Status = "ACTIVE"
+	}
+
+	_, err = s.db.ExecContext(ctx, `
+		INSERT INTO users (id, tenant_id, username, password_hash, full_name, email, phone, role, status, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, user.ID, user.TenantID, user.Username, user.PasswordHash, user.FullName, user.Email, user.Phone, strings.ToUpper(user.Role), user.Status, user.CreatedAt)
+	return err
+}
+
+// ── Add-ons & Staff Quota ───────────────────────────────────────────────────────
+
+func (s *SQLiteStorage) GetStaffQuotaStatus(ctx context.Context, tenantID string) (*domain.StaffQuotaStatus, error) {
+	baseQuota := 3
+	var dbBase sql.NullInt32
+	_ = s.db.QueryRowContext(ctx, "SELECT base_staff_quota FROM tenants WHERE id = ?", tenantID).Scan(&dbBase)
+	if dbBase.Valid && dbBase.Int32 > 0 {
+		baseQuota = int(dbBase.Int32)
+	}
+
+	var addonQuota sql.NullInt32
+	_ = s.db.QueryRowContext(ctx, `
+		SELECT COALESCE(SUM(quantity), 0) FROM tenant_addons 
+		WHERE tenant_id = ? AND status = 'ACTIVE' AND addon_type = 'STAFF_SEAT' 
+		AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
+	`, tenantID).Scan(&addonQuota)
+
+	var usedStaff sql.NullInt32
+	_ = s.db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM users 
+		WHERE tenant_id = ? AND status = 'ACTIVE' AND UPPER(role) != 'OWNER'
+	`, tenantID).Scan(&usedStaff)
+
+	aq := 0
+	if addonQuota.Valid {
+		aq = int(addonQuota.Int32)
+	}
+	used := 0
+	if usedStaff.Valid {
+		used = int(usedStaff.Int32)
+	}
+	total := baseQuota + aq
+	remaining := total - used
+	if remaining < 0 {
+		remaining = 0
+	}
+
+	return &domain.StaffQuotaStatus{
+		TenantID:       tenantID,
+		BaseQuota:      baseQuota,
+		AddonQuota:     aq,
+		TotalQuota:     total,
+		UsedStaffCount: used,
+		RemainingQuota: remaining,
+		CanAddStaff:    remaining > 0,
+	}, nil
+}
+
+func (s *SQLiteStorage) ListTenantAddons(ctx context.Context, tenantID string) ([]domain.TenantAddon, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT id, tenant_id, addon_code, addon_type, name, quantity, monthly_price, status, expires_at, created_at, updated_at
+		FROM tenant_addons WHERE tenant_id = ? ORDER BY created_at DESC
+	`, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []domain.TenantAddon
+	for rows.Next() {
+		var a domain.TenantAddon
+		if err := rows.Scan(&a.ID, &a.TenantID, &a.AddonCode, &a.AddonType, &a.Name, &a.Quantity, &a.MonthlyPrice, &a.Status, &a.ExpiresAt, &a.CreatedAt, &a.UpdatedAt); err != nil {
+			return nil, err
+		}
+		list = append(list, a)
+	}
+	return list, nil
+}
+
+func (s *SQLiteStorage) CreateTenantAddon(ctx context.Context, addon *domain.TenantAddon) error {
+	if addon.ID == "" {
+		addon.ID = uuid.New().String()
+	}
+	now := time.Now()
+	addon.CreatedAt = now
+	addon.UpdatedAt = now
+	if addon.Status == "" {
+		addon.Status = "ACTIVE"
+	}
+	_, err := s.db.ExecContext(ctx, `
+		INSERT INTO tenant_addons (id, tenant_id, addon_code, addon_type, name, quantity, monthly_price, status, expires_at, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, addon.ID, addon.TenantID, addon.AddonCode, addon.AddonType, addon.Name, addon.Quantity, addon.MonthlyPrice, addon.Status, addon.ExpiresAt, addon.CreatedAt, addon.UpdatedAt)
+	return err
+}
+
 
 // ── Plan Methods ───────────────────────────────────────────────────────────────
 
