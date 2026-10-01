@@ -122,6 +122,8 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
       SMTP_FROM: ${SMTP_FROM}
+      ISP_BASE_URL: http://172.18.0.1:8081
+      FTTX_BASE_URL: http://172.18.0.1:8082
     volumes:
       - ../keys:/app/keys:ro
     networks:

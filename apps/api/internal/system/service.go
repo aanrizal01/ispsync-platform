@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -152,13 +154,20 @@ func (s *Service) CheckAll(ctx context.Context) (*SystemStatusResponse, error) {
 		LastChecked: now,
 	})
 
-	// 6. GOGIGA-ISP Onboarding Service (Port 8081)
+	// 6. ISPSYNC Core / Nexus Service (Port 8081)
+	ispURL := os.Getenv("ISP_BASE_URL")
+	if ispURL == "" {
+		ispURL = "http://172.18.0.1:8081"
+	}
 	ispStart := time.Now()
-	ispStatus, ispLatency, ispDetails := checkHTTPService("http://127.0.0.1:8081/health", "Layanan pendaftaran & onboarding aktif", ispStart)
+	ispStatus, ispLatency, ispDetails := checkHTTPService(strings.TrimRight(ispURL, "/")+"/health", "Layanan pendaftaran & onboarding aktif", ispStart)
+	if ispStatus == "DOWN" {
+		ispStatus, ispLatency, ispDetails = checkHTTPService("http://127.0.0.1:8081/health", "Layanan pendaftaran & onboarding aktif", ispStart)
+	}
 
 	services = append(services, ServiceStatus{
 		ID:          "gogiga-isp",
-		Name:        "ISP Onboarding Service",
+		Name:        "ISPSYNC Core / Nexus",
 		Category:    "service",
 		Status:      ispStatus,
 		LatencyMs:   ispLatency,
@@ -168,13 +177,20 @@ func (s *Service) CheckAll(ctx context.Context) (*SystemStatusResponse, error) {
 		LastChecked: now,
 	})
 
-	// 7. GOGIGA-FTTX Core Network Service (Port 8082)
+	// 7. ISPSYNC FiberGrid Core Engine (Port 8082)
+	fttxURL := os.Getenv("FTTX_BASE_URL")
+	if fttxURL == "" {
+		fttxURL = "http://172.18.0.1:8082"
+	}
 	fttxStart := time.Now()
-	fttxStatus, fttxLatency, fttxDetails := checkHTTPService("http://127.0.0.1:8082/", "Layanan manajemen FTTX & OLT aktif", fttxStart)
+	fttxStatus, fttxLatency, fttxDetails := checkHTTPService(strings.TrimRight(fttxURL, "/")+"/", "Layanan manajemen FTTX & OLT aktif", fttxStart)
+	if fttxStatus == "DOWN" {
+		fttxStatus, fttxLatency, fttxDetails = checkHTTPService("http://127.0.0.1:8082/", "Layanan manajemen FTTX & OLT aktif", fttxStart)
+	}
 
 	services = append(services, ServiceStatus{
 		ID:          "gogiga-fttx",
-		Name:        "FTTX & OLT Core Engine",
+		Name:        "ISPSYNC FiberGrid",
 		Category:    "network",
 		Status:      fttxStatus,
 		LatencyMs:   fttxLatency,
@@ -183,6 +199,7 @@ func (s *Service) CheckAll(ctx context.Context) (*SystemStatusResponse, error) {
 		Details:     fttxDetails,
 		LastChecked: now,
 	})
+
 
 	// 8. Router NAS Gateway
 	nasStatus := "OPERATIONAL"
