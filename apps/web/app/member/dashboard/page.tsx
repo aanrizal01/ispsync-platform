@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import MemberNav from "../_nav";
 import { useMember } from "../context";
 
@@ -141,16 +142,23 @@ export default function MemberDashboard() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-gray-100">
+              <div className="pt-3 border-t border-gray-100 flex items-center gap-2">
                 <a
                   href={urls.ledger}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-2 transition-all shadow-sm shadow-blue-200"
+                  className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-1.5 transition-all shadow-sm shadow-blue-200"
                 >
-                  <span>Buka ISPSYNC Ledger</span>
+                  <span>Buka Ledger</span>
                   <span className="text-sm font-normal">↗</span>
                 </a>
+                <Link
+                  href="/member/engine/ledger"
+                  className="py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 text-xs font-semibold rounded-xl text-center flex items-center justify-center gap-1 transition-colors"
+                  title="Pengaturan Domain & RADIUS Ledger"
+                >
+                  <span>⚙️</span>
+                </Link>
               </div>
             </div>
 
@@ -187,16 +195,23 @@ export default function MemberDashboard() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-gray-100">
+              <div className="pt-3 border-t border-gray-100 flex items-center gap-2">
                 <a
                   href={urls.nexus}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-2 transition-all shadow-sm shadow-purple-200"
+                  className="flex-1 py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-1.5 transition-all shadow-sm shadow-purple-200"
                 >
-                  <span>Buka ISPSYNC Nexus</span>
+                  <span>Buka Nexus</span>
                   <span className="text-sm font-normal">↗</span>
                 </a>
+                <Link
+                  href="/member/engine/nexus"
+                  className="py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 text-xs font-semibold rounded-xl text-center flex items-center justify-center gap-1 transition-colors"
+                  title="Pengaturan Domain & Branding Nexus"
+                >
+                  <span>⚙️</span>
+                </Link>
               </div>
             </div>
 
@@ -233,16 +248,23 @@ export default function MemberDashboard() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-gray-100">
+              <div className="pt-3 border-t border-gray-100 flex items-center gap-2">
                 <a
                   href={urls.fibergrid}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-2 transition-all shadow-sm shadow-emerald-200"
+                  className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-1.5 transition-all shadow-sm shadow-emerald-200"
                 >
-                  <span>Buka ISPSYNC FiberGrid</span>
+                  <span>Buka FiberGrid</span>
                   <span className="text-sm font-normal">↗</span>
                 </a>
+                <Link
+                  href="/member/engine/fibergrid"
+                  className="py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 text-xs font-semibold rounded-xl text-center flex items-center justify-center gap-1 transition-colors"
+                  title="Pengaturan Domain & TR-069 FiberGrid"
+                >
+                  <span>⚙️</span>
+                </Link>
               </div>
             </div>
           </div>

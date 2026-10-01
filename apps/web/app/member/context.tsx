@@ -10,6 +10,11 @@ type Member = {
   autoRenew: boolean; domain: string;
   invoices: { id: string; date: string; dueDate: string; period: string; amount: string; status: string; paymentDate: string | null; paymentMethod: string | null; }[];
   tickets: any[];
+  engines?: {
+    ledger?: { customDomain?: string; radiusSecret?: string; pgProvider?: string; updatedAt?: string };
+    nexus?: { customDomain?: string; brandName?: string; supportPhone?: string; captiveUrl?: string; updatedAt?: string };
+    fibergrid?: { customDomain?: string; genieAcsUrl?: string; oltType?: string; informInterval?: string; updatedAt?: string };
+  };
 };
 
 type MemberContextType = {
@@ -18,6 +23,7 @@ type MemberContextType = {
   loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  updateEngineConfig: (engine: "ledger" | "nexus" | "fibergrid", config: any) => Promise<{ success: boolean; error?: string }>;
 };
 
 const MemberContext = createContext<MemberContextType | null>(null);
@@ -74,6 +80,25 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  async function updateEngineConfig(engine: "ledger" | "nexus" | "fibergrid", config: any) {
+    if (!member) return { success: false, error: "Not authenticated" };
+    try {
+      const res = await fetch("/api/member/engine-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId: member.id, engine, config }),
+      });
+      const data = await res.json();
+      if (data.success && data.member) {
+        setMember(data.member);
+        return { success: true };
+      }
+      return { success: false, error: data.error || "Gagal menyimpan konfigurasi" };
+    } catch (err: any) {
+      return { success: false, error: err?.message || "Koneksi gagal" };
+    }
+  }
+
   function logout() {
     if (token) {
       fetch("/api/member/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "logout", token }) });
@@ -83,7 +108,7 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
     router.push("/member/login");
   }
 
-  return <MemberContext.Provider value={{ member, token, loading, login, logout }}>{children}</MemberContext.Provider>;
+  return <MemberContext.Provider value={{ member, token, loading, login, logout, updateEngineConfig }}>{children}</MemberContext.Provider>;
 }
 
 export function useMember() {

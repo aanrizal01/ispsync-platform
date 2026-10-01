@@ -4,11 +4,20 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useMember } from "./context";
 
-const navItems = [
+const mainNavItems = [
   { href: "/member/dashboard", label: "Dashboard", icon: "▦" },
-  { href: "/member/invoices", label: "Invoice", icon: "🧾" },
-  { href: "/member/profile", label: "Profil", icon: "👤" },
-  { href: "/member/support", label: "Support", icon: "💬" },
+  { href: "/member/invoices", label: "Invoice & Billing", icon: "🧾" },
+];
+
+const engineNavItems = [
+  { href: "/member/engine/ledger", label: "Engine Ledger", sub: "Billing & AAA", icon: "💳", key: "ledger" as const },
+  { href: "/member/engine/nexus", label: "Engine Nexus", sub: "Customer & Ops", icon: "🌐", key: "nexus" as const },
+  { href: "/member/engine/fibergrid", label: "Engine FiberGrid", sub: "FTTX & NOC", icon: "📡", key: "fibergrid" as const },
+];
+
+const accountNavItems = [
+  { href: "/member/profile", label: "Profil Perusahaan", icon: "👤" },
+  { href: "/member/support", label: "Bantuan & Support", icon: "💬" },
 ];
 
 function getEngineUrls(domain?: string) {
@@ -52,11 +61,12 @@ export default function MemberNav({ children }: { children: React.ReactNode }) {
   const expires = new Date(member.expiresAt);
   const today = new Date();
   const daysLeft = Math.ceil((expires.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const urls = getEngineUrls(member.domain);
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <aside className="w-60 bg-white border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 z-40">
+      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 z-40">
         {/* Logo */}
         <div className="h-16 flex items-center gap-2.5 px-5 border-b border-gray-100">
           <img
@@ -71,66 +81,105 @@ export default function MemberNav({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Plan badge */}
-        <div className="mx-4 mt-4 mb-2 p-3 bg-blue-50 rounded-xl border border-blue-100">
+        <div className="mx-4 mt-3 mb-2 p-3 bg-blue-50/70 rounded-xl border border-blue-100/70">
           <div className="text-[10px] font-bold uppercase tracking-wider text-blue-500 mb-0.5">Paket Aktif</div>
-          <div className="font-black text-blue-700 text-sm">{member.planName}</div>
-          <div className="text-[10px] text-blue-500 mt-1">
+          <div className="font-black text-blue-700 text-xs truncate">{member.planName}</div>
+          <div className="text-[10px] text-blue-500 mt-0.5">
             {daysLeft > 0 ? `${daysLeft} hari tersisa` : "Sudah expired"}
           </div>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-2 space-y-1">
-          {navItems.map(item => (
-            <Link key={item.href} href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                pathname === item.href
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              }`}>
-              <span>{item.icon}</span>
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* 3 Engine Fast Launcher in Sidebar */}
-        <div className="mx-3 my-2 pt-2 border-t border-gray-100">
-          <div className="px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5 flex items-center justify-between">
-            <span>Akses 3 Engine</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        {/* Nav Container with Scroll */}
+        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-4">
+          {/* Section 1: Main */}
+          <div>
+            <div className="px-2 mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+              Menu Utama
+            </div>
+            <div className="space-y-0.5">
+              {mainNavItems.map(item => (
+                <Link key={item.href} href={item.href}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    pathname === item.href
+                      ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}>
+                  <span className="text-sm">{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
           </div>
-          {(() => {
-            const urls = getEngineUrls(member.domain);
-            return (
-              <div className="space-y-0.5">
-                <a href={urls.ledger} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors group">
-                  <span className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded bg-blue-100 text-blue-700 text-[10px] flex items-center justify-center font-bold">L</span>
-                    <span>Ledger</span>
-                  </span>
-                  <span className="text-[10px] text-gray-400 group-hover:text-blue-600 transition-colors">↗</span>
-                </a>
-                <a href={urls.nexus} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-colors group">
-                  <span className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded bg-purple-100 text-purple-700 text-[10px] flex items-center justify-center font-bold">N</span>
-                    <span>Nexus</span>
-                  </span>
-                  <span className="text-[10px] text-gray-400 group-hover:text-purple-600 transition-colors">↗</span>
-                </a>
-                <a href={urls.fibergrid} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors group">
-                  <span className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded bg-emerald-100 text-emerald-700 text-[10px] flex items-center justify-center font-bold">F</span>
-                    <span>FiberGrid</span>
-                  </span>
-                  <span className="text-[10px] text-gray-400 group-hover:text-emerald-600 transition-colors">↗</span>
-                </a>
-              </div>
-            );
-          })()}
+
+          {/* Section 2: 3 Engine Tenant Settings */}
+          <div>
+            <div className="px-2 mb-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400">
+              <span>Pengaturan 3 Engine</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            </div>
+            <div className="space-y-1">
+              {engineNavItems.map(eng => {
+                const isActive = pathname.startsWith(eng.href);
+                const liveUrl = urls[eng.key];
+                return (
+                  <div key={eng.href} className="group relative">
+                    <Link
+                      href={eng.href}
+                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                        isActive
+                          ? "bg-slate-900 text-white shadow-sm"
+                          : "text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="text-sm">{eng.icon}</span>
+                        <div className="truncate">
+                          <div className="truncate">{eng.label}</div>
+                          <div className={`text-[10px] font-normal ${isActive ? "text-slate-300" : "text-gray-400"}`}>
+                            {eng.sub}
+                          </div>
+                        </div>
+                      </div>
+                      <a
+                        href={liveUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={e => e.stopPropagation()}
+                        title="Buka engine di tab baru"
+                        className={`p-1 rounded-lg text-[11px] transition-colors ${
+                          isActive
+                            ? "text-slate-400 hover:text-white hover:bg-slate-800"
+                            : "text-gray-400 hover:text-blue-600 hover:bg-gray-200"
+                        }`}
+                      >
+                        ↗
+                      </a>
+                    </Link>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Section 3: Account */}
+          <div>
+            <div className="px-2 mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+              Akun &amp; Support
+            </div>
+            <div className="space-y-0.5">
+              {accountNavItems.map(item => (
+                <Link key={item.href} href={item.href}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    pathname === item.href
+                      ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}>
+                  <span className="text-sm">{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* User */}
