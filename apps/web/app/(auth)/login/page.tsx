@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -19,7 +19,10 @@ import {
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const [isTenantDemo, setIsTenantDemo] = useState(false);
+  const [tenantName, setTenantName] = useState("ISPSYNC");
+  const [tenantSlug, setTenantSlug] = useState("");
+  const [tenantLogo, setTenantLogo] = useState("");
+  const [isTenant, setIsTenant] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -34,8 +37,18 @@ export default function LoginPage() {
         window.location.href = "/member/login";
         return;
       }
-      const demo = h.includes("ispku") || h.startsWith("billing.");
-      setIsTenantDemo(demo);
+      
+      const parts = h.split(".");
+      if (parts.length >= 3) {
+        const slug = parts[1].toLowerCase();
+        const upper = parts[1].toUpperCase();
+        setTenantSlug(slug);
+        setTenantName(upper);
+        setTenantLogo(`/web/${slug}_logo.svg`);
+        setIsTenant(true);
+
+        document.title = `Masuk | ${upper} Ledger`;
+      }
     }
   }, []);
 
@@ -68,20 +81,29 @@ export default function LoginPage() {
         {/* Top: Brand Header */}
         <div className="relative z-10">
           <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 ring-1 ring-white/20 flex-shrink-0">
-              <Zap className="w-6 h-6 text-white" />
-            </div>
+            {tenantLogo ? (
+              <img
+                src={tenantLogo}
+                alt="Logo"
+                className="h-10 w-auto brightness-0 invert"
+                onError={(e) => (e.currentTarget.style.display = "none")}
+              />
+            ) : (
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 ring-1 ring-white/20 flex-shrink-0">
+                <Zap className="w-6 h-6 text-white" />
+              </div>
+            )}
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-black text-2xl tracking-wider text-white">
-                  {isTenantDemo ? "ISPKU" : "ISPSYNC"}
+                <span className="font-black text-2xl tracking-wider text-white uppercase">
+                  {tenantName}
                 </span>
                 <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
-                  {isTenantDemo ? "DEMO CMS" : "PORTAL MEMBER"}
+                  {isTenant ? "LEDGER & BILLING" : "PORTAL MEMBER"}
                 </span>
               </div>
               <p className="text-[11px] font-medium text-slate-400 tracking-wider">
-                {isTenantDemo ? "Backoffice Demo Administrator" : "Kelola Langganan & Layanan Akun"}
+                {isTenant ? `Backoffice Operasional & Billing ${tenantName}` : "Kelola Langganan & Layanan Akun"}
               </p>
             </div>
           </div>
@@ -90,102 +112,54 @@ export default function LoginPage() {
         {/* Middle: Feature Highlights */}
         <div className="relative z-10 my-10 max-w-xl space-y-6">
           <h1 className="text-3xl xl:text-4xl font-extrabold tracking-tight text-white leading-tight">
-            {isTenantDemo ? (
-              <>
-                Dashboard Demo{" "}
-                <span className="bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-400 bg-clip-text text-transparent">
-                  Manajemen ISP &amp; FTTH
-                </span>
-                .
-              </>
-            ) : (
-              <>
-                Kelola Langganan &amp;{" "}
-                <span className="bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-400 bg-clip-text text-transparent">
-                  Layanan Akun Anda
-                </span>
-                .
-              </>
-            )}
+            Dashboard Operasional &amp;{" "}
+            <span className="bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-400 bg-clip-text text-transparent">
+              Billing {tenantName}
+            </span>
+            .
           </h1>
           <p className="text-slate-300 text-sm leading-relaxed">
-            {isTenantDemo
-              ? "Akses demo live backoffice untuk manajemen MikroTik, paket bandwidth, OLT fiber, voucher hotspot, dan kasir billing loket agen."
-              : "Akses portal terpusat untuk memantau masa aktif langganan, rincian paket, riwayat tagihan bulanan, dan pengaturan layanan ISPSYNC Anda."}
+            {isTenant
+              ? `Akses backoffice terpusat untuk manajemen pelanggan internet, penagihan invoice otomatis, paket bandwidth, dan voucher hotspot ${tenantName}.`
+              : "Akses portal terpusat untuk memantau masa aktif langganan, rincian paket, riwayat tagihan bulanan, dan pengaturan layanan Anda."}
           </p>
 
           <div className="mt-8 space-y-3.5">
-            {isTenantDemo ? (
-              <>
-                <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
-                  <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 flex-shrink-0 mt-0.5">
-                    <Server className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-white">MikroTik &amp; RADIUS Otomatis</h4>
-                    <p className="text-xs text-slate-400 mt-0.5">Sinkronisasi pool IP, isolir pelanggan jatuh tempo, dan buka blokir otomatis 24/7.</p>
-                  </div>
-                </div>
+            <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
+              <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 flex-shrink-0 mt-0.5">
+                <Server className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Manajemen Pelanggan &amp; Layanan</h4>
+                <p className="text-xs text-slate-400 mt-0.5">Database pelanggan PPPoE, IPoE, ODP fiber, serta aktivasi layanan otomatis.</p>
+              </div>
+            </div>
 
-                <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
-                  <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 flex-shrink-0 mt-0.5">
-                    <Layers className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-white">Manajemen ODP &amp; Pelanggan</h4>
-                    <p className="text-xs text-slate-400 mt-0.5">Pemetaan jalur kabel fiber, database pelanggan PPPoE, serta histori transaksi.</p>
-                  </div>
-                </div>
+            <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
+              <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 flex-shrink-0 mt-0.5">
+                <Layers className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Billing, Faktur &amp; Pembayaran</h4>
+                <p className="text-xs text-slate-400 mt-0.5">Generate tagihan bulanan, pembayaran QRIS/VA otomatis, dan cetak kwitansi resmi.</p>
+              </div>
+            </div>
 
-                <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-white">Kasir Android &amp; Struk Thermal</h4>
-                    <p className="text-xs text-slate-400 mt-0.5">Aplikasi mobile kasir mitra loket dengan cetak struk Bluetooth thermal instan.</p>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
-                  <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 flex-shrink-0 mt-0.5">
-                    <CreditCard className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-white">Masa Aktif &amp; Paket Langganan</h4>
-                    <p className="text-xs text-slate-400 mt-0.5">Pantau status aktif langganan, masa berlaku paket, dan kemudahan perpanjangan layanan.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
-                  <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 flex-shrink-0 mt-0.5">
-                    <FileText className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-white">Riwayat Faktur &amp; Pembayaran</h4>
-                    <p className="text-xs text-slate-400 mt-0.5">Akses arsip invoice tagihan berkala, kwitansi resmi, dan riwayat transaksi akun Anda.</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0 mt-0.5">
-                    <Settings2 className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-white">Konfigurasi &amp; Dukungan Layanan</h4>
-                    <p className="text-xs text-slate-400 mt-0.5">Pengaturan kontak penanggung jawab, integrasi layanan, serta jalur bantuan prioritas.</p>
-                  </div>
-                </div>
-              </>
-            )}
+            <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0 mt-0.5">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-white">Radius AAA &amp; Hotspot Engine</h4>
+                <p className="text-xs text-slate-400 mt-0.5">Sinkronisasi pool IP, isolir pelanggan jatuh tempo, dan generator voucher hotspot.</p>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Bottom: Footer Info */}
         <div className="relative z-10 pt-6 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-500">
-          <p>&copy; {new Date().getFullYear()} ISPSYNC. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} {tenantName}. All rights reserved.</p>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-slate-400 font-mono">Sistem Online</span>
@@ -351,7 +325,7 @@ export default function LoginPage() {
                 </>
               ) : (
                 <>
-                  <span>{isTenantDemo ? "Masuk ke Dashboard Demo ISPKU" : "Masuk ke Portal Member"}</span>
+                  <span>Masuk ke Dashboard {tenantName}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -365,7 +339,7 @@ export default function LoginPage() {
               <span>Koneksi Aman &bull; TLS 1.3 &amp; Enkripsi Sesi</span>
             </div>
             <p className="text-center text-[11px] text-slate-400 mt-2">
-              Butuh bantuan langganan atau aktivasi? Hubungi <span className="text-slate-600 font-medium">support@ispsync.id</span>
+              Butuh bantuan akses atau reset akun? Hubungi administrator internal {tenantName}.
             </p>
           </div>
         </div>
