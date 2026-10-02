@@ -174,20 +174,29 @@ export default function LoginPage() {
         <div className="w-full max-w-md mx-auto">
           {/* Mobile Brand Header */}
           <div className="lg:hidden flex items-center gap-3 mb-8 pb-6 border-b border-slate-100">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center">
-              <Zap className="w-6 h-6 text-white" />
-            </div>
+            {tenantLogo ? (
+              <img
+                src={tenantLogo}
+                alt="Logo"
+                className="h-9 w-auto"
+                onError={(e) => (e.currentTarget.style.display = "none")}
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center">
+                <Zap className="w-6 h-6 text-white" />
+              </div>
+            )}
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-black text-xl text-slate-900">
-                  {isTenantDemo ? "ISPKU" : "ISPSYNC"}
+                <span className="font-black text-xl text-slate-900 uppercase">
+                  {tenantName}
                 </span>
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-800">
-                  {isTenantDemo ? "DEMO CMS" : "PORTAL MEMBER"}
+                  {isTenant ? "LEDGER & BILLING" : "PORTAL MEMBER"}
                 </span>
               </div>
               <p className="text-[10px] text-slate-500">
-                {isTenantDemo ? "Demo Administrator" : "Kelola Langganan & Layanan"}
+                {isTenant ? `Backoffice Operasional ${tenantName}` : "Kelola Langganan & Layanan"}
               </p>
             </div>
           </div>
@@ -195,17 +204,15 @@ export default function LoginPage() {
           {/* Form Header */}
           <div className="mb-8">
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-              {isTenantDemo ? "Login Demo ISPKU" : "Login Portal Member"}
+              Login Administrator {tenantName}
             </h2>
             <p className="text-slate-500 text-sm mt-2 leading-relaxed">
-              {isTenantDemo
-                ? "Gunakan akun demo administrator di bawah ini untuk mencoba seluruh fitur CMS."
-                : "Masuk ke akun Anda untuk mengelola langganan dan layanan aktif."}
+              Masuk ke backoffice untuk mengelola operasional, pelanggan, dan penagihan {tenantName}.
             </p>
           </div>
 
           {/* Demo Account Box for Demo Mode */}
-          {isTenantDemo && (
+          {tenantSlug === "ispku" && (
             <div className="mb-6 p-4 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-900 text-xs space-y-1.5">
               <div className="flex items-center justify-between font-mono">
                 <span className="text-slate-500">Email:</span>
