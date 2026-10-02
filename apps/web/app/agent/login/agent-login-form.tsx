@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useAuth } from "@/lib/auth/context";
 import { type ApiError } from "@/lib/api/client";
 import {
@@ -120,7 +119,7 @@ export default function AgentLoginForm({ initialTenant }: { initialTenant: Tenan
           <div className="absolute -bottom-32 left-1/4 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 
           {/* Top: Brand Header */}
-          <div className="relative z-10 flex items-center justify-between">
+          <div className="relative z-10">
             <div className="flex items-center gap-3.5">
               {tenantLogo ? (
                 <img
@@ -148,14 +147,6 @@ export default function AgentLoginForm({ initialTenant }: { initialTenant: Tenan
                 </p>
               </div>
             </div>
-
-            <Link
-              href="/hotspot/buy"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-xs font-semibold text-cyan-400 border border-slate-700 hover:border-cyan-500/50 transition-colors shadow-xs"
-            >
-              <span>Beli Voucher Online</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
           </div>
 
           {/* Middle: Hero Messaging & Highlights */}
@@ -357,13 +348,6 @@ export default function AgentLoginForm({ initialTenant }: { initialTenant: Tenan
                     Hubungi CS Kemitraan via WhatsApp
                   </a>
                 </div>
-              </div>
-
-              <div className="text-center text-xs text-slate-500 pt-1">
-                Ingin membeli voucher WiFi langsung?{" "}
-                <Link href="/hotspot/buy" className="text-cyan-600 hover:underline font-bold">
-                  Beli Voucher Online Disini &rarr;
-                </Link>
               </div>
             </div>
           </div>
