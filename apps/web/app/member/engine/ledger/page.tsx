@@ -246,6 +246,51 @@ export default function EngineLedgerSettings() {
             </div>
           </div>
 
+          {/* NEW: Auto-Isolir / Billing Automation */}
+          <div className="bg-rose-50 border border-rose-100 rounded-2xl overflow-hidden shadow-sm">
+            <div className="px-6 py-5 border-b border-rose-100/50 bg-gradient-to-r from-rose-100 to-rose-50 flex items-center gap-3">
+              <span className="text-xl">🛑</span>
+              <div>
+                <h2 className="text-sm font-bold text-rose-900">Sistem Auto-Isolir Tunggakan (Walled-Garden)</h2>
+                <p className="text-[11px] text-rose-700 mt-0.5">Redirect pelanggan telat bayar ke halaman peringatan ISPSYNC.</p>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="bg-white/80 border border-rose-200 p-4 rounded-xl flex items-start gap-3">
+                <span className="text-rose-600 mt-0.5">ℹ️</span>
+                <div className="text-xs text-rose-800 leading-relaxed">
+                  <strong>Bagaimana Ini Bekerja?</strong><br/>
+                  Script ini akan membuat <code>POOL_ISOLIR</code> dan aturan <code>dst-nat</code> di MikroTik Anda. 
+                  Jika pelanggan menunggak, FreeRADIUS ISPSYNC akan mengalokasikan mereka ke pool ini. 
+                  Semua trafik internet mereka akan otomatis dialihkan ke halaman peringatan (beserta QRIS pelunasan).
+                </div>
+              </div>
+              
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const res = await fetch("http://ispsync.id:8081/api/v1/tenant/isolir/generate", {
+                      method: "POST",
+                      headers: { "X-Tenant-Slug": member.company.toLowerCase() }
+                    });
+                    const data = await res.json();
+                    if (data.script) {
+                       alert("SUKSES GENERATE SCRIPT ISOLIR!\n\nSilakan Copy Paste ini di Terminal Winbox Anda:\n\n" + data.script);
+                    } else {
+                       alert("Gagal: " + (data.error || "Unknown"));
+                    }
+                  } catch(err) {
+                    alert("Gagal menghubungi server: " + err);
+                  }
+                }}
+                className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-2"
+              >
+                <span>⚡ Generate Script Isolir</span>
+              </button>
+            </div>
+          </div>
+
           {/* RADIUS AAA Section */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
             <div>
