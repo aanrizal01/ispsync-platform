@@ -54,6 +54,10 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 					appType = domain.AppSales
 				case "teknisi":
 					appType = domain.AppTeknisi
+				case "wifi":
+					appType = domain.AppWifi
+				case "isolir":
+					appType = domain.AppIsolir
 				default:
 					appType = domain.AppCMS
 				}
@@ -76,6 +80,10 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 						appType = domain.AppSales
 					case "teknisi":
 						appType = domain.AppTeknisi
+					case "wifi", "hotspot":
+						appType = domain.AppWifi
+					case "isolir":
+						appType = domain.AppIsolir
 					default:
 						appType = domain.AppCMS
 					}
@@ -87,7 +95,7 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 						subParts := strings.SplitN(sub, "-", 2)
 						p1, p2 := subParts[0], subParts[1]
 						switch p1 {
-						case "cms", "portal", "nexus", "noc", "sales", "teknisi":
+						case "cms", "portal", "nexus", "noc", "sales", "teknisi", "wifi", "hotspot", "isolir":
 							switch p1 {
 							case "portal", "nexus":
 								appType = domain.AppPortal
@@ -97,6 +105,10 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 								appType = domain.AppSales
 							case "teknisi":
 								appType = domain.AppTeknisi
+							case "wifi", "hotspot":
+								appType = domain.AppWifi
+							case "isolir":
+								appType = domain.AppIsolir
 							default:
 								appType = domain.AppCMS
 							}
@@ -113,6 +125,10 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 								appType = domain.AppSales
 							case "teknisi":
 								appType = domain.AppTeknisi
+							case "wifi", "hotspot":
+								appType = domain.AppWifi
+							case "isolir":
+								appType = domain.AppIsolir
 							default:
 								appType = domain.AppCMS
 							}
@@ -147,6 +163,10 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 						appType = domain.AppSales
 					case "teknisi":
 						appType = domain.AppTeknisi
+					case "wifi", "hotspot":
+						appType = domain.AppWifi
+					case "isolir":
+						appType = domain.AppIsolir
 					default:
 						appType = domain.AppCMS
 					}

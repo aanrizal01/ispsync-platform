@@ -18,6 +18,8 @@ const (
 	AppNOC       AppType = "noc"
 	AppSales     AppType = "sales"
 	AppTeknisi   AppType = "teknisi"
+	AppWifi      AppType = "wifi"
+	AppIsolir    AppType = "isolir"
 	AppPlatform  AppType = "platform" // Admin master SaaS ISPSYNC
 )
 

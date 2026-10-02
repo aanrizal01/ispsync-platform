@@ -39,6 +39,15 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if tCtx.AppType == domain.AppWifi {
+		h.ServeHotspot(w, r)
+		return
+	}
+	if tCtx.AppType == domain.AppIsolir {
+		h.ServeIsolir(w, r)
+		return
+	}
+
 	h.mu.RLock()
 	html := h.htmlCache
 	h.mu.RUnlock()
