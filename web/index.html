@@ -1097,63 +1097,76 @@
     <section id="tab-track" class="hidden max-w-5xl mx-auto space-y-6">
 
       <!-- 1. LOGIN CONTAINER (Shown if not logged in) -->
-      <div id="customer-login-container" class="max-w-4xl mx-auto my-4 sm:my-8 overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-xl">
-        <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[540px]">
+      <div id="customer-login-container" class="max-w-5xl mx-auto my-4 sm:my-8 overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl shadow-cyan-950/20">
+        <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[580px]">
           
           <!-- LEFT HERO BRANDING PANEL (lg:col-span-5) -->
-          <div class="lg:col-span-5 bg-slate-900 text-white p-6 sm:p-8 flex flex-col justify-between">
-            <div class="space-y-6">
+          <div class="lg:col-span-5 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/40 text-white p-7 sm:p-10 flex flex-col justify-between relative overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-800/80">
+            <!-- Ambient Gradient Glows (Uniform with Image 1) -->
+            <div class="absolute -top-32 -left-32 w-80 h-80 bg-cyan-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute top-1/2 -right-32 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-32 left-1/4 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="relative z-10 space-y-6">
               <!-- Brand Header -->
-              <div class="space-y-3">
-                <div class="flex items-center gap-3">
-                  <img src="/logo.png" alt="GOGIGA" class="h-10 w-auto object-contain" />
+              <div>
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-mono font-medium mb-4">
+                  <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                  <span>PORTAL PELANGGAN</span>
+                </div>
+                
+                <div class="flex items-center gap-3.5">
+                  <div class="w-12 h-12 rounded-2xl bg-slate-900/90 border border-slate-700/80 flex items-center justify-center p-2 shadow-inner">
+                    <img id="cust-login-logo" src="/logo.png" alt="Logo" class="max-h-full max-w-full object-contain" onerror="this.src='/logo.png'" />
+                  </div>
                   <div>
-                    <h2 class="text-xl font-bold tracking-tight text-white">GOGIGANET</h2>
-                    <p class="text-xs text-blue-200">Fiber Broadband &amp; Gaming Network</p>
+                    <h2 class="text-xl font-black tracking-tight text-white cust-brand-name-dynamic">ISPSYNC</h2>
+                    <p class="text-xs text-cyan-300/80 font-mono tracking-wide">Fiber Broadband &amp; Digital Services</p>
                   </div>
                 </div>
-                <p class="text-xs text-slate-300 leading-relaxed font-sans pt-1">
-                  Portal mandiri pelanggan untuk memantau status perangkat Wi-Fi, redaman kabel optik, rincian tagihan resmi, dan pembayaran cepat via QRIS.
+
+                <p class="text-xs text-slate-300 leading-relaxed font-sans pt-4">
+                  Portal mandiri pelanggan untuk monitoring perangkat ONT, cek redaman sinyal fiber, cek invoice tagihan bulanan, dan pelunasan instan.
                 </p>
               </div>
 
-              <!-- Feature Highlights -->
-              <div class="space-y-2.5 pt-1">
-                <div class="flex items-start gap-3 p-3 rounded-md bg-white/5 border border-white/10">
-                  <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
+              <!-- Feature Highlights (Modern Card Styling) -->
+              <div class="space-y-3 pt-1">
+                <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                  <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
                     <i data-lucide="activity" class="w-4 h-4"></i>
                   </div>
                   <div>
-                    <h4 class="text-xs font-semibold text-white">Status ONT &amp; Sinyal Fiber</h4>
-                    <p class="text-[11px] text-slate-300">Cek redaman optik dan status koneksi Wi-Fi langsung dari perangkat.</p>
+                    <h4 class="text-xs font-bold text-slate-100">Status ONT &amp; Sinyal Fiber</h4>
+                    <p class="text-[11px] text-slate-400 leading-normal">Cek redaman optik dBm dan status koneksi Wi-Fi secara real-time.</p>
                   </div>
                 </div>
 
-                <div class="flex items-start gap-3 p-3 rounded-md bg-white/5 border border-white/10">
-                  <div class="w-8 h-8 rounded-md bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
+                <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                  <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
                     <i data-lucide="receipt" class="w-4 h-4"></i>
                   </div>
                   <div>
-                    <h4 class="text-xs font-semibold text-white">Faktur &amp; Pembayaran QRIS</h4>
-                    <p class="text-[11px] text-slate-300">Pelunasan otomatis 24 jam dan unduh kuitansi resmi PDF kapan saja.</p>
+                    <h4 class="text-xs font-bold text-slate-100">Faktur &amp; Pembayaran QRIS</h4>
+                    <p class="text-[11px] text-slate-400 leading-normal">Pelunasan otomatis 24 jam dan unduh kuitansi resmi PDF kapan saja.</p>
                   </div>
                 </div>
 
-                <div class="flex items-start gap-3 p-3 rounded-md bg-white/5 border border-white/10">
-                  <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <i data-lucide="map-pin" class="w-4 h-4"></i>
+                <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                  <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i>
                   </div>
                   <div>
-                    <h4 class="text-xs font-semibold text-white">Kelola Multi-Lokasi</h4>
-                    <p class="text-[11px] text-slate-300">Akses seluruh titik pasang internet Anda dalam satu akun terpadu.</p>
+                    <h4 class="text-xs font-bold text-slate-100">Keamanan Data Terenkripsi</h4>
+                    <p class="text-[11px] text-slate-400 leading-normal">Akses data pribadi dan riwayat langganan dengan perlindungan SSL.</p>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- Trust / Security Footer -->
-            <div class="pt-6 mt-6 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-              <div class="flex items-center gap-1.5 text-slate-300">
+            <div class="relative z-10 pt-5 mt-6 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+              <div class="flex items-center gap-1.5 text-cyan-400/90 font-mono text-[11px]">
                 <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
                 <span>Enkripsi SSL 256-Bit</span>
               </div>
@@ -1169,20 +1182,20 @@
               <div class="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div>
                   <h3 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Selamat Datang</h3>
-                  <p class="text-xs text-slate-500 font-sans mt-0.5">Silakan masuk untuk mengakses portal pelanggan GOGIGANET</p>
+                  <p class="text-xs text-slate-500 font-sans mt-0.5">Silakan masuk untuk mengakses portal pelanggan <span class="cust-brand-name-dynamic font-semibold text-slate-700">Layanan Internet</span></p>
                 </div>
-                <div class="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-xs shrink-0">
+                <div class="w-11 h-11 rounded-2xl bg-cyan-50 text-cyan-600 flex items-center justify-center border border-cyan-100 shadow-xs shrink-0">
                   <i data-lucide="user-check" class="w-5 h-5"></i>
                 </div>
               </div>
 
               <!-- Auth Method Selector Tabs -->
-              <div class="flex items-center p-1.5 bg-slate-100/90 rounded-lg border border-slate-200/70">
-                <button type="button" id="tab-cust-auth-password" onclick="switchCustomerAuthMethod('password')" class="flex-1 py-2.5 text-xs font-mono font-bold rounded-xl transition text-blue-700 bg-white shadow-xs flex items-center justify-center gap-2">
+              <div class="flex items-center p-1.5 bg-slate-100/90 rounded-xl border border-slate-200/70">
+                <button type="button" id="tab-cust-auth-password" onclick="switchCustomerAuthMethod('password')" class="flex-1 py-2.5 text-xs font-mono font-bold rounded-lg transition text-cyan-700 bg-white shadow-xs flex items-center justify-center gap-2">
                   <i data-lucide="key" class="w-4 h-4"></i>
                   <span>KATA SANDI</span>
                 </button>
-                <button type="button" id="tab-cust-auth-otp" onclick="switchCustomerAuthMethod('otp')" class="flex-1 py-2.5 text-xs font-mono font-bold rounded-xl transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-2">
+                <button type="button" id="tab-cust-auth-otp" onclick="switchCustomerAuthMethod('otp')" class="flex-1 py-2.5 text-xs font-mono font-bold rounded-lg transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-2">
                   <i data-lucide="message-square" class="w-4 h-4"></i>
                   <span>OTP WHATSAPP</span>
                 </button>
@@ -1197,7 +1210,7 @@
                   </label>
                   <div class="relative">
                     <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-                    <input type="text" id="customer-login-identifier" placeholder="Contoh: 08xxxxxxxxxx atau email@gmail.com" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm font-sans outline-none focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-100 transition shadow-xs" required />
+                    <input type="text" id="customer-login-identifier" placeholder="Contoh: 08xxxxxxxxxx atau email@gmail.com" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm font-sans outline-none focus:bg-white focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition shadow-xs" required />
                   </div>
                 </div>
 
@@ -1206,33 +1219,33 @@
                     <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
                       <span>Kata Sandi Akun</span>
                     </label>
-                    <a href="https://wa.me/6285186866164?text=Halo%20Admin%20GOGIGANET%2C%20saya%20ingin%20bantuan%20reset%20kata%20sandi%20portal%20pelanggan" target="_blank" class="text-xs text-blue-600 hover:text-blue-700 font-medium hover:underline inline-flex items-center gap-1 font-sans">
+                    <a id="cust-login-forgot-link" href="#" target="_blank" class="text-xs text-cyan-600 hover:text-cyan-700 font-medium hover:underline inline-flex items-center gap-1 font-sans">
                       <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
                       <span>Lupa Sandi?</span>
                     </a>
                   </div>
                   <div class="relative">
                     <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-                    <input type="password" id="customer-login-password" placeholder="Masukkan kata sandi akun Anda" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-11 py-3 text-sm font-sans outline-none focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-100 transition shadow-xs" required />
+                    <input type="password" id="customer-login-password" placeholder="Masukkan kata sandi akun Anda" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-11 py-3 text-sm font-sans outline-none focus:bg-white focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition shadow-xs" required />
                     <button type="button" onclick="toggleCustLoginPassVisibility()" class="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-700 transition" title="Lihat/Sembunyikan Sandi">
                       <i data-lucide="eye" id="cust-login-pass-eye-icon" class="w-4 h-4"></i>
                     </button>
                   </div>
-                  <div class="p-3 bg-blue-50/70 border border-blue-100 rounded-xl mt-2 flex items-start gap-2 text-xs text-blue-900 font-sans">
-                    <i data-lucide="shield-alert" class="w-4 h-4 text-blue-600 shrink-0 mt-0.5"></i>
+                  <div class="p-3 bg-cyan-50/70 border border-cyan-100 rounded-xl mt-2 flex items-start gap-2.5 text-xs text-cyan-950 font-sans">
+                    <i data-lucide="shield-alert" class="w-4 h-4 text-cyan-600 shrink-0 mt-0.5"></i>
                     <p class="leading-relaxed">
-                      <strong>Pelanggan Terdaftar:</strong> Kata sandi awal adalah <strong>6 digit terakhir nomor WhatsApp</strong> Anda (atau <code>gogiga123</code>). Anda dapat mengubah sandi setelah masuk ke dashboard.
+                      <strong>Pelanggan Terdaftar:</strong> Kata sandi awal adalah <strong>6 digit terakhir nomor WhatsApp</strong> Anda. Anda dapat mengubah sandi setelah masuk ke dashboard.
                     </p>
                   </div>
                 </div>
 
-                <button type="submit" id="btn-customer-login" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-mono font-bold py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-lg shadow-blue-600/25 active:scale-[0.99]">
+                <button type="submit" id="btn-customer-login" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-mono font-bold py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-lg shadow-cyan-600/25 active:scale-[0.99]">
                   <i data-lucide="log-in" class="w-4 h-4"></i>
                   <span>MASUK KE PORTAL PELANGGAN</span>
                 </button>
               </form>
 
-              <!-- Method 2: OTP WhatsApp Login Form (Prepared / Dual-Method) -->
+              <!-- Method 2: OTP WhatsApp Login Form -->
               <form id="form-cust-login-otp" onsubmit="handleCustomerOTPLoginSubmit(event)" class="hidden space-y-4">
                 <div>
                   <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
@@ -1241,7 +1254,7 @@
                   <div class="flex gap-2">
                     <div class="relative flex-1">
                       <i data-lucide="phone" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-                      <input type="text" id="customer-login-otp-phone" placeholder="08xxxxxxxxxx" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm font-sans outline-none focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-100 transition shadow-xs" />
+                      <input type="text" id="customer-login-otp-phone" placeholder="08xxxxxxxxxx" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm font-sans outline-none focus:bg-white focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition shadow-xs" />
                     </div>
                     <button type="button" id="btn-request-customer-otp" onclick="requestCustomerOTP()" class="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-mono font-bold rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-md shadow-emerald-600/20 active:scale-95">
                       <i data-lucide="send" class="w-3.5 h-3.5"></i>
@@ -1274,11 +1287,11 @@
 
             <!-- Bottom Utilities -->
             <div class="pt-6 mt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 font-sans">
-              <button type="button" onclick="switchTab('register')" class="hover:text-blue-600 transition inline-flex items-center gap-1.5 font-medium">
+              <button type="button" onclick="switchTab('register')" class="hover:text-cyan-600 transition inline-flex items-center gap-1.5 font-medium">
                 <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
                 <span>Kembali ke Pendaftaran Baru / Cek Area Peta</span>
               </button>
-              <a href="https://wa.me/6285186866164?text=Halo%20Admin%20GOGIGANET%2C%20saya%20butuh%20bantuan%20login%20portal%20pelanggan" target="_blank" class="hover:text-emerald-600 transition inline-flex items-center gap-1.5 font-medium">
+              <a id="cust-login-help-link" href="#" target="_blank" class="hover:text-emerald-600 transition inline-flex items-center gap-1.5 font-medium">
                 <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
                 <span>Bantuan Customer Service</span>
               </a>
@@ -9775,7 +9788,7 @@
         if (formOtp) formOtp.classList.remove('hidden');
       } else {
         if (tabPass) {
-          tabPass.className = 'flex-1 py-2.5 text-xs font-mono font-bold rounded-xl transition text-blue-700 bg-white shadow-xs flex items-center justify-center gap-2';
+          tabPass.className = 'flex-1 py-2.5 text-xs font-mono font-bold rounded-lg transition text-cyan-700 bg-white shadow-xs flex items-center justify-center gap-2';
         }
         if (tabOtp) {
           tabOtp.className = 'flex-1 py-2.5 text-xs font-mono font-bold rounded-xl transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-2';
@@ -21389,6 +21402,7 @@
 
       const mode = currentSubdomainMode || (typeof detectActiveSubdomain === 'function' ? detectActiveSubdomain() : 'unified');
       if (mode === 'portal') {
+        const tName = (window.__ISPSYNC_TENANT__ && window.__ISPSYNC_TENANT__.name) || 'ISPSYNC';
         if (tabId === 'track') {
           document.documentElement.classList.add('is-portal-track');
           try {
@@ -21396,6 +21410,8 @@
             if (!url.searchParams.get('track')) url.searchParams.set('login', '1');
             window.history.replaceState({}, '', url);
           } catch (e) {}
+          if (typeof applyDynamicCustomerLogin === 'function') applyDynamicCustomerLogin();
+          document.title = `Masuk | ${tName} Portal Pelanggan`;
         } else if (tabId === 'register') {
           document.documentElement.classList.remove('is-portal-track');
           try {
@@ -21404,6 +21420,7 @@
             url.searchParams.delete('track');
             window.history.replaceState({}, '', url);
           } catch (e) {}
+          document.title = `${tName} Broadband • Registrasi & Jangkauan Fiber Optik`;
         }
       }
 
@@ -23248,6 +23265,60 @@
         console.warn('applyDynamicFooter error:', err);
       }
     }
+ 
+    function applyDynamicCustomerLogin() {
+      try {
+        let tenantName = "ISPSYNC";
+        let logoUrl = "/logo.png";
+        let waPhone = "6285186866164";
+
+        if (window.__ISPSYNC_TENANT__) {
+          const t = window.__ISPSYNC_TENANT__;
+          if (t.name) tenantName = t.name;
+          if (t.logo_url) logoUrl = t.logo_url;
+          if (t.contact_phone) {
+            let p = t.contact_phone.replace(/[^0-9]/g, '');
+            if (p.startsWith('0')) p = '62' + p.substring(1);
+            if (p) waPhone = p;
+          }
+        } else {
+          const h = window.location.hostname.toLowerCase();
+          const parts = h.split('.');
+          if (parts.length >= 3 && parts[0] !== 'www') {
+            const slug = (parts.length >= 4 && (parts[0] === 'ledger' || parts[0] === 'hotspot')) ? parts[1] : parts[0];
+            if (slug && slug !== 'ispsync') {
+              tenantName = slug.toUpperCase();
+              logoUrl = '/web/' + slug + '_logo.svg';
+            }
+          }
+        }
+
+        document.querySelectorAll('.cust-brand-name-dynamic').forEach(el => {
+          el.innerText = tenantName;
+        });
+
+        const logoEl = document.getElementById('cust-login-logo');
+        if (logoEl && logoUrl) {
+          logoEl.src = logoUrl;
+        }
+
+        const forgotLink = document.getElementById('cust-login-forgot-link');
+        if (forgotLink) {
+          forgotLink.href = `https://wa.me/${waPhone}?text=${encodeURIComponent('Halo Admin ' + tenantName + ', saya ingin bantuan reset kata sandi portal pelanggan')}`;
+        }
+        const helpLink = document.getElementById('cust-login-help-link');
+        if (helpLink) {
+          helpLink.href = `https://wa.me/${waPhone}?text=${encodeURIComponent('Halo Admin ' + tenantName + ', saya butuh bantuan login portal pelanggan')}`;
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('login') === '1' || urlParams.get('masuk') === '1' || urlParams.get('track')) {
+          document.title = `Masuk | ${tenantName} Portal Pelanggan`;
+        }
+      } catch (err) {
+        console.warn('applyDynamicCustomerLogin error:', err);
+      }
+    }
 
     // Close dropdown when clicking outside
     window.addEventListener('click', (e) => {
@@ -23264,6 +23335,7 @@
       initCustomerPortal();
       applySubdomainRouting();
       applyDynamicFooter();
+      applyDynamicCustomerLogin();
       syncSSOSession();
       if (typeof updatePortalAuthChromeVisibility === 'function') updatePortalAuthChromeVisibility();
 

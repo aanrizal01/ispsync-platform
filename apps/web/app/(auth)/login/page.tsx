@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -39,15 +39,33 @@ export default function LoginPage() {
       }
       
       const parts = h.split(".");
-      if (parts.length >= 3) {
-        const slug = parts[1].toLowerCase();
-        const upper = parts[1].toUpperCase();
+      let slug = "";
+      if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "hotspot")) {
+        slug = parts[1].toLowerCase();
+      } else if (parts.length === 3) {
+        if (parts[0] === "ledger" || parts[0] === "hotspot") {
+          slug = parts[1].toLowerCase();
+        } else if (parts[0] !== "www") {
+          slug = parts[0].toLowerCase();
+        }
+      } else if (parts.length >= 3 && parts[0] !== "ledger" && parts[0] !== "www") {
+        slug = parts[0].toLowerCase();
+      }
+
+      if (slug && slug !== "ispsync") {
+        const upper = slug.toUpperCase();
         setTenantSlug(slug);
         setTenantName(upper);
         setTenantLogo(`/web/${slug}_logo.svg`);
         setIsTenant(true);
-
         document.title = `Masuk | ${upper} Ledger`;
+
+        const iconEl = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+        if (iconEl) {
+          iconEl.href = `/web/${slug}_favicon.svg`;
+        }
+      } else {
+        document.title = "Masuk ke Dashboard";
       }
     }
   }, []);
@@ -68,7 +86,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-slate-950 font-sans selection:bg-cyan-500 selection:text-slate-950">
+    <>
+      <title>{tenantName && tenantName !== "ISPSYNC" ? `Masuk | ${tenantName} Ledger` : "Masuk ke Dashboard"}</title>
+      <div className="min-h-screen w-full flex flex-col lg:flex-row bg-slate-950 font-sans selection:bg-cyan-500 selection:text-slate-950">
       {/* ========================================================
           LEFT SIDE: Showcase (Dynamic: Demo vs Member Portal)
          ======================================================== */}
@@ -352,5 +372,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+    </>
   );
-}

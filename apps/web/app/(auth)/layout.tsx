@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Masuk",
-  description: "Login ke ISPSYNC CMS — Network & Management Platform",
+  title: {
+    absolute: "Masuk ke Dashboard",
+  },
+  description: "Login ke Backoffice Ledger & Management Platform",
 };
 
 export default function AuthLayout({
