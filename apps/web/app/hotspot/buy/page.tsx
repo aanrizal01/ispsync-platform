@@ -410,12 +410,18 @@ function HotspotBuyForm() {
     <div className="min-h-screen bg-slate-900 flex flex-col justify-between items-center p-4 py-6">
       {/* Top Header Navigation */}
       <header className="w-full max-w-md flex items-center justify-between py-2 px-1 mb-3 text-xs">
-        <Link href="/hotspot/buy" className="flex items-center gap-2 text-white font-bold tracking-tight">
-          <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center shadow-md shadow-blue-500/20">
-            <Wifi className="w-4 h-4 text-white" />
-          </div>
-          <span className="tracking-wide">GOGIGA HOTSPOT</span>
-        </Link>
+        <div className="flex items-center gap-2 text-white font-bold tracking-tight">
+          {tenantLogo ? (
+            <img src={tenantLogo} alt="Logo" className="h-6 w-auto brightness-0 invert" onError={(e) => e.currentTarget.style.display = 'none'} />
+          ) : (
+            <>
+              <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center shadow-md shadow-blue-500/20">
+                <Wifi className="w-4 h-4 text-white" />
+              </div>
+              <span className="tracking-wide uppercase">{tenantName} HOTSPOT</span>
+            </>
+          )}
+        </div>
         <div className="flex items-center gap-1.5">
           <Link
             href={`/hotspot/login?ip=${encodeURIComponent(clientIP)}&mac=${encodeURIComponent(clientMAC)}&link-login=${encodeURIComponent(linkLogin)}&link-orig=${encodeURIComponent(linkOrig)}`}
@@ -436,17 +442,23 @@ function HotspotBuyForm() {
 
       <div className="max-w-md w-full bg-white rounded-3xl p-6 sm:p-8 shadow-2xl">
         {/* Brand Header */}
-        <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md shadow-blue-500/20">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
+          <div className="text-center mb-6">
+            <div className="flex items-center justify-center mx-auto mb-4">
+              {tenantLogo ? (
+                <img src={tenantLogo} alt="Logo" className="h-10 w-auto" onError={(e) => e.currentTarget.style.display = 'none'} />
+              ) : (
+                <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-md shadow-blue-500/20">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+              )}
+            </div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Beli Voucher WiFi</h1>
+            <p className="text-slate-500 text-xs mt-1">
+              Pembayaran instan online via QRIS atau e-Wallet langsung aktif
+            </p>
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Beli Voucher WiFi</h1>
-          <p className="text-slate-500 text-xs mt-1">
-            Pembayaran instan online via QRIS atau e-Wallet langsung aktif
-          </p>
-        </div>
 
         {error && (
           <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">
