@@ -138,6 +138,7 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
       slug: %q,
       name: %q,
       short_name: %q,
+      logo_url: %q,
       brand_color: %q,
       contact_phone: %q,
       contact_email: %q,
@@ -154,7 +155,7 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
       } catch (e) {}
     })();
   </script>
-`, tCtx.Tenant.ID, tCtx.Tenant.Slug, tCtx.Tenant.Name, tCtx.Tenant.PrefixID, tCtx.Tenant.BrandColor, tCtx.Tenant.ContactPhone, tCtx.Tenant.ContactEmail, tCtx.Tenant.Address, tCtx.AppType, tCtx.Subdomain, tCtx.Host, string(allTenantsJSON), mode, tCtx.Tenant.Name)
+`, tCtx.Tenant.ID, tCtx.Tenant.Slug, tCtx.Tenant.Name, tCtx.Tenant.PrefixID, tCtx.Tenant.LogoURL, tCtx.Tenant.BrandColor, tCtx.Tenant.ContactPhone, tCtx.Tenant.ContactEmail, tCtx.Tenant.Address, tCtx.AppType, tCtx.Subdomain, tCtx.Host, string(allTenantsJSON), mode, tCtx.Tenant.Name)
 
 	// Inject script into <head>
 	html = strings.Replace(html, "<head>", "<head>\n"+tenantScript, 1)
@@ -183,6 +184,11 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 	html = strings.Replace(html, "@gogiga_isp", email, -1)
 	html = strings.Replace(html, "info@ispsync.id", email, -1)
 	html = strings.Replace(html, "mailto:info@ispsync.id", "mailto:"+email, -1)
+
+	// Dynamic Logo replacements
+	if tCtx.Tenant.LogoURL != "" {
+		html = strings.Replace(html, "/logo.png", tCtx.Tenant.LogoURL, -1)
+	}
 
 	html = strings.Replace(html, "GOGIGANET", tCtx.Tenant.Name, -1)
 

@@ -45,6 +45,7 @@ type Storage interface {
 
 	// Custom Domain & TLS Check
 	UpdateTenantCustomDomain(ctx context.Context, tenantID, customDomain string) error
+	UpdateTenantProfile(ctx context.Context, tenantID, logoUrl, brandColor, contactPhone, contactEmail string) error
 	ValidateDomainForTLS(ctx context.Context, domainName string) bool
 
 	// Invoices (Siklus Penagihan Bulanan)

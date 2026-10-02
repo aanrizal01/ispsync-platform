@@ -32,6 +32,7 @@ export default function EngineNexusSettings() {
   const [brandName, setBrandName] = useState("");
   const [supportPhone, setSupportPhone] = useState("");
   const [captiveUrl, setCaptiveUrl] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -45,6 +46,7 @@ export default function EngineNexusSettings() {
         if (member.engines.nexus.brandName) setBrandName(member.engines.nexus.brandName);
         if (member.engines.nexus.supportPhone) setSupportPhone(member.engines.nexus.supportPhone);
         if (member.engines.nexus.captiveUrl) setCaptiveUrl(member.engines.nexus.captiveUrl);
+        if (member.engines.nexus.logoUrl) setLogoUrl(member.engines.nexus.logoUrl);
       }
     }
   }, [member]);
@@ -67,6 +69,7 @@ export default function EngineNexusSettings() {
       brandName: brandName.trim(),
       supportPhone: supportPhone.trim(),
       captiveUrl: captiveUrl.trim(),
+      logoUrl: logoUrl.trim(),
     });
     setSaving(false);
     if (res.success) {
@@ -309,6 +312,22 @@ export default function EngineNexusSettings() {
                   placeholder="contoh: 081234567890"
                   className="w-full bg-white border border-gray-300 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-xl px-3.5 py-2 text-xs font-medium text-gray-800 transition-colors"
                 />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-1.5">
+                  URL Logo Brand (PNG / SVG)
+                </label>
+                <input
+                  type="text"
+                  value={logoUrl}
+                  onChange={e => setLogoUrl(e.target.value)}
+                  placeholder="contoh: https://ispku.com/logo.png"
+                  className="w-full bg-white border border-gray-300 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-xl px-3.5 py-2 text-xs font-medium text-gray-800 transition-colors"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Masukkan URL gambar logo ISP Anda. Logo akan ditampilkan di header Landing Portal dan favicon. Jika kosong, akan menggunakan logo default ISPSYNC.
+                </p>
               </div>
             </div>
 

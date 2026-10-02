@@ -1147,6 +1147,11 @@ func (s *PostgresStorage) UpdateTenantCustomDomain(ctx context.Context, tenantID
 	return err
 }
 
+func (s *PostgresStorage) UpdateTenantProfile(ctx context.Context, tenantID, logoUrl, brandColor, contactPhone, contactEmail string) error {
+	_, err := s.db.ExecContext(ctx, "UPDATE tenants SET logo_url = $1, brand_color = $2, contact_phone = $3, contact_email = $4, updated_at = $5 WHERE id = $6", strings.TrimSpace(logoUrl), strings.TrimSpace(brandColor), strings.TrimSpace(contactPhone), strings.TrimSpace(contactEmail), time.Now(), tenantID)
+	return err
+}
+
 func (s *PostgresStorage) ValidateDomainForTLS(ctx context.Context, domainName string) bool {
 	d := strings.ToLower(strings.TrimSpace(domainName))
 	if d == "" {

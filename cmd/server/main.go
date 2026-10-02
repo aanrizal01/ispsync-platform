@@ -122,6 +122,7 @@ func main() {
 
 		api.Get("/context", apiH.GetContext)
 		api.Post("/tenant/custom-domain", apiH.UpdateCustomDomain)
+		api.Post("/tenant/profile", apiH.UpdateTenantProfile)
 		api.Get("/plans", apiH.ListPlans)
 		api.Get("/odps", apiH.ListODPs)
 		api.Get("/olts", apiH.ListOLTs)

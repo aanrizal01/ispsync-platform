@@ -472,6 +472,36 @@ func (h *APIHandler) UpdateCustomDomain(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
+// UpdateTenantProfile mengatur branding (logo, warna, kontak) tenant
+func (h *APIHandler) UpdateTenantProfile(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	if t == nil {
+		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
+		return
+	}
+
+	var req struct {
+		LogoURL      string `json:"logo_url"`
+		BrandColor   string `json:"brand_color"`
+		ContactPhone string `json:"contact_phone"`
+		ContactEmail string `json:"contact_email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.errorResponse(w, http.StatusBadRequest, "Invalid JSON input")
+		return
+	}
+
+	if err := h.store.UpdateTenantProfile(r.Context(), t.ID, req.LogoURL, req.BrandColor, req.ContactPhone, req.ContactEmail); err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, "Gagal menyimpan profil: "+err.Error())
+		return
+	}
+
+	h.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Profil dan Branding berhasil diperbarui.",
+	})
+}
+
 // ListInvoices mengambil daftar tagihan bulanan
 func (h *APIHandler) ListInvoices(w http.ResponseWriter, r *http.Request) {
 	t := middleware.GetTenant(r)

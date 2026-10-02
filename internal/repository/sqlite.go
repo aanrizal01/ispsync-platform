@@ -1231,6 +1231,11 @@ func (s *SQLiteStorage) UpdateTenantCustomDomain(ctx context.Context, tenantID, 
 	return err
 }
 
+func (s *SQLiteStorage) UpdateTenantProfile(ctx context.Context, tenantID, logoUrl, brandColor, contactPhone, contactEmail string) error {
+	_, err := s.db.ExecContext(ctx, "UPDATE tenants SET logo_url = ?, brand_color = ?, contact_phone = ?, contact_email = ?, updated_at = ? WHERE id = ?", strings.TrimSpace(logoUrl), strings.TrimSpace(brandColor), strings.TrimSpace(contactPhone), strings.TrimSpace(contactEmail), time.Now(), tenantID)
+	return err
+}
+
 func (s *SQLiteStorage) ValidateDomainForTLS(ctx context.Context, domainName string) bool {
 	d := strings.ToLower(strings.TrimSpace(domainName))
 	if d == "" {
