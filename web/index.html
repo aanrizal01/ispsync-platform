@@ -1209,7 +1209,7 @@
 
           <!-- Bottom: Footer Info -->
           <div class="relative z-10 pt-6 border-t border-slate-800/80 text-xs text-slate-500">
-            <p>&copy; <span id="cust-copy-year">2026</span> <span class="cust-brand-name-dynamic">ISPMU</span>. All rights reserved.</p>
+            <p>&copy; <span id="cust-copy-year">2026</span> <span id="cust-legal-name">PT. Mitra Usaha Data</span>. All rights reserved.</p>
           </div>
         </div>
 
@@ -23383,6 +23383,13 @@
         const copyYear = document.getElementById('cust-copy-year');
         if (copyYear) {
           copyYear.innerText = new Date().getFullYear();
+        }
+
+        let legalName = (window.__ISPSYNC_TENANT__ && window.__ISPSYNC_TENANT__.name) || 
+          (tenantName === 'ISPMU' ? 'PT. Mitra Usaha Data' : (tenantName === 'ISPKU' ? 'PT. ISP Kita Nusantara' : `PT. ${tenantName} Data Nusantara`));
+        const legalEl = document.getElementById('cust-legal-name');
+        if (legalEl) {
+          legalEl.innerText = legalName;
         }
 
         const forgotLink = document.getElementById('cust-login-forgot-link');

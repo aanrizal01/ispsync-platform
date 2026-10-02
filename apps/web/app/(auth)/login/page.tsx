@@ -20,6 +20,7 @@ import {
 export default function LoginPage() {
   const { login } = useAuth();
   const [tenantName, setTenantName] = useState("ISPSYNC");
+  const [tenantLegalName, setTenantLegalName] = useState("");
   const [tenantSlug, setTenantSlug] = useState("");
   const [tenantLogo, setTenantLogo] = useState("");
   const [isTenant, setIsTenant] = useState(false);
@@ -52,10 +53,17 @@ export default function LoginPage() {
         slug = parts[0].toLowerCase();
       }
 
+      const TENANT_LEGAL_MAP: Record<string, string> = {
+        ispmu: "PT. Mitra Usaha Data",
+        ispku: "PT. ISP Kita Nusantara",
+        dev: "Laboratorium ISPSYNC R&D",
+      };
+
       if (slug && slug !== "ispsync") {
         const upper = slug.toUpperCase();
         setTenantSlug(slug);
         setTenantName(upper);
+        setTenantLegalName(TENANT_LEGAL_MAP[slug] || `PT. ${upper} Data Nusantara`);
         setTenantLogo(`/web/${slug}_logo.svg`);
         setIsTenant(true);
         document.title = `Masuk | ${upper} Ledger`;
@@ -179,7 +187,7 @@ export default function LoginPage() {
 
         {/* Bottom: Footer Info */}
         <div className="relative z-10 pt-6 border-t border-slate-800/80 text-xs text-slate-500">
-          <p>&copy; {new Date().getFullYear()} {tenantName}. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} {tenantLegalName || tenantName}. All rights reserved.</p>
         </div>
       </div>
 

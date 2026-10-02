@@ -52,9 +52,9 @@ Whenever creating or modifying frontend interfaces across the ISPSYNC platform (
   - Use clean, sharp, professional corporate badges (`rounded-md bg-slate-800 text-cyan-400 border border-slate-700`).
 * **NEVER Add Floating "Sistem Online" Status Indicators:**
   - DO NOT insert `● Sistem Online` or fake status indicators in footers. Keep footers clean with just dynamic copyright.
-* **ALWAYS Use Short Brand Name / Slug (e.g. ISPMU):**
-  - Always prefer the short brand acronym or slug uppercase (`ISPMU`, `ISPKU`, `GOGIGA`) for all user-facing hero headlines, greetings, and buttons.
-  - Never display full legal PT entities (such as "PT. Mitra Usaha Data") as the primary title or greeting.
+* **ALWAYS Use Short Brand Name in Hero & Full Legal PT in Footer:**
+  - Hero headlines, login greetings, cards, and buttons: Always use the short brand acronym or slug uppercase (`ISPMU`, `ISPKU`, `GOGIGA`). Never use the long legal PT name as the primary title or greeting.
+  - Footer copyright: Always use the full legal corporate PT entity name (`© 2026 PT. Mitra Usaha Data. All rights reserved.`). This establishes official legal copyright, authority, and enterprise trust.
 
 ---
 
