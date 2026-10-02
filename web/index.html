@@ -154,15 +154,53 @@
       display: none !important;
     }
 
-    /* Saat belum login di subdomain operasional atau portal login pelanggan: sembunyikan navbar & footer seketika (pusatkan login form) */
+    /* Saat belum login di subdomain operasional atau portal login pelanggan: sembunyikan navbar & footer seketika (full-screen take-over) */
     html.subdomain-login-mode:not([data-subdomain="unified"]) #main-header,
     html.subdomain-login-mode:not([data-subdomain="unified"]) #main-footer,
     html.is-portal-track:not(.subdomain-logged-in) #main-header,
-    html.is-portal-track:not(.subdomain-logged-in) #main-footer {
+    html.is-portal-track:not(.subdomain-logged-in) #main-footer,
+    html.is-portal-track:not(.subdomain-logged-in) #subdomain-sim-bar,
+    html.is-portal-track:not(.subdomain-logged-in) #top-noc-status-bar {
       display: none !important;
     }
-    html.subdomain-login-mode:not([data-subdomain="unified"]) body > main,
+
+    html.is-portal-track:not(.subdomain-logged-in),
+    html.is-portal-track:not(.subdomain-logged-in) body {
+      background-color: #020617 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      min-height: 100vh !important;
+      overflow-x: hidden !important;
+    }
     html.is-portal-track:not(.subdomain-logged-in) body > main {
+      max-width: 100% !important;
+      width: 100% !important;
+      min-height: 100vh !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      display: block !important;
+    }
+    html.is-portal-track:not(.subdomain-logged-in) #tab-track {
+      max-width: 100% !important;
+      width: 100% !important;
+      min-height: 100vh !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      display: block !important;
+    }
+    html.is-portal-track:not(.subdomain-logged-in) #customer-login-container {
+      max-width: 100% !important;
+      width: 100% !important;
+      min-height: 100vh !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border-radius: 0 !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    html.subdomain-login-mode:not([data-subdomain="unified"]) body > main {
       min-height: 100vh !important;
       display: flex !important;
       flex-direction: column !important;
@@ -1096,207 +1134,240 @@
     <!-- ══════════════════════════════════════════════════════════ -->
     <section id="tab-track" class="hidden max-w-5xl mx-auto space-y-6">
 
-      <!-- 1. LOGIN CONTAINER (Shown if not logged in) -->
-      <div id="customer-login-container" class="max-w-5xl mx-auto my-4 sm:my-8 overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl shadow-cyan-950/20">
-        <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[580px]">
-          
-          <!-- LEFT HERO BRANDING PANEL (lg:col-span-5) -->
-          <div class="lg:col-span-5 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/40 text-white p-7 sm:p-10 flex flex-col justify-between relative overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-800/80">
-            <!-- Ambient Gradient Glows (Uniform with Image 1) -->
-            <div class="absolute -top-32 -left-32 w-80 h-80 bg-cyan-600/20 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute top-1/2 -right-32 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute -bottom-32 left-1/4 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
-            
-            <div class="relative z-10 space-y-6">
-              <!-- Brand Header -->
+      <!-- 1. FULL-SCREEN LOGIN CONTAINER (Shown if not logged in) -->
+      <div id="customer-login-container" class="min-h-screen w-full flex flex-col lg:flex-row bg-slate-950 font-sans selection:bg-cyan-500 selection:text-slate-950">
+        
+        <!-- LEFT SIDE: Showcase (Dynamic Brand Authority - Identical to Gambar 1) -->
+        <div class="hidden lg:flex lg:w-1/2 xl:w-7/12 relative flex-col justify-between p-10 xl:p-16 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/40 text-white overflow-hidden border-r border-slate-800/80">
+          <!-- Ambient Radial Glows -->
+          <div class="absolute -top-32 -left-32 w-96 h-96 bg-cyan-600/20 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute top-1/2 -right-32 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute -bottom-32 left-1/4 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+          <!-- Top: Brand Header -->
+          <div class="relative z-10">
+            <div class="flex items-center gap-3.5">
+              <div class="w-12 h-12 rounded-2xl bg-slate-900/90 border border-slate-700/80 flex items-center justify-center p-2 shadow-inner">
+                <img id="cust-login-logo" src="/logo.png" alt="Logo" class="max-h-full max-w-full object-contain" onerror="this.src='/logo.png'" />
+              </div>
               <div>
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-mono font-medium mb-4">
-                  <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
-                  <span>PORTAL PELANGGAN</span>
-                </div>
-                
-                <div class="flex items-center gap-3.5">
-                  <div class="w-12 h-12 rounded-2xl bg-slate-900/90 border border-slate-700/80 flex items-center justify-center p-2 shadow-inner">
-                    <img id="cust-login-logo" src="/logo.png" alt="Logo" class="max-h-full max-w-full object-contain" onerror="this.src='/logo.png'" />
-                  </div>
-                  <div>
-                    <h2 class="text-xl font-black tracking-tight text-white cust-brand-name-dynamic">ISPSYNC</h2>
-                    <p class="text-xs text-cyan-300/80 font-mono tracking-wide">Fiber Broadband &amp; Digital Services</p>
+                <div class="flex items-center gap-2">
+                  <h2 class="text-2xl font-black tracking-tight text-white cust-brand-name-dynamic">ISPMU</h2>
+                  <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-mono font-medium">
+                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                    <span>PORTAL PELANGGAN</span>
                   </div>
                 </div>
-
-                <p class="text-xs text-slate-300 leading-relaxed font-sans pt-4">
-                  Portal mandiri pelanggan untuk monitoring perangkat ONT, cek redaman sinyal fiber, cek invoice tagihan bulanan, dan pelunasan instan.
-                </p>
+                <p class="text-xs text-slate-400 font-sans mt-0.5">Layanan Mandiri Pelanggan <span class="cust-brand-name-dynamic">ISPMU</span></p>
               </div>
-
-              <!-- Feature Highlights (Modern Card Styling) -->
-              <div class="space-y-3 pt-1">
-                <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
-                  <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
-                    <i data-lucide="activity" class="w-4 h-4"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-xs font-bold text-slate-100">Status ONT &amp; Sinyal Fiber</h4>
-                    <p class="text-[11px] text-slate-400 leading-normal">Cek redaman optik dBm dan status koneksi Wi-Fi secara real-time.</p>
-                  </div>
-                </div>
-
-                <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
-                  <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
-                    <i data-lucide="receipt" class="w-4 h-4"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-xs font-bold text-slate-100">Faktur &amp; Pembayaran QRIS</h4>
-                    <p class="text-[11px] text-slate-400 leading-normal">Pelunasan otomatis 24 jam dan unduh kuitansi resmi PDF kapan saja.</p>
-                  </div>
-                </div>
-
-                <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
-                  <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
-                    <i data-lucide="shield-check" class="w-4 h-4"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-xs font-bold text-slate-100">Keamanan Data Terenkripsi</h4>
-                    <p class="text-[11px] text-slate-400 leading-normal">Akses data pribadi dan riwayat langganan dengan perlindungan SSL.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Trust / Security Footer -->
-            <div class="relative z-10 pt-5 mt-6 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-              <div class="flex items-center gap-1.5 text-cyan-400/90 font-mono text-[11px]">
-                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
-                <span>Enkripsi SSL 256-Bit</span>
-              </div>
-              <span class="text-slate-400 text-[11px]">Privasi Terlindungi UU PDP</span>
             </div>
           </div>
 
-          <!-- RIGHT LOGIN FORM PANEL (lg:col-span-7) -->
-          <div class="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-white relative">
-            <div class="space-y-6">
-              
-              <!-- Form Top Bar -->
-              <div class="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div>
-                  <h3 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Selamat Datang</h3>
-                  <p class="text-xs text-slate-500 font-sans mt-0.5">Silakan masuk untuk mengakses portal pelanggan <span class="cust-brand-name-dynamic font-semibold text-slate-700">Layanan Internet</span></p>
+          <!-- Middle: Hero Messaging & Highlights -->
+          <div class="relative z-10 my-auto py-10 space-y-6">
+            <div class="space-y-4">
+              <h1 class="text-3xl sm:text-4xl xl:text-5xl font-black text-white tracking-tight leading-[1.15]">
+                Layanan Internet &amp; <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-400">Tagihan <span class="cust-brand-name-dynamic">ISPMU</span>.</span>
+              </h1>
+              <p class="text-sm sm:text-base text-slate-400 max-w-lg leading-relaxed font-sans">
+                Akses mandiri terpusat untuk memantau status perangkat Wi-Fi, redaman kabel optik, rincian tagihan resmi, dan pelunasan cepat via QRIS.
+              </p>
+            </div>
+
+            <!-- Feature Cards (Uniform Carrier-Grade Telco Design) -->
+            <div class="space-y-3 pt-2 max-w-xl">
+              <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="activity" class="w-4 h-4"></i>
                 </div>
-                <div class="w-11 h-11 rounded-2xl bg-cyan-50 text-cyan-600 flex items-center justify-center border border-cyan-100 shadow-xs shrink-0">
-                  <i data-lucide="user-check" class="w-5 h-5"></i>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-100">Status ONT &amp; Sinyal Fiber</h4>
+                  <p class="text-[11px] text-slate-400 leading-normal">Cek redaman optik dBm dan status koneksi Wi-Fi langsung dari perangkat.</p>
                 </div>
               </div>
 
-              <!-- Auth Method Selector Tabs -->
-              <div class="flex items-center p-1.5 bg-slate-100/90 rounded-xl border border-slate-200/70">
-                <button type="button" id="tab-cust-auth-password" onclick="switchCustomerAuthMethod('password')" class="flex-1 py-2.5 text-xs font-mono font-bold rounded-lg transition text-cyan-700 bg-white shadow-xs flex items-center justify-center gap-2">
-                  <i data-lucide="key" class="w-4 h-4"></i>
-                  <span>KATA SANDI</span>
-                </button>
-                <button type="button" id="tab-cust-auth-otp" onclick="switchCustomerAuthMethod('otp')" class="flex-1 py-2.5 text-xs font-mono font-bold rounded-lg transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-2">
-                  <i data-lucide="message-square" class="w-4 h-4"></i>
-                  <span>OTP WHATSAPP</span>
-                </button>
+              <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="receipt" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-100">Faktur &amp; Pembayaran QRIS</h4>
+                  <p class="text-[11px] text-slate-400 leading-normal">Pelunasan otomatis 24 jam dan unduh kuitansi resmi PDF kapan saja.</p>
+                </div>
               </div>
 
-              <!-- Method 1: Password Login Form -->
-              <form id="form-cust-login-password" onsubmit="handleCustomerLoginSubmit(event)" class="space-y-4">
-                <div>
-                  <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center justify-between">
-                    <span>Identitas Akun</span>
-                    <span class="text-[10px] text-slate-400 font-sans font-normal">WhatsApp / Email / No. Registrasi</span>
-                  </label>
-                  <div class="relative">
-                    <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-                    <input type="text" id="customer-login-identifier" placeholder="Contoh: 08xxxxxxxxxx atau email@gmail.com" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm font-sans outline-none focus:bg-white focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition shadow-xs" required />
-                  </div>
+              <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="shield-check" class="w-4 h-4"></i>
                 </div>
-
                 <div>
-                  <div class="flex items-center justify-between mb-1.5">
-                    <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
-                      <span>Kata Sandi Akun</span>
-                    </label>
-                    <a id="cust-login-forgot-link" href="#" target="_blank" class="text-xs text-cyan-600 hover:text-cyan-700 font-medium hover:underline inline-flex items-center gap-1 font-sans">
-                      <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
-                      <span>Lupa Sandi?</span>
-                    </a>
-                  </div>
-                  <div class="relative">
-                    <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-                    <input type="password" id="customer-login-password" placeholder="Masukkan kata sandi akun Anda" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-11 py-3 text-sm font-sans outline-none focus:bg-white focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition shadow-xs" required />
-                    <button type="button" onclick="toggleCustLoginPassVisibility()" class="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-700 transition" title="Lihat/Sembunyikan Sandi">
-                      <i data-lucide="eye" id="cust-login-pass-eye-icon" class="w-4 h-4"></i>
-                    </button>
-                  </div>
-                  <div class="p-3 bg-cyan-50/70 border border-cyan-100 rounded-xl mt-2 flex items-start gap-2.5 text-xs text-cyan-950 font-sans">
-                    <i data-lucide="shield-alert" class="w-4 h-4 text-cyan-600 shrink-0 mt-0.5"></i>
-                    <p class="leading-relaxed">
-                      <strong>Pelanggan Terdaftar:</strong> Kata sandi awal adalah <strong>6 digit terakhir nomor WhatsApp</strong> Anda. Anda dapat mengubah sandi setelah masuk ke dashboard.
-                    </p>
-                  </div>
+                  <h4 class="text-xs font-bold text-slate-100">Keamanan Data &amp; Privasi</h4>
+                  <p class="text-[11px] text-slate-400 leading-normal">Akses data pribadi dan riwayat langganan dengan perlindungan SSL 256-Bit.</p>
                 </div>
+              </div>
+            </div>
+          </div>
 
-                <button type="submit" id="btn-customer-login" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-mono font-bold py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-lg shadow-cyan-600/25 active:scale-[0.99]">
-                  <i data-lucide="log-in" class="w-4 h-4"></i>
-                  <span>MASUK KE PORTAL PELANGGAN</span>
-                </button>
-              </form>
+          <!-- Bottom: Footer Security & Status -->
+          <div class="relative z-10 pt-6 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+            <p>&copy; <span id="cust-copy-year">2026</span> <span class="cust-brand-name-dynamic">ISPMU</span>. All rights reserved.</p>
+            <div class="flex items-center gap-2 text-xs text-emerald-400 font-mono">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Sistem Online</span>
+            </div>
+          </div>
+        </div>
 
-              <!-- Method 2: OTP WhatsApp Login Form -->
-              <form id="form-cust-login-otp" onsubmit="handleCustomerOTPLoginSubmit(event)" class="hidden space-y-4">
-                <div>
-                  <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                    <span>Nomor WhatsApp Terdaftar</span>
+        <!-- RIGHT SIDE: Auth Form (Clean Edge-to-Edge Matching Gambar 1) -->
+        <div class="w-full lg:w-1/2 xl:w-5/12 flex flex-col justify-between p-8 sm:p-12 lg:p-16 bg-white relative min-h-screen">
+          
+          <!-- Mobile Brand Header (Visible only on small screens) -->
+          <div class="lg:hidden flex items-center justify-between pb-6 mb-6 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+              <img id="cust-login-logo-mobile" src="/logo.png" alt="Logo" class="h-9 w-auto object-contain" onerror="this.src='/logo.png'" />
+              <div>
+                <h3 class="font-black text-slate-900 text-lg leading-tight cust-brand-name-dynamic">ISPMU</h3>
+                <p class="text-[11px] text-slate-500 font-mono">PORTAL PELANGGAN</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Centered Form Container -->
+          <div class="max-w-md w-full mx-auto my-auto py-4">
+            
+            <!-- Form Title -->
+            <div class="mb-6">
+              <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Login Pelanggan <span class="cust-brand-name-dynamic">ISPMU</span></h2>
+              <p class="text-xs sm:text-sm text-slate-500 mt-1 font-sans">
+                Masuk ke portal mandiri untuk mengelola layanan, cek perangkat, dan tagihan <span class="cust-brand-name-dynamic font-semibold text-slate-700">ISPMU</span>.
+              </p>
+            </div>
+
+            <!-- Auth Method Selector Tabs -->
+            <div class="flex items-center p-1.5 bg-slate-100/90 rounded-xl border border-slate-200/70 mb-6">
+              <button type="button" id="tab-cust-auth-password" onclick="switchCustomerAuthMethod('password')" class="flex-1 py-2.5 text-xs font-mono font-bold rounded-lg transition text-cyan-700 bg-white shadow-xs flex items-center justify-center gap-2">
+                <i data-lucide="key" class="w-4 h-4"></i>
+                <span>KATA SANDI</span>
+              </button>
+              <button type="button" id="tab-cust-auth-otp" onclick="switchCustomerAuthMethod('otp')" class="flex-1 py-2.5 text-xs font-mono font-bold rounded-lg transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-2">
+                <i data-lucide="message-square" class="w-4 h-4"></i>
+                <span>OTP WHATSAPP</span>
+              </button>
+            </div>
+
+            <!-- Method 1: Password Login Form -->
+            <form id="form-cust-login-password" onsubmit="handleCustomerLoginSubmit(event)" class="space-y-4">
+              <div>
+                <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center justify-between">
+                  <span>Identitas Akun</span>
+                  <span class="text-[10px] text-slate-400 font-sans font-normal">WhatsApp / Email / No. Registrasi</span>
+                </label>
+                <div class="relative">
+                  <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                  <input type="text" id="customer-login-identifier" placeholder="Contoh: 08xxxxxxxxxx atau email@gmail.com" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm font-sans outline-none focus:bg-white focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition shadow-xs" required />
+                </div>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
+                    <span>Kata Sandi Akun</span>
                   </label>
-                  <div class="flex gap-2">
-                    <div class="relative flex-1">
-                      <i data-lucide="phone" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-                      <input type="text" id="customer-login-otp-phone" placeholder="08xxxxxxxxxx" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm font-sans outline-none focus:bg-white focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition shadow-xs" />
-                    </div>
-                    <button type="button" id="btn-request-customer-otp" onclick="requestCustomerOTP()" class="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-mono font-bold rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-md shadow-emerald-600/20 active:scale-95">
-                      <i data-lucide="send" class="w-3.5 h-3.5"></i>
-                      <span id="btn-request-otp-text">Kirim OTP</span>
-                    </button>
-                  </div>
-                  <p id="cust-otp-sent-status" class="hidden text-xs text-emerald-600 mt-2 font-mono font-semibold flex items-center gap-1">
-                    <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
-                    <span>Kode OTP telah dikirimkan ke WhatsApp Anda.</span>
+                  <a id="cust-login-forgot-link" href="#" target="_blank" class="text-xs text-cyan-600 hover:text-cyan-700 font-medium hover:underline inline-flex items-center gap-1 font-sans">
+                    <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+                    <span>Lupa Sandi?</span>
+                  </a>
+                </div>
+                <div class="relative">
+                  <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                  <input type="password" id="customer-login-password" placeholder="Masukkan kata sandi akun Anda" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-11 py-3 text-sm font-sans outline-none focus:bg-white focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition shadow-xs" required />
+                  <button type="button" onclick="toggleCustLoginPassVisibility()" class="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-700 transition" title="Lihat/Sembunyikan Sandi">
+                    <i data-lucide="eye" id="cust-login-pass-eye-icon" class="w-4 h-4"></i>
+                  </button>
+                </div>
+                <div class="p-3 bg-cyan-50/70 border border-cyan-100 rounded-xl mt-2 flex items-start gap-2.5 text-xs text-cyan-950 font-sans">
+                  <i data-lucide="shield-alert" class="w-4 h-4 text-cyan-600 shrink-0 mt-0.5"></i>
+                  <p class="leading-relaxed">
+                    <strong>Pelanggan Terdaftar:</strong> Kata sandi awal adalah <strong>6 digit terakhir nomor WhatsApp</strong> Anda. Anda dapat mengubah sandi setelah masuk ke dashboard.
                   </p>
                 </div>
+              </div>
 
-                <div>
-                  <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                    <span>Kode Verifikasi (OTP WhatsApp)</span>
-                  </label>
-                  <div class="relative">
-                    <i data-lucide="shield-check" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-                    <input type="text" id="customer-login-otp-code" maxlength="6" placeholder="Masukkan 4 digit kode OTP" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm font-mono tracking-widest outline-none focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100 transition shadow-xs" />
-                  </div>
-                  <p class="text-[11px] text-slate-500 mt-1.5 font-sans">Kode OTP berlaku selama 5 menit untuk satu kali verifikasi login.</p>
-                </div>
+              <div class="flex items-center justify-between pt-1">
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                  <input type="checkbox" id="cust-remember-me" class="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 border-slate-300" checked />
+                  <span class="text-xs text-slate-600 font-sans">Ingat sesi login saya</span>
+                </label>
+              </div>
 
-                <button type="submit" id="btn-customer-otp-login" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-mono font-bold py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-lg shadow-emerald-600/25 active:scale-[0.99]">
-                  <i data-lucide="check-circle" class="w-4 h-4"></i>
-                  <span>VERIFIKASI &amp; MASUK</span>
-                </button>
-              </form>
-            </div>
-
-            <!-- Bottom Utilities -->
-            <div class="pt-6 mt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 font-sans">
-              <button type="button" onclick="switchTab('register')" class="hover:text-cyan-600 transition inline-flex items-center gap-1.5 font-medium">
-                <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
-                <span>Kembali ke Pendaftaran Baru / Cek Area Peta</span>
+              <button type="submit" id="btn-customer-login" class="w-full bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-mono font-bold py-3.5 px-4 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-lg shadow-cyan-600/20 active:scale-[0.99]">
+                <span>Masuk ke Portal Pelanggan</span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
               </button>
-              <a id="cust-login-help-link" href="#" target="_blank" class="hover:text-emerald-600 transition inline-flex items-center gap-1.5 font-medium">
-                <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
-                <span>Bantuan Customer Service</span>
-              </a>
+            </form>
+
+            <!-- Method 2: OTP WhatsApp Login Form -->
+            <form id="form-cust-login-otp" onsubmit="handleCustomerOTPLoginSubmit(event)" class="hidden space-y-4">
+              <div>
+                <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  <span>Nomor WhatsApp Terdaftar</span>
+                </label>
+                <div class="flex gap-2">
+                  <div class="relative flex-1">
+                    <i data-lucide="phone" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                    <input type="text" id="customer-login-otp-phone" placeholder="08xxxxxxxxxx" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm font-sans outline-none focus:bg-white focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition shadow-xs" />
+                  </div>
+                  <button type="button" id="btn-request-customer-otp" onclick="requestCustomerOTP()" class="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-mono font-bold rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-md shadow-emerald-600/20 active:scale-95">
+                    <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                    <span id="btn-request-otp-text">Kirim OTP</span>
+                  </button>
+                </div>
+                <p id="cust-otp-sent-status" class="hidden text-xs text-emerald-600 mt-2 font-mono font-semibold flex items-center gap-1">
+                  <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                  <span>Kode OTP telah dikirimkan ke WhatsApp Anda.</span>
+                </p>
+              </div>
+
+              <div>
+                <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  <span>Kode Verifikasi (OTP WhatsApp)</span>
+                </label>
+                <div class="relative">
+                  <i data-lucide="shield-check" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                  <input type="text" id="customer-login-otp-code" maxlength="6" placeholder="Masukkan 4 digit kode OTP" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm font-mono tracking-widest outline-none focus:bg-white focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100 transition shadow-xs" />
+                </div>
+                <p class="text-[11px] text-slate-500 mt-1.5 font-sans">Kode OTP berlaku selama 5 menit untuk satu kali verifikasi login.</p>
+              </div>
+
+              <button type="submit" id="btn-customer-otp-login" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-mono font-bold py-3.5 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-lg shadow-emerald-600/25 active:scale-[0.99]">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                <span>VERIFIKASI &amp; MASUK</span>
+              </button>
+            </form>
+
+            <!-- Security Note Footnote (Identical to Gambar 1) -->
+            <div class="mt-8 pt-6 border-t border-slate-100">
+              <div class="flex items-center gap-2 text-slate-400 text-xs justify-center">
+                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500 flex-shrink-0"></i>
+                <span>Koneksi Aman &bull; TLS 1.3 &amp; Enkripsi Sesi</span>
+              </div>
+              <p class="text-center text-[11px] text-slate-400 mt-2">
+                Butuh bantuan akses atau reset akun? Hubungi customer service <span class="cust-brand-name-dynamic">ISPMU</span>.
+              </p>
             </div>
 
+          </div>
+
+          <!-- Bottom Navigation Utilities -->
+          <div class="pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 font-sans">
+            <button type="button" onclick="switchTab('register')" class="hover:text-cyan-600 transition inline-flex items-center gap-1.5 font-medium">
+              <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+              <span>Kembali ke Pendaftaran Baru / Cek Area Peta</span>
+            </button>
+            <a id="cust-login-help-link" href="#" target="_blank" class="hover:text-emerald-600 transition inline-flex items-center gap-1.5 font-medium">
+              <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
+              <span>Bantuan Customer Service</span>
+            </a>
           </div>
 
         </div>
@@ -23302,6 +23373,16 @@
           logoEl.src = logoUrl;
         }
 
+        const logoMobile = document.getElementById('cust-login-logo-mobile');
+        if (logoMobile && logoUrl) {
+          logoMobile.src = logoUrl;
+        }
+
+        const copyYear = document.getElementById('cust-copy-year');
+        if (copyYear) {
+          copyYear.innerText = new Date().getFullYear();
+        }
+
         const forgotLink = document.getElementById('cust-login-forgot-link');
         if (forgotLink) {
           forgotLink.href = `https://wa.me/${waPhone}?text=${encodeURIComponent('Halo Admin ' + tenantName + ', saya ingin bantuan reset kata sandi portal pelanggan')}`;
@@ -23314,6 +23395,10 @@
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('login') === '1' || urlParams.get('masuk') === '1' || urlParams.get('track')) {
           document.title = `Masuk | ${tenantName} Portal Pelanggan`;
+        }
+
+        if (typeof lucide !== 'undefined' && lucide.createIcons) {
+          lucide.createIcons();
         }
       } catch (err) {
         console.warn('applyDynamicCustomerLogin error:', err);
