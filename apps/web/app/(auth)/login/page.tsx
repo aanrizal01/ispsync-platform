@@ -151,15 +151,15 @@ export default function LoginPage() {
               </div>
             )}
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-black text-2xl tracking-wider text-white uppercase">
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-2xl font-black tracking-tight text-white uppercase cust-brand-name-dynamic">
                   {tenantName}
-                </span>
+                </h2>
                 <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
                   {isTenant ? "LEDGER & BILLING" : "PORTAL MEMBER"}
                 </span>
               </div>
-              <p className="text-[11px] font-medium text-slate-400 tracking-wider">
+              <p className="text-xs text-slate-400 font-sans mt-0.5">
                 {isTenant ? `Backoffice Operasional & Billing ${tenantName}` : "Kelola Langganan & Layanan Akun"}
               </p>
             </div>
@@ -240,15 +240,15 @@ export default function LoginPage() {
               </div>
             )}
             <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-black text-xl text-slate-900 uppercase">
+              <div className="flex items-center gap-2">
+                <h3 className="font-black text-xl text-slate-900 tracking-tight uppercase">
                   {tenantName}
-                </span>
+                </h3>
                 <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-slate-100 text-cyan-800 border border-slate-200">
                   {isTenant ? "LEDGER & BILLING" : "PORTAL MEMBER"}
                 </span>
               </div>
-              <p className="text-[10px] text-slate-500">
+              <p className="text-xs text-slate-500 font-sans mt-0.5">
                 {isTenant ? `Backoffice Operasional ${tenantName}` : "Kelola Langganan & Layanan"}
               </p>
             </div>

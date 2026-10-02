@@ -1,11 +1,18 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/context";
 
-const geist = Geist({
-  variable: "--font-geist-sans",
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const viewport = {
@@ -38,8 +45,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={geist.variable}>
-      <body className="antialiased bg-slate-50 text-slate-900">
+    <html lang="en" className={`${plusJakartaSans.variable} ${jetbrainsMono.variable}`}>
+      <body className="antialiased bg-slate-50 text-slate-900 font-sans">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
