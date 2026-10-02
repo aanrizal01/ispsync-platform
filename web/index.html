@@ -1147,9 +1147,7 @@
           <!-- Top: Brand Header -->
           <div class="relative z-10">
             <div class="flex items-center gap-3.5">
-              <div class="w-12 h-12 rounded-2xl bg-slate-900/90 border border-slate-700/80 flex items-center justify-center p-2 shadow-inner">
-                <img id="cust-login-logo" src="/logo.png" alt="Logo" class="max-h-full max-w-full object-contain" onerror="this.src='/logo.png'" />
-              </div>
+              <img id="cust-login-logo" src="/web/ispmu_logo.svg" alt="ISPMU" class="h-10 w-auto brightness-0 invert object-contain" onerror="this.style.display='none'" />
               <div>
                 <div class="flex items-center gap-2.5">
                   <h2 class="text-2xl font-black tracking-tight text-white cust-brand-name-dynamic">ISPMU</h2>
@@ -1219,7 +1217,7 @@
           <!-- Mobile Brand Header (Visible only on small screens) -->
           <div class="lg:hidden flex items-center justify-between pb-6 mb-6 border-b border-slate-100">
             <div class="flex items-center gap-3">
-              <img id="cust-login-logo-mobile" src="/logo.png" alt="Logo" class="h-9 w-auto object-contain" onerror="this.src='/logo.png'" />
+              <img id="cust-login-logo-mobile" src="/web/ispmu_logo.svg" alt="Logo" class="h-9 w-auto object-contain" onerror="this.src='/logo.png'" />
               <div>
                 <h3 class="font-black text-slate-900 text-lg leading-tight cust-brand-name-dynamic">ISPMU</h3>
                 <p class="text-[11px] text-slate-500 font-mono">PORTAL PELANGGAN</p>
@@ -23373,11 +23371,14 @@
         const logoEl = document.getElementById('cust-login-logo');
         if (logoEl && logoUrl) {
           logoEl.src = logoUrl;
+          logoEl.style.display = 'block';
+          logoEl.className = 'h-10 w-auto brightness-0 invert object-contain';
         }
 
         const logoMobile = document.getElementById('cust-login-logo-mobile');
         if (logoMobile && logoUrl) {
           logoMobile.src = logoUrl;
+          logoMobile.style.display = 'block';
         }
 
         const copyYear = document.getElementById('cust-copy-year');
