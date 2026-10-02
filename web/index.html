@@ -1151,12 +1151,11 @@
                 <img id="cust-login-logo" src="/logo.png" alt="Logo" class="max-h-full max-w-full object-contain" onerror="this.src='/logo.png'" />
               </div>
               <div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2.5">
                   <h2 class="text-2xl font-black tracking-tight text-white cust-brand-name-dynamic">ISPMU</h2>
-                  <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-mono font-medium">
-                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
-                    <span>PORTAL PELANGGAN</span>
-                  </div>
+                  <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
+                    PORTAL PELANGGAN
+                  </span>
                 </div>
                 <p class="text-xs text-slate-400 font-sans mt-0.5">Layanan Mandiri Pelanggan <span class="cust-brand-name-dynamic">ISPMU</span></p>
               </div>
@@ -1208,13 +1207,9 @@
             </div>
           </div>
 
-          <!-- Bottom: Footer Security & Status -->
-          <div class="relative z-10 pt-6 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+          <!-- Bottom: Footer Info -->
+          <div class="relative z-10 pt-6 border-t border-slate-800/80 text-xs text-slate-500">
             <p>&copy; <span id="cust-copy-year">2026</span> <span class="cust-brand-name-dynamic">ISPMU</span>. All rights reserved.</p>
-            <div class="flex items-center gap-2 text-xs text-emerald-400 font-mono">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>Sistem Online</span>
-            </div>
           </div>
         </div>
 
@@ -23345,7 +23340,14 @@
 
         if (window.__ISPSYNC_TENANT__) {
           const t = window.__ISPSYNC_TENANT__;
-          if (t.name) tenantName = t.name;
+          // Prioritize short brand name (e.g. ISPMU, ISPKU) over legal corporate name
+          if (t.short_name) {
+            tenantName = t.short_name;
+          } else if (t.slug) {
+            tenantName = t.slug.toUpperCase();
+          } else if (t.name) {
+            tenantName = t.name;
+          }
           if (t.logo_url) logoUrl = t.logo_url;
           if (t.contact_phone) {
             let p = t.contact_phone.replace(/[^0-9]/g, '');

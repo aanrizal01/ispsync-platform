@@ -118,7 +118,7 @@ export default function LoginPage() {
                 <span className="font-black text-2xl tracking-wider text-white uppercase">
                   {tenantName}
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
                   {isTenant ? "LEDGER & BILLING" : "PORTAL MEMBER"}
                 </span>
               </div>
@@ -178,12 +178,8 @@ export default function LoginPage() {
         </div>
 
         {/* Bottom: Footer Info */}
-        <div className="relative z-10 pt-6 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-500">
+        <div className="relative z-10 pt-6 border-t border-slate-800/80 text-xs text-slate-500">
           <p>&copy; {new Date().getFullYear()} {tenantName}. All rights reserved.</p>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-slate-400 font-mono">Sistem Online</span>
-          </div>
         </div>
       </div>
 

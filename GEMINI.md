@@ -23,12 +23,11 @@ Whenever creating or modifying frontend interfaces across the ISPSYNC platform (
 ### B. Typography & Micro-Elements
 * **Headlines:** `font-black` or `font-extrabold` with `tracking-tight`.
 * **Gradient Text Highlights:** `text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-400`.
-* **Pill Badges (Carrier-Grade Capsule):**
+* **Micro Badges (Clean Corporate Minimal):**
   ```html
-  <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-mono font-medium">
-    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
-    <span>BADGE TEXT</span>
-  </div>
+  <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
+    BADGE TEXT
+  </span>
   ```
 * **Feature Cards (Dark Glassmorphism):**
   ```html
@@ -44,8 +43,18 @@ Whenever creating or modifying frontend interfaces across the ISPSYNC platform (
   ```
 
 ### C. Split-Screen Layout Standard
-* **Left Panel (Brand Authority & Prestige):** Dark slate gradient, ambient glows, feature showcase, live telemetry/status badges, and security certification footer.
-* **Right Panel (Action & Utility):** Crisp white or high-contrast slate-50, clean typography, rounded-xl inputs with cyan focus rings, and high-velocity gradient submit buttons (`bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500`).
+* **Left Panel (Brand Authority & Prestige):** Dark slate gradient, ambient glows, feature showcase, and clean copyright footer.
+* **Right Panel (Action & Utility):** Crisp white or high-contrast slate-50, clean typography, rounded-xl inputs with cyan focus rings, and high-velocity gradient submit buttons (`bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600`).
+
+### D. STRICT Prohibited Elements (Anti-Patterns)
+* **NEVER Use Sci-Fi / Gimmicky Capsule Badges:**
+  - Strictly forbidden: DO NOT use pill/capsule badges with glowing pulsing animated dots (`animate-pulse`).
+  - Use clean, sharp, professional corporate badges (`rounded-md bg-slate-800 text-cyan-400 border border-slate-700`).
+* **NEVER Add Floating "Sistem Online" Status Indicators:**
+  - DO NOT insert `● Sistem Online` or fake status indicators in footers. Keep footers clean with just dynamic copyright.
+* **ALWAYS Use Short Brand Name / Slug (e.g. ISPMU):**
+  - Always prefer the short brand acronym or slug uppercase (`ISPMU`, `ISPKU`, `GOGIGA`) for all user-facing hero headlines, greetings, and buttons.
+  - Never display full legal PT entities (such as "PT. Mitra Usaha Data") as the primary title or greeting.
 
 ---
 
