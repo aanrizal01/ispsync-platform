@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"html/template"
 	"net"
 	"os"
@@ -248,31 +249,19 @@ func (h *PageHandler) ServeHotspot(w http.ResponseWriter, r *http.Request) {
 
 	ip, mac := h.getClientIPMAC(r)
 	linkLogin := r.URL.Query().Get("link-login")
-	if linkLogin == "" {
-		linkLogin = "/login"
-	}
 	dst := r.URL.Query().Get("dst")
-
-	data := PortalTemplateData{
-		TenantName:   tCtx.Tenant.Name,
-		TenantPrefix: tCtx.Tenant.PrefixID,
-		LogoURL:      tCtx.Tenant.LogoURL,
-		BrandColor:   tCtx.Tenant.BrandColor,
-		ContactPhone: tCtx.Tenant.ContactPhone,
-		ClientIP:     ip,
-		ClientMAC:    mac,
-		Host:         tCtx.Host,
-		LoginLink:    linkLogin,
-		DestURL:      dst,
+	if dst == "" {
+		dst = r.URL.Query().Get("link-orig")
 	}
 
-	tmpl, err := template.ParseFiles("web/telco_hotspot.html")
-	if err != nil {
-		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	tmpl.Execute(w, data)
+	redirectURL := fmt.Sprintf("https://ledger.%s.ispsync.id/hotspot/login?ip=%s&mac=%s&link-login=%s&link-orig=%s",
+		tCtx.Tenant.Slug,
+		url.QueryEscape(ip),
+		url.QueryEscape(mac),
+		url.QueryEscape(linkLogin),
+		url.QueryEscape(dst),
+	)
+	http.Redirect(w, r, redirectURL, http.StatusFound)
 }
 
 func (h *PageHandler) ServeIsolir(w http.ResponseWriter, r *http.Request) {

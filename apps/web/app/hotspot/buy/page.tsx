@@ -14,6 +14,8 @@ import { formatRupiah } from "@/lib/utils";
 import {
   Wifi,
   Store,
+  ArrowLeft,
+  Smartphone,
   ArrowRight,
   LogIn,
   Search,
@@ -434,35 +436,23 @@ function HotspotBuyForm() {
     <div className="min-h-screen bg-slate-900 flex flex-col justify-between items-center p-4 py-6">
       {/* Top Header Navigation */}
       <header className="w-full max-w-md flex items-center justify-between py-2 px-1 mb-3 text-xs">
-        <div className="flex items-center gap-2 text-white font-bold tracking-tight">
-          {tenantLogo ? (
-            <img src={tenantLogo} alt="Logo" className="h-6 w-auto brightness-0 invert" onError={(e) => e.currentTarget.style.display = 'none'} />
-          ) : (
-            <>
-              <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center shadow-md shadow-blue-500/20">
-                <Wifi className="w-4 h-4 text-white" />
-              </div>
-              <span className="tracking-wide uppercase">{tenantName} HOTSPOT</span>
-            </>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5">
           <Link
             href={`/hotspot/login?ip=${encodeURIComponent(clientIP)}&mac=${encodeURIComponent(clientMAC)}&link-login=${encodeURIComponent(linkLogin)}&link-orig=${encodeURIComponent(linkOrig)}`}
-            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors flex items-center gap-1 font-medium"
+            className="flex items-center gap-1.5 text-slate-300 hover:text-white transition font-medium"
           >
-            <LogIn className="w-3.5 h-3.5" />
+            <ArrowLeft className="w-4 h-4" />
             <span>Login Hotspot</span>
           </Link>
-          <Link
-            href="/agent/login"
-            className="px-2.5 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 transition-colors flex items-center gap-1 font-bold"
-          >
-            <Store className="w-3.5 h-3.5" />
-            <span>Portal Agen</span>
-          </Link>
-        </div>
-      </header>
+          <div className="flex items-center gap-1.5">
+            <Link
+              href="/agent/login"
+              className="px-2.5 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 border border-amber-500/30 transition-colors flex items-center gap-1 font-bold"
+            >
+              <Store className="w-3.5 h-3.5" />
+              <span>Portal Agen</span>
+            </Link>
+          </div>
+        </header>
 
       <div className="max-w-md w-full bg-white rounded-3xl p-6 sm:p-8 shadow-2xl">
         {/* Brand Header */}
@@ -587,7 +577,7 @@ function HotspotBuyForm() {
                       : "border-slate-200 text-slate-600 hover:bg-slate-50"
                   }`}
                 >
-                  <span>ðŸ“±</span>
+                  <Smartphone className="w-4 h-4" />
                   <span>QRIS Semua Bank</span>
                 </button>
                 <button
@@ -599,7 +589,7 @@ function HotspotBuyForm() {
                       : "border-slate-200 text-slate-600 hover:bg-slate-50"
                   }`}
                 >
-                  <span>ðŸ’³</span>
+                  <CreditCard className="w-4 h-4" />
                   <span>e-Wallet / VA</span>
                 </button>
               </div>
@@ -667,8 +657,7 @@ function HotspotBuyForm() {
               <Link
                 href={`/hotspot/login?ip=${encodeURIComponent(clientIP)}&mac=${encodeURIComponent(clientMAC)}&link-login=${encodeURIComponent(linkLogin)}&link-orig=${encodeURIComponent(linkOrig)}`}
                 className="text-xs text-slate-500 hover:text-slate-800 transition-colors"
-              >
-                â† Sudah punya kode voucher? Masuk disini
+              ><ArrowLeft className="w-3.5 h-3.5 inline mr-1" /> Sudah punya kode voucher? Masuk disini
               </Link>
             </div>
           </div>

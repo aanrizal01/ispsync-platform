@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { hotspotApi } from "@/lib/api/hotspot";
 import { cn } from "@/lib/utils";
+import { Wifi, CreditCard, Store } from "lucide-react";
 
 function HotspotLoginForm() {
   const searchParams = useSearchParams();
@@ -33,7 +34,42 @@ function HotspotLoginForm() {
   } | null>(null);
   const [resetKey, setResetKey] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
-  const [resetError, setResetError] = useState<string | null>(null);
+    const [resetError, setResetError] = useState<string | null>(null);
+
+  const [tenantLogo, setTenantLogo] = useState("");
+  const [tenantName, setTenantName] = useState("WiFi Hotspot");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const parts = window.location.host.split('.');
+      if (parts.length >= 3) {
+        const tenantSlug = parts[1].toLowerCase();
+        const tenantUpper = parts[1].toUpperCase();
+        setTenantName(tenantUpper);
+        
+        const logoUrl = `/web/${tenantSlug}_logo.svg`;
+        const faviconUrl = `/web/${tenantSlug}_favicon.svg`;
+        setTenantLogo(logoUrl);
+
+        document.title = `Hotspot Login | ${tenantUpper}`;
+
+        try {
+          const oldIcons = document.querySelectorAll(
+            "link[rel*='icon'], link[rel='shortcut icon'], link[rel='apple-touch-icon']"
+          );
+          oldIcons.forEach((el) => el.parentNode?.removeChild(el));
+
+          const newLink = document.createElement("link");
+          newLink.rel = "icon";
+          newLink.type = "image/svg+xml";
+          newLink.href = `${faviconUrl}?v=${Date.now()}`;
+          document.head.appendChild(newLink);
+        } catch (e) {
+          console.error("Failed to update favicon:", e);
+        }
+      }
+    }
+  }, []);
 
   const submitToRouter = (u: string, p: string) => {
     if (linkLogin) {
@@ -139,12 +175,23 @@ function HotspotLoginForm() {
       <div className="max-w-md w-full bg-white rounded-3xl p-6 sm:p-8 shadow-2xl">
         {/* Brand Header */}
         <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md shadow-blue-500/20">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
-            </svg>
+          <div className="flex items-center justify-center mx-auto mb-4">
+            {tenantLogo ? (
+              <img
+                src={tenantLogo}
+                alt="Logo"
+                className="h-10 w-auto"
+                onError={(e) => (e.currentTarget.style.display = "none")}
+              />
+            ) : (
+              <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-md shadow-blue-500/20">
+                <Wifi className="w-6 h-6 text-white" />
+              </div>
+            )}
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">WiFi Hotspot Portal</h1>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            WiFi Hotspot {tenantName}
+          </h1>
           <p className="text-slate-500 text-xs mt-1">
             Selamat datang! Masukkan voucher atau login akun untuk terhubung ke internet.
           </p>
