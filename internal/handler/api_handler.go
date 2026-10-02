@@ -1528,3 +1528,45 @@ func (h *APIHandler) GenerateMikrotikVPN(w http.ResponseWriter, r *http.Request)
 		"script": script,
 	})
 }
+
+// GenerateHotspotConfig membuat script konfigurasi Walled-Garden dan External Login Hotspot MikroTik
+func (h *APIHandler) GenerateHotspotConfig(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	if t == nil {
+		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
+		return
+	}
+
+	// Host landing page / hotspot dari Nexus tenant ini (default ke domain utama kalau custom-nya kosong)
+	hotspotDomain := t.CustomDomain
+	if hotspotDomain == "" {
+		hotspotDomain = "nexus." + t.Slug + ".ispsync.id"
+	}
+
+	script := fmt.Sprintf(`/ip hotspot profile
+set [ find default=yes ] hotspot-address=10.5.50.1 login-by=cookie,http-chap,http-pap
+add dns-name=login.lokal hotspot-address=10.5.50.1 html-directory=flash/hotspot login-by=mac,cookie,http-chap,http-pap name=ispsync_prof
+
+/ip hotspot walled-garden
+add action=allow comment="ISPSYNC Cloud Gateway" dst-host="%s"
+add action=allow comment="ISPSYNC Cloud IP" dst-address="103.179.65.73"
+add action=allow comment="Xendit Payment Gateway" dst-host="*.xendit.co"
+add action=allow comment="Midtrans Payment Gateway" dst-host="*.midtrans.com"
+add action=allow comment="Midtrans CDN" dst-host="*.sandbox.midtrans.com"
+add action=allow comment="Google Fonts" dst-host="fonts.googleapis.com"
+add action=allow comment="Google Fonts Static" dst-host="fonts.gstatic.com"
+
+/ip hotspot walled-garden ip
+add action=accept comment="Allow ISPSYNC Cloud IP" dst-address="103.179.65.73"
+add action=accept comment="Allow DNS Google" dst-address="8.8.8.8"
+add action=accept comment="Allow DNS Cloudflare" dst-address="1.1.1.1"
+
+# Catatan: Silakan ubah hotspot-address dan nama direktori (html-directory) sesuai dengan jaringan Anda.
+# Jika Anda menggunakan RADIUS cloud ISPSYNC, pastikan Radius Client sudah diarahkan ke 10.255.x.x (VPN) atau Public IP ISPSYNC.
+`, hotspotDomain)
+
+	h.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"script":  script,
+	})
+}

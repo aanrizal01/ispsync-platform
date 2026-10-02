@@ -346,6 +346,43 @@ export default function EngineNexusSettings() {
                 Digunakan untuk integrasi halaman login voucher pada MikroTik RouterBoard.
               </p>
             </div>
+
+            {/* Walled Garden / Hotspot Automation */}
+            <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
+              <div className="flex items-start gap-3">
+                <span className="text-xl">📡</span>
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-purple-900">Integrasi Walled-Garden Otomatis</h3>
+                    <p className="text-xs text-purple-700 leading-relaxed mt-1">
+                      Agar pelanggan dapat membuka halaman login dan melakukan pembayaran Payment Gateway (QRIS/Transfer) <b>sebelum</b> memiliki akses internet, IP Cloud ISPSYNC harus diizinkan di MikroTik.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const res = await fetch("http://ispsync.id:8081/api/v1/tenant/hotspot/generate", {
+                          method: "POST",
+                          headers: { "X-Tenant-Slug": member.company.toLowerCase() }
+                        });
+                        const data = await res.json();
+                        if (data.script) {
+                           alert("SUKSES GENERATE SCRIPT!\n\nSilakan Copy Paste ini di Terminal Winbox Anda:\n\n" + data.script);
+                        } else {
+                           alert("Gagal: " + (data.error || "Unknown"));
+                        }
+                      } catch(err) {
+                        alert("Gagal menghubungi server: " + err);
+                      }
+                    }}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-lg transition-colors inline-flex items-center gap-2 shadow-sm"
+                  >
+                    <span>⚡ Generate Script Walled-Garden</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Action buttons */}

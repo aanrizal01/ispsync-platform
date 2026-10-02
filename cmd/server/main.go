@@ -124,6 +124,7 @@ func main() {
 		api.Post("/tenant/custom-domain", apiH.UpdateCustomDomain)
 		api.Post("/tenant/profile", apiH.UpdateTenantProfile)
 		api.Post("/tenant/mikrotik/generate", apiH.GenerateMikrotikVPN)
+		api.Post("/tenant/hotspot/generate", apiH.GenerateHotspotConfig)
 		api.Get("/plans", apiH.ListPlans)
 		api.Get("/odps", apiH.ListODPs)
 		api.Get("/olts", apiH.ListOLTs)
