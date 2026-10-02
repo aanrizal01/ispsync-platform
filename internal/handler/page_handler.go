@@ -190,6 +190,10 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 	// Dynamic Logo replacements
 	if tCtx.Tenant.LogoURL != "" {
 		html = strings.Replace(html, "/logo.png", tCtx.Tenant.LogoURL, -1)
+		faviconURL := strings.Replace(tCtx.Tenant.LogoURL, "_logo.svg", "_favicon.svg", 1)
+		html = strings.Replace(html, "<link id=\"dynamic-favicon\" rel=\"icon\" type=\"image/png\" href=\""+tCtx.Tenant.LogoURL+"\" />", "<link id=\"dynamic-favicon\" rel=\"icon\" type=\"image/svg+xml\" href=\""+faviconURL+"\" />", 1)
+		// Fallback for without ID
+		html = strings.Replace(html, "<link rel=\"icon\" type=\"image/png\" href=\""+tCtx.Tenant.LogoURL+"\" />", "<link rel=\"icon\" type=\"image/svg+xml\" href=\""+faviconURL+"\" />", 1)
 	}
 
 	html = strings.Replace(html, "GOGIGANET", tCtx.Tenant.Name, -1)
