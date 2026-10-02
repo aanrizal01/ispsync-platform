@@ -46,6 +46,21 @@ function HotspotBuyForm() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const [tenantLogo, setTenantLogo] = useState("");
+  const [tenantName, setTenantName] = useState("ISPSYNC");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const parts = window.location.host.split('.');
+      if (parts.length >= 3) {
+        const slug = parts[1].toUpperCase();
+        setTenantName(slug);
+        setTenantLogo(https:///web/_logo.svg);
+      }
+    }
+  }, []);
+
+
   // Recovery State
   const [recoverPhone, setRecoverPhone] = useState("");
   const [recoverOrderID, setRecoverOrderID] = useState("");
@@ -62,20 +77,7 @@ function HotspotBuyForm() {
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoMsg, setPromoMsg] = useState<string | null>(null);
 
-  // Load Midtrans Snap Script on mount
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const snapScriptUrl = "https://app.midtrans.com/snap/snap.js";
-    const clientKey = "Mid-client-lbXcAlC7QYsCLR3R";
-
-    if (!document.querySelector(`script[src="${snapScriptUrl}"]`)) {
-      const script = document.createElement("script");
-      script.src = snapScriptUrl;
-      script.setAttribute("data-client-key", clientKey);
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  }, []);
+  
 
   // Save router redirect parameters to sessionStorage so they persist across PG redirects
   useEffect(() => {
@@ -186,34 +188,49 @@ function HotspotBuyForm() {
     const pUrl = paymentUrl || order?.payment_url;
     const oId = orderId || order?.order_id || "";
 
-    if (typeof window !== "undefined" && (window as any).snap && token) {
-      try {
-        (window as any).snap.pay(token, {
-          onSuccess: function (result: any) {
-            if (oId) {
-              handleConfirmPayment(oId);
-            }
-          },
-          onPending: function (result: any) {
-            console.log("Midtrans payment pending:", result);
-          },
-          onError: function (result: any) {
-            console.error("Midtrans payment error:", result);
-            setError("Pembayaran gagal atau dibatalkan.");
-          },
-          onClose: function () {
-            console.log("Customer closed the Midtrans Snap modal");
-          },
-        });
-        return;
-      } catch (err) {
-        console.error("Failed to open snap modal:", err);
-      }
-    }
+    const isSandbox = pUrl?.includes('sandbox.midtrans.com');
+    const snapScriptUrl = isSandbox ? "https://app.sandbox.midtrans.com/snap/snap.js" : "https://app.midtrans.com/snap/snap.js";
+    const clientKey = "Mid-client-lbXcAlC7QYsCLR3R";
 
-    // Fallback jika snap script terblokir di captive portal / browser
-    if (pUrl && typeof window !== "undefined") {
-      window.open(pUrl, "_blank");
+    const loadAndPay = () => {
+      if (typeof window !== "undefined" && (window as any).snap && token) {
+        try {
+          (window as any).snap.pay(token, {
+            onSuccess: function (result: any) {
+              if (oId) {
+                setStep("SUCCESS");
+              }
+            },
+            onPending: function (result: any) {
+              console.log("Midtrans payment pending:", result);
+            },
+            onError: function (result: any) {
+              console.error("Midtrans payment error:", result);
+              setError("Pembayaran gagal atau dibatalkan.");
+            },
+            onClose: function () {
+              console.log("Customer closed the Midtrans Snap modal");
+            },
+          });
+          return;
+        } catch (err) {
+          console.error("Failed to open snap modal:", err);
+        }
+      }
+      if (pUrl && typeof window !== "undefined") {
+        window.open(pUrl, "_blank");
+      }
+    };
+
+    if (!document.querySelector(script[src=""])) {
+      const script = document.createElement("script");
+      script.src = snapScriptUrl;
+      script.setAttribute("data-client-key", clientKey);
+      script.async = true;
+      script.onload = loadAndPay;
+      document.body.appendChild(script);
+    } else {
+      loadAndPay();
     }
   };
 
@@ -224,7 +241,7 @@ function HotspotBuyForm() {
     try {
       const res = await hotspotApi.purchase({
         template_id: selectedPkg.id,
-        phone: phone.trim(),
+        phone: phone.trim().replace(/\D/g, "").replace(/^0/, "62"),
         payment_method: paymentMethod,
         client_ip: clientIP,
         client_mac: clientMAC,
@@ -257,7 +274,7 @@ function HotspotBuyForm() {
       const res = await hotspotApi.checkPurchase({
         order_id: targetOrderId,
         template_id: selectedPkg?.id,
-        phone: phone.trim(),
+        phone: phone.trim().replace(/\D/g, "").replace(/^0/, "62"),
         promo_code: order?.promo_code || appliedPromo?.promo_code || undefined,
         simulate_pay: false,
       });
@@ -353,7 +370,7 @@ function HotspotBuyForm() {
 
     try {
       const res = await hotspotApi.recoverVoucher({
-        phone: recoverPhone.trim(),
+        phone: recoverPhone.trim().replace(/\D/g, "").replace(/^0/, "62"),
         order_id: recoverOrderID.trim(),
         client_ip: activeIP,
         client_mac: activeMAC,
