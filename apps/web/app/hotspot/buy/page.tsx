@@ -222,7 +222,7 @@ function HotspotBuyForm() {
       }
     };
 
-    if (!document.querySelector(script[src=""])) {
+    if (!document.querySelector("script[src=\"" + snapScriptUrl + "\"]")) {
       const script = document.createElement("script");
       script.src = snapScriptUrl;
       script.setAttribute("data-client-key", clientKey);

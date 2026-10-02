@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect } from "react";
 import MemberNav from "../../_nav";
 import { useMember } from "../../context";
@@ -46,7 +46,7 @@ export default function EngineNexusSettings() {
         if (member.engines.nexus.brandName) setBrandName(member.engines.nexus.brandName);
         if (member.engines.nexus.supportPhone) setSupportPhone(member.engines.nexus.supportPhone);
         if (member.engines.nexus.captiveUrl) setCaptiveUrl(member.engines.nexus.captiveUrl);
-        if (member.engines.nexus.logoUrl) setLogoUrl(member.engines.nexus.logoUrl);
+        if ((member.engines.nexus as any).logoUrl) setLogoUrl((member.engines.nexus as any).logoUrl);
       }
     }
   }, [member]);
@@ -99,7 +99,7 @@ export default function EngineNexusSettings() {
               <span className="text-xs font-semibold text-purple-600">Customer &amp; Field Operations</span>
             </div>
             <h1 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-              <span>🌐</span> Pengaturan ISPSYNC Nexus &amp; Portal
+              <span>ðŸŒ</span> Pengaturan ISPSYNC Nexus &amp; Portal
             </h1>
             <p className="text-xs text-gray-500 mt-1">
               Kelola domain Landing Portal Pelanggan, aplikasi teknisi lapangan, dan branding mandiri.
@@ -113,8 +113,8 @@ export default function EngineNexusSettings() {
               rel="noopener noreferrer"
               className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm shadow-blue-200 flex items-center gap-1.5"
             >
-              <span>🏠 Buka Landing Portal</span>
-              <span className="text-xs font-normal">↗</span>
+              <span>ðŸ  Buka Landing Portal</span>
+              <span className="text-xs font-normal">â†—</span>
             </a>
             <a
               href={urls.nexus}
@@ -122,8 +122,8 @@ export default function EngineNexusSettings() {
               rel="noopener noreferrer"
               className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm shadow-purple-200 flex items-center gap-1.5"
             >
-              <span>🌐 Buka Operasional Nexus</span>
-              <span className="text-xs font-normal">↗</span>
+              <span>ðŸŒ Buka Operasional Nexus</span>
+              <span className="text-xs font-normal">â†—</span>
             </a>
           </div>
         </div>
@@ -132,7 +132,7 @@ export default function EngineNexusSettings() {
         <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg font-bold">
-              ✓
+              âœ“
             </div>
             <div>
               <div className="text-xs font-bold text-gray-900">Status Server Nexus: Operasional</div>
@@ -152,7 +152,7 @@ export default function EngineNexusSettings() {
           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-5">
             <div>
               <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <span>🌐</span> Domain Landing Portal &amp; Operasional
+                <span>ðŸŒ</span> Domain Landing Portal &amp; Operasional
               </h2>
               <p className="text-xs text-gray-500 mt-1">
                 Alamat web yang dikunjungi pelanggan umum (pendaftaran/cek tagihan) serta tim sales &amp; teknisi ISP Anda.
@@ -163,7 +163,7 @@ export default function EngineNexusSettings() {
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                  <span>🏠</span> 1. Landing Portal Pelanggan (Publik)
+                  <span>ðŸ </span> 1. Landing Portal Pelanggan (Publik)
                 </span>
                 <span className="text-[10px] bg-blue-100 text-blue-800 font-semibold px-2 py-0.5 rounded">
                   Customer Self-Service
@@ -184,7 +184,7 @@ export default function EngineNexusSettings() {
                   onClick={() => copyText(`https://${activeRootDomain}`, "root_url")}
                   className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-medium transition-colors"
                 >
-                  {copiedField === "root_url" ? "✓ Tersalin" : "Salin URL"}
+                  {copiedField === "root_url" ? "âœ“ Tersalin" : "Salin URL"}
                 </button>
                 <a
                   href={`https://${activeRootDomain}`}
@@ -192,7 +192,7 @@ export default function EngineNexusSettings() {
                   rel="noopener noreferrer"
                   className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-colors"
                 >
-                  Buka ↗
+                  Buka â†—
                 </a>
               </div>
             </div>
@@ -201,7 +201,7 @@ export default function EngineNexusSettings() {
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                  <span>🌐</span> 2. Portal Operasional Nexus (Internal)
+                  <span>ðŸŒ</span> 2. Portal Operasional Nexus (Internal)
                 </span>
                 <span className="text-[10px] bg-purple-100 text-purple-800 font-semibold px-2 py-0.5 rounded">
                   Sales &amp; Teknisi
@@ -222,7 +222,7 @@ export default function EngineNexusSettings() {
                   onClick={() => copyText(urls.nexus, "nexus_url")}
                   className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-medium transition-colors"
                 >
-                  {copiedField === "nexus_url" ? "✓ Tersalin" : "Salin URL"}
+                  {copiedField === "nexus_url" ? "âœ“ Tersalin" : "Salin URL"}
                 </button>
                 <a
                   href={urls.nexus}
@@ -230,7 +230,7 @@ export default function EngineNexusSettings() {
                   rel="noopener noreferrer"
                   className="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold transition-colors"
                 >
-                  Buka ↗
+                  Buka â†—
                 </a>
               </div>
             </div>
@@ -260,7 +260,7 @@ export default function EngineNexusSettings() {
             {/* DNS Helper */}
             <div className="bg-slate-900 text-slate-200 rounded-xl p-4 text-xs space-y-2">
               <div className="font-bold text-white flex items-center justify-between">
-                <span>📋 Panduan DNS Jika Menggunakan Domain Sendiri:</span>
+                <span>ðŸ“‹ Panduan DNS Jika Menggunakan Domain Sendiri:</span>
                 <span className="text-[10px] text-purple-300 font-mono">Auto-SSL Let's Encrypt Aktif</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
@@ -280,7 +280,7 @@ export default function EngineNexusSettings() {
           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
             <div>
               <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <span>🎨</span> Kustomisasi Tampilan &amp; Branding
+                <span>ðŸŽ¨</span> Kustomisasi Tampilan &amp; Branding
               </h2>
               <p className="text-xs text-gray-500 mt-1">
                 Informasi ini ditampilkan di header portal pelanggan dan pesan notifikasi otomatis.
@@ -350,7 +350,7 @@ export default function EngineNexusSettings() {
             {/* Walled Garden / Hotspot Automation */}
             <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
               <div className="flex items-start gap-3">
-                <span className="text-xl">📡</span>
+                <span className="text-xl">ðŸ“¡</span>
                 <div className="flex-1 space-y-3">
                   <div>
                     <h3 className="text-sm font-bold text-purple-900">Integrasi Walled-Garden Otomatis</h3>
@@ -378,7 +378,7 @@ export default function EngineNexusSettings() {
                     }}
                     className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-lg transition-colors inline-flex items-center gap-2 shadow-sm"
                   >
-                    <span>⚡ Generate Script Walled-Garden</span>
+                    <span>âš¡ Generate Script Walled-Garden</span>
                   </button>
                 </div>
               </div>
@@ -389,7 +389,7 @@ export default function EngineNexusSettings() {
           <div className="flex items-center justify-end gap-3 pt-2">
             {saveSuccess && (
               <span className="text-xs font-bold text-emerald-600 animate-fade-in flex items-center gap-1">
-                <span>✓</span> Pengaturan Nexus &amp; Portal berhasil disimpan!
+                <span>âœ“</span> Pengaturan Nexus &amp; Portal berhasil disimpan!
               </span>
             )}
             <button
