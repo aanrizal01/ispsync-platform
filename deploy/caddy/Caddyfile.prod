@@ -115,6 +115,29 @@ https:// {
         }
     }
 
+    # 0.7. Universal Agent & Sales Backoffice (/agent)
+    @agent_path {
+        path /agent*
+    }
+    handle @agent_path {
+        reverse_proxy web:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_down Cache-Control "no-cache, no-store, must-revalidate"
+        }
+    }
+
+    # 0.8. Universal Static Assets & Tenant Brand Favicons (/web/*)
+    @web_assets {
+        path /web/*
+    }
+    handle @web_assets {
+        reverse_proxy 172.18.0.1:8081 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
     # 1. CMS & Billing Backoffice App (Next.js & API)
     @billing_api {
         header_regexp Host (^(ledger|billing)\.|\.(ledger|billing)\.)
