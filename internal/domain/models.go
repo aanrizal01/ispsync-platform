@@ -137,8 +137,11 @@ type OLT struct {
 	Name      string `json:"name"`
 	Vendor    string `json:"vendor"` // "HUAWEI", "ZTE", "VSOL", "JOLINK", "FIBERHOME"
 	HostIP    string `json:"host_ip"`
-	Port      int    `json:"port"`
-	Username  string `json:"username"`
+	Port          int    `json:"port"`
+	SNMPPort      int    `json:"snmp_port"`
+	SNMPCommunity string `json:"snmp_community"`
+	RouterID      string `json:"router_id"`
+	Username      string `json:"username"`
 	Password  string `json:"-"`
 	Status    string `json:"status"`
 	TotalPONs int    `json:"total_pons"`
