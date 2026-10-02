@@ -15,6 +15,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
 type APIHandler struct {
@@ -1464,3 +1465,66 @@ func (h *APIHandler) PurchaseAddon(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+
+// GenerateMikrotikVPN membuat WireGuard keys dan script MikroTik
+func (h *APIHandler) GenerateMikrotikVPN(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	if t == nil {
+		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
+		return
+	}
+
+	// Cek apakah sudah ada router
+	router, err := h.store.GetMikrotikRouter(r.Context(), t.ID)
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, "Gagal mengecek router")
+		return
+	}
+
+	var privKey wgtypes.Key
+	var pubKey wgtypes.Key
+
+	// Jika belum ada, buat baru
+	if router == nil {
+		privKey, _ = wgtypes.GeneratePrivateKey()
+		pubKey = privKey.PublicKey()
+
+		// TODO: Implementasi alokasi IP otomatis yang tidak bentrok (sementara hardcode 10.255.0.2)
+		// Kita bisa menggunakan query SQL untuk mencari IP terakhir.
+		ipSuffix := time.Now().Unix() % 250 + 2 // Cepat untuk prototipe
+		wgIP := fmt.Sprintf("10.255.0.%d", ipSuffix)
+
+		router = &domain.MikrotikRouter{
+			ID:          uuid.New().String(),
+			TenantID:    t.ID,
+			Name:        "Router Utama " + t.Name,
+			WgPubkey:    pubKey.String(),
+			WgIP:        wgIP,
+			APIPort:     8728,
+			APIUser:     "ispsync_api",
+			APIPassword: uuid.New().String()[:12], // Random password API
+			Status:      "offline",
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		}
+
+		if err := h.store.CreateMikrotikRouter(r.Context(), router); err != nil {
+			h.errorResponse(w, http.StatusInternalServerError, "Gagal menyimpan data router: "+err.Error())
+			return
+		}
+	}
+
+	// Generate Script Winbox
+	script := fmt.Sprintf(`/interface wireguard add listen-port=13231 mtu=1420 name=wg-ispsync private-key="%s"
+/interface wireguard peers add allowed-address=0.0.0.0/0 endpoint-address=vpn.ispsync.id endpoint-port=51820 interface=wg-ispsync persistent-keepalive=25s public-key="<SERVER_PUBLIC_KEY_DISINI>"
+/ip address add address=%s/16 interface=wg-ispsync
+/user add name=%s password=%s group=full
+/ip service set api address=10.255.0.0/16 port=%d disabled=no`, 
+		privKey.String(), router.WgIP, router.APIUser, router.APIPassword, router.APIPort)
+
+	h.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"router": router,
+		"script": script,
+	})
+}

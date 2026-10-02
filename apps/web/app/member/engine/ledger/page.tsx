@@ -203,6 +203,49 @@ export default function EngineLedgerSettings() {
             </div>
           </div>
 
+          {/* NEW: VPN Hub / MikroTik Router Sync */}
+          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+            <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white flex items-center gap-3">
+              <span className="text-xl">🛡️</span>
+              <div>
+                <h2 className="text-sm font-bold text-gray-900">Koneksi VPN MikroTik (Auto-Provisioning)</h2>
+                <p className="text-[11px] text-gray-500 mt-0.5">Hubungkan router Anda ke Cloud ISPSYNC menggunakan WireGuard.</p>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-xl flex items-start gap-3">
+                <span className="text-yellow-600 mt-0.5">ℹ️</span>
+                <div className="text-xs text-yellow-800 leading-relaxed">
+                  <strong>RouterOS v7+ Sangat Direkomendasikan.</strong><br/>
+                  Klik "Generate Script" di bawah ini. Sistem akan membagikan alokasi IP Private (10.255.x.x) dan kunci kriptografi otomatis. Anda cukup mem-<em>paste</em> kode tersebut di menu <strong>New Terminal</strong> MikroTik (Winbox).
+                </div>
+              </div>
+              
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const res = await fetch("http://ispsync.id:8081/api/v1/tenant/mikrotik/generate", {
+                      method: "POST",
+                      headers: { "X-Tenant-Slug": member.company.toLowerCase() }
+                    });
+                    const data = await res.json();
+                    if (data.script) {
+                       alert("SUKSES GENERATE!\n\nSilakan Copy Paste ini di Terminal Winbox:\n\n" + data.script);
+                    } else {
+                       alert("Gagal: " + (data.error || "Unknown"));
+                    }
+                  } catch(err) {
+                    alert("Gagal menghubungi server: " + err);
+                  }
+                }}
+                className="px-4 py-2.5 bg-gray-900 hover:bg-black text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-2"
+              >
+                <span>⚡ Generate Script Winbox</span>
+              </button>
+            </div>
+          </div>
+
           {/* RADIUS AAA Section */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-4">
             <div>

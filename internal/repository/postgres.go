@@ -1167,6 +1167,29 @@ func (s *PostgresStorage) UpdateTenantProfile(ctx context.Context, tenantID, log
 	return err
 }
 
+func (s *PostgresStorage) CreateMikrotikRouter(ctx context.Context, r *domain.MikrotikRouter) error {
+	_, err := s.db.ExecContext(ctx, `
+		INSERT INTO mikrotik_routers (id, tenant_id, name, wg_pubkey, wg_ip, api_port, api_user, api_password, status, last_seen, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		ON CONFLICT(id) DO UPDATE SET 
+		wg_pubkey=excluded.wg_pubkey, wg_ip=excluded.wg_ip, api_password=excluded.api_password, updated_at=excluded.updated_at
+	`, r.ID, r.TenantID, r.Name, r.WgPubkey, r.WgIP, r.APIPort, r.APIUser, r.APIPassword, r.Status, r.LastSeen, r.CreatedAt, r.UpdatedAt)
+	return err
+}
+
+func (s *PostgresStorage) GetMikrotikRouter(ctx context.Context, tenantID string) (*domain.MikrotikRouter, error) {
+	row := s.db.QueryRowContext(ctx, "SELECT id, tenant_id, name, wg_pubkey, wg_ip, api_port, api_user, api_password, status, last_seen, created_at, updated_at FROM mikrotik_routers WHERE tenant_id = $1", tenantID)
+	var r domain.MikrotikRouter
+	err := row.Scan(&r.ID, &r.TenantID, &r.Name, &r.WgPubkey, &r.WgIP, &r.APIPort, &r.APIUser, &r.APIPassword, &r.Status, &r.LastSeen, &r.CreatedAt, &r.UpdatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &r, nil
+}
+
 func (s *PostgresStorage) ValidateDomainForTLS(ctx context.Context, domainName string) bool {
 	d := strings.ToLower(strings.TrimSpace(domainName))
 	if d == "" {
