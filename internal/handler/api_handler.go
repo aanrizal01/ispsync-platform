@@ -15,6 +15,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/go-routeros/routeros"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
@@ -1568,5 +1569,98 @@ add action=accept comment="Allow DNS Cloudflare" dst-address="1.1.1.1"
 	h.jsonResponse(w, http.StatusOK, map[string]interface{}{
 		"success": true,
 		"script":  script,
+	})
+}
+
+
+
+// GenerateIsolirScript membuat script NAT dan IP Pool untuk Auto-Isolir di MikroTik
+func (h *APIHandler) GenerateIsolirScript(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	if t == nil {
+		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
+		return
+	}
+
+	// Domain Isolir
+	isolirDomain := t.CustomDomain
+	if isolirDomain == "" {
+		isolirDomain = "nexus." + t.Slug + ".ispsync.id"
+	}
+
+	script := fmt.Sprintf(`/ip pool
+add name=POOL_ISOLIR ranges=10.50.50.2-10.50.50.254
+
+/ip firewall nat
+# Redirect semua trafik HTTP port 80 ke server Cloud ISPSYNC (Halaman Isolir)
+add action=dst-nat chain=dstnat comment="ISPSYNC AUTO-ISOLIR HTTP" dst-port=80 protocol=tcp src-address=10.50.50.0/24 to-addresses=103.179.65.73 to-ports=80
+# Redirect trafik HTTPS (Optional, bisa menyebabkan SSL warning di sisi client, tapi efektif memblokir akses)
+add action=dst-nat chain=dstnat comment="ISPSYNC AUTO-ISOLIR HTTPS" dst-port=443 protocol=tcp src-address=10.50.50.0/24 to-addresses=103.179.65.73 to-ports=443
+
+/ip firewall filter
+add action=accept chain=forward comment="Allow DNS for Isolir" dst-port=53 protocol=udp src-address=10.50.50.0/24
+add action=accept chain=forward comment="Allow HTTP to ISPSYNC Cloud" dst-address=103.179.65.73 dst-port=80,443 protocol=tcp src-address=10.50.50.0/24
+add action=drop chain=forward comment="Drop All Other Traffic from ISOLIR" src-address=10.50.50.0/24
+`)
+
+	h.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"script":  script,
+	})
+}
+
+// KickSubscriber menendang user PPPoE atau Hotspot secara realtime menggunakan RouterOS API via WireGuard
+func (h *APIHandler) KickSubscriber(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	if t == nil {
+		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
+		return
+	}
+
+	username := r.URL.Query().Get("username")
+	if username == "" {
+		h.errorResponse(w, http.StatusBadRequest, "Parameter username dibutuhkan")
+		return
+	}
+
+	router, err := h.store.GetMikrotikRouter(r.Context(), t.ID)
+	if err != nil || router == nil {
+		h.errorResponse(w, http.StatusInternalServerError, "Router VPN MikroTik belum dikonfigurasi")
+		return
+	}
+
+	// Connect ke MikroTik via WireGuard IP (e.g. 10.255.0.x:8728)
+	client, err := routeros.Dial(fmt.Sprintf("%s:%d", router.WgIP, router.APIPort), router.APIUser, router.APIPassword)
+	if err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, "Gagal terhubung ke RouterOS API via VPN: " + err.Error())
+		return
+	}
+	defer client.Close()
+
+	// Coba tendang dari PPPoE
+	replyPPPoE, _ := client.Run("/ppp/active/print", "?name=" + username)
+	pppoeKicked := false
+	if len(replyPPPoE.Re) > 0 {
+		for _, re := range replyPPPoE.Re {
+			id := re.Map[".id"]
+			client.Run("/ppp/active/remove", "=.id=" + id)
+			pppoeKicked = true
+		}
+	}
+
+	// Coba tendang dari Hotspot
+	replyHotspot, _ := client.Run("/ip/hotspot/active/print", "?user=" + username)
+	hotspotKicked := false
+	if len(replyHotspot.Re) > 0 {
+		for _, re := range replyHotspot.Re {
+			id := re.Map[".id"]
+			client.Run("/ip/hotspot/active/remove", "=.id=" + id)
+			hotspotKicked = true
+		}
+	}
+
+	h.jsonResponse(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": fmt.Sprintf("User %s dieksekusi. PPPoE: %v, Hotspot: %v", username, pppoeKicked, hotspotKicked),
 	})
 }
