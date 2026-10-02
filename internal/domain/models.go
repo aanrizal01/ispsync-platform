@@ -259,3 +259,19 @@ type TenantContext struct {
 	IsMaster  bool
 }
 
+
+
+type MikrotikRouter struct {
+	ID          string    `json:"id"`
+	TenantID    string    `json:"tenant_id"`
+	Name        string    `json:"name"`
+	WgPubkey    string    `json:"wg_pubkey"`
+	WgIP        string    `json:"wg_ip"`
+	APIPort     int       `json:"api_port"`
+	APIUser     string    `json:"api_user"`
+	APIPassword string    `json:"api_password"`
+	Status      string    `json:"status"`
+	LastSeen    time.Time `json:"last_seen"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}

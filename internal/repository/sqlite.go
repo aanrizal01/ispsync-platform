@@ -92,6 +92,21 @@ func (s *SQLiteStorage) migrate() error {
 		UNIQUE(tenant_id, code)
 	);
 
+	CREATE TABLE IF NOT EXISTS mikrotik_routers (
+		id TEXT PRIMARY KEY,
+		tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+		name TEXT NOT NULL,
+		wg_pubkey TEXT NOT NULL,
+		wg_ip TEXT NOT NULL UNIQUE,
+		api_port INTEGER DEFAULT 8728,
+		api_user TEXT NOT NULL,
+		api_password TEXT NOT NULL,
+		status TEXT DEFAULT 'offline',
+		last_seen DATETIME,
+		created_at DATETIME,
+		updated_at DATETIME
+	);
+
 	CREATE TABLE IF NOT EXISTS odps (
 		id TEXT PRIMARY KEY,
 		tenant_id TEXT NOT NULL,
