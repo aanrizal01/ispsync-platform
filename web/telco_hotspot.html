@@ -134,10 +134,10 @@
                 tenantSlug = parts[1];
             }
             if (tenantSlug) {
-                const url = 'https://billing.' + tenantSlug + '.ispsync.id/hotspot/buy';
+                const url = 'https://ledger.' + tenantSlug + '.ispsync.id/hotspot/buy';
                 document.getElementById('link-buy').href = url;
             } else {
-                document.getElementById('link-buy').href = 'https://billing.gogiga.net.id/hotspot/buy';
+                document.getElementById('link-buy').href = 'https://ledger.gogiga.net.id/hotspot/buy';
             }
         } catch(e) {}
     </script>
