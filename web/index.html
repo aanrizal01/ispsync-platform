@@ -189,7 +189,10 @@
       padding: 0 !important;
       display: block !important;
     }
-    html.is-portal-track:not(.subdomain-logged-in) #customer-login-container {
+    html.is-portal-track:not(.subdomain-logged-in) #customer-login-container,
+    html.subdomain-login-mode:not(.subdomain-logged-in) #sales-login-container,
+    html.subdomain-login-mode:not(.subdomain-logged-in) #admin-login-container,
+    html.subdomain-login-mode:not(.subdomain-logged-in) #technician-login-container {
       max-width: 100% !important;
       width: 100% !important;
       min-height: 100vh !important;
@@ -202,11 +205,22 @@
 
     html.subdomain-login-mode:not([data-subdomain="unified"]) body > main {
       min-height: 100vh !important;
+      max-width: 100% !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
       display: flex !important;
       flex-direction: column !important;
-      justify-content: center !important;
-      padding-top: 0.5rem !important;
-      padding-bottom: 1.5rem !important;
+      justify-content: flex-start !important;
+    }
+
+    html.subdomain-login-mode:not(.subdomain-logged-in) #tab-sales,
+    html.subdomain-login-mode:not(.subdomain-logged-in) #tab-admin,
+    html.subdomain-login-mode:not(.subdomain-logged-in) #tab-technician {
+      max-width: 100% !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
     }
 
     /* Saat sudah login di subdomain: pastikan dashboard langsung tampil tanpa flash login card */
@@ -1987,114 +2001,153 @@
     <!-- ══════════════════════════════════════════════════════════ -->
     <section id="tab-sales" class="hidden max-w-5xl mx-auto space-y-6">
 
-      <!-- 1. LOGIN BOX (Shown if not logged in) -->
-      <div id="sales-login-container" class="max-w-4xl mx-auto my-4 sm:my-8 overflow-hidden rounded-lg bg-white border border-slate-200 shadow-sm">
-        <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[500px]">
-          
-          <!-- LEFT HERO BRANDING PANEL (lg:col-span-5) -->
-          <div class="lg:col-span-5 bg-slate-950 text-white p-6 sm:p-8 flex flex-col justify-between">
-            <div class="space-y-6">
-              <!-- Brand Header -->
-              <div class="space-y-3">
-                <div class="flex items-center gap-3">
-                  <img src="/logo.png" alt="GOGIGA" class="h-9 w-auto object-contain" />
-                  <div>
-                    <h2 class="text-lg font-bold tracking-tight text-white">GOGIGANET</h2>
-                    <p class="text-[11px] text-sky-400 font-mono font-semibold">Portal Agen &amp; Account Executive</p>
-                  </div>
+      <!-- 1. FULL-SCREEN LOGIN CONTAINER (Shown if not logged in) -->
+      <div id="sales-login-container" class="min-h-screen w-full flex flex-col lg:flex-row bg-slate-950 font-sans selection:bg-cyan-500 selection:text-slate-950">
+        
+        <!-- LEFT SIDE: Showcase (Dynamic Brand Authority) -->
+        <div class="hidden lg:flex lg:w-1/2 xl:w-7/12 relative flex-col justify-between p-10 xl:p-16 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/40 text-white overflow-hidden border-r border-slate-800/80">
+          <!-- Ambient Radial Glows -->
+          <div class="absolute -top-32 -left-32 w-96 h-96 bg-cyan-600/20 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute top-1/2 -right-32 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute -bottom-32 left-1/4 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+          <!-- Top: Brand Header -->
+          <div class="relative z-10">
+            <div class="flex items-center gap-3.5">
+              <img id="sales-login-logo" src="/web/ispmu_logo.svg" alt="Logo" class="h-10 w-auto brightness-0 invert object-contain" onerror="this.style.display='none'" />
+              <div>
+                <div class="flex items-center gap-2.5">
+                  <h2 class="text-2xl font-black tracking-tight text-white cust-brand-name-dynamic">ISPMU</h2>
+                  <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
+                    PORTAL SALES &amp; MITRA
+                  </span>
                 </div>
-                <p class="text-xs text-slate-400 leading-relaxed font-sans pt-1">
-                  Satu pintu bagi tim Sales &amp; Mitra Agen resmi untuk mengelola referral pelanggan, memantau progres survei ODP, dan cek komisi pasang baru.
-                </p>
+                <p class="text-xs text-slate-400 font-sans mt-0.5">Sistem Referral &amp; Komisi Mitra <span class="cust-brand-name-dynamic">ISPMU</span></p>
               </div>
-
-              <!-- Feature Highlights -->
-              <div class="space-y-2 pt-1">
-                <div class="flex items-start gap-3 p-3 rounded-md bg-white/5 border border-white/10">
-                  <div class="w-7 h-7 rounded-md bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <i data-lucide="link-2" class="w-3.5 h-3.5"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-xs font-semibold text-white">Tautan Referral Personalisasi</h4>
-                    <p class="text-[11px] text-slate-400">Bagikan link promo ber-ID sales untuk kemudahan registrasi mandiri calon pelanggan.</p>
-                  </div>
-                </div>
-
-                <div class="flex items-start gap-3 p-3 rounded-md bg-white/5 border border-white/10">
-                  <div class="w-7 h-7 rounded-md bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-xs font-semibold text-white">Cek Titik ODP &amp; Coverage Area</h4>
-                    <p class="text-[11px] text-slate-400">Verifikasi jarak rumah calon pelanggan ke tiang ODP Payakumbuh secara presisi.</p>
-                  </div>
-                </div>
-
-                <div class="flex items-start gap-3 p-3 rounded-md bg-white/5 border border-white/10">
-                  <div class="w-7 h-7 rounded-md bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <i data-lucide="trending-up" class="w-3.5 h-3.5"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-xs font-semibold text-white">Tracking Pelanggan &amp; Insentif</h4>
-                    <p class="text-[11px] text-slate-400">Pantau siklus status prospek dari pendaftaran, survei, hingga aktif terpasang.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Trust / Security Footer -->
-            <div class="pt-4 mt-6 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-              <div class="flex items-center gap-1.5 text-slate-300">
-                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-sky-400"></i>
-                <span>Akses Resmi Sales GOGIGANET</span>
-              </div>
-              <span class="text-slate-400 text-[11px]">Area Payakumbuh</span>
             </div>
           </div>
 
-          <!-- RIGHT LOGIN FORM PANEL (lg:col-span-7) -->
-          <div class="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-between bg-white relative">
-            <div class="space-y-5">
-              
-              <!-- Form Top Bar -->
-              <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div>
-                  <h3 class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">Login Portal Sales</h3>
-                  <p class="text-xs text-slate-500 font-sans mt-0.5">Masukkan username/kode sales dan password akun Anda</p>
+          <!-- Middle: Hero Messaging & Highlights -->
+          <div class="relative z-10 my-auto py-10 space-y-6">
+            <div class="space-y-4">
+              <h1 class="text-3xl sm:text-4xl xl:text-5xl font-black text-white tracking-tight leading-[1.15]">
+                Aktivasi Penjualan &amp; <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-400">Komisi Mitra <span class="cust-brand-name-dynamic">ISPMU</span>.</span>
+              </h1>
+              <p class="text-sm sm:text-base text-slate-400 max-w-lg leading-relaxed font-sans">
+                Akses mandiri tim sales dan mitra keagenan resmi untuk pendaftaran pelanggan baru, cek jarak tiang ODP fiber, dan pantau insentif komisi bulanan.
+              </p>
+            </div>
+
+            <!-- Feature Cards (Uniform Carrier-Grade Telco Design) -->
+            <div class="space-y-3 pt-2 max-w-xl">
+              <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="link-2" class="w-4 h-4"></i>
                 </div>
-                <div class="w-9 h-9 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200 shrink-0">
-                  <i data-lucide="briefcase" class="w-4 h-4 text-sky-700"></i>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-100">Tautan Referral &amp; Registrasi Cepat</h4>
+                  <p class="text-[11px] text-slate-400 leading-normal">Bagikan link promo ber-ID sales untuk kemudahan registrasi mandiri calon pelanggan.</p>
                 </div>
               </div>
 
-              <form onsubmit="handleSalesLoginSubmit(event)" class="space-y-3.5">
-                <div>
-                  <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-slate-700 mb-1">Username / Kode Sales</label>
-                  <input type="text" id="sales-login-code" placeholder="Masukkan username atau kode sales" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-md px-3 py-2 text-xs font-mono outline-none focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition" required />
+              <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="map-pin" class="w-4 h-4"></i>
                 </div>
-
                 <div>
-                  <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-slate-700 mb-1 flex items-center justify-between">
-                    <span>Password Sales</span>
-                    <span class="text-[10px] text-slate-400 font-sans font-normal">Password akun staf / PIN</span>
-                  </label>
-                  <input type="password" id="sales-login-phone" placeholder="Masukkan password akun sales" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-md px-3 py-2 text-xs font-mono outline-none focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition" required />
+                  <h4 class="text-xs font-bold text-slate-100">Cek Titik ODP &amp; Coverage Area</h4>
+                  <p class="text-[11px] text-slate-400 leading-normal">Verifikasi jarak rumah calon pelanggan ke tiang ODP fiber terdekat secara presisi.</p>
                 </div>
+              </div>
 
-                <button type="submit" id="btn-sales-login" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-mono font-bold py-2.5 rounded-md transition flex items-center justify-center gap-2 text-xs shadow-xs active:scale-[0.99] cursor-pointer">
-                  <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
-                  <span>MASUK KE PORTAL SALES</span>
-                </button>
-              </form>
-            </div>
-
-            <!-- Footer Help Note -->
-            <div class="pt-4 border-t border-slate-100 text-center text-[11px] text-slate-400">
-              Butuh bantuan akses akun? Hubungi Admin Koordinator Sales GOGIGANET.
+              <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="trending-up" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-100">Tracking Pelanggan &amp; Insentif Komisi</h4>
+                  <p class="text-[11px] text-slate-400 leading-normal">Pantau siklus status prospek dari survei, instalasi aktif, hingga pencairan komisi.</p>
+                </div>
+              </div>
             </div>
           </div>
 
+          <!-- Bottom: Footer Info -->
+          <div class="relative z-10 pt-6 border-t border-slate-800/80 text-xs text-slate-500">
+            <p>&copy; <span class="sales-copy-year">2026</span> <span class="sales-legal-name">PT. Mitra Usaha Data</span>. All rights reserved.</p>
+          </div>
         </div>
+
+        <!-- RIGHT SIDE: Auth Form (Clean Edge-to-Edge Matching Design) -->
+        <div class="w-full lg:w-1/2 xl:w-5/12 flex flex-col justify-between p-8 sm:p-12 lg:p-16 bg-white relative min-h-screen">
+          
+          <!-- Mobile Brand Header (Visible only on small screens) -->
+          <div class="lg:hidden flex items-center justify-between pb-6 mb-6 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+              <img id="sales-login-logo-mobile" src="/web/ispmu_logo.svg" alt="Logo" class="h-9 w-auto object-contain" onerror="this.src='/logo.png'" />
+              <div>
+                <h3 class="font-black text-slate-900 text-lg leading-tight cust-brand-name-dynamic">ISPMU</h3>
+                <p class="text-[11px] text-slate-500 font-mono">PORTAL SALES</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Centered Form Container -->
+          <div class="max-w-md w-full mx-auto my-auto py-4">
+            
+            <!-- Form Title -->
+            <div class="mb-6">
+              <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Login Portal Sales <span class="cust-brand-name-dynamic">ISPMU</span></h2>
+              <p class="text-xs sm:text-sm text-slate-500 mt-1 font-sans">
+                Masukkan identitas akun/kode sales dan password akun <span class="cust-brand-name-dynamic font-semibold text-slate-700">ISPMU</span>.
+              </p>
+            </div>
+
+            <!-- Form -->
+            <form onsubmit="handleSalesLoginSubmit(event)" class="space-y-4">
+              <div>
+                <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center justify-between">
+                  <span>Username / Kode Sales</span>
+                  <span class="text-[10px] text-slate-400 font-sans font-normal">Email / Kode ID Sales</span>
+                </label>
+                <div class="relative">
+                  <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                  <input type="text" id="sales-login-code" placeholder="sales@ispmu.ispsync.id atau kode sales" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm font-sans outline-none focus:bg-white focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition shadow-xs" required />
+                </div>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
+                    <span>Password Sales</span>
+                  </label>
+                  <span class="text-[10px] text-slate-400 font-sans font-normal">PIN / Password Staf</span>
+                </div>
+                <div class="relative">
+                  <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                  <input type="password" id="sales-login-phone" placeholder="Masukkan password akun sales" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm font-sans outline-none focus:bg-white focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition shadow-xs" required />
+                </div>
+              </div>
+
+              <button type="submit" id="btn-sales-login" class="w-full bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-mono font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md shadow-cyan-600/20 active:scale-[0.99] cursor-pointer mt-2">
+                <i data-lucide="log-in" class="w-4 h-4"></i>
+                <span>MASUK KE PORTAL SALES</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Footer Note -->
+          <div class="pt-6 border-t border-slate-100 mt-6 text-center">
+            <div class="flex items-center justify-center gap-2 text-xs text-slate-400">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500"></i>
+              <span>Koneksi Aman &bull; TLS 1.3 &amp; Enkripsi Sesi</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">
+              Butuh bantuan akses akun? Hubungi Admin Koordinator Sales <span class="cust-brand-name-dynamic">ISPMU</span>.
+            </p>
+          </div>
+        </div>
+
       </div>
 
       <!-- 2. DASHBOARD CONTAINER (Shown when logged in) -->
@@ -2511,111 +2564,152 @@
     <!-- ══════════════════════════════════════════════════════════ -->
     <section id="tab-admin" class="hidden">
       <!-- 1. ADMIN NOC DIRECT LOGIN (Shown when unauthenticated) -->
-      <div id="admin-login-container" class="max-w-4xl mx-auto my-4 sm:my-8 overflow-hidden rounded-lg bg-white border border-slate-200 shadow-sm">
-        <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[500px]">
-          
-          <!-- LEFT HERO BRANDING PANEL (lg:col-span-5) -->
-          <div class="lg:col-span-5 bg-slate-950 text-white p-6 sm:p-8 flex flex-col justify-between">
-            <div class="space-y-6">
-              <!-- Brand Header -->
-              <div class="space-y-3">
-                <div class="flex items-center gap-3">
-                  <img src="/logo.png" alt="GOGIGA" class="h-9 w-auto object-contain" />
-                  <div>
-                    <h2 class="text-lg font-bold tracking-tight text-white">GOGIGANET</h2>
-                    <p class="text-[11px] text-sky-400 font-mono font-semibold">NOC Core &amp; Command Center</p>
-                  </div>
+      <div id="admin-login-container" class="min-h-screen w-full flex flex-col lg:flex-row bg-slate-950 font-sans selection:bg-cyan-500 selection:text-slate-950">
+        
+        <!-- LEFT SIDE: Showcase (Dynamic Brand Authority) -->
+        <div class="hidden lg:flex lg:w-1/2 xl:w-7/12 relative flex-col justify-between p-10 xl:p-16 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/40 text-white overflow-hidden border-r border-slate-800/80">
+          <!-- Ambient Radial Glows -->
+          <div class="absolute -top-32 -left-32 w-96 h-96 bg-cyan-600/20 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute top-1/2 -right-32 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute -bottom-32 left-1/4 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+          <!-- Top: Brand Header -->
+          <div class="relative z-10">
+            <div class="flex items-center gap-3.5">
+              <img id="admin-login-logo" src="/web/ispmu_logo.svg" alt="Logo" class="h-10 w-auto brightness-0 invert object-contain" onerror="this.style.display='none'" />
+              <div>
+                <div class="flex items-center gap-2.5">
+                  <h2 class="text-2xl font-black tracking-tight text-white cust-brand-name-dynamic">ISPMU</h2>
+                  <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
+                    NOC &amp; COMMAND CENTER
+                  </span>
                 </div>
-                <p class="text-xs text-slate-400 leading-relaxed font-sans pt-1">
-                  Pusat otentikasi dan kontrol infrastruktur jaringan untuk Owner, Network Operations Center (NOC), dan Keuangan / Billing.
-                </p>
+                <p class="text-xs text-slate-400 font-sans mt-0.5">Pusat Kontrol Infrastruktur Jaringan &amp; Core Network</p>
               </div>
-
-              <!-- Feature Highlights -->
-              <div class="space-y-2 pt-1">
-                <div class="flex items-start gap-3 p-3 rounded-md bg-white/5 border border-white/10">
-                  <div class="w-7 h-7 rounded-md bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <i data-lucide="server" class="w-3.5 h-3.5"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-xs font-semibold text-white">Core Network &amp; OLT PON</h4>
-                    <p class="text-[11px] text-slate-400">Monitoring status OLT, uplink, redaman kabel optik, dan sesi aktif RADIUS.</p>
-                  </div>
-                </div>
-
-                <div class="flex items-start gap-3 p-3 rounded-md bg-white/5 border border-white/10">
-                  <div class="w-7 h-7 rounded-md bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-xs font-semibold text-white">Disposisi &amp; SPK Teknisi</h4>
-                    <p class="text-[11px] text-slate-400">Penugasan tim instalasi, survei kendala, dan audit validasi BAST digital.</p>
-                  </div>
-                </div>
-
-                <div class="flex items-start gap-3 p-3 rounded-md bg-white/5 border border-white/10">
-                  <div class="w-7 h-7 rounded-md bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <i data-lucide="receipt" class="w-3.5 h-3.5"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-xs font-semibold text-white">Billing, Kas &amp; PPN 11%</h4>
-                    <p class="text-[11px] text-slate-400">Rekonsiliasi transaksi pembayaran, saldo deposit jaminan, dan rekapitulasi pajak.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Trust / Security Footer -->
-            <div class="pt-4 mt-6 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-              <div class="flex items-center gap-1.5 text-slate-300">
-                <i data-lucide="lock" class="w-3.5 h-3.5 text-sky-400"></i>
-                <span>Enkripsi Akses Berlapis (RBAC)</span>
-              </div>
-              <span class="text-slate-400 text-[11px]">Audit Trail 24/7</span>
             </div>
           </div>
 
-          <!-- RIGHT LOGIN FORM PANEL (lg:col-span-7) -->
-          <div class="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-between bg-white relative">
-            <div class="space-y-5">
-              
-              <!-- Form Top Bar -->
-              <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div>
-                  <h3 class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">Otorisasi Internal</h3>
-                  <p class="text-xs text-slate-500 font-sans mt-0.5">Masuk dengan kredensial akun staf internal yang sah</p>
+          <!-- Middle: Hero Messaging & Highlights -->
+          <div class="relative z-10 my-auto py-10 space-y-6">
+            <div class="space-y-4">
+              <h1 class="text-3xl sm:text-4xl xl:text-5xl font-black text-white tracking-tight leading-[1.15]">
+                Pusat Kontrol Jaringan &amp; <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-400">NOC Infrastructure.</span>
+              </h1>
+              <p class="text-sm sm:text-base text-slate-400 max-w-lg leading-relaxed font-sans">
+                Pusat otentikasi dan kontrol infrastruktur jaringan untuk Owner, Network Operations Center (NOC), dan Keuangan / Billing.
+              </p>
+            </div>
+
+            <!-- Feature Cards (Uniform Carrier-Grade Telco Design) -->
+            <div class="space-y-3 pt-2 max-w-xl">
+              <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="server" class="w-4 h-4"></i>
                 </div>
-                <div class="w-9 h-9 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200 shrink-0">
-                  <i data-lucide="shield-check" class="w-4 h-4 text-sky-700"></i>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-100">Core Network &amp; OLT PON</h4>
+                  <p class="text-[11px] text-slate-400 leading-normal">Monitoring status OLT, uplink, redaman kabel optik, dan sesi aktif RADIUS.</p>
                 </div>
               </div>
 
-              <form onsubmit="handleAdminDirectLogin(event)" class="space-y-3.5">
-                <div>
-                  <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-slate-700 mb-1">Username Akun</label>
-                  <input type="text" id="admin-direct-username" placeholder="Masukkan username akun" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-md px-3 py-2 text-xs font-mono outline-none focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition" required />
+              <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="shield-alert" class="w-4 h-4"></i>
                 </div>
-
                 <div>
-                  <label class="block text-[11px] font-mono font-bold uppercase tracking-wider text-slate-700 mb-1">Password</label>
-                  <input type="password" id="admin-direct-password" placeholder="Masukkan password Anda" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-md px-3 py-2 text-xs font-mono outline-none focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition" required />
+                  <h4 class="text-xs font-bold text-slate-100">Disposisi &amp; SPK Teknisi</h4>
+                  <p class="text-[11px] text-slate-400 leading-normal">Penugasan tim instalasi, survei kendala, dan audit validasi BAST digital.</p>
                 </div>
+              </div>
 
-                <button type="submit" id="btn-admin-direct-login" class="w-full py-2.5 px-4 rounded-md text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-xs transition flex items-center justify-center gap-2 cursor-pointer active:scale-98">
-                  <i data-lucide="lock" class="w-3.5 h-3.5"></i>
-                  <span>AUTENTIKASI &amp; MASUK PANEL</span>
-                </button>
-              </form>
-
-            </div>
-
-            <!-- Footer Help Note -->
-            <div class="pt-4 border-t border-slate-100 text-center text-[11px] text-slate-400">
-              Akses tercatat dan diawasi otomatis oleh sistem keamanan internal.
+              <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="receipt" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-100">Billing, Kas &amp; PPN 11%</h4>
+                  <p class="text-[11px] text-slate-400 leading-normal">Rekonsiliasi transaksi pembayaran, saldo deposit jaminan, dan rekapitulasi pajak.</p>
+                </div>
+              </div>
             </div>
           </div>
 
+          <!-- Bottom: Footer Info -->
+          <div class="relative z-10 pt-6 border-t border-slate-800/80 text-xs text-slate-500">
+            <p>&copy; <span class="admin-copy-year">2026</span> <span class="admin-legal-name">PT. Mitra Usaha Data</span>. All rights reserved.</p>
+          </div>
         </div>
+
+        <!-- RIGHT SIDE: Auth Form (Clean Edge-to-Edge Matching Design) -->
+        <div class="w-full lg:w-1/2 xl:w-5/12 flex flex-col justify-between p-8 sm:p-12 lg:p-16 bg-white relative min-h-screen">
+          
+          <!-- Mobile Brand Header (Visible only on small screens) -->
+          <div class="lg:hidden flex items-center justify-between pb-6 mb-6 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+              <img id="admin-login-logo-mobile" src="/web/ispmu_logo.svg" alt="Logo" class="h-9 w-auto object-contain" onerror="this.src='/logo.png'" />
+              <div>
+                <h3 class="font-black text-slate-900 text-lg leading-tight cust-brand-name-dynamic">ISPMU</h3>
+                <p class="text-[11px] text-slate-500 font-mono">NOC COMMAND CENTER</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Centered Form Container -->
+          <div class="max-w-md w-full mx-auto my-auto py-4">
+            
+            <!-- Form Title -->
+            <div class="mb-6">
+              <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Otorisasi Internal Staf NOC</h2>
+              <p class="text-xs sm:text-sm text-slate-500 mt-1 font-sans">
+                Masuk dengan kredensial staf internal akun <span class="cust-brand-name-dynamic font-semibold text-slate-700">ISPMU</span>.
+              </p>
+            </div>
+
+            <!-- Form -->
+            <form onsubmit="handleAdminDirectLogin(event)" class="space-y-4">
+              <div>
+                <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center justify-between">
+                  <span>Username Akun</span>
+                  <span class="text-[10px] text-slate-400 font-sans font-normal">Email / ID Admin</span>
+                </label>
+                <div class="relative">
+                  <i data-lucide="user-check" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                  <input type="text" id="admin-direct-username" placeholder="admin@ispmu.ispsync.id atau username" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm font-sans outline-none focus:bg-white focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition shadow-xs" required />
+                </div>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
+                    <span>Password</span>
+                  </label>
+                  <span class="text-[10px] text-slate-400 font-sans font-normal">Kredensial Resmi Staf</span>
+                </div>
+                <div class="relative">
+                  <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                  <input type="password" id="admin-direct-password" placeholder="Masukkan password Anda" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm font-sans outline-none focus:bg-white focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition shadow-xs" required />
+                </div>
+              </div>
+
+              <button type="submit" id="btn-admin-direct-login" class="w-full bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-mono font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md shadow-cyan-600/20 active:scale-[0.99] cursor-pointer mt-2">
+                <i data-lucide="lock" class="w-4 h-4"></i>
+                <span>AUTENTIKASI &amp; MASUK PANEL NOC</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Footer Note -->
+          <div class="pt-6 border-t border-slate-100 mt-6 text-center">
+            <div class="flex items-center justify-center gap-2 text-xs text-slate-400">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500"></i>
+              <span>Enkripsi Akses Berlapis (RBAC) &bull; Audit Trail 24/7</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">
+              Akses tercatat dan diawasi otomatis oleh sistem keamanan internal.
+            </p>
+          </div>
+        </div>
+
       </div>
 
       <!-- 2. ADMIN DASHBOARD (Shown when authenticated) -->
@@ -3817,110 +3911,152 @@
     <section id="tab-technician" class="hidden space-y-6">
 
       <!-- 1. TECHNICIAN LOGIN CONTAINER (Shown when unauthenticated) -->
-      <div id="technician-login-container" class="max-w-4xl mx-auto my-4 sm:my-8 overflow-hidden rounded-lg bg-white border border-slate-200 shadow-sm">
-        <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[520px]">
-          
-          <!-- LEFT HERO BRANDING PANEL (lg:col-span-5) -->
-          <div class="lg:col-span-5 bg-slate-900 text-white p-6 sm:p-8 flex flex-col justify-between">
-            <div class="space-y-6">
-              <!-- Brand Header -->
-              <div class="space-y-3">
-                <div class="flex items-center gap-3">
-                  <img src="/logo.png" alt="GOGIGA" class="h-10 w-auto object-contain" />
-                  <div>
-                    <h2 class="text-xl font-bold tracking-tight text-white">GOGIGANET</h2>
-                    <p class="text-xs text-blue-400 font-mono font-semibold">Portal Teknisi &amp; BAST Digital</p>
-                  </div>
+      <div id="technician-login-container" class="min-h-screen w-full flex flex-col lg:flex-row bg-slate-950 font-sans selection:bg-cyan-500 selection:text-slate-950">
+        
+        <!-- LEFT SIDE: Showcase (Dynamic Brand Authority) -->
+        <div class="hidden lg:flex lg:w-1/2 xl:w-7/12 relative flex-col justify-between p-10 xl:p-16 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/40 text-white overflow-hidden border-r border-slate-800/80">
+          <!-- Ambient Radial Glows -->
+          <div class="absolute -top-32 -left-32 w-96 h-96 bg-cyan-600/20 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute top-1/2 -right-32 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute -bottom-32 left-1/4 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+          <!-- Top: Brand Header -->
+          <div class="relative z-10">
+            <div class="flex items-center gap-3.5">
+              <img id="tech-login-logo" src="/web/ispmu_logo.svg" alt="Logo" class="h-10 w-auto brightness-0 invert object-contain" onerror="this.style.display='none'" />
+              <div>
+                <div class="flex items-center gap-2.5">
+                  <h2 class="text-2xl font-black tracking-tight text-white cust-brand-name-dynamic">ISPMU</h2>
+                  <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
+                    PORTAL TEKNISI &amp; BAST DIGITAL
+                  </span>
                 </div>
-                <p class="text-xs text-slate-300 leading-relaxed font-sans pt-1">
-                  Akses operasional resmi tim teknisi lapangan untuk penyelesaian Surat Perintah Kerja (SPK), uji redaman OPM, dan tanda tangan BAST digital.
-                </p>
+                <p class="text-xs text-slate-400 font-sans mt-0.5">Operasional Lapangan &amp; Validasi Pelanggan <span class="cust-brand-name-dynamic">ISPMU</span></p>
               </div>
-
-              <!-- Feature Highlights -->
-              <div class="space-y-2.5 pt-1">
-                <div class="flex items-start gap-3 p-3 rounded-md bg-white/5 border border-white/10">
-                  <div class="w-8 h-8 rounded-md bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <i data-lucide="clipboard-list" class="w-4 h-4"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-xs font-semibold text-white">Daftar Tugas SPK Terjadwal</h4>
-                    <p class="text-[11px] text-slate-300">Survei lokasi ODP baru, penarikan kabel dropcore, dan penanganan gangguan.</p>
-                  </div>
-                </div>
-
-                <div class="flex items-start gap-3 p-3 rounded-md bg-white/5 border border-white/10">
-                  <div class="w-8 h-8 rounded-md bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <i data-lucide="gauge" class="w-4 h-4"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-xs font-semibold text-white">Standar Redaman OPM (-16 s/d -22 dBm)</h4>
-                    <p class="text-[11px] text-slate-300">Panduan redaman optik presisi untuk menjamin internet pelanggan stabil &amp; minim loss.</p>
-                  </div>
-                </div>
-
-                <div class="flex items-start gap-3 p-3 rounded-md bg-white/5 border border-white/10">
-                  <div class="w-8 h-8 rounded-md bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <i data-lucide="file-check-2" class="w-4 h-4"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-xs font-semibold text-white">BAST Digital &amp; Validasi ONT</h4>
-                    <p class="text-[11px] text-slate-300">Pindai barcode SN/MAC ONT dan tanda tangan pelanggan langsung dari smartphone.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Trust / Security Footer -->
-            <div class="pt-6 mt-6 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-              <div class="flex items-center gap-1.5 text-slate-300">
-                <i data-lucide="shield-check" class="w-4 h-4 text-amber-400"></i>
-                <span>Enkripsi Sambungan Lapangan</span>
-              </div>
-              <span class="text-slate-400 text-[11px]">GPS Terhubung</span>
             </div>
           </div>
 
-          <!-- RIGHT LOGIN FORM PANEL (lg:col-span-7) -->
-          <div class="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-white relative">
-            <div class="space-y-6">
-              
-              <!-- Form Top Bar -->
-              <div class="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div>
-                  <h3 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Portal Petugas Teknisi</h3>
-                  <p class="text-xs text-slate-500 font-sans mt-0.5">Masukkan username teknisi dan password untuk membuka daftar SPK</p>
+          <!-- Middle: Hero Messaging & Highlights -->
+          <div class="relative z-10 my-auto py-10 space-y-6">
+            <div class="space-y-4">
+              <h1 class="text-3xl sm:text-4xl xl:text-5xl font-black text-white tracking-tight leading-[1.15]">
+                Penyelesaian Tugas SPK &amp; <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-400">BAST Digital Teknisi.</span>
+              </h1>
+              <p class="text-sm sm:text-base text-slate-400 max-w-lg leading-relaxed font-sans">
+                Akses operasional resmi tim teknisi lapangan untuk penyelesaian Surat Perintah Kerja (SPK), uji redaman OPM, dan tanda tangan BAST digital.
+              </p>
+            </div>
+
+            <!-- Feature Cards (Uniform Carrier-Grade Telco Design) -->
+            <div class="space-y-3 pt-2 max-w-xl">
+              <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="clipboard-list" class="w-4 h-4"></i>
                 </div>
-                <div class="w-11 h-11 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200 shadow-xs shrink-0">
-                  <i data-lucide="wrench" class="w-5 h-5"></i>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-100">Daftar Tugas SPK Terjadwal</h4>
+                  <p class="text-[11px] text-slate-400 leading-normal">Survei lokasi ODP baru, penarikan kabel dropcore, dan penanganan gangguan.</p>
                 </div>
               </div>
 
-              <form onsubmit="handleTechnicianDirectLogin(event)" class="space-y-4">
-                <div>
-                  <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">Username Teknisi</label>
-                  <input type="text" id="technician-direct-name" placeholder="Masukkan username teknisi" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-md px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-mono outline-none focus:bg-white focus:border-slate-900 transition" required />
+              <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="gauge" class="w-4 h-4"></i>
                 </div>
-
                 <div>
-                  <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">Password Teknisi</label>
-                  <input type="password" id="technician-direct-pin" placeholder="Masukkan password akun teknisi" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-md px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-mono outline-none focus:bg-white focus:border-slate-900 transition" required />
+                  <h4 class="text-xs font-bold text-slate-100">Standar Redaman OPM Presisi</h4>
+                  <p class="text-[11px] text-slate-400 leading-normal">Panduan redaman optik presisi (-16 s/d -22 dBm) untuk internet stabil &amp; minim loss.</p>
                 </div>
+              </div>
 
-                <button type="submit" id="btn-technician-direct-login" class="w-full py-3.5 px-4 rounded-md text-xs sm:text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-xs transition flex items-center justify-center gap-2 cursor-pointer">
-                  <i data-lucide="wrench" class="w-4 h-4"></i>
-                  <span>MASUK KE DAFTAR TUGAS SPK</span>
-                </button>
-              </form>
-            </div>
-
-            <!-- Footer Help Note -->
-            <div class="pt-4 border-t border-slate-100 text-center text-xs text-slate-400">
-              Kendala di lapangan? Hubungi Dispatcher NOC Gogiganet via radio/WhatsApp.
+              <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="file-check-2" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-100">BAST Digital &amp; Validasi ONT</h4>
+                  <p class="text-[11px] text-slate-400 leading-normal">Pindai barcode SN/MAC ONT dan tanda tangan pelanggan langsung dari smartphone.</p>
+                </div>
+              </div>
             </div>
           </div>
 
+          <!-- Bottom: Footer Info -->
+          <div class="relative z-10 pt-6 border-t border-slate-800/80 text-xs text-slate-500">
+            <p>&copy; <span class="tech-copy-year">2026</span> <span class="tech-legal-name">PT. Mitra Usaha Data</span>. All rights reserved.</p>
+          </div>
         </div>
+
+        <!-- RIGHT SIDE: Auth Form (Clean Edge-to-Edge Matching Design) -->
+        <div class="w-full lg:w-1/2 xl:w-5/12 flex flex-col justify-between p-8 sm:p-12 lg:p-16 bg-white relative min-h-screen">
+          
+          <!-- Mobile Brand Header (Visible only on small screens) -->
+          <div class="lg:hidden flex items-center justify-between pb-6 mb-6 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+              <img id="tech-login-logo-mobile" src="/web/ispmu_logo.svg" alt="Logo" class="h-9 w-auto object-contain" onerror="this.src='/logo.png'" />
+              <div>
+                <h3 class="font-black text-slate-900 text-lg leading-tight cust-brand-name-dynamic">ISPMU</h3>
+                <p class="text-[11px] text-slate-500 font-mono">PORTAL TEKNISI</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Centered Form Container -->
+          <div class="max-w-md w-full mx-auto my-auto py-4">
+            
+            <!-- Form Title -->
+            <div class="mb-6">
+              <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Portal Petugas Teknisi <span class="cust-brand-name-dynamic">ISPMU</span></h2>
+              <p class="text-xs sm:text-sm text-slate-500 mt-1 font-sans">
+                Masukkan identitas akun teknisi dan password untuk membuka daftar tugas SPK.
+              </p>
+            </div>
+
+            <!-- Form -->
+            <form onsubmit="handleTechnicianDirectLogin(event)" class="space-y-4">
+              <div>
+                <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center justify-between">
+                  <span>Username / Kode Teknisi</span>
+                  <span class="text-[10px] text-slate-400 font-sans font-normal">Email / ID Teknisi</span>
+                </label>
+                <div class="relative">
+                  <i data-lucide="wrench" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                  <input type="text" id="technician-direct-name" placeholder="teknisi@ispmu.ispsync.id atau kode teknisi" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm font-sans outline-none focus:bg-white focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition shadow-xs" required />
+                </div>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
+                    <span>Password Teknisi</span>
+                  </label>
+                  <span class="text-[10px] text-slate-400 font-sans font-normal">PIN / Kata Sandi</span>
+                </div>
+                <div class="relative">
+                  <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                  <input type="password" id="technician-direct-pin" placeholder="Masukkan password akun teknisi" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm font-sans outline-none focus:bg-white focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition shadow-xs" required />
+                </div>
+              </div>
+
+              <button type="submit" id="btn-technician-direct-login" class="w-full bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-mono font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md shadow-cyan-600/20 active:scale-[0.99] cursor-pointer mt-2">
+                <i data-lucide="wrench" class="w-4 h-4"></i>
+                <span>MASUK KE DAFTAR TUGAS SPK</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Footer Note -->
+          <div class="pt-6 border-t border-slate-100 mt-6 text-center">
+            <div class="flex items-center justify-center gap-2 text-xs text-slate-400">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-500"></i>
+              <span>Enkripsi Sambungan Lapangan &bull; GPS Terhubung</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">
+              Kendala di lapangan? Hubungi Dispatcher NOC <span class="cust-brand-name-dynamic font-semibold">ISPMU</span> via radio/WhatsApp.
+            </p>
+          </div>
+        </div>
+
       </div>
 
       <!-- 2. TECHNICIAN DASHBOARD CONTAINER (Shown when authenticated) -->
@@ -23168,9 +23304,48 @@
       }
     }
 
+    function getActiveTenantInfo() {
+      let tenantSlug = "ispmu";
+      let tenantName = "ISPMU";
+      let logoUrl = "/web/ispmu_logo.svg";
+      let waPhone = "6285186866164";
+
+      if (window.__ISPSYNC_TENANT__) {
+        const t = window.__ISPSYNC_TENANT__;
+        if (t.slug) tenantSlug = t.slug.toLowerCase();
+        if (t.short_name) tenantName = t.short_name;
+        else if (t.slug) tenantName = t.slug.toUpperCase();
+        else if (t.name) tenantName = t.name;
+        if (t.logo_url) logoUrl = t.logo_url;
+        if (t.contact_phone) {
+          let p = t.contact_phone.replace(/[^0-9]/g, '');
+          if (p.startsWith('0')) p = '62' + p.substring(1);
+          if (p) waPhone = p;
+        }
+      } else {
+        const h = window.location.hostname.toLowerCase();
+        const parts = h.split('.');
+        if (parts.length >= 3 && parts[0] !== 'www') {
+          const isSub = ['ledger', 'hotspot', 'sales', 'teknisi', 'noc', 'noc-fo', 'member', 'portal', 'rekan', 'status'].includes(parts[0]);
+          const slug = (parts.length >= 4 && isSub) ? parts[1] : parts[0];
+          if (slug && slug !== 'ispsync') {
+            tenantSlug = slug.toLowerCase();
+            tenantName = slug.toUpperCase();
+            logoUrl = '/web/' + slug + '_logo.svg';
+          }
+        }
+      }
+
+      let legalName = (window.__ISPSYNC_TENANT__ && window.__ISPSYNC_TENANT__.name) || 
+        (tenantSlug === 'ispmu' ? 'PT. Mitra Usaha Data' : (tenantSlug === 'ispku' ? 'PT. ISP Kita Nusantara' : `PT. ${tenantName} Data Nusantara`));
+
+      return { tenantSlug, tenantName, logoUrl, waPhone, legalName };
+    }
+
     function applySubdomainRouting() {
       currentSubdomainMode = detectActiveSubdomain();
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const { tenantName } = getActiveTenantInfo();
 
       if (isLocalhost) {
         document.body.classList.add('is-dev');
@@ -23201,10 +23376,10 @@
       const topNocLabel = document.getElementById('top-noc-label');
 
       if (currentSubdomainMode === 'portal') {
-        // 🌐 PORTAL PELANGGAN (portal.gogiga.net.id)
-        document.title = "GOGIGANET Broadband • Registrasi & Jangkauan Fiber Optik";
-        if (subtitle) subtitle.innerText = "Fiber Broadband & Gaming Network";
-        if (topNocBar) topNocBar.classList.add('hidden'); // Sembunyikan status internal NOC untuk pelanggan umum
+        // 🌐 PORTAL PELANGGAN
+        document.title = `${tenantName} Broadband • Registrasi & Jangkauan Fiber Optik`;
+        if (subtitle) subtitle.innerText = `Fiber Broadband & Digital Network`;
+        if (topNocBar) topNocBar.classList.add('hidden');
 
         if (regBtn) {
           regBtn.classList.remove('hidden');
@@ -23215,9 +23390,6 @@
         if (adminBtn) adminBtn.classList.add('hidden');
         if (jartaplokBtn) jartaplokBtn.classList.add('hidden');
 
-        // Pada portal.gogiga.net.id:
-        // Tampilan DEFAULT adalah Cek Area & Pendaftaran Layanan Baru (#tab-register)
-        // Buka tab track (login mandiri pelanggan) jika ada permintaan login (?login=1, ?track=...) atau sudah ada sesi aktif
         const urlParams = new URLSearchParams(window.location.search);
         const isLoginRequested = urlParams.get('track') || urlParams.get('login') || urlParams.get('masuk');
         const hasSession = !!localStorage.getItem('customer_auth_data');
@@ -23228,9 +23400,9 @@
           switchTab('register');
         }
       } else if (currentSubdomainMode === 'sales') {
-        // 💼 PORTAL SALES (sales.gogiga.net.id)
-        document.title = "GOGIGANET • Portal Agen & Account Executive Sales";
-        if (subtitle) subtitle.innerText = "Portal Agen & Account Executive Sales";
+        // 💼 PORTAL SALES
+        document.title = `Masuk | ${tenantName} Portal Sales`;
+        if (subtitle) subtitle.innerText = `Portal Agen & Mitra ${tenantName}`;
         if (topNocBar) topNocBar.classList.add('hidden');
 
         if (salesBtn) salesBtn.classList.add('hidden');
@@ -23241,8 +23413,8 @@
         localStorage.setItem('active_portal_role', 'sales');
         switchTab('sales');
       } else if (currentSubdomainMode === 'noc-fo') {
-        // 🛠️ NOC COMMAND CENTER (noc-fo.gogiga.net.id)
-        document.title = "GOGIGANET • NOC Core & Infrastructure Command Center";
+        // 🛠️ NOC COMMAND CENTER
+        document.title = `Masuk | ${tenantName} NOC Command Center`;
         if (topNocBar) topNocBar.classList.add('hidden');
 
         if (adminBtn) adminBtn.classList.add('hidden');
@@ -23252,8 +23424,8 @@
 
         switchTab('admin');
       } else if (currentSubdomainMode === 'rekan') {
-        // 🤝 REKAN JARTAPLOK (rekan.gogiga.net.id)
-        document.title = "GOGIGANET • Portal Rekanan Jartaplok Wholesale";
+        // 🤝 REKAN JARTAPLOK
+        document.title = `${tenantName} • Portal Rekanan Jartaplok Wholesale`;
         if (subtitle) subtitle.innerText = "Portal Rekanan Jaringan Lokal (Jartaplok Wholesale)";
         if (topNocBar) topNocBar.classList.add('hidden');
 
@@ -23265,9 +23437,9 @@
         localStorage.setItem('active_portal_role', 'jartaplok');
         switchTab('jartaplok');
       } else if (currentSubdomainMode === 'technician') {
-        // 🔧 PORTAL TEKNISI LAPANGAN (teknisi.gogiga.net.id)
-        document.title = "GOGIGANET • Portal Tugas Teknisi & BAST Digital";
-        if (subtitle) subtitle.innerText = "Portal Tugas Teknisi & BAST Digital Lapangan";
+        // 🔧 PORTAL TEKNISI LAPANGAN
+        document.title = `Masuk | ${tenantName} Portal Teknisi`;
+        if (subtitle) subtitle.innerText = `Portal Petugas Teknisi & BAST Digital ${tenantName}`;
         if (topNocBar) topNocBar.classList.add('hidden');
 
         const techBtn = document.getElementById('tab-technician-nav-btn');
@@ -23281,7 +23453,7 @@
         switchTab('technician');
       } else {
         // 🔄 MASTER DEV / ALL-IN-ONE
-        if (subtitle) subtitle.innerText = "Fiber Broadband & Gaming Network";
+        if (subtitle) subtitle.innerText = "Fiber Broadband & Network Provider";
         if (topNocBar) topNocBar.classList.add('hidden');
         if (regBtn) {
           regBtn.classList.remove('hidden');
@@ -23332,67 +23504,66 @@
  
     function applyDynamicCustomerLogin() {
       try {
-        let tenantName = "ISPSYNC";
-        let logoUrl = "/logo.png";
-        let waPhone = "6285186866164";
+        const { tenantSlug, tenantName, logoUrl, waPhone, legalName } = getActiveTenantInfo();
 
-        if (window.__ISPSYNC_TENANT__) {
-          const t = window.__ISPSYNC_TENANT__;
-          // Prioritize short brand name (e.g. ISPMU, ISPKU) over legal corporate name
-          if (t.short_name) {
-            tenantName = t.short_name;
-          } else if (t.slug) {
-            tenantName = t.slug.toUpperCase();
-          } else if (t.name) {
-            tenantName = t.name;
-          }
-          if (t.logo_url) logoUrl = t.logo_url;
-          if (t.contact_phone) {
-            let p = t.contact_phone.replace(/[^0-9]/g, '');
-            if (p.startsWith('0')) p = '62' + p.substring(1);
-            if (p) waPhone = p;
-          }
-        } else {
-          const h = window.location.hostname.toLowerCase();
-          const parts = h.split('.');
-          if (parts.length >= 3 && parts[0] !== 'www') {
-            const slug = (parts.length >= 4 && (parts[0] === 'ledger' || parts[0] === 'hotspot')) ? parts[1] : parts[0];
-            if (slug && slug !== 'ispsync') {
-              tenantName = slug.toUpperCase();
-              logoUrl = '/web/' + slug + '_logo.svg';
-            }
-          }
-        }
-
+        // 1. Text branding across elements
         document.querySelectorAll('.cust-brand-name-dynamic').forEach(el => {
           el.innerText = tenantName;
         });
 
-        const logoEl = document.getElementById('cust-login-logo');
-        if (logoEl && logoUrl) {
-          logoEl.src = logoUrl;
-          logoEl.style.display = 'block';
-          logoEl.className = 'h-10 w-auto brightness-0 invert object-contain';
+        // 2. Standalone logos across all operational portals (Customer, Sales, NOC, Technician)
+        const logoSelectors = [
+          { id: 'cust-login-logo', isDarkBg: true },
+          { id: 'cust-login-logo-mobile', isDarkBg: false },
+          { id: 'sales-login-logo', isDarkBg: true },
+          { id: 'sales-login-logo-mobile', isDarkBg: false },
+          { id: 'admin-login-logo', isDarkBg: true },
+          { id: 'admin-login-logo-mobile', isDarkBg: false },
+          { id: 'tech-login-logo', isDarkBg: true },
+          { id: 'tech-login-logo-mobile', isDarkBg: false }
+        ];
+
+        logoSelectors.forEach(item => {
+          const el = document.getElementById(item.id);
+          if (el && logoUrl) {
+            el.src = logoUrl;
+            el.style.display = 'block';
+            if (item.isDarkBg) {
+              el.className = 'h-10 w-auto brightness-0 invert object-contain';
+            } else {
+              el.className = 'h-9 w-auto object-contain';
+            }
+          }
+        });
+
+        // 3. Dynamic email/username placeholders based on active domain
+        const salesInput = document.getElementById('sales-login-code');
+        if (salesInput) {
+          salesInput.placeholder = `sales@${tenantSlug}.ispsync.id atau kode sales`;
         }
 
-        const logoMobile = document.getElementById('cust-login-logo-mobile');
-        if (logoMobile && logoUrl) {
-          logoMobile.src = logoUrl;
-          logoMobile.style.display = 'block';
+        const adminInput = document.getElementById('admin-direct-username');
+        if (adminInput) {
+          adminInput.placeholder = `admin@${tenantSlug}.ispsync.id atau username`;
         }
 
-        const copyYear = document.getElementById('cust-copy-year');
-        if (copyYear) {
-          copyYear.innerText = new Date().getFullYear();
+        const techInput = document.getElementById('technician-direct-name');
+        if (techInput) {
+          techInput.placeholder = `teknisi@${tenantSlug}.ispsync.id atau kode teknisi`;
         }
 
-        let legalName = (window.__ISPSYNC_TENANT__ && window.__ISPSYNC_TENANT__.name) || 
-          (tenantName === 'ISPMU' ? 'PT. Mitra Usaha Data' : (tenantName === 'ISPKU' ? 'PT. ISP Kita Nusantara' : `PT. ${tenantName} Data Nusantara`));
-        const legalEl = document.getElementById('cust-legal-name');
-        if (legalEl) {
-          legalEl.innerText = legalName;
-        }
+        // 4. Copyright Year across footers
+        const currentYear = new Date().getFullYear();
+        ['#cust-copy-year', '.sales-copy-year', '.admin-copy-year', '.tech-copy-year'].forEach(sel => {
+          document.querySelectorAll(sel).forEach(el => el.innerText = currentYear);
+        });
 
+        // 5. Official full legal corporate name across footers
+        ['#cust-legal-name', '.sales-legal-name', '.admin-legal-name', '.tech-legal-name'].forEach(sel => {
+          document.querySelectorAll(sel).forEach(el => el.innerText = legalName);
+        });
+
+        // 6. WhatsApp Help Links
         const forgotLink = document.getElementById('cust-login-forgot-link');
         if (forgotLink) {
           forgotLink.href = `https://wa.me/${waPhone}?text=${encodeURIComponent('Halo Admin ' + tenantName + ', saya ingin bantuan reset kata sandi portal pelanggan')}`;
@@ -23402,6 +23573,7 @@
           helpLink.href = `https://wa.me/${waPhone}?text=${encodeURIComponent('Halo Admin ' + tenantName + ', saya butuh bantuan login portal pelanggan')}`;
         }
 
+        // 7. Subdomain page title refinement
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('login') === '1' || urlParams.get('masuk') === '1' || urlParams.get('track')) {
           document.title = `Masuk | ${tenantName} Portal Pelanggan`;
