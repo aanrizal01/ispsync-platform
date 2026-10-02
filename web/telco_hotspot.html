@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hotspot Access - {{.TenantName}}</title>
+    <link rel="icon" type="image/svg+xml" href="{{.LogoURL}}" id="tab-favicon">
+    <script>
+      const fav = document.getElementById("tab-favicon");
+      if (fav && fav.href.includes("_logo.svg")) {
+        fav.href = fav.href.replace("_logo.svg", "_favicon.svg");
+      }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>

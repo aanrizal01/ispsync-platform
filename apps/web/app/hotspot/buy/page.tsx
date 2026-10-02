@@ -53,9 +53,38 @@ function HotspotBuyForm() {
     if (typeof window !== "undefined") {
       const parts = window.location.host.split('.');
       if (parts.length >= 3) {
-        const slug = parts[1].toUpperCase();
-        setTenantName(slug);
-        setTenantLogo(`https://${parts.slice(1).join('.')}/web/${parts[1]}_logo.svg`);
+        const tenantSlug = parts[1].toLowerCase();
+        const tenantUpper = parts[1].toUpperCase();
+        setTenantName(tenantUpper);
+        
+        const domainBase = parts.slice(1).join('.');
+        const logoUrl = `https://${domainBase}/web/${tenantSlug}_logo.svg`;
+        const faviconUrl = `https://${domainBase}/web/${tenantSlug}_favicon.svg`;
+        setTenantLogo(logoUrl);
+
+        // Update document title dynamically
+        document.title = `Beli Voucher WiFi Hotspot | ${tenantUpper}`;
+
+        // Update document favicon dynamically
+        const updateFavicon = (href: string) => {
+          let links = document.querySelectorAll<HTMLLinkElement>(
+            "link[rel*='icon'], link[rel='shortcut icon'], link[rel='apple-touch-icon']"
+          );
+          if (links.length > 0) {
+            links.forEach((link) => {
+              link.href = href;
+              link.type = "image/svg+xml";
+            });
+          } else {
+            const link = document.createElement("link");
+            link.rel = "icon";
+            link.type = "image/svg+xml";
+            link.href = href;
+            document.head.appendChild(link);
+          }
+        };
+
+        updateFavicon(faviconUrl);
       }
     }
   }, []);
