@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -55,7 +55,7 @@ function HotspotBuyForm() {
       if (parts.length >= 3) {
         const slug = parts[1].toUpperCase();
         setTenantName(slug);
-        setTenantLogo(https:///web/_logo.svg);
+        setTenantLogo(`https://${parts.slice(1).join('.')}/web/${parts[1]}_logo.svg`);
       }
     }
   }, []);
@@ -170,10 +170,10 @@ function HotspotBuyForm() {
       const res = await hotspotApi.validatePromo(promoCode.trim());
       if (res.valid) {
         setAppliedPromo(res);
-        setPromoMsg(`✅ Diskon ${res.online_discount_pct}% diterapkan dari Agen ${res.agent_name}!`);
+        setPromoMsg(`âœ… Diskon ${res.online_discount_pct}% diterapkan dari Agen ${res.agent_name}!`);
       } else {
         setAppliedPromo(null);
-        setPromoMsg(`❌ ${res.message}`);
+        setPromoMsg(`âŒ ${res.message}`);
       }
     } catch (err: any) {
       setAppliedPromo(null);
@@ -563,7 +563,7 @@ function HotspotBuyForm() {
                       : "border-slate-200 text-slate-600 hover:bg-slate-50"
                   }`}
                 >
-                  <span>📱</span>
+                  <span>ðŸ“±</span>
                   <span>QRIS Semua Bank</span>
                 </button>
                 <button
@@ -575,7 +575,7 @@ function HotspotBuyForm() {
                       : "border-slate-200 text-slate-600 hover:bg-slate-50"
                   }`}
                 >
-                  <span>💳</span>
+                  <span>ðŸ’³</span>
                   <span>e-Wallet / VA</span>
                 </button>
               </div>
@@ -644,7 +644,7 @@ function HotspotBuyForm() {
                 href={`/hotspot/login?ip=${encodeURIComponent(clientIP)}&mac=${encodeURIComponent(clientMAC)}&link-login=${encodeURIComponent(linkLogin)}&link-orig=${encodeURIComponent(linkOrig)}`}
                 className="text-xs text-slate-500 hover:text-slate-800 transition-colors"
               >
-                ← Sudah punya kode voucher? Masuk disini
+                â† Sudah punya kode voucher? Masuk disini
               </Link>
             </div>
           </div>
@@ -706,7 +706,7 @@ function HotspotBuyForm() {
                   onClick={() => setRecoverBlockedResult(null)}
                   className="text-xs text-amber-700 hover:text-amber-900 font-medium block mx-auto pt-1"
                 >
-                  ← Coba nomor lain
+                  â† Coba nomor lain
                 </button>
               </div>
             ) : (
@@ -766,7 +766,7 @@ function HotspotBuyForm() {
                   }}
                   className="text-xs text-slate-400 hover:text-slate-600 block mx-auto pt-1"
                 >
-                  ← Kembali ke Menu Beli
+                  â† Kembali ke Menu Beli
                 </button>
               </form>
             )}
@@ -837,7 +837,7 @@ function HotspotBuyForm() {
               onClick={() => handleConfirmPayment()}
               className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition-colors shadow-md shadow-emerald-500/20 disabled:bg-emerald-400 flex items-center justify-center gap-2"
             >
-              {loading ? "Memverifikasi..." : "✓ Cek Status Pembayaran Sekarang"}
+              {loading ? "Memverifikasi..." : "âœ“ Cek Status Pembayaran Sekarang"}
             </button>
 
             <button
@@ -845,7 +845,7 @@ function HotspotBuyForm() {
               onClick={() => setStep("SELECT")}
               className="text-xs text-slate-400 hover:text-slate-600 block mx-auto pt-1"
             >
-              ← Ganti paket atau batalkan
+              â† Ganti paket atau batalkan
             </button>
           </div>
         )}
@@ -883,7 +883,7 @@ function HotspotBuyForm() {
                   onClick={copyVoucherCode}
                   className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 bg-white px-3.5 py-1.5 rounded-lg border border-blue-200 shadow-xs transition-colors"
                 >
-                  <span>📋</span>
+                  <span>ðŸ“‹</span>
                   <span>{copied ? "Berhasil Disalin!" : "Salin Kode Voucher"}</span>
                 </button>
               </div>
@@ -896,7 +896,7 @@ function HotspotBuyForm() {
               onClick={handleAutoConnect}
               className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl text-base transition-colors shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2"
             >
-              <span>⚡</span>
+              <span>âš¡</span>
               <span>{loading ? "Menghubungkan..." : "HUBUNGKAN KE INTERNET SEKARANG"}</span>
             </button>
 
@@ -918,7 +918,7 @@ function HotspotBuyForm() {
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
         </Link>
         <p className="text-[11px] text-slate-500">
-          © {new Date().getFullYear()} ISPSYNC • Layanan Hotspot &amp; Voucher Digital
+          Â© {new Date().getFullYear()} ISPSYNC â€¢ Layanan Hotspot &amp; Voucher Digital
         </p>
       </footer>
     </div>
