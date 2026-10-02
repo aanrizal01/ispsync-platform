@@ -180,9 +180,9 @@ https:// {
         }
     }
 
-    # 2. FTTX NOC Command Center & FiberGrid (fttx.*, noc.*, fibergrid.*)
+    # 2. FTTX & FiberGrid Core Engine (fttx.*, fibergrid.*)
     @fttx {
-        header_regexp Host (^(fttx|noc|fibergrid)\.|\.(fttx|noc|fibergrid)\.)
+        header_regexp Host (^(fttx|fibergrid)\.|\.(fttx|fibergrid)\.)
     }
     handle @fttx {
         reverse_proxy 172.18.0.1:8082 {
@@ -191,9 +191,9 @@ https:// {
         }
     }
 
-    # 3. Customer & Field Operational Portals - ISPSYNC Nexus (nexus.*, portal.*, sales.*, teknisi.*, rekan.*)
+    # 3. Customer & Field Operational Portals - ISPSYNC Nexus (nexus.*, portal.*, sales.*, teknisi.*, rekan.*, noc.*, noc-fo.*)
     @nexus {
-        header_regexp Host (^(nexus|portal|sales|teknisi|rekan)\.|\.(nexus|portal|sales|teknisi|rekan)\.)
+        header_regexp Host (^(nexus|portal|sales|teknisi|rekan|noc|noc-fo)\.|\.(nexus|portal|sales|teknisi|rekan|noc|noc-fo)\.)
     }
     handle @nexus {
         reverse_proxy 172.18.0.1:8081 {
