@@ -544,7 +544,7 @@ export default function AdminPasspointPage() {
                   onChange={(e) => setSelectedProfileId(e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
                 >
-                  <option value="">Gunakan Profil Default (GOGIGA Passpoint)</option>
+                  <option value="">Gunakan Profil Default Sistem</option>
                   {profiles.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name} ({p.operator_friendly_name})
@@ -692,7 +692,7 @@ export default function AdminPasspointPage() {
                 <Smartphone className="w-4 h-4 text-slate-600" />
                 Panduan untuk HP Android:
               </div>
-              <div>1. Sambungkan ke WiFi: <b>GOGIGA Passpoint</b></div>
+              <div>1. Sambungkan ke WiFi SSID: <b>Passpoint / Hotspot 2.0</b></div>
               <div>2. EAP Method: <b>TTLS</b>, Phase 2: <b>MSCHAPV2</b></div>
               <div>3. CA Certificate: <b>Do not validate</b></div>
               <div>4. Identity: <b>{issuedCredential.username}</b></div>

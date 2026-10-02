@@ -150,9 +150,33 @@ https:// {
         }
     }
 
+    # 0.72. Passpoint & HS2.0 Onboarding Portal (/passpoint)
+    @passpoint_path {
+        path /passpoint*
+    }
+    handle @passpoint_path {
+        reverse_proxy web:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_down Cache-Control "no-cache, no-store, must-revalidate"
+        }
+    }
+
+    # 0.73. Passpoint Apple MobileConfig Profile Generator (.mobileconfig)
+    @passpoint_apple_profile {
+        path /api/v1/passpoint/credentials/*/apple-profile
+    }
+    handle @passpoint_apple_profile {
+        reverse_proxy api:8080 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_down Content-Type "application/x-apple-aspen-config"
+        }
+    }
+
     # 1. CMS & Billing Backoffice App (Next.js & API)
     @billing_api {
-        header_regexp Host (^(ledger|billing)\.|\.(ledger|billing)\.)
+        header_regexp Host (^(ledger|billing|passpoint)\.|\.(ledger|billing|passpoint)\.)
         path /api/v1/* /health /ready
     }
     handle @billing_api {
@@ -169,8 +193,15 @@ https:// {
     }
     redir @billing_root /login temporary
 
+    # Redirect root to /passpoint on Passpoint subdomain
+    @passpoint_root {
+        header_regexp Host (^(passpoint)\.|\.(passpoint)\.)
+        path /
+    }
+    redir @passpoint_root /passpoint temporary
+
     @billing {
-        header_regexp Host (^(ledger|billing)\.|\.(ledger|billing)\.)
+        header_regexp Host (^(ledger|billing|passpoint)\.|\.(ledger|billing|passpoint)\.)
     }
     handle @billing {
         reverse_proxy web:3000 {
