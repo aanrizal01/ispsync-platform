@@ -241,6 +241,11 @@ func main() {
 	r.Get("/SOP_OPERASIONAL_LENGKAP_GOGIGANET.pdf", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "web/SOP_OPERASIONAL_LENGKAP_GOGIGANET.pdf")
 	})
+	
+	// NOC Telco Preset Captive Portal & Isolir
+	r.Get("/hotspot", pageH.ServeHotspot)
+	r.Get("/isolir", pageH.ServeIsolir)
+	
 	r.Handle("/web/*", http.StripPrefix("/web/", http.FileServer(http.Dir("web"))))
 
 	// Web UI Multi-Tenant (CMS, Portal, NOC, Sales, Teknisi)

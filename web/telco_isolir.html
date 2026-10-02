@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Isolated - {{.TenantName}}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .brand-bg { background-color: {{.BrandColor}}; }
+        .brand-text { color: {{.BrandColor}}; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-center items-center p-4">
+
+    <!-- NOC Header -->
+    <div class="w-full max-w-md bg-slate-900 border-2 border-rose-600/50 rounded-xl overflow-hidden shadow-[0_0_40px_rgba(225,29,72,0.15)]">
+        <div class="bg-rose-600 px-5 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                {{if .LogoURL}}
+                <img src="{{.LogoURL}}" alt="Logo" class="h-6 w-auto brightness-0 invert">
+                {{else}}
+                <div class="font-black text-white text-lg tracking-wider">{{.TenantPrefix}}</div>
+                {{end}}
+            </div>
+            <div class="text-[10px] font-bold text-white uppercase tracking-widest mono bg-rose-800 px-2 py-0.5 rounded shadow-inner">
+                SERVICE ISOLATED
+            </div>
+        </div>
+        
+        <!-- Isolation Alert Panel -->
+        <div class="p-6 bg-slate-800 text-center">
+            <div class="w-16 h-16 rounded-full bg-rose-500/10 flex items-center justify-center mx-auto mb-4 border border-rose-500/20">
+                <span class="text-3xl">🛑</span>
+            </div>
+            <h2 class="text-xl font-black text-white mb-2 uppercase tracking-wide">Akses Internet Diblokir</h2>
+            <p class="text-xs text-slate-300 mb-6 leading-relaxed">
+                Mohon maaf, layanan internet Anda saat ini diisolasi sementara karena adanya tagihan yang belum diselesaikan (Jatuh Tempo).
+            </p>
+            
+            <div class="bg-slate-900 p-4 rounded-lg border border-slate-700 text-left mb-6">
+                <div class="text-[10px] text-slate-500 mono mb-1 uppercase tracking-wider">Identitas Jaringan (IP)</div>
+                <div class="font-bold text-white mono text-sm">{{.ClientIP}}</div>
+                <div class="border-t border-slate-700 my-2"></div>
+                <div class="text-[10px] text-slate-500 mono mb-1 uppercase tracking-wider">Status AAA RADIUS</div>
+                <div class="font-bold text-rose-400 mono text-sm flex items-center gap-2">
+                    <span class="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
+                    OVERDUE / SUSPENDED
+                </div>
+            </div>
+            
+            <a href="/member" class="block w-full brand-bg hover:brightness-110 text-white font-black text-sm uppercase tracking-wider py-3.5 rounded-lg shadow-lg transition">
+                💳 BAYAR TAGIHAN VIA QRIS
+            </a>
+            
+            <a href="https://wa.me/{{.ContactPhone}}" target="_blank" class="block w-full mt-3 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs py-3 rounded-lg transition">
+                Hubungi Call Center NOC
+            </a>
+        </div>
+        
+        <!-- Footer -->
+        <div class="p-4 bg-slate-900 border-t border-slate-800 flex justify-center">
+            <div class="text-[10px] text-slate-600 mono">
+                STRICT TELCO PRESET &copy; ISPSYNC
+            </div>
+        </div>
+    </div>
+</body>
+</html>

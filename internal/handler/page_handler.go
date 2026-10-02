@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"html/template"
+	"net"
 	"os"
 	"strings"
 	"sync"
@@ -195,4 +197,96 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(html))
+}
+
+
+
+type PortalTemplateData struct {
+	TenantName   string
+	TenantPrefix string
+	LogoURL      string
+	BrandColor   string
+	ContactPhone string
+	ClientIP     string
+	ClientMAC    string
+	Host         string
+	LoginLink    string
+	DestURL      string
+}
+
+func (h *PageHandler) getClientIPMAC(r *http.Request) (string, string) {
+	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+	if ip == "" {
+		ip = r.RemoteAddr
+	}
+	mac := r.URL.Query().Get("mac")
+	if mac == "" {
+		mac = "00:00:00:00:00:00"
+	}
+	return ip, mac
+}
+
+func (h *PageHandler) ServeHotspot(w http.ResponseWriter, r *http.Request) {
+	tCtx := middleware.GetTenantContext(r)
+	if tCtx == nil || tCtx.Tenant == nil {
+		http.Error(w, "Tenant not found", http.StatusNotFound)
+		return
+	}
+
+	ip, mac := h.getClientIPMAC(r)
+	linkLogin := r.URL.Query().Get("link-login")
+	if linkLogin == "" {
+		linkLogin = "/login"
+	}
+	dst := r.URL.Query().Get("dst")
+
+	data := PortalTemplateData{
+		TenantName:   tCtx.Tenant.Name,
+		TenantPrefix: tCtx.Tenant.PrefixID,
+		LogoURL:      tCtx.Tenant.LogoURL,
+		BrandColor:   tCtx.Tenant.BrandColor,
+		ContactPhone: tCtx.Tenant.ContactPhone,
+		ClientIP:     ip,
+		ClientMAC:    mac,
+		Host:         tCtx.Host,
+		LoginLink:    linkLogin,
+		DestURL:      dst,
+	}
+
+	tmpl, err := template.ParseFiles("web/telco_hotspot.html")
+	if err != nil {
+		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	tmpl.Execute(w, data)
+}
+
+func (h *PageHandler) ServeIsolir(w http.ResponseWriter, r *http.Request) {
+	tCtx := middleware.GetTenantContext(r)
+	if tCtx == nil || tCtx.Tenant == nil {
+		http.Error(w, "Tenant not found", http.StatusNotFound)
+		return
+	}
+
+	ip, mac := h.getClientIPMAC(r)
+
+	data := PortalTemplateData{
+		TenantName:   tCtx.Tenant.Name,
+		TenantPrefix: tCtx.Tenant.PrefixID,
+		LogoURL:      tCtx.Tenant.LogoURL,
+		BrandColor:   tCtx.Tenant.BrandColor,
+		ContactPhone: tCtx.Tenant.ContactPhone,
+		ClientIP:     ip,
+		ClientMAC:    mac,
+		Host:         tCtx.Host,
+	}
+
+	tmpl, err := template.ParseFiles("web/telco_isolir.html")
+	if err != nil {
+		http.Error(w, "Template error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	tmpl.Execute(w, data)
 }
