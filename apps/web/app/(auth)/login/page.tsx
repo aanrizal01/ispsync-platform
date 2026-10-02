@@ -17,13 +17,62 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
+const TENANT_LEGAL_MAP: Record<string, string> = {
+  ispmu: "PT. Mitra Usaha Data",
+  ispku: "PT. ISP Kita Nusantara",
+  dev: "Laboratorium ISPSYNC R&D",
+};
+
+function getInitialTenantInfo() {
+  if (typeof window === "undefined") {
+    return {
+      name: "ISPMU",
+      legalName: "PT. Mitra Usaha Data",
+      slug: "ispmu",
+      logo: "/web/ispmu_logo.svg",
+      isTenant: true,
+    };
+  }
+  const h = window.location.hostname.toLowerCase();
+  if (h === "ispsync.id" || h === "www.ispsync.id") {
+    return { name: "ISPSYNC", legalName: "", slug: "", logo: "", isTenant: false };
+  }
+  const parts = h.split(".");
+  let slug = "";
+  if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "hotspot")) {
+    slug = parts[1].toLowerCase();
+  } else if (parts.length === 3) {
+    if (parts[0] === "ledger" || parts[0] === "hotspot") {
+      slug = parts[1].toLowerCase();
+    } else if (parts[0] !== "www") {
+      slug = parts[0].toLowerCase();
+    }
+  } else if (parts.length >= 3 && parts[0] !== "ledger" && parts[0] !== "www") {
+    slug = parts[0].toLowerCase();
+  }
+
+  if (slug && slug !== "ispsync") {
+    const upper = slug.toUpperCase();
+    return {
+      name: upper,
+      legalName: TENANT_LEGAL_MAP[slug] || `PT. ${upper} Data Nusantara`,
+      slug: slug,
+      logo: `/web/${slug}_logo.svg`,
+      isTenant: true,
+    };
+  }
+
+  return { name: "ISPSYNC", legalName: "", slug: "", logo: "", isTenant: false };
+}
+
 export default function LoginPage() {
   const { login } = useAuth();
-  const [tenantName, setTenantName] = useState("ISPSYNC");
-  const [tenantLegalName, setTenantLegalName] = useState("");
-  const [tenantSlug, setTenantSlug] = useState("");
-  const [tenantLogo, setTenantLogo] = useState("");
-  const [isTenant, setIsTenant] = useState(false);
+  const initial = getInitialTenantInfo();
+  const [tenantName, setTenantName] = useState(initial.name);
+  const [tenantLegalName, setTenantLegalName] = useState(initial.legalName);
+  const [tenantSlug, setTenantSlug] = useState(initial.slug);
+  const [tenantLogo, setTenantLogo] = useState(initial.logo);
+  const [isTenant, setIsTenant] = useState(initial.isTenant);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -39,38 +88,18 @@ export default function LoginPage() {
         return;
       }
       
-      const parts = h.split(".");
-      let slug = "";
-      if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "hotspot")) {
-        slug = parts[1].toLowerCase();
-      } else if (parts.length === 3) {
-        if (parts[0] === "ledger" || parts[0] === "hotspot") {
-          slug = parts[1].toLowerCase();
-        } else if (parts[0] !== "www") {
-          slug = parts[0].toLowerCase();
-        }
-      } else if (parts.length >= 3 && parts[0] !== "ledger" && parts[0] !== "www") {
-        slug = parts[0].toLowerCase();
-      }
+      const info = getInitialTenantInfo();
+      setTenantSlug(info.slug);
+      setTenantName(info.name);
+      setTenantLegalName(info.legalName);
+      setTenantLogo(info.logo);
+      setIsTenant(info.isTenant);
 
-      const TENANT_LEGAL_MAP: Record<string, string> = {
-        ispmu: "PT. Mitra Usaha Data",
-        ispku: "PT. ISP Kita Nusantara",
-        dev: "Laboratorium ISPSYNC R&D",
-      };
-
-      if (slug && slug !== "ispsync") {
-        const upper = slug.toUpperCase();
-        setTenantSlug(slug);
-        setTenantName(upper);
-        setTenantLegalName(TENANT_LEGAL_MAP[slug] || `PT. ${upper} Data Nusantara`);
-        setTenantLogo(`/web/${slug}_logo.svg`);
-        setIsTenant(true);
-        document.title = `Masuk | ${upper} Ledger`;
-
+      if (info.isTenant) {
+        document.title = `Masuk | ${info.name} Ledger`;
         const iconEl = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
-        if (iconEl) {
-          iconEl.href = `/web/${slug}_favicon.svg`;
+        if (iconEl && info.slug) {
+          iconEl.href = `/web/${info.slug}_favicon.svg`;
         }
       } else {
         document.title = "Masuk ke Dashboard";
@@ -187,7 +216,7 @@ export default function LoginPage() {
 
         {/* Bottom: Footer Info */}
         <div className="relative z-10 pt-6 border-t border-slate-800/80 text-xs text-slate-500">
-          <p>&copy; {new Date().getFullYear()} {tenantLegalName || tenantName}. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} {tenantLegalName || (tenantName === "ISPMU" ? "PT. Mitra Usaha Data" : (tenantName === "ISPKU" ? "PT. ISP Kita Nusantara" : "PT. Mitra Usaha Data"))}. All rights reserved.</p>
         </div>
       </div>
 
@@ -215,7 +244,7 @@ export default function LoginPage() {
                 <span className="font-black text-xl text-slate-900 uppercase">
                   {tenantName}
                 </span>
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-800">
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-slate-100 text-cyan-800 border border-slate-200">
                   {isTenant ? "LEDGER & BILLING" : "PORTAL MEMBER"}
                 </span>
               </div>
