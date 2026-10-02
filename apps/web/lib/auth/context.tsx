@@ -112,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         // Fallback untuk Demo Admin saat offline / pengetesan lokal tanpa database
         if (
-          (email === "admin@isp.local" && password === "Admin123456!") ||
+          ((email === "admin@isp.local" || email.startsWith("admin@") || email === "demo@isp.local") && password === "Admin123456!") ||
           email === "demo@isp.local"
         ) {
           const demoUser: User = {

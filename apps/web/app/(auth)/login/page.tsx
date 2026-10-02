@@ -269,7 +269,7 @@ export default function LoginPage() {
             <div className="mb-6 p-4 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-900 text-xs space-y-1.5">
               <div className="flex items-center justify-between font-mono">
                 <span className="text-slate-500">Email:</span>
-                <span className="font-bold text-cyan-900">admin@isp.local</span>
+                <span className="font-bold text-cyan-900">admin@{tenantSlug}.ispsync.id</span>
               </div>
               <div className="flex items-center justify-between font-mono">
                 <span className="text-slate-500">Password:</span>
@@ -310,7 +310,7 @@ export default function LoginPage() {
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@isp.local"
+                  placeholder={tenantSlug ? `admin@${tenantSlug}.ispsync.id` : "admin@ispsync.id"}
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-600 focus:border-cyan-600 text-sm transition-all shadow-sm"
                 />
               </div>
