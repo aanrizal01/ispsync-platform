@@ -192,7 +192,8 @@
     html.is-portal-track:not(.subdomain-logged-in) #customer-login-container,
     html.subdomain-login-mode:not(.subdomain-logged-in) #sales-login-container,
     html.subdomain-login-mode:not(.subdomain-logged-in) #admin-login-container,
-    html.subdomain-login-mode:not(.subdomain-logged-in) #technician-login-container {
+    html.subdomain-login-mode:not(.subdomain-logged-in) #technician-login-container,
+    html.subdomain-login-mode:not(.subdomain-logged-in) #jartaplok-login-container {
       max-width: 100% !important;
       width: 100% !important;
       min-height: 100vh !important;
@@ -216,7 +217,8 @@
 
     html.subdomain-login-mode:not(.subdomain-logged-in) #tab-sales,
     html.subdomain-login-mode:not(.subdomain-logged-in) #tab-admin,
-    html.subdomain-login-mode:not(.subdomain-logged-in) #tab-technician {
+    html.subdomain-login-mode:not(.subdomain-logged-in) #tab-technician,
+    html.subdomain-login-mode:not(.subdomain-logged-in) #tab-jartaplok {
       max-width: 100% !important;
       width: 100% !important;
       margin: 0 !important;
@@ -4304,111 +4306,150 @@
     <!-- ══════════════════════════════════════════════════════════ -->
     <section id="tab-jartaplok" class="hidden space-y-6">
       
-      <!-- 1. JARTAPLOK LOGIN CONTAINER (Shown when unauthenticated) -->
-      <div id="jartaplok-login-container" class="max-w-4xl mx-auto my-4 sm:my-8 overflow-hidden rounded-lg bg-white border border-slate-200 shadow-sm">
-        <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[520px]">
-          
-          <!-- LEFT HERO BRANDING PANEL (lg:col-span-5) -->
-          <div class="lg:col-span-5 bg-slate-900 text-white p-6 sm:p-8 flex flex-col justify-between">
-            <div class="space-y-6">
-              <!-- Brand Header -->
-              <div class="space-y-3">
-                <div class="flex items-center gap-3">
-                  <img src="/logo.png" alt="GOGIGA" class="h-10 w-auto object-contain" />
-                  <div>
-                    <h2 class="text-xl font-bold tracking-tight text-white">GOGIGANET</h2>
-                    <p class="text-xs text-blue-400 font-mono font-semibold">Portal Rekanan JARTAPLOK Wholesale</p>
-                  </div>
+      <!-- 1. JARTAPLOK & CARRIER LOGIN CONTAINER (Shown when unauthenticated) -->
+      <div id="jartaplok-login-container" class="min-h-screen w-full flex flex-col lg:flex-row bg-slate-950 font-sans selection:bg-cyan-500 selection:text-slate-950">
+        
+        <!-- LEFT SIDE: Showcase (Dynamic Brand Authority) -->
+        <div class="hidden lg:flex lg:w-1/2 xl:w-7/12 relative flex-col justify-between p-10 xl:p-16 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/40 text-white overflow-hidden border-r border-slate-800/80">
+          <!-- Ambient Radial Glows -->
+          <div class="absolute -top-32 -left-32 w-96 h-96 bg-cyan-600/20 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute top-1/2 -right-32 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute -bottom-32 left-1/4 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+          <!-- Top: Brand Header -->
+          <div class="relative z-10">
+            <div class="flex items-center gap-3.5">
+              <img id="jartaplok-login-logo" src="/web/ispmu_logo.svg" alt="Logo" class="h-10 w-auto brightness-0 invert object-contain" onerror="this.style.display='none'" />
+              <div>
+                <div class="flex items-center gap-2.5">
+                  <h2 class="text-2xl font-black tracking-tight text-white cust-brand-name-dynamic">ISPMU</h2>
+                  <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
+                    PORTAL CARRIER &amp; JARTAPLOK
+                  </span>
                 </div>
-                <p class="text-xs text-slate-300 leading-relaxed font-sans pt-1">
-                  Akses kemitraan B2B khusus penyelenggara Jaringan Tetap Lokal (Jartaplok) untuk audit utilisasi sewa port, titik ODP, dan cetak faktur wholesale.
-                </p>
+                <p class="text-xs text-slate-400 font-sans mt-0.5">Infrastruktur B2B &amp; Utilisasi Port <span class="cust-brand-name-dynamic">ISPMU</span></p>
               </div>
-
-              <!-- Feature Highlights -->
-              <div class="space-y-2.5 pt-1">
-                <div class="flex items-start gap-3 p-3 rounded-md bg-white/5 border border-white/10">
-                  <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <i data-lucide="network" class="w-4 h-4"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-xs font-semibold text-white">Rekapitulasi Port FO &amp; Prorata</h4>
-                    <p class="text-[11px] text-slate-300">Penghitungan otomatis biaya sewa port aktif per kapasitas (50M, 100M, 150M, dst) dan masa jeda.</p>
-                  </div>
-                </div>
-
-                <div class="flex items-start gap-3 p-3 rounded-md bg-white/5 border border-white/10">
-                  <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <i data-lucide="map" class="w-4 h-4"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-xs font-semibold text-white">Utilisasi Titik ODP &amp; Tiang</h4>
-                    <p class="text-[11px] text-slate-300">Integrasi KML, pemetaan koordinat tiang distribusi, dan kapasitas port terpakai vs tersedia.</p>
-                  </div>
-                </div>
-
-                <div class="flex items-start gap-3 p-3 rounded-md bg-white/5 border border-white/10">
-                  <div class="w-8 h-8 rounded-md bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <i data-lucide="receipt" class="w-4 h-4"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-xs font-semibold text-white">Faktur Tagihan Wholesale</h4>
-                    <p class="text-[11px] text-slate-300">Unduh dan cetak lembar invoice resmi tagihan sewa port wholesale dari Rekanan ke GOGIGA ISP.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Trust / Security Footer -->
-            <div class="pt-6 mt-6 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-              <div class="flex items-center gap-1.5 text-slate-300">
-                <i data-lucide="shield-check" class="w-4 h-4 text-indigo-400"></i>
-                <span>Akses Kemitraan B2B Wholesale</span>
-              </div>
-              <span class="text-slate-400 text-[11px]">Enkripsi Kunci API</span>
             </div>
           </div>
 
-          <!-- RIGHT LOGIN FORM PANEL (lg:col-span-7) -->
-          <div class="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-white relative">
-            <div class="space-y-6">
-              
-              <!-- Form Top Bar -->
-              <div class="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div>
-                  <h3 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Portal Rekanan</h3>
-                  <p class="text-xs text-slate-500 font-sans mt-0.5">Silakan masukkan username dan password/PIN kunci rekanan</p>
+          <!-- Middle: Hero Messaging & Highlights -->
+          <div class="relative z-10 my-auto py-10 space-y-6">
+            <div class="space-y-4">
+              <h1 class="text-3xl sm:text-4xl xl:text-5xl font-black text-white tracking-tight leading-[1.15]">
+                Kemitraan Jartaplok &amp; <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-400">Carrier Wholesale.</span>
+              </h1>
+              <p class="text-sm sm:text-base text-slate-400 max-w-lg leading-relaxed font-sans">
+                Akses resmi rekanan B2B Jaringan Tetap Lokal (Jartaplok) untuk audit utilisasi sewa port aktif, pemetaan tiang ODP, serta cetak faktur tagihan wholesale.
+              </p>
+            </div>
+
+            <!-- Feature Cards (Uniform Carrier-Grade Telco Design) -->
+            <div class="space-y-3 pt-2 max-w-xl">
+              <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="network" class="w-4 h-4"></i>
                 </div>
-                <div class="w-11 h-11 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200 shadow-xs shrink-0">
-                  <i data-lucide="network" class="w-5 h-5"></i>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-100">Rekapitulasi Port FO &amp; Prorata</h4>
+                  <p class="text-[11px] text-slate-400 leading-normal">Penghitungan otomatis biaya sewa port aktif per kapasitas (50M, 100M, 150M, dst) dan masa jeda.</p>
                 </div>
               </div>
 
-              <form onsubmit="handleJartaplokDirectLogin(event)" class="space-y-4">
-                <div>
-                  <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">Username Rekanan</label>
-                  <input type="text" id="jartaplok-direct-username" placeholder="Masukkan username rekanan" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-md px-3.5 py-2 text-xs sm:text-sm font-mono outline-none focus:bg-white focus:border-slate-900 transition" required />
+              <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="map" class="w-4 h-4"></i>
                 </div>
-
                 <div>
-                  <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">Password / PIN Kunci</label>
-                  <input type="password" id="jartaplok-direct-pin" placeholder="Masukkan password akun rekanan" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-md px-3.5 py-2 text-xs sm:text-sm font-mono outline-none focus:bg-white focus:border-slate-900 transition" required />
+                  <h4 class="text-xs font-bold text-slate-100">Utilisasi Titik ODP &amp; Tiang</h4>
+                  <p class="text-[11px] text-slate-400 leading-normal">Integrasi KML, pemetaan koordinat tiang distribusi, dan kapasitas port terpakai vs tersedia.</p>
                 </div>
+              </div>
 
-                <button type="submit" id="btn-jartaplok-direct-login" class="w-full py-3 px-4 rounded-md text-xs sm:text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-xs transition flex items-center justify-center gap-2 cursor-pointer">
-                  <i data-lucide="key" class="w-4 h-4"></i>
-                  <span>BUKA DASHBOARD REKANAN</span>
-                </button>
-              </form>
-            </div>
-
-            <!-- Footer Help Note -->
-            <div class="pt-4 border-t border-slate-100 text-center text-xs text-slate-400">
-              Pertanyaan mengenai sewa port atau ODP? Hubungi Manajemen NOC Gogiganet.
+              <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                  <i data-lucide="receipt" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-slate-100">Faktur Tagihan Wholesale</h4>
+                  <p class="text-[11px] text-slate-400 leading-normal">Unduh dan cetak lembar invoice resmi tagihan sewa port wholesale dari Rekanan ke ISP secara akurat.</p>
+                </div>
+              </div>
             </div>
           </div>
 
+          <!-- Bottom: Footer Info -->
+          <div class="relative z-10 pt-6 border-t border-slate-800/80 text-xs text-slate-500">
+            <p>&copy; <span class="jartap-copy-year">2026</span> <span class="jartap-legal-name">PT. Mitra Usaha Data</span>. All rights reserved.</p>
+          </div>
         </div>
+
+        <!-- RIGHT SIDE: Auth Form (Clean Edge-to-Edge Matching Design) -->
+        <div class="w-full lg:w-1/2 xl:w-5/12 flex flex-col justify-between p-8 sm:p-12 lg:p-16 bg-white relative min-h-screen">
+          
+          <!-- Mobile Brand Header (Visible only on small screens) -->
+          <div class="lg:hidden flex items-center justify-between pb-6 mb-6 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+              <img id="jartaplok-login-logo-mobile" src="/web/ispmu_logo.svg" alt="Logo" class="h-9 w-auto object-contain" onerror="this.src='/logo.png'" />
+              <div>
+                <h3 class="font-black text-slate-900 text-lg leading-tight cust-brand-name-dynamic">ISPMU</h3>
+                <p class="text-[11px] text-slate-500 font-mono">PORTAL CARRIER &amp; JARTAPLOK</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Centered Form Container -->
+          <div class="max-w-md w-full mx-auto my-auto py-4">
+            
+            <!-- Form Title -->
+            <div class="mb-6">
+              <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Portal Rekanan &amp; Carrier Wholesale <span class="cust-brand-name-dynamic">ISPMU</span></h2>
+              <p class="text-xs sm:text-sm text-slate-500 mt-1 font-sans">
+                Masukkan identitas akun rekanan dan kata sandi untuk membuka dashboard audit wholesale.
+              </p>
+            </div>
+
+            <!-- Form -->
+            <form onsubmit="handleJartaplokDirectLogin(event)" class="space-y-4">
+              <div>
+                <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center justify-between">
+                  <span>Username Rekanan</span>
+                  <span class="text-[10px] text-slate-400 font-sans font-normal">Email / ID Mitra</span>
+                </label>
+                <div class="relative">
+                  <i data-lucide="network" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                  <input type="text" id="jartaplok-direct-username" placeholder="carrier@ispmu.ispsync.id atau kode rekanan" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm font-sans outline-none focus:bg-white focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition shadow-xs" required />
+                </div>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700">
+                    <span>Password / PIN Kunci</span>
+                  </label>
+                  <span class="text-[10px] text-slate-400 font-sans font-normal">Kata Sandi Akun</span>
+                </div>
+                <div class="relative">
+                  <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                  <input type="password" id="jartaplok-direct-pin" placeholder="Masukkan password akun rekanan" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-4 py-3 text-sm font-sans outline-none focus:bg-white focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100 transition shadow-xs" required />
+                </div>
+              </div>
+
+              <button type="submit" id="btn-jartaplok-direct-login" class="w-full bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-mono font-bold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md shadow-cyan-600/20 active:scale-[0.99] cursor-pointer mt-2">
+                <i data-lucide="key" class="w-4 h-4"></i>
+                <span>BUKA DASHBOARD CARRIER WHOLESALE</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Footer Note -->
+          <div class="pt-6 border-t border-slate-100 mt-6 text-center">
+            <div class="flex items-center justify-center gap-2 text-xs text-slate-400">
+              <span>Pertanyaan mengenai sewa port atau ODP?</span>
+              <span class="text-slate-600 font-medium">Hubungi Manajemen NOC <span class="cust-brand-name-dynamic">ISPMU</span></span>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- 2. JARTAPLOK DASHBOARD (Shown when authenticated) -->
@@ -4426,7 +4467,7 @@
               Portal Rekanan Penyelenggara JARTAPLOK
             </h1>
             <p class="text-xs sm:text-sm text-slate-300 max-w-2xl font-sans leading-relaxed">
-              Konsolidasi rekapitulasi dan estimasi pemakaian sewa port fiber optic (last-mile flat rate), kapasitas tiang ODP, serta tagihan bulanan resmi dengan <strong>PT Inovasi Sistem Pintar</strong>.
+              Konsolidasi rekapitulasi dan estimasi pemakaian sewa port fiber optic (last-mile flat rate), kapasitas tiang ODP, serta tagihan bulanan resmi dengan <strong class="jartap-legal-name">PT. Mitra Usaha Data</strong>.
             </p>
             <div class="flex flex-wrap items-center gap-3 pt-1 text-xs font-mono text-indigo-200/90">
               <span>Mitra: <strong class="text-white" id="jartap-partner-name">PT. GNET BIARO AKSES</strong></span>
@@ -4470,7 +4511,7 @@
             </div>
           </div>
           <div id="jartap-total-billing" class="text-2xl sm:text-3xl font-black text-emerald-800 font-mono tracking-tight">Rp 0</div>
-          <p id="jartap-billing-subtext" class="text-[11px] text-slate-500 mt-1 font-sans">Kewajiban sewa bulan berjalan dari GOGIGA ISP</p>
+          <p id="jartap-billing-subtext" class="text-[11px] text-slate-500 mt-1 font-sans">Kewajiban sewa bulan berjalan dari <span class="cust-brand-name-dynamic">ISPMU</span> ISP</p>
         </div>
 
         <!-- Card 2: Port FO Aktif Disewa -->
@@ -4570,7 +4611,7 @@
               </span>
             </div>
             <p class="text-xs text-slate-500 font-sans mt-0.5">
-              Data teknis sirkuit port fiber optic aktif untuk rekapitulasi dan estimasi pemakaian billing tanpa mengekspos data pribadi pelanggan ritel GOGIGA ISP.
+              Data teknis sirkuit port fiber optic aktif untuk rekapitulasi dan estimasi pemakaian billing tanpa mengekspos data pribadi pelanggan ritel <span class="cust-brand-name-dynamic">ISPMU</span> ISP.
             </p>
           </div>
           <button type="button" onclick="loadJartaplokPortsTable()" class="text-xs font-mono text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1">
@@ -23272,7 +23313,7 @@
         if (app === 'sales') return 'sales';
         if (app === 'technician' || app === 'teknisi') return 'technician';
         if (app === 'noc' || app === 'noc-fo' || app === 'admin') return 'noc-fo';
-        if (app === 'rekan' || app === 'mitra') return 'rekan';
+        if (app === 'rekan' || app === 'mitra' || app === 'carrier') return 'rekan';
         if (app === 'portal' || app === 'nexus') return 'portal';
       }
 
@@ -23283,7 +23324,7 @@
       const host = window.location.hostname.toLowerCase();
       if (host.startsWith('sales.') || host.includes('sales.gogiga')) return 'sales';
       if (host.startsWith('noc-fo.') || host.startsWith('noc.') || host.includes('noc-fo.gogiga')) return 'noc-fo';
-      if (host.startsWith('rekan.') || host.startsWith('mitra.') || host.includes('rekan.gogiga')) return 'rekan';
+      if (host.startsWith('rekan.') || host.startsWith('mitra.') || host.startsWith('carrier.') || host.includes('rekan.gogiga')) return 'rekan';
       if (host.startsWith('teknisi.') || host.startsWith('technician.') || host.includes('teknisi.gogiga') || host.includes('technician.gogiga')) return 'technician';
       if (host.startsWith('portal.') || host.startsWith('nexus.') || host.includes('portal.gogiga')) return 'portal';
 
@@ -23326,7 +23367,7 @@
         const h = window.location.hostname.toLowerCase();
         const parts = h.split('.');
         if (parts.length >= 3 && parts[0] !== 'www') {
-          const isSub = ['ledger', 'hotspot', 'sales', 'teknisi', 'noc', 'noc-fo', 'member', 'portal', 'rekan', 'status'].includes(parts[0]);
+          const isSub = ['ledger', 'hotspot', 'sales', 'teknisi', 'noc', 'noc-fo', 'member', 'portal', 'rekan', 'carrier', 'status'].includes(parts[0]);
           const slug = (parts.length >= 4 && isSub) ? parts[1] : parts[0];
           if (slug && slug !== 'ispsync') {
             tenantSlug = slug.toLowerCase();
@@ -23424,9 +23465,9 @@
 
         switchTab('admin');
       } else if (currentSubdomainMode === 'rekan') {
-        // 🤝 REKAN JARTAPLOK
-        document.title = `${tenantName} • Portal Rekanan Jartaplok Wholesale`;
-        if (subtitle) subtitle.innerText = "Portal Rekanan Jaringan Lokal (Jartaplok Wholesale)";
+        // 🤝 REKAN JARTAPLOK / CARRIER
+        document.title = `Masuk | ${tenantName} Portal Carrier Wholesale`;
+        if (subtitle) subtitle.innerText = `Portal Rekanan & Carrier Wholesale ${tenantName}`;
         if (topNocBar) topNocBar.classList.add('hidden');
 
         if (jartaplokBtn) jartaplokBtn.classList.add('hidden');
@@ -23511,7 +23552,7 @@
           el.innerText = tenantName;
         });
 
-        // 2. Standalone logos across all operational portals (Customer, Sales, NOC, Technician)
+        // 2. Standalone logos across all operational portals (Customer, Sales, NOC, Technician, Carrier Wholesale)
         const logoSelectors = [
           { id: 'cust-login-logo', isDarkBg: true },
           { id: 'cust-login-logo-mobile', isDarkBg: false },
@@ -23520,7 +23561,9 @@
           { id: 'admin-login-logo', isDarkBg: true },
           { id: 'admin-login-logo-mobile', isDarkBg: false },
           { id: 'tech-login-logo', isDarkBg: true },
-          { id: 'tech-login-logo-mobile', isDarkBg: false }
+          { id: 'tech-login-logo-mobile', isDarkBg: false },
+          { id: 'jartaplok-login-logo', isDarkBg: true },
+          { id: 'jartaplok-login-logo-mobile', isDarkBg: false }
         ];
 
         logoSelectors.forEach(item => {
@@ -23552,14 +23595,19 @@
           techInput.placeholder = `teknisi@${tenantSlug}.ispsync.id atau kode teknisi`;
         }
 
+        const jartapInput = document.getElementById('jartaplok-direct-username');
+        if (jartapInput) {
+          jartapInput.placeholder = `carrier@${tenantSlug}.ispsync.id atau kode rekanan`;
+        }
+
         // 4. Copyright Year across footers
         const currentYear = new Date().getFullYear();
-        ['#cust-copy-year', '.sales-copy-year', '.admin-copy-year', '.tech-copy-year'].forEach(sel => {
+        ['#cust-copy-year', '.sales-copy-year', '.admin-copy-year', '.tech-copy-year', '.jartap-copy-year'].forEach(sel => {
           document.querySelectorAll(sel).forEach(el => el.innerText = currentYear);
         });
 
         // 5. Official full legal corporate name across footers
-        ['#cust-legal-name', '.sales-legal-name', '.admin-legal-name', '.tech-legal-name'].forEach(sel => {
+        ['#cust-legal-name', '.sales-legal-name', '.admin-legal-name', '.tech-legal-name', '.jartap-legal-name'].forEach(sel => {
           document.querySelectorAll(sel).forEach(el => el.innerText = legalName);
         });
 
