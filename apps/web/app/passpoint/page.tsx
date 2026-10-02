@@ -34,7 +34,7 @@ const TENANT_LEGAL_MAP: Record<string, string> = {
 };
 
 export default function PasspointOnboardingPage() {
-  const [pageMode, setPageMode] = useState<"BUY" | "LOOKUP">("BUY");
+  const [pageMode, setPageMode] = useState<"BUY" | "RENEW" | "LOOKUP">("BUY");
 
   // Dynamic tenant state
   const [tenantSlug, setTenantSlug] = useState("ispku");
@@ -254,6 +254,18 @@ export default function PasspointOnboardingPage() {
     }
   };
 
+  const handleSelectMode = (mode: "BUY" | "RENEW" | "LOOKUP") => {
+    setPageMode(mode);
+    setError(null);
+    if (mode === "RENEW") {
+      setRenewOrder(null);
+      setRenewSuccess(null);
+      if (packages.length > 0 && !renewPkg) {
+        setRenewPkg(packages.find((p) => p.is_popular) || packages[0]);
+      }
+    }
+  };
+
   const downloadUrl = credential ? passpointApi.getAppleProfileUrl(credential.id) : "#";
 
   return (
@@ -313,30 +325,44 @@ export default function PasspointOnboardingPage() {
          ======================================================== */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 -mt-8 relative z-20 space-y-6">
         {/* Mode Selector Tabs */}
-        <div className="bg-slate-900/90 backdrop-blur-md rounded-2xl p-1.5 shadow-xl border border-slate-800 flex gap-2">
+        <div className="bg-slate-900/90 backdrop-blur-md rounded-2xl p-1.5 shadow-xl border border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-2">
           <button
             type="button"
-            onClick={() => setPageMode("BUY")}
-            className={`flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            onClick={() => handleSelectMode("BUY")}
+            className={`py-3 px-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
               pageMode === "BUY"
                 ? "bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 text-white shadow-md shadow-cyan-600/20"
                 : "text-slate-400 hover:text-white hover:bg-slate-800/60"
             }`}
           >
-            <ShoppingBag className="w-4 h-4" />
-            <span>Beli Akses Passpoint Baru</span>
+            <ShoppingBag className="w-4 h-4 shrink-0" />
+            <span>Beli Akses Baru</span>
           </button>
+
           <button
             type="button"
-            onClick={() => setPageMode("LOOKUP")}
-            className={`flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            onClick={() => handleSelectMode("RENEW")}
+            className={`py-3 px-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              pageMode === "RENEW"
+                ? "bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 text-white shadow-md shadow-cyan-600/20"
+                : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+            }`}
+          >
+            <Zap className="w-4 h-4 shrink-0 text-amber-400" />
+            <span>Perpanjang Paket</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleSelectMode("LOOKUP")}
+            className={`py-3 px-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
               pageMode === "LOOKUP"
                 ? "bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 text-white shadow-md shadow-cyan-600/20"
                 : "text-slate-400 hover:text-white hover:bg-slate-800/60"
             }`}
           >
-            <RotateCcw className="w-4 h-4" />
-            <span>Pasang Ulang Profil (Sudah Ada ID)</span>
+            <Download className="w-4 h-4 shrink-0" />
+            <span>Pasang Ulang Profil</span>
           </button>
         </div>
 
@@ -494,7 +520,238 @@ export default function PasspointOnboardingPage() {
           </div>
         )}
 
-        {/* ── MODE B: Lookup ID yang Sudah Ada ─────────────────── */}
+        {/* ── MODE B: Perpanjang Masa Aktif Paket (RENEW) ───────── */}
+        {pageMode === "RENEW" && (
+          <div className="space-y-6">
+            {!credential ? (
+              /* Step 1: Input Credential / ID lookup */
+              <div className="bg-slate-900/70 backdrop-blur-md rounded-2xl p-6 sm:p-8 shadow-xl border border-slate-800">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                    <Zap className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Perpanjang Masa Aktif Paket Passpoint</h2>
+                    <p className="text-xs text-slate-400">
+                      Perpanjang langganan tanpa perlu unduh ulang atau pasang ulang profil di perangkat Anda.
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-xs sm:text-sm text-slate-400 mt-4 mb-6 leading-relaxed">
+                  Masukkan ID Kredensial Passpoint Anda yang tertera di pesan WhatsApp pendaftaran atau riwayat aktivasi sebelumnya di jaringan {tenantName}.
+                </p>
+
+                <form onSubmit={handleLookup} className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="text"
+                    placeholder="Contoh: 123e4567-e89b-12d3-a456-426614174000"
+                    value={credentialId}
+                    onChange={(e) => setCredentialId(e.target.value)}
+                    className="flex-1 bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 text-sm font-mono outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-6 py-3 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-mono font-bold rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 shrink-0 cursor-pointer disabled:opacity-50"
+                  >
+                    {loading ? "Memeriksa..." : "CEK AKUN & PERPANJANG"}
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </form>
+              </div>
+            ) : (
+              /* Step 2: Credential Found -> Show Renewal Selection or QRIS or Success */
+              <div className="space-y-6">
+                {/* Active Account Identity Bar */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-cyan-500/40 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                      <Clock className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-white text-sm sm:text-base">
+                          {credential.customer_name || "Pelanggan Passpoint"}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase">
+                          {credential.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 font-mono mt-0.5">
+                        EAP User: <span className="text-cyan-400 font-bold">{credential.username}</span> • ID: <span className="text-slate-300">{credential.id.slice(0, 8)}...</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCredential(null);
+                      setRenewOrder(null);
+                      setRenewSuccess(null);
+                      setCredentialId("");
+                    }}
+                    className="text-xs text-slate-400 hover:text-white px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 transition cursor-pointer shrink-0"
+                  >
+                    Ganti ID Akun Lain
+                  </button>
+                </div>
+
+                {/* Sub-step A: Success Banner */}
+                {renewSuccess ? (
+                  <div className="p-6 rounded-2xl bg-slate-900/90 border border-emerald-500/50 shadow-2xl text-center space-y-4">
+                    <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20">
+                      <CheckCircle2 className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-black text-white">{renewSuccess.message || "Perpanjangan Berhasil!"}</h3>
+                      <p className="text-xs sm:text-sm text-slate-300 mt-2 max-w-lg mx-auto">
+                        Masa aktif baru akun Anda berlaku hingga:{" "}
+                        <strong className="text-emerald-400 font-mono text-base block mt-1">
+                          {new Date(renewSuccess.new_expires_at).toLocaleString("id-ID")}
+                        </strong>
+                      </p>
+                      <p className="text-xs text-slate-400 mt-2">
+                        Profil Wi-Fi di smartphone dan laptop Anda <strong>otomatis langsung aktif kembali</strong> di seluruh jangkauan hotspot {tenantName} tanpa perlu menyetel ulang apa pun.
+                      </p>
+                    </div>
+
+                    <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRenewSuccess(null);
+                          setRenewOrder(null);
+                        }}
+                        className="px-6 py-3 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-mono font-bold rounded-xl text-xs uppercase tracking-wider transition shadow-md shadow-cyan-600/20 cursor-pointer"
+                      >
+                        Perpanjang Paket Lain
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectMode("LOOKUP")}
+                        className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-mono font-bold rounded-xl text-xs uppercase tracking-wider transition cursor-pointer"
+                      >
+                        Lihat Panduan Perangkat
+                      </button>
+                    </div>
+                  </div>
+                ) : renewOrder ? (
+                  /* Sub-step B: QRIS Payment Display for Renewal */
+                  <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl p-6 sm:p-8 shadow-xl border border-slate-800 text-center space-y-6">
+                    <div>
+                      <h2 className="text-xl font-black text-white">Selesaikan Pembayaran QRIS Perpanjangan</h2>
+                      <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                        Scan kode QRIS di bawah menggunakan m-Banking atau aplikasi e-wallet apa pun.
+                      </p>
+                    </div>
+
+                    <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 inline-block max-w-xs w-full mx-auto">
+                      <p className="text-xs text-slate-400 mb-1">Total Pembayaran Perpanjangan:</p>
+                      <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-mono mb-1">
+                        {formatRupiah(renewOrder.amount)}
+                      </p>
+                      <p className="text-xs font-semibold text-slate-300">
+                        {renewOrder.package_name} (+{renewOrder.duration_days} Hari)
+                      </p>
+                    </div>
+
+                    <div className="p-4 bg-white rounded-3xl border-4 border-slate-700 inline-block shadow-2xl">
+                      <img
+                        src={renewOrder.qr_image_url}
+                        alt="QRIS Perpanjangan Passpoint"
+                        className="w-56 h-56 object-contain rounded-xl mx-auto"
+                      />
+                      <p className="text-[10px] text-slate-500 mt-2 font-mono">Invoice Order: {renewOrder.order_id}</p>
+                    </div>
+
+                    <div className="max-w-md mx-auto space-y-3">
+                      <button
+                        type="button"
+                        disabled={renewLoading}
+                        onClick={handleConfirmRenewPayment}
+                        className="w-full py-3.5 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-mono font-bold rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-600/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>{renewLoading ? "Memverifikasi..." : "SAYA SUDAH MEMBAYAR / KONFIRMASI"}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setRenewOrder(null)}
+                        className="text-xs text-slate-400 hover:text-white transition cursor-pointer"
+                      >
+                        &larr; Batalkan atau ganti pilihan paket
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Sub-step C: Choose Package to Renew */
+                  <div className="bg-slate-900/70 backdrop-blur-md rounded-2xl p-6 sm:p-8 shadow-xl border border-slate-800">
+                    <div className="mb-6">
+                      <h2 className="text-xl font-bold text-white flex items-center gap-2.5">
+                        <Zap className="w-5 h-5 text-amber-400" />
+                        <span>Pilih Paket Perpanjangan Masa Aktif</span>
+                      </h2>
+                      <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                        Pilih paket perpanjangan kuota &amp; masa aktif. Masa aktif akan otomatis diakumulasikan ke akun Anda.
+                      </p>
+                    </div>
+
+                    {/* Package Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                      {packages.map((pkg) => {
+                        const isSelected = renewPkg?.id === pkg.id;
+                        return (
+                          <div
+                            key={pkg.id}
+                            onClick={() => setRenewPkg(pkg)}
+                            className={`relative rounded-2xl p-5 border-2 cursor-pointer transition-all flex flex-col justify-between ${
+                              isSelected
+                                ? "border-cyan-500 bg-slate-800/90 shadow-lg shadow-cyan-500/10 ring-1 ring-cyan-500/30"
+                                : "border-slate-800 hover:border-slate-700 bg-slate-900/50"
+                            }`}
+                          >
+                            {pkg.is_popular && (
+                              <span className="absolute -top-3 right-4 px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-800 text-cyan-400 border border-slate-700 shadow-xs">
+                                Paling Laris
+                              </span>
+                            )}
+                            <div>
+                              <h3 className="font-extrabold text-base text-white mb-1">{pkg.name}</h3>
+                              <div className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-mono mb-2">
+                                {formatRupiah(pkg.price)}
+                              </div>
+                              <p className="text-xs text-slate-400 mb-3">{pkg.description}</p>
+                            </div>
+                            <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-semibold text-slate-300">
+                              <span className="text-cyan-400">{pkg.speed_limit}</span>
+                              <span className="text-slate-400 font-mono font-bold">+{pkg.duration_days} Hari</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={renewLoading || !renewPkg}
+                      onClick={handleRenewSubmit}
+                      className="w-full py-3.5 px-4 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-mono font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md shadow-cyan-600/20 active:scale-[0.99] cursor-pointer disabled:opacity-50"
+                    >
+                      <span>Lanjut Pembayaran QRIS ({renewPkg ? formatRupiah(renewPkg.price) : ""})</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── MODE C: Lookup ID yang Sudah Ada ─────────────────── */}
         {pageMode === "LOOKUP" && (
           <div className="bg-slate-900/70 backdrop-blur-md rounded-2xl p-6 sm:p-8 shadow-xl border border-slate-800">
             <h2 className="text-xl font-bold text-white flex items-center gap-2.5 mb-2">
@@ -527,7 +784,7 @@ export default function PasspointOnboardingPage() {
         )}
 
         {/* ── HASIL KREDENSIAL & PANDUAN INSTALASI PERANGKAT ───── */}
-        {credential && (
+        {credential && pageMode !== "RENEW" && (
           <div className="space-y-6 mt-6">
             {/* Status Card */}
             <div className="bg-slate-900/90 rounded-2xl p-6 border border-cyan-500/40 shadow-xl">
@@ -562,14 +819,7 @@ export default function PasspointOnboardingPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsRenewOpen(true);
-                    setRenewOrder(null);
-                    setRenewSuccess(null);
-                    if (packages.length > 0 && !renewPkg) {
-                      setRenewPkg(packages.find((p) => p.is_popular) || packages[0]);
-                    }
-                  }}
+                  onClick={() => handleSelectMode("RENEW")}
                   className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-mono font-bold rounded-xl shadow-md transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
                 >
                   <Zap className="w-3.5 h-3.5" />
