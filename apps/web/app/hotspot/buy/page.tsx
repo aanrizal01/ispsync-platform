@@ -57,34 +57,29 @@ function HotspotBuyForm() {
         const tenantUpper = parts[1].toUpperCase();
         setTenantName(tenantUpper);
         
-        const domainBase = parts.slice(1).join('.');
-        const logoUrl = `https://${domainBase}/web/${tenantSlug}_logo.svg`;
-        const faviconUrl = `https://${domainBase}/web/${tenantSlug}_favicon.svg`;
+        // Use SAME-ORIGIN paths so browser doesn't block cross-origin favicons/logos
+        const logoUrl = `/web/${tenantSlug}_logo.svg`;
+        const faviconUrl = `/web/${tenantSlug}_favicon.svg`;
         setTenantLogo(logoUrl);
 
         // Update document title dynamically
         document.title = `Beli Voucher WiFi Hotspot | ${tenantUpper}`;
 
-        // Update document favicon dynamically
-        const updateFavicon = (href: string) => {
-          let links = document.querySelectorAll<HTMLLinkElement>(
+        // Force browser to update favicon by removing old tags and adding new same-origin link
+        try {
+          const oldIcons = document.querySelectorAll(
             "link[rel*='icon'], link[rel='shortcut icon'], link[rel='apple-touch-icon']"
           );
-          if (links.length > 0) {
-            links.forEach((link) => {
-              link.href = href;
-              link.type = "image/svg+xml";
-            });
-          } else {
-            const link = document.createElement("link");
-            link.rel = "icon";
-            link.type = "image/svg+xml";
-            link.href = href;
-            document.head.appendChild(link);
-          }
-        };
+          oldIcons.forEach((el) => el.parentNode?.removeChild(el));
 
-        updateFavicon(faviconUrl);
+          const newLink = document.createElement("link");
+          newLink.rel = "icon";
+          newLink.type = "image/svg+xml";
+          newLink.href = `${faviconUrl}?v=${Date.now()}`;
+          document.head.appendChild(newLink);
+        } catch (e) {
+          console.error("Failed to update favicon:", e);
+        }
       }
     }
   }, []);

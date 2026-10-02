@@ -127,6 +127,13 @@ https:// {
         }
     }
 
+    # 0.75. Dynamic Tenant Favicon & Icon rewrite
+    @tenant_icon {
+        header_regexp tenant Host ^(?:[a-zA-Z0-9_-]+\.)*([a-zA-Z0-9_-]+)\.ispsync\.id$
+        path /favicon.ico /favicon.ico* /logo.png
+    }
+    rewrite @tenant_icon /web/{re.tenant.1}_favicon.svg
+
     # 0.8. Universal Static Assets & Tenant Brand Favicons (/web/*)
     @web_assets {
         path /web/*
