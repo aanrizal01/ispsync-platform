@@ -3510,7 +3510,7 @@ export default function AgentDashboardPage() {
                 {/* Customer Details */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-900 mb-1.5">
                       Nomor WhatsApp Pelanggan *
                     </label>
                     <input
@@ -3519,11 +3519,11 @@ export default function AgentDashboardPage() {
                       placeholder="Contoh: 081234567890"
                       value={passpointManualPhone}
                       onChange={(e) => setPasspointManualPhone(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition"
+                      className="w-full px-4 py-3 rounded-xl border-2 border-slate-300 bg-white text-slate-950 font-mono text-base font-bold placeholder:text-slate-400 placeholder:font-normal focus:border-cyan-600 focus:bg-white focus:ring-4 focus:ring-cyan-500/20 outline-none transition shadow-2xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                    <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-900 mb-1.5">
                       Nama Pelanggan (Opsional)
                     </label>
                     <input
@@ -3531,7 +3531,7 @@ export default function AgentDashboardPage() {
                       placeholder="Contoh: Pak Budi"
                       value={passpointManualName}
                       onChange={(e) => setPasspointManualName(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition"
+                      className="w-full px-4 py-3 rounded-xl border-2 border-slate-300 bg-white text-slate-950 text-base font-semibold placeholder:text-slate-400 placeholder:font-normal focus:border-cyan-600 focus:bg-white focus:ring-4 focus:ring-cyan-500/20 outline-none transition shadow-2xs"
                     />
                   </div>
                 </div>
@@ -4149,7 +4149,10 @@ export default function AgentDashboardPage() {
       {/* ── MODAL: BUAT VOUCHER OFFLINE ───────────────────────────── */}
       {showGenerateModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 my-8">
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 my-8"
+          >
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -4158,17 +4161,17 @@ export default function AgentDashboardPage() {
                 </h3>
                 <p className="text-xs text-slate-500">Saldo dompet akan dipotong dengan harga bersih (setelah cashback {cashbackPct}%)</p>
               </div>
-              <button onClick={() => setShowGenerateModal(false)} className="text-slate-400 hover:text-slate-600">✕</button>
+              <button onClick={() => setShowGenerateModal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">✕</button>
             </div>
 
             <form onSubmit={handleGenerateBatch} className="space-y-4 text-sm">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Pilih Paket Template Voucher *</label>
+                <label className="block text-xs font-bold text-slate-900 mb-1">Pilih Paket Template Voucher *</label>
                 <select
                   required
                   value={generateForm.template_id}
                   onChange={(e) => setGenerateForm({ ...generateForm, template_id: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl bg-white font-medium"
+                  className="w-full px-3.5 py-3 border-2 border-slate-300 rounded-xl bg-white text-slate-950 font-bold text-base focus:border-blue-600 focus:ring-4 focus:ring-blue-500/20 outline-none transition shadow-2xs"
                 >
                   {templates.length === 0 ? (
                     <option value="">Memuat paket voucher...</option>
@@ -4183,7 +4186,7 @@ export default function AgentDashboardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Jumlah Voucher yang Ingin Dibuat *</label>
+                <label className="block text-xs font-bold text-slate-900 mb-1">Jumlah Voucher yang Ingin Dibuat *</label>
                 <div className="flex gap-1.5 sm:gap-2">
                   {[1, 5, 10, 20, 50, 100].map((q) => (
                     <button
@@ -4191,7 +4194,7 @@ export default function AgentDashboardPage() {
                       type="button"
                       onClick={() => setGenerateForm({ ...generateForm, quantity: q })}
                       className={cn(
-                        "flex-1 py-2 text-xs font-bold rounded-xl border transition-colors cursor-pointer",
+                        "flex-1 py-2.5 text-xs font-bold rounded-xl border transition-colors cursor-pointer",
                         generateForm.quantity === q
                           ? "bg-blue-600 text-white border-blue-600 shadow-xs"
                           : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
@@ -4208,7 +4211,7 @@ export default function AgentDashboardPage() {
                   required
                   value={generateForm.quantity}
                   onChange={(e) => setGenerateForm({ ...generateForm, quantity: Number(e.target.value) })}
-                  className="w-full mt-2 px-3 py-2 border border-slate-300 rounded-xl font-mono text-center font-bold"
+                  className="w-full mt-2 px-3.5 py-2.5 border-2 border-slate-300 rounded-xl font-mono text-center font-black text-base text-slate-950 bg-white placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-500/20 outline-none transition shadow-2xs"
                   placeholder="Atau ketik jumlah bebas"
                 />
               </div>
@@ -4487,7 +4490,10 @@ export default function AgentDashboardPage() {
             }
           }}
         >
-          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[92vh] flex flex-col p-6 shadow-2xl space-y-5 overflow-y-auto my-auto animate-in fade-in zoom-in-95 duration-150">
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-lg w-full max-h-[92vh] flex flex-col p-6 shadow-2xl space-y-5 overflow-y-auto my-auto animate-in fade-in zoom-in-95 duration-150"
+          >
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div>
                 <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -4522,7 +4528,7 @@ export default function AgentDashboardPage() {
               className="space-y-4 text-sm"
             >
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                <label className="block text-xs font-bold text-slate-900 mb-1.5">
                   Pilih Paket Passpoint *
                 </label>
                 {passpointPackages.length === 0 ? (
@@ -4540,10 +4546,10 @@ export default function AgentDashboardPage() {
                           key={pkg.id}
                           onClick={() => setPasspointManualPackageId(pkg.id)}
                           className={cn(
-                            "p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between",
+                            "p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between",
                             isSelected
-                              ? "border-cyan-600 bg-cyan-50/60 shadow-xs ring-1 ring-cyan-500/20"
-                              : "border-slate-200 hover:border-slate-300 bg-white"
+                              ? "border-cyan-600 bg-cyan-50 shadow-sm ring-2 ring-cyan-500/30"
+                              : "border-slate-300 hover:border-slate-400 bg-white shadow-2xs"
                           )}
                         >
                           <div className="flex justify-between items-start gap-1">
@@ -4560,7 +4566,7 @@ export default function AgentDashboardPage() {
                             )}
                           </div>
                           <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                            <span className="text-slate-500 font-mono">Modal: <b>{formatRupiah(debit)}</b></span>
+                            <span className="text-slate-500 font-mono">Modal: <b className="text-slate-900">{formatRupiah(debit)}</b></span>
                             <span className="text-emerald-600 font-bold font-mono">Untung: +{formatRupiah(cashback)}</span>
                           </div>
                         </div>
@@ -4571,7 +4577,7 @@ export default function AgentDashboardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-900 mb-1">
                   Nomor WhatsApp Pelanggan *
                 </label>
                 <input
@@ -4580,15 +4586,15 @@ export default function AgentDashboardPage() {
                   placeholder="Contoh: 081234567890"
                   value={passpointManualPhone}
                   onChange={(e) => setPasspointManualPhone(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-mono text-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-slate-300 bg-white text-slate-950 font-mono text-base font-bold placeholder:text-slate-400 placeholder:font-normal focus:border-cyan-600 focus:bg-white focus:ring-4 focus:ring-cyan-500/20 outline-none transition shadow-2xs"
                 />
-                <p className="text-[10.5px] text-slate-400 mt-1">
+                <p className="text-[10.5px] text-slate-500 mt-1">
                   Kredensial dan link profil Wi-Fi akan dikirimkan ke nomor ini via WhatsApp.
                 </p>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-900 mb-1">
                   Nama Pelanggan (Opsional)
                 </label>
                 <input
@@ -4596,7 +4602,7 @@ export default function AgentDashboardPage() {
                   placeholder="Contoh: Pak Budi"
                   value={passpointManualName}
                   onChange={(e) => setPasspointManualName(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-slate-300 bg-white text-slate-950 text-base font-semibold placeholder:text-slate-400 placeholder:font-normal focus:border-cyan-600 focus:bg-white focus:ring-4 focus:ring-cyan-500/20 outline-none transition shadow-2xs"
                 />
               </div>
 
