@@ -37,7 +37,7 @@ export default function AdminFibergridPage() {
     }
   }, []);
 
-  const fibergridUrl = `https://fttx.${tenantSlug}.ispsync.id`;
+  const fibergridUrl = `https://fibergrid.${tenantSlug}.ispsync.id`;
   const nexusUrl = `https://nexus.${tenantSlug}.ispsync.id`;
 
   return (
@@ -47,10 +47,10 @@ export default function AdminFibergridPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
-              ENGINE 3 FTTX
+              ENGINE 3 FIBERGRID
             </span>
             <span className="text-xs text-slate-500 font-mono">
-              fttx.{tenantSlug}.ispsync.id
+              fibergrid.{tenantSlug}.ispsync.id
             </span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">

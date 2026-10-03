@@ -2,7 +2,11 @@ package network
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -65,8 +69,99 @@ type CreateODPRequest struct {
 // Repository ODP & Fiber Methods
 // ──────────────────────────────────────────
 
+type nexusODPItem struct {
+	ID                string  `json:"id"`
+	TenantID          string  `json:"tenant_id"`
+	Code              string  `json:"code"`
+	Name              string  `json:"name"`
+	Latitude          float64 `json:"latitude"`
+	Longitude         float64 `json:"longitude"`
+	TotalPorts        int     `json:"total_ports"`
+	UsedPorts         int     `json:"used_ports"`
+	Status            string  `json:"status"`
+	IsSharedJartaplok bool    `json:"is_shared_jartaplok"`
+	OwnerTenantSlug   string  `json:"owner_tenant_slug"`
+	OwnerTenantName   string  `json:"owner_tenant_name"`
+}
+
+func (r *Repository) fetchFromNexus(ctx context.Context) []ODPNode {
+	baseURL := os.Getenv("NEXUS_API_URL")
+	if baseURL == "" {
+		baseURL = "http://172.18.0.1:8081"
+	}
+	req, err := http.NewRequestWithContext(ctx, "GET", baseURL+"/api/v1/odps", nil)
+	if err != nil {
+		return nil
+	}
+	// Query current tenant ODPs and Jartaplok shared ODPs
+	req.Header.Set("Host", "nexus.ispku.ispsync.id")
+
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return nil
+	}
+	defer resp.Body.Close()
+
+	var rawItems []nexusODPItem
+	if err := json.NewDecoder(resp.Body).Decode(&rawItems); err != nil {
+		return nil
+	}
+
+	result := make([]ODPNode, 0, len(rawItems))
+	for _, it := range rawItems {
+		clusterArea := "Lokal"
+		providerName := "Internal ISP"
+		if it.IsSharedJartaplok {
+			clusterArea = "Jartaplok " + strings.ToUpper(it.OwnerTenantSlug)
+			if it.OwnerTenantName != "" {
+				providerName = it.OwnerTenantName
+			} else {
+				providerName = "Mitra Jartaplok " + it.OwnerTenantSlug
+			}
+		}
+
+		result = append(result, ODPNode{
+			ID:              it.ID,
+			Code:            it.Code,
+			Name:            it.Name,
+			Latitude:        it.Latitude,
+			Longitude:       it.Longitude,
+			TotalPorts:      it.TotalPorts,
+			UsedPorts:       it.UsedPorts,
+			Status:          it.Status,
+			ClusterArea:     clusterArea,
+			ProviderID:      it.OwnerTenantSlug,
+			ProviderName:    providerName,
+			IsClusterActive: true,
+			SplitterSpec:    fmt.Sprintf("1:%d PLC", it.TotalPorts),
+			OpticalPowerDBM: -16.8 - float64(it.UsedPorts)*0.55,
+			CreatedAt:       time.Now(),
+			UpdatedAt:       time.Now(),
+		})
+	}
+	return result
+}
+
 func (r *Repository) ListODPNodes(ctx context.Context, cluster string) ([]ODPNode, error) {
-	// Auto seed default infrastructure if empty
+	// 1. First attempt to fetch from EngineNexus (which aggregates own ODPs + Jartaplok partner ODPs)
+	nexusNodes := r.fetchFromNexus(ctx)
+	if len(nexusNodes) > 0 {
+		if cluster != "" {
+			filtered := make([]ODPNode, 0)
+			for _, n := range nexusNodes {
+				if strings.Contains(strings.ToLower(n.ClusterArea), strings.ToLower(cluster)) ||
+					strings.Contains(strings.ToLower(n.Name), strings.ToLower(cluster)) ||
+					strings.Contains(strings.ToLower(n.Code), strings.ToLower(cluster)) {
+					filtered = append(filtered, n)
+				}
+			}
+			return filtered, nil
+		}
+		return nexusNodes, nil
+	}
+
+	// 2. Fallback to local PostgreSQL odp_nodes table
 	_ = r.SeedDefaultODPsIfEmpty(ctx)
 
 	query := `
@@ -103,7 +198,6 @@ func (r *Repository) ListODPNodes(ctx context.Context, cluster string) ([]ODPNod
 		if err != nil {
 			return nil, fmt.Errorf("scan odp_node: %w", err)
 		}
-		// Calculate simulated realistic optical power dBm based on used ports
 		n.OpticalPowerDBM = -16.5 - float64(n.UsedPorts)*0.6
 		nodes = append(nodes, n)
 	}
