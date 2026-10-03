@@ -142,6 +142,7 @@ export default function AdminSettingsPage() {
     smtpPort: "587",
     smtpUser: "",
     smtpPass: "",
+    smtpFrom: "",
 
     // Security & AAA
     jwtExpiryHours: 24,

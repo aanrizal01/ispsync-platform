@@ -770,7 +770,7 @@ export default function AdminNetworkPage() {
             <div>
               <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">ONT Online (TR-069)</p>
               <p className="text-2xl font-bold text-emerald-600">
-                {onts.filter((o) => o.status === "ONLINE").length}
+                {onts.filter((o) => o.connection_status === "ONLINE").length}
               </p>
             </div>
           </div>
@@ -782,7 +782,7 @@ export default function AdminNetworkPage() {
             <div>
               <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">ONT Offline</p>
               <p className="text-2xl font-bold text-rose-600">
-                {onts.filter((o) => o.status !== "ONLINE").length}
+                {onts.filter((o) => o.connection_status !== "ONLINE").length}
               </p>
             </div>
           </div>
