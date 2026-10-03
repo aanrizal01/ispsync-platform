@@ -586,8 +586,8 @@ export default function AdminSettingsPage() {
         </div>
       )}
 
-      {/* Tabs Navigation */}
-      <div className="flex border-b border-slate-200 gap-1 overflow-x-auto pb-px">
+      {/* Tabs Navigation (Carrier-Grade Segmented Pill Nav) */}
+      <div className="p-1.5 bg-slate-100/90 border border-slate-200/80 rounded-2xl flex flex-wrap items-center gap-1.5 shadow-2xs">
         {[
           { id: "general", label: "Profil & Identitas ISP", icon: Building2 },
           { id: "invoice_template", label: "Template Faktur & Kop Surat", icon: FileText },
@@ -603,14 +603,14 @@ export default function AdminSettingsPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer select-none ${
                 isActive
-                  ? "border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl"
-                  : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
+                  ? "bg-white text-blue-600 shadow-xs border border-slate-200/80 font-extrabold"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
               }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? "text-blue-600" : "text-slate-400"}`} />
-              {tab.label}
+              <Icon className={`w-3.5 h-3.5 ${isActive ? "text-blue-600" : "text-slate-400"}`} />
+              <span>{tab.label}</span>
             </button>
           );
         })}

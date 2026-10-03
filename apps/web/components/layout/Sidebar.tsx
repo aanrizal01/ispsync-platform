@@ -410,7 +410,7 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
       {/* 1. Desktop Persistent Sidebar */}
       <aside
         className={cn(
-          "hidden lg:flex flex-col min-h-screen bg-[#0B1120] text-white shrink-0 sticky top-0 h-screen print:hidden transition-all duration-300 ease-in-out border-r border-slate-800/80 z-20",
+          "hidden lg:flex flex-col h-full bg-[#0B1120] text-white shrink-0 print:hidden transition-all duration-300 ease-in-out border-r border-slate-800/80 z-20",
           collapsed ? "w-18" : "w-64"
         )}
       >

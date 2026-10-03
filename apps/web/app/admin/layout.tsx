@@ -99,19 +99,17 @@ export default function AdminLayout({
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 w-full overflow-x-hidden print:block print:bg-white print:overflow-visible">
+    <div className="flex h-screen bg-slate-50 w-full overflow-hidden print:block print:bg-white print:overflow-visible">
       {/* Responsive Sidebar */}
-      <div className="print:hidden">
-        <Sidebar
-          mobileOpen={mobileMenuOpen}
-          onCloseMobile={() => setMobileMenuOpen(false)}
-        />
-      </div>
+      <Sidebar
+        mobileOpen={mobileMenuOpen}
+        onCloseMobile={() => setMobileMenuOpen(false)}
+      />
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 w-full max-w-full print:block print:w-full print:m-0 print:p-0">
+      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto w-full max-w-full print:block print:w-full print:m-0 print:p-0">
         {/* Top Header Navbar with Dark Theme matching Sidebar */}
-        <header className="print:hidden bg-[#0B1120] border-b border-slate-800/80 px-4 py-2.5 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-md backdrop-blur-md">
+        <header className="print:hidden bg-[#0B1120] border-b border-slate-800/80 px-4 py-2.5 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-md backdrop-blur-md shrink-0">
           <div className="flex items-center gap-3">
             {/* Hamburger Button for Mobile */}
             <button
