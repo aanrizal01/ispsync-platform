@@ -39,7 +39,7 @@ export const defaultInvoiceTemplateSettings: InvoiceTemplateSettings = {
   phone: "+62 811-660-1234",
   email: "info@ispsync.id",
   website: "https://ispsync.id",
-  logo_url: "/logo.png",
+  logo_url: "/web/dev_logo.svg",
   bank_name: "Bank Central Asia (BCA)",
   bank_account_number: "8001234567",
   bank_account_holder: "PT Inovasi Sistem Pintar",

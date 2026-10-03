@@ -85,6 +85,12 @@ export function InvoicePrintDocument({
   const accentColor = template.accent_color || "#2563eb";
   const layout = overrideLayout || template.layout || "modern";
   const isQrEnabled = template.enable_qr_verification !== false;
+  const logoUrl = template.header_image_url || template.logo_url || "/web/dev_logo.svg";
+  const hasHorizontalSvgLogo =
+    logoUrl.includes("_logo.svg") ||
+    logoUrl.includes("dev_logo") ||
+    logoUrl.includes("ispmu_logo") ||
+    logoUrl.includes("ispku_logo");
   // Selalu arahkan ke subdomain portal billing (https://ispsync.id), bukan web profil utama
   const billingBaseUrl =
     typeof window !== "undefined" && window.location.origin.includes("billing.")
@@ -156,29 +162,47 @@ export function InvoicePrintDocument({
             />
           ) : (
             <div className="text-center pb-4 relative">
-              <div className="flex items-center justify-center gap-4 mb-2">
-                <div className="w-16 h-16 p-1 border border-slate-300 rounded flex items-center justify-center shrink-0">
+              {hasHorizontalSvgLogo ? (
+                <div className="flex flex-col items-center justify-center mb-2">
                   <img
-                    src={template.header_image_url || template.logo_url || "/logo.png"}
+                    src={logoUrl}
                     alt={template.brand_name}
-                    className="w-full h-full object-contain"
+                    className="h-12 sm:h-14 w-auto max-w-[280px] object-contain"
                     onError={(e: any) => {
                       e.target.src = "/logo.png";
                     }}
                   />
-                </div>
-                <div className="text-left">
-                  <h1 className="text-2xl font-serif font-black tracking-wider uppercase text-slate-900">
-                    {template.brand_name}
-                  </h1>
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                    {template.company_name}
-                  </p>
-                  {template.tax_id && (
-                    <p className="text-[11px] text-slate-600 font-mono">NPWP: {template.tax_id}</p>
+                  {template.company_name && template.company_name !== template.brand_name && (
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-700 mt-1">
+                      {template.company_name} {template.tax_id ? `• NPWP: ${template.tax_id}` : ""}
+                    </p>
                   )}
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-center justify-center gap-4 mb-2">
+                  <div className="w-14 h-14 p-1 border border-slate-300 rounded flex items-center justify-center shrink-0">
+                    <img
+                      src={logoUrl}
+                      alt={template.brand_name}
+                      className="w-full h-full object-contain"
+                      onError={(e: any) => {
+                        e.target.src = "/logo.png";
+                      }}
+                    />
+                  </div>
+                  <div className="text-left">
+                    <h1 className="text-2xl font-serif font-black tracking-wider uppercase text-slate-900">
+                      {template.brand_name}
+                    </h1>
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                      {template.company_name}
+                    </p>
+                    {template.tax_id && (
+                      <p className="text-[11px] text-slate-600 font-mono">NPWP: {template.tax_id}</p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <p className="text-[11px] text-slate-600 leading-tight">
                 {template.license_no && <span className="block italic">{template.license_no}</span>}
@@ -841,37 +865,56 @@ export function InvoicePrintDocument({
           style={{ borderColor: accentColor }}
         >
           <div className="flex flex-col items-start max-w-md">
-            {/* Logo Tanpa Kotak di Bagian Atas */}
-            <div className="mb-2.5">
-              <img
-                src={template.header_image_url || template.logo_url || "/logo.png"}
-                alt={template.brand_name || "Logo"}
-                className="h-10 sm:h-12 w-auto max-w-[220px] object-contain object-left"
-                onError={(e: any) => {
-                  e.target.src = "/logo.png";
-                }}
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-2xl font-black tracking-tight" style={{ color: accentColor }}>
-                  {template.brand_name || "ISPSYNC"}
-                </span>
+            {/* Logo Brand Header */}
+            {hasHorizontalSvgLogo ? (
+              <div className="mb-2">
+                <img
+                  src={logoUrl}
+                  alt={template.brand_name || "Logo"}
+                  className="h-11 sm:h-12 w-auto max-w-[260px] object-contain object-left"
+                  onError={(e: any) => {
+                    e.target.src = "/logo.png";
+                  }}
+                />
               </div>
-              <p className="text-xs font-semibold text-slate-700 mt-0.5">
-                {template.company_name || "PT Inovasi Sistem Pintar"}
-              </p>
-              <p className="text-[11px] text-slate-500 mt-1 max-w-sm leading-relaxed">
-                {template.license_no && (
-                  <>
-                    {template.license_no}
-                    <br />
-                  </>
+            ) : (
+              <div className="flex items-center gap-3 mb-2.5">
+                <img
+                  src={logoUrl}
+                  alt={template.brand_name || "Logo"}
+                  className="h-10 sm:h-11 w-auto max-w-[56px] object-contain object-left shrink-0"
+                  onError={(e: any) => {
+                    e.target.src = "/logo.png";
+                  }}
+                />
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 leading-none">
+                    {template.brand_name || "ISPSYNC"}
+                  </h1>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1 leading-none">
+                    {template.brand_name === "DEV LAB" ? "ISPSYNC R&D" : (template.company_name || "INTERNET SERVICE PROVIDER")}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div>
+              {/* If horizontal SVG logo is used, company name is displayed if different from brand name */}
+              {hasHorizontalSvgLogo && template.company_name && template.company_name !== template.brand_name && (
+                <p className="text-xs font-bold text-slate-700 mt-0.5">
+                  {template.company_name}
+                </p>
+              )}
+              <div className="text-[11px] text-slate-500 mt-1 max-w-sm leading-relaxed space-y-0.5">
+                {template.tax_id && (
+                  <p className="font-mono text-slate-600">NPWP: {template.tax_id}</p>
                 )}
-                Kantor: {template.address}
-                <br />
-                Telp/WA: {template.phone} &bull; Email: {template.email}
-              </p>
+                {template.license_no && (
+                  <p className="italic text-slate-600">{template.license_no}</p>
+                )}
+                <p>Kantor: {template.address}</p>
+                <p>Telp/WA: {template.phone} &bull; Email: {template.email}</p>
+              </div>
             </div>
           </div>
 

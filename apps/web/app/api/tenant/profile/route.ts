@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
     member?.company ||
     `PT. ${upper} Data Nusantara`;
 
-  const brandName = upper === "DEV" ? "ISPSYNC DEV" : upper;
+  const brandName = upper === "DEV" ? "DEV LAB" : upper;
   const phone = member?.phone || "+62 812-3456-7890";
   const email = member?.email || `admin@${slug}.ispsync.id`;
   const address =
