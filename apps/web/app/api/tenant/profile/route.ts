@@ -101,6 +101,7 @@ export async function GET(req: NextRequest) {
   const domain = member?.domain || `${slug}.ispsync.id`;
   const website = `https://${domain}`;
   const logoUrl = `/web/${slug}_logo.svg`;
+  const faviconUrl = `/web/${slug}_favicon.svg`;
   const telcoLicense = TENANT_TELCO_LICENSES[slug] || {
     nib: member?.nib || "0220208123456",
     sklo: member?.sklo || "No. 128/TEL.04.02/KOMINFO",
