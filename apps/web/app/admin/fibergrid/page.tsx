@@ -360,7 +360,7 @@ export default function AdminFibergridPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
-              ENGINE 3 FIBERGRID &amp; NEXUS GIS
+              FIBERGRID &amp; NEXUS GIS
             </span>
             <span className="text-xs text-slate-500 font-mono">
               Single-Source GIS Database
@@ -368,7 +368,7 @@ export default function AdminFibergridPage() {
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
             <Network className="w-6 h-6 text-blue-600" />
-            Peta FTTX GIS — Topologi &amp; Sebaran ODP
+            Fibergrid &amp; Nexus GIS — Topologi &amp; Sebaran ODP
           </h1>
           <p className="text-sm text-slate-500">
             Pusat pemetaan geospasial titik ODP, jalur fiber optik backbone/feeder, dan sebaran ODP mitra Jartaplok dari EngineNexus.

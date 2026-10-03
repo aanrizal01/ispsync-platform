@@ -144,12 +144,10 @@ const navSections: NavSection[] = [
         permission: "network:read",
       },
       {
-        label: "Peta FTTX GIS (Fibergrid)",
+        label: "Fibergrid & Nexus GIS",
         href: "/admin/fibergrid",
         icon: Network,
         permission: "network:read",
-        badge: "Engine 3",
-        badgeColor: "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30",
       },
       {
         label: "Server RADIUS",

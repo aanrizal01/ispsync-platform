@@ -630,13 +630,13 @@ export default function AdminNetworkPage() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-white">NOC Command Center &amp; Peta Fibergrid (Engine 3)</h3>
+              <h3 className="text-sm font-bold text-white">Peta Fibergrid &amp; Nexus GIS</h3>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                FTTX ENGINE
+                FTTX &amp; NEXUS
               </span>
             </div>
             <p className="text-xs text-slate-400">
-              Topologi kabel FO end-to-end, OLT multi-vendor, ODC, rute tiang, dan ekspor KML dikelola terpusat di EngineFibergrid.
+              Topologi kabel FO end-to-end, OLT multi-vendor, ODC, rute tiang, dan agregasi data sebaran ODP mitra Jartaplok.
             </p>
           </div>
         </div>
@@ -644,7 +644,7 @@ export default function AdminNetworkPage() {
           href="/admin/fibergrid"
           className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-bold rounded-lg transition shrink-0 flex items-center gap-2 text-center justify-center"
         >
-          <span>Buka Peta FTTX GIS</span>
+          <span>Buka Fibergrid &amp; Nexus GIS</span>
           <ExternalLink className="w-3.5 h-3.5" />
         </Link>
       </div>
