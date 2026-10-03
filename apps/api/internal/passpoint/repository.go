@@ -932,3 +932,113 @@ func (r *Repository) MarkOrderPaid(ctx context.Context, orderID string, credID u
 
 	return tx.Commit(ctx)
 }
+
+func (r *Repository) ListPackages(ctx context.Context, onlyActive bool) ([]PasspointPackage, error) {
+	q := `
+		SELECT id, name, description, duration_days, price, speed_limit, is_popular, is_active, sort_order, created_at, updated_at
+		FROM passpoint_packages
+	`
+	if onlyActive {
+		q += " WHERE is_active = TRUE"
+	}
+	q += " ORDER BY sort_order ASC, duration_days ASC"
+
+	rows, err := r.db.Query(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("list packages: %w", err)
+	}
+	defer rows.Close()
+
+	var pkgs []PasspointPackage
+	for rows.Next() {
+		var p PasspointPackage
+		if err := rows.Scan(
+			&p.ID, &p.Name, &p.Description, &p.DurationDays, &p.Price,
+			&p.SpeedLimit, &p.IsPopular, &p.IsActive, &p.SortOrder,
+			&p.CreatedAt, &p.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan package: %w", err)
+		}
+		pkgs = append(pkgs, p)
+	}
+	return pkgs, nil
+}
+
+func (r *Repository) GetPackageByID(ctx context.Context, id string) (*PasspointPackage, error) {
+	const q = `
+		SELECT id, name, description, duration_days, price, speed_limit, is_popular, is_active, sort_order, created_at, updated_at
+		FROM passpoint_packages
+		WHERE id = $1
+	`
+	var p PasspointPackage
+	err := r.db.QueryRow(ctx, q, id).Scan(
+		&p.ID, &p.Name, &p.Description, &p.DurationDays, &p.Price,
+		&p.SpeedLimit, &p.IsPopular, &p.IsActive, &p.SortOrder,
+		&p.CreatedAt, &p.UpdatedAt,
+	)
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get package by id: %w", err)
+	}
+	return &p, nil
+}
+
+func (r *Repository) CreatePackage(ctx context.Context, p *PasspointPackage) error {
+	const q = `
+		INSERT INTO passpoint_packages (
+			id, name, description, duration_days, price, speed_limit, is_popular, is_active, sort_order, created_at, updated_at
+		) VALUES (
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW()
+		)
+	`
+	_, err := r.db.Exec(ctx, q,
+		p.ID, p.Name, p.Description, p.DurationDays, p.Price,
+		p.SpeedLimit, p.IsPopular, p.IsActive, p.SortOrder,
+	)
+	if err != nil {
+		return fmt.Errorf("create package: %w", err)
+	}
+	return nil
+}
+
+func (r *Repository) UpdatePackage(ctx context.Context, p *PasspointPackage) error {
+	const q = `
+		UPDATE passpoint_packages SET
+			name = $2,
+			description = $3,
+			duration_days = $4,
+			price = $5,
+			speed_limit = $6,
+			is_popular = $7,
+			is_active = $8,
+			sort_order = $9,
+			updated_at = NOW()
+		WHERE id = $1
+	`
+	res, err := r.db.Exec(ctx, q,
+		p.ID, p.Name, p.Description, p.DurationDays, p.Price,
+		p.SpeedLimit, p.IsPopular, p.IsActive, p.SortOrder,
+	)
+	if err != nil {
+		return fmt.Errorf("update package: %w", err)
+	}
+	if res.RowsAffected() == 0 {
+		return fmt.Errorf("package not found")
+	}
+	return nil
+}
+
+func (r *Repository) DeletePackage(ctx context.Context, id string) error {
+	const q = `DELETE FROM passpoint_packages WHERE id = $1`
+	res, err := r.db.Exec(ctx, q, id)
+	if err != nil {
+		return fmt.Errorf("delete package: %w", err)
+	}
+	if res.RowsAffected() == 0 {
+		return fmt.Errorf("package not found")
+	}
+	return nil
+}
+

@@ -28,19 +28,26 @@ import {
   Shield,
   RotateCcw,
   X,
+  Package,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import {
   passpointApi,
   PasspointProfile,
   PasspointCredential,
+  PasspointPackage,
   CreatePasspointProfileInput,
+  CreatePasspointPackageInput,
+  UpdatePasspointPackageInput,
 } from "@/lib/api/passpoint";
 import { customerApi, Customer } from "@/lib/api/customers";
 
 export default function AdminPasspointPage() {
-  const [activeTab, setActiveTab] = useState<"credentials" | "profiles">("credentials");
+  const [activeTab, setActiveTab] = useState<"credentials" | "profiles" | "packages">("credentials");
   const [profiles, setProfiles] = useState<PasspointProfile[]>([]);
   const [credentials, setCredentials] = useState<PasspointCredential[]>([]);
+  const [packages, setPackages] = useState<PasspointPackage[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +55,33 @@ export default function AdminPasspointPage() {
   // Modals
   const [showIssueModal, setShowIssueModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showPackageModal, setShowPackageModal] = useState(false);
+  const [editingPackage, setEditingPackage] = useState<PasspointPackage | null>(null);
+  const [packageLoading, setPackageLoading] = useState(false);
   const [issuedCredential, setIssuedCredential] = useState<PasspointCredential | null>(null);
+
+  // Package Form
+  const [packageForm, setPackageForm] = useState<{
+    id: string;
+    name: string;
+    description: string;
+    duration_days: number;
+    price: number;
+    speed_limit: string;
+    is_popular: boolean;
+    is_active: boolean;
+    sort_order: number;
+  }>({
+    id: "",
+    name: "",
+    description: "",
+    duration_days: 7,
+    price: 25000,
+    speed_limit: "15 Mbps Unlimited",
+    is_popular: false,
+    is_active: true,
+    sort_order: 1,
+  });
 
   // Password visibility map & copy indicator
   const [showPasswordMap, setShowPasswordMap] = useState<Record<string, boolean>>({});
@@ -137,14 +170,17 @@ export default function AdminPasspointPage() {
     setLoading(true);
     setError(null);
     try {
-      const [profRes, credRes] = await Promise.all([
+      const [profRes, credRes, pkgsRes] = await Promise.all([
         passpointApi.getProfiles(),
         passpointApi.getCredentials(1, 250),
+        passpointApi.getAdminPackages(),
       ]);
       const profList = Array.isArray(profRes) ? profRes : (profRes as any)?.data || [];
       const credList = Array.isArray(credRes) ? credRes : (credRes as any)?.data || [];
+      const pkgList = Array.isArray(pkgsRes) ? pkgsRes : (pkgsRes as any)?.data || [];
       setProfiles(profList);
       setCredentials(credList);
+      setPackages(pkgList);
     } catch (err: any) {
       setError(err.message || "Gagal memuat data Passpoint");
     } finally {
@@ -256,6 +292,83 @@ export default function AdminPasspointPage() {
     } catch (err: any) {
       alert(err.message || "Gagal mencabut kredensial");
     }
+  const openCreatePackageModal = () => {
+    setEditingPackage(null);
+    setPackageForm({
+      id: "pkg-passpoint-" + Date.now().toString(36),
+      name: "",
+      description: "",
+      duration_days: 7,
+      price: 25000,
+      speed_limit: "15 Mbps Unlimited",
+      is_popular: false,
+      is_active: true,
+      sort_order: packages.length + 1,
+    });
+    setShowPackageModal(true);
+  };
+
+  const openEditPackageModal = (pkg: PasspointPackage) => {
+    setEditingPackage(pkg);
+    setPackageForm({
+      id: pkg.id,
+      name: pkg.name,
+      description: pkg.description || "",
+      duration_days: pkg.duration_days,
+      price: pkg.price,
+      speed_limit: pkg.speed_limit,
+      is_popular: pkg.is_popular,
+      is_active: pkg.is_active ?? true,
+      sort_order: pkg.sort_order ?? 0,
+    });
+    setShowPackageModal(true);
+  };
+
+  const handleSavePackage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPackageLoading(true);
+    try {
+      if (editingPackage) {
+        await passpointApi.updatePackage(editingPackage.id, {
+          name: packageForm.name,
+          description: packageForm.description,
+          duration_days: Number(packageForm.duration_days),
+          price: Number(packageForm.price),
+          speed_limit: packageForm.speed_limit,
+          is_popular: packageForm.is_popular,
+          is_active: packageForm.is_active,
+          sort_order: Number(packageForm.sort_order),
+        });
+      } else {
+        await passpointApi.createPackage({
+          id: packageForm.id.trim(),
+          name: packageForm.name.trim(),
+          description: packageForm.description,
+          duration_days: Number(packageForm.duration_days),
+          price: Number(packageForm.price),
+          speed_limit: packageForm.speed_limit,
+          is_popular: packageForm.is_popular,
+          is_active: packageForm.is_active,
+          sort_order: Number(packageForm.sort_order),
+        });
+      }
+      setShowPackageModal(false);
+      fetchData();
+    } catch (err: any) {
+      alert(err.message || "Gagal menyimpan paket");
+    } finally {
+      setPackageLoading(false);
+    }
+  };
+
+  const handleDeletePackage = async (id: string) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus paket Passpoint ini?")) return;
+    try {
+      await passpointApi.deletePackage(id);
+      fetchData();
+    } catch (err: any) {
+      alert(err.message || "Gagal menghapus paket");
+    }
   };
 
   return (
@@ -264,7 +377,7 @@ export default function AdminPasspointPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <Radio className="w-6 h-6 text-blue-600" />
+            <Radio className="w-6 h-6 text-slate-800" />
             Passpoint / Hotspot 2.0 (EAP-TTLS)
           </h1>
           <p className="text-sm text-slate-500">
@@ -272,48 +385,78 @@ export default function AdminPasspointPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowProfileModal(true)}
-            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-semibold rounded-lg transition"
-          >
-            + Profil Jaringan
-          </button>
-          <button
-            onClick={openIssueModal}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition flex items-center gap-2 shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Terbitkan Kredensial
-          </button>
+          {activeTab === "packages" ? (
+            <button
+              onClick={openCreatePackageModal}
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1.5 shadow-xs"
+            >
+              <Plus className="w-4 h-4" />
+              Tambah Paket
+            </button>
+          ) : activeTab === "profiles" ? (
+            <button
+              onClick={() => setShowProfileModal(true)}
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1.5 shadow-xs"
+            >
+              <Plus className="w-4 h-4" />
+              Profil Jaringan
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-semibold rounded-lg transition border border-slate-200"
+              >
+                + Profil Jaringan
+              </button>
+              <button
+                onClick={openIssueModal}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1.5 shadow-xs"
+              >
+                <Plus className="w-4 h-4" />
+                Terbitkan Kredensial
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
             <Radio className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Profil Passpoint</p>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Profil Jaringan</p>
             <p className="text-2xl font-bold text-slate-900">{profiles.length}</p>
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
             <Smartphone className="w-6 h-6" />
           </div>
           <div>
             <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Kredensial Aktif</p>
-            <p className="text-2xl font-bold text-emerald-600">
+            <p className="text-2xl font-bold text-slate-900">
               {credentials.filter((c) => c.status === "ACTIVE").length}
             </p>
           </div>
         </div>
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
+            <Package className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Paket Layanan</p>
+            <p className="text-2xl font-bold text-slate-900">{packages.length}</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
             <Globe className="w-6 h-6" />
           </div>
           <div>
@@ -322,9 +465,9 @@ export default function AdminPasspointPage() {
               href="/passpoint"
               target="_blank"
               rel="noreferrer"
-              className="text-sm font-semibold text-blue-600 hover:underline flex items-center gap-1 mt-1"
+              className="text-xs font-semibold text-slate-900 hover:underline flex items-center gap-1 mt-1"
             >
-              Buka Halaman Publik <ExternalLink className="w-3.5 h-3.5" />
+              Buka Halaman <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
             </a>
           </div>
         </div>
@@ -337,7 +480,7 @@ export default function AdminPasspointPage() {
             onClick={() => setActiveTab("credentials")}
             className={`pb-3 text-sm font-semibold border-b-2 transition ${
               activeTab === "credentials"
-                ? "border-blue-600 text-blue-600"
+                ? "border-slate-900 text-slate-900"
                 : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
@@ -347,11 +490,21 @@ export default function AdminPasspointPage() {
             onClick={() => setActiveTab("profiles")}
             className={`pb-3 text-sm font-semibold border-b-2 transition ${
               activeTab === "profiles"
-                ? "border-blue-600 text-blue-600"
+                ? "border-slate-900 text-slate-900"
                 : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
             Profil Jaringan / Realm ({profiles.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("packages")}
+            className={`pb-3 text-sm font-semibold border-b-2 transition ${
+              activeTab === "packages"
+                ? "border-slate-900 text-slate-900"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            Paket Layanan ({packages.length})
           </button>
         </div>
 
@@ -668,6 +821,89 @@ export default function AdminPasspointPage() {
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+        {/* Tab 3: Packages */}
+        {activeTab === "packages" && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-slate-700">
+              <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase text-slate-500">
+                <tr>
+                  <th className="px-6 py-3">Paket &amp; Deskripsi</th>
+                  <th className="px-6 py-3">Durasi</th>
+                  <th className="px-6 py-3">Kecepatan</th>
+                  <th className="px-6 py-3">Harga Jual</th>
+                  <th className="px-6 py-3">Urutan</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {packages.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
+                      Belum ada paket Passpoint yang dibuat.
+                    </td>
+                  </tr>
+                ) : (
+                  packages.map((pkg) => (
+                    <tr key={pkg.id} className="hover:bg-slate-50/50 transition">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-slate-900">{pkg.name}</span>
+                          {pkg.is_popular && (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                              Populer
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-slate-400 mt-0.5">{pkg.description || "-"}</div>
+                        <div className="text-[11px] font-mono text-slate-400 mt-0.5">ID: {pkg.id}</div>
+                      </td>
+                      <td className="px-6 py-4 text-xs font-semibold text-slate-700">
+                        {pkg.duration_days} Hari
+                      </td>
+                      <td className="px-6 py-4 text-xs font-mono text-slate-600">
+                        {pkg.speed_limit}
+                      </td>
+                      <td className="px-6 py-4 text-xs font-bold text-slate-900">
+                        Rp {pkg.price.toLocaleString("id-ID")}
+                      </td>
+                      <td className="px-6 py-4 text-xs font-mono text-slate-500">
+                        {pkg.sort_order ?? 0}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            pkg.is_active !== false
+                              ? "bg-slate-100 text-slate-800 border border-slate-200"
+                              : "bg-slate-50 text-slate-400 border border-slate-200"
+                          }`}
+                        >
+                          {pkg.is_active !== false ? "Aktif" : "Nonaktif"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right space-x-1.5 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => openEditPackageModal(pkg)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 rounded-lg border border-slate-200 transition shadow-2xs"
+                        >
+                          <Pencil className="w-3.5 h-3.5 text-slate-500" />
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePackage(pkg.id)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg border border-rose-200 transition shadow-2xs"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Hapus
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -1054,6 +1290,148 @@ export default function AdminPasspointPage() {
                   className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg disabled:opacity-50"
                 >
                   {profileLoading ? "Menyimpan..." : "Simpan Profil"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Create/Edit Package */}
+      {showPackageModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
+            <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+              <Package className="w-5 h-5 text-slate-700" />
+              {editingPackage ? "Edit Paket Passpoint" : "Tambah Paket Passpoint"}
+            </h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Paket ini akan tampil sebagai pilihan pembelian di portal onboarding pelanggan dan loket agen.
+            </p>
+
+            <form onSubmit={handleSavePackage} className="space-y-3.5">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">ID / Kode Paket *</label>
+                  <input
+                    type="text"
+                    value={packageForm.id}
+                    onChange={(e) => setPackageForm({ ...packageForm, id: e.target.value })}
+                    disabled={!!editingPackage}
+                    placeholder="e.g. pkg-passpoint-30d"
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg disabled:bg-slate-100 disabled:text-slate-500 font-mono text-xs"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Durasi (Hari) *</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={packageForm.duration_days}
+                    onChange={(e) => setPackageForm({ ...packageForm, duration_days: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Paket *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Passpoint Bulanan 30 Hari"
+                  value={packageForm.name}
+                  onChange={(e) => setPackageForm({ ...packageForm, name: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Harga Jual (Rp) *</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1000}
+                    value={packageForm.price}
+                    onChange={(e) => setPackageForm({ ...packageForm, price: parseInt(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg font-semibold"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Kecepatan (Speed Limit) *</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 25 Mbps Unlimited"
+                    value={packageForm.speed_limit}
+                    onChange={(e) => setPackageForm({ ...packageForm, speed_limit: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Deskripsi Paket</label>
+                <textarea
+                  rows={2}
+                  placeholder="Deskripsi singkat keunggulan paket..."
+                  value={packageForm.description}
+                  onChange={(e) => setPackageForm({ ...packageForm, description: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Urutan Tampil (Sort Order)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={packageForm.sort_order}
+                    onChange={(e) => setPackageForm({ ...packageForm, sort_order: parseInt(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                  />
+                </div>
+                <div className="flex flex-col justify-end space-y-2 pb-1">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={packageForm.is_popular}
+                      onChange={(e) => setPackageForm({ ...packageForm, is_popular: e.target.checked })}
+                      className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                    />
+                    Tandai sebagai Paket Populer
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={packageForm.is_active}
+                      onChange={(e) => setPackageForm({ ...packageForm, is_active: e.target.checked })}
+                      className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                    />
+                    Status Aktif (Ditampilkan)
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setShowPackageModal(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={packageLoading}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs disabled:opacity-50"
+                >
+                  {packageLoading ? "Menyimpan..." : editingPackage ? "Simpan Perubahan" : "Buat Paket"}
                 </button>
               </div>
             </form>

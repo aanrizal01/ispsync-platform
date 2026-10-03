@@ -233,6 +233,10 @@ func (s *Service) GenerateAppleProfile(ctx context.Context, credID uuid.UUID) ([
 }
 
 func (s *Service) GetPackages(ctx context.Context) ([]PasspointPackage, error) {
+	pkgs, err := s.repo.ListPackages(ctx, true)
+	if err == nil && len(pkgs) > 0 {
+		return pkgs, nil
+	}
 	return []PasspointPackage{
 		{
 			ID:           "pkg-passpoint-7d",
@@ -242,6 +246,8 @@ func (s *Service) GetPackages(ctx context.Context) ([]PasspointPackage, error) {
 			Price:        25000,
 			SpeedLimit:   "15 Mbps Unlimited",
 			IsPopular:    false,
+			IsActive:     true,
+			SortOrder:    1,
 		},
 		{
 			ID:           "pkg-passpoint-30d",
@@ -251,6 +257,8 @@ func (s *Service) GetPackages(ctx context.Context) ([]PasspointPackage, error) {
 			Price:        50000,
 			SpeedLimit:   "25 Mbps Unlimited",
 			IsPopular:    true,
+			IsActive:     true,
+			SortOrder:    2,
 		},
 		{
 			ID:           "pkg-passpoint-90d",
@@ -260,8 +268,101 @@ func (s *Service) GetPackages(ctx context.Context) ([]PasspointPackage, error) {
 			Price:        120000,
 			SpeedLimit:   "35 Mbps Unlimited",
 			IsPopular:    false,
+			IsActive:     true,
+			SortOrder:    3,
 		},
 	}, nil
+}
+
+func (s *Service) ListAdminPackages(ctx context.Context) ([]PasspointPackage, error) {
+	pkgs, err := s.repo.ListPackages(ctx, false)
+	if err != nil {
+		return nil, apperrors.Internal(err)
+	}
+	if len(pkgs) == 0 {
+		return s.GetPackages(ctx)
+	}
+	return pkgs, nil
+}
+
+func (s *Service) CreatePackage(ctx context.Context, req CreatePasspointPackageRequest) (*PasspointPackage, error) {
+	existing, err := s.repo.GetPackageByID(ctx, req.ID)
+	if err != nil {
+		return nil, apperrors.Internal(err)
+	}
+	if existing != nil {
+		return nil, apperrors.BadRequest("ID paket sudah digunakan")
+	}
+
+	isActive := true
+	if req.IsActive != nil {
+		isActive = *req.IsActive
+	}
+	sortOrder := 0
+	if req.SortOrder != nil {
+		sortOrder = *req.SortOrder
+	}
+
+	pkg := &PasspointPackage{
+		ID:           req.ID,
+		Name:         req.Name,
+		Description:  req.Description,
+		DurationDays: req.DurationDays,
+		Price:        req.Price,
+		SpeedLimit:   req.SpeedLimit,
+		IsPopular:    req.IsPopular,
+		IsActive:     isActive,
+		SortOrder:    sortOrder,
+	}
+
+	if err := s.repo.CreatePackage(ctx, pkg); err != nil {
+		return nil, apperrors.Internal(err)
+	}
+
+	return pkg, nil
+}
+
+func (s *Service) UpdatePackage(ctx context.Context, id string, req UpdatePasspointPackageRequest) (*PasspointPackage, error) {
+	existing, err := s.repo.GetPackageByID(ctx, id)
+	if err != nil {
+		return nil, apperrors.Internal(err)
+	}
+	if existing == nil {
+		return nil, apperrors.NotFound("Paket Passpoint tidak ditemukan")
+	}
+
+	pkg := &PasspointPackage{
+		ID:           id,
+		Name:         req.Name,
+		Description:  req.Description,
+		DurationDays: req.DurationDays,
+		Price:        req.Price,
+		SpeedLimit:   req.SpeedLimit,
+		IsPopular:    req.IsPopular,
+		IsActive:     req.IsActive,
+		SortOrder:    req.SortOrder,
+	}
+
+	if err := s.repo.UpdatePackage(ctx, pkg); err != nil {
+		return nil, apperrors.Internal(err)
+	}
+
+	return pkg, nil
+}
+
+func (s *Service) DeletePackage(ctx context.Context, id string) error {
+	existing, err := s.repo.GetPackageByID(ctx, id)
+	if err != nil {
+		return apperrors.Internal(err)
+	}
+	if existing == nil {
+		return apperrors.NotFound("Paket Passpoint tidak ditemukan")
+	}
+
+	if err := s.repo.DeletePackage(ctx, id); err != nil {
+		return apperrors.Internal(err)
+	}
+	return nil
 }
 
 func (s *Service) Purchase(ctx context.Context, req PasspointPurchaseRequest) (*PasspointPurchaseResponse, error) {

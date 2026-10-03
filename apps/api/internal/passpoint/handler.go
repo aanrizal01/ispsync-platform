@@ -50,6 +50,12 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 		r.With(authMW.RequirePermission("subscriptions:write")).Post("/customers/{customer_id}/credentials", h.IssueCredential)
 		r.With(authMW.RequirePermission("subscriptions:read")).Get("/customers/{customer_id}/credentials", h.ListCustomerCredentials)
 		r.With(authMW.RequirePermission("subscriptions:write")).Patch("/credentials/{id}/revoke", h.RevokeCredential)
+
+		// Passpoint Packages Management (Admin)
+		r.With(authMW.RequirePermission("subscriptions:read")).Get("/admin/packages", h.ListAdminPackages)
+		r.With(authMW.RequirePermission("subscriptions:write")).Post("/admin/packages", h.CreatePackage)
+		r.With(authMW.RequirePermission("subscriptions:write")).Put("/admin/packages/{id}", h.UpdatePackage)
+		r.With(authMW.RequirePermission("subscriptions:write")).Delete("/admin/packages/{id}", h.DeletePackage)
 	})
 }
 
@@ -273,6 +279,65 @@ func (h *Handler) CheckRenew(w http.ResponseWriter, r *http.Request) {
 	}
 
 	middleware.JSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) ListAdminPackages(w http.ResponseWriter, r *http.Request) {
+	pkgs, err := h.service.ListAdminPackages(r.Context())
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+	middleware.JSON(w, http.StatusOK, map[string]any{"data": pkgs})
+}
+
+func (h *Handler) CreatePackage(w http.ResponseWriter, r *http.Request) {
+	var req CreatePasspointPackageRequest
+	if err := middleware.DecodeJSON(r, &req); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	pkg, err := h.service.CreatePackage(r.Context(), req)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+	middleware.JSON(w, http.StatusCreated, pkg)
+}
+
+func (h *Handler) UpdatePackage(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		middleware.JSONError(w, h.logger, apperrors.BadRequest("ID paket diperlukan"))
+		return
+	}
+
+	var req UpdatePasspointPackageRequest
+	if err := middleware.DecodeJSON(r, &req); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	pkg, err := h.service.UpdatePackage(r.Context(), id, req)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+	middleware.JSON(w, http.StatusOK, pkg)
+}
+
+func (h *Handler) DeletePackage(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		middleware.JSONError(w, h.logger, apperrors.BadRequest("ID paket diperlukan"))
+		return
+	}
+
+	if err := h.service.DeletePackage(r.Context(), id); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+	middleware.JSON(w, http.StatusOK, map[string]any{"message": "Paket berhasil dihapus"})
 }
 
 

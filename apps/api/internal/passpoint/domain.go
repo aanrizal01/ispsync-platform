@@ -60,13 +60,40 @@ type IssueCredentialRequest struct {
 }
 
 type PasspointPackage struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
+	ID           string    `json:"id"`
+	Name         string    `json:"name"`
+	Description  string    `json:"description"`
+	DurationDays int       `json:"duration_days"`
+	Price        int64     `json:"price"` // IDR
+	SpeedLimit   string    `json:"speed_limit"`
+	IsPopular    bool      `json:"is_popular"`
+	IsActive     bool      `json:"is_active"`
+	SortOrder    int       `json:"sort_order"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type CreatePasspointPackageRequest struct {
+	ID           string `json:"id" validate:"required,min=2"`
+	Name         string `json:"name" validate:"required,min=2"`
 	Description  string `json:"description"`
-	DurationDays int    `json:"duration_days"`
-	Price        int64  `json:"price"` // IDR
-	SpeedLimit   string `json:"speed_limit"`
+	DurationDays int    `json:"duration_days" validate:"required,min=1"`
+	Price        int64  `json:"price" validate:"min=0"`
+	SpeedLimit   string `json:"speed_limit" validate:"required"`
 	IsPopular    bool   `json:"is_popular"`
+	IsActive     *bool  `json:"is_active"`
+	SortOrder    *int   `json:"sort_order"`
+}
+
+type UpdatePasspointPackageRequest struct {
+	Name         string `json:"name" validate:"required,min=2"`
+	Description  string `json:"description"`
+	DurationDays int    `json:"duration_days" validate:"required,min=1"`
+	Price        int64  `json:"price" validate:"min=0"`
+	SpeedLimit   string `json:"speed_limit" validate:"required"`
+	IsPopular    bool   `json:"is_popular"`
+	IsActive     bool   `json:"is_active"`
+	SortOrder    int    `json:"sort_order"`
 }
 
 type PasspointPurchaseRequest struct {

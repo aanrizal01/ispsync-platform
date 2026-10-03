@@ -59,6 +59,33 @@ export interface PasspointPackage {
   price: number;
   speed_limit: string;
   is_popular: boolean;
+  is_active?: boolean;
+  sort_order?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreatePasspointPackageInput {
+  id: string;
+  name: string;
+  description?: string;
+  duration_days: number;
+  price: number;
+  speed_limit: string;
+  is_popular?: boolean;
+  is_active?: boolean;
+  sort_order?: number;
+}
+
+export interface UpdatePasspointPackageInput {
+  name: string;
+  description?: string;
+  duration_days: number;
+  price: number;
+  speed_limit: string;
+  is_popular: boolean;
+  is_active: boolean;
+  sort_order: number;
 }
 
 export interface ValidatePromoResponse {
@@ -245,6 +272,26 @@ export const passpointApi = {
 
   getPackages: () =>
     request<PasspointPackage[]>("/passpoint/packages"),
+
+  getAdminPackages: () =>
+    request<{ data: PasspointPackage[] } | PasspointPackage[]>("/passpoint/admin/packages"),
+
+  createPackage: (data: CreatePasspointPackageInput) =>
+    request<PasspointPackage>("/passpoint/admin/packages", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  updatePackage: (id: string, data: UpdatePasspointPackageInput) =>
+    request<PasspointPackage>(`/passpoint/admin/packages/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  deletePackage: (id: string) =>
+    request<{ message: string }>(`/passpoint/admin/packages/${id}`, {
+      method: "DELETE",
+    }),
 
   purchase: (data: PasspointPurchaseInput) =>
     request<PasspointPurchaseResponse>("/passpoint/purchase", {
