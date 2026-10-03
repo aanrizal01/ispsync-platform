@@ -1107,7 +1107,7 @@ func (r *Repository) GetExpiringCredentialsForReminder(ctx context.Context, wind
 		) po ON true
 		WHERE c.status = 'ACTIVE'
 		  AND po.expires_at > NOW()
-		  AND po.expires_at <= NOW() + ($1 || ' hours')::INTERVAL
+		  AND po.expires_at <= NOW() + ($1 * INTERVAL '1 hour')
 		  AND cust.phone IS NOT NULL AND cust.phone != ''
 		  AND (c.reminder_sent_at IS NULL OR c.reminder_sent_at < NOW() - INTERVAL '20 hours')
 	`
