@@ -3,6 +3,7 @@
 import React from "react";
 import { InvoiceTemplateSettings, defaultInvoiceTemplateSettings } from "@/lib/api/settings";
 import { InvoiceDocumentData } from "@/components/invoice/InvoicePrintDocument";
+import { Barcode128 } from "@/components/common/Barcode128";
 
 export interface PaymentReceiptData {
   id?: string;
@@ -230,13 +231,18 @@ export function ReceiptPrintDocument({
             Bukti pembayaran ini sah dan diproses otomatis oleh sistem {template.brand_name || "GOGIGANET"}.
           </p>
 
-          {/* Barcode Mock */}
-          <div className="pt-1">
-            <div className="text-center font-mono tracking-widest text-[9px] font-bold text-slate-800 select-none">
-              ||| | ||||| || | |||| ||| |||| |
+          {/* Barcode Code 128 Nyata */}
+          {payment.payment_number && (
+            <div className="pt-2 flex flex-col items-center justify-center">
+              <Barcode128
+                value={payment.payment_number}
+                height={is58mm ? 28 : 34}
+                width={is58mm ? 0.95 : 1.15}
+                fontSize={is58mm ? 8.5 : 9.5}
+                caption="Bukti Pembayaran Sah"
+              />
             </div>
-            <p className="font-mono text-[8.5px] text-slate-500">{payment.payment_number}</p>
-          </div>
+          )}
 
           <div className="pt-1 text-[8px] text-slate-400">
             - - - - - - - - SIMPAN STRUK INI - - - - - - - -

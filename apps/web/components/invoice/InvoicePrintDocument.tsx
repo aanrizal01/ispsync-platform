@@ -2,6 +2,7 @@
 
 import React from "react";
 import { InvoiceTemplateSettings, defaultInvoiceTemplateSettings } from "@/lib/api/settings";
+import { Barcode128 } from "@/components/common/Barcode128";
 
 export interface InvoiceItem {
   id?: string;
@@ -190,7 +191,7 @@ export function InvoicePrintDocument({
           <div className="border-b-4 border-double border-slate-800 mb-6"></div>
 
           {/* Document Title & Reference Header */}
-          <div className="flex justify-between items-center mb-5 pb-2 border-b border-slate-200">
+          <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-200">
             <div>
               <h2 className="text-lg font-bold font-serif uppercase tracking-widest text-slate-900">
                 FAKTUR PENAGIHAN RESMI
@@ -199,18 +200,31 @@ export function InvoicePrintDocument({
                 No. Dokumen: <strong className="text-slate-900">{invoice.invoice_number}</strong>
               </p>
             </div>
-            <div className="text-right">
-              <span
-                className={`inline-block px-3 py-1 font-bold text-xs uppercase border rounded ${
-                  isPaid
-                    ? "border-emerald-600 text-emerald-800 bg-emerald-50"
-                    : isOverdue
-                    ? "border-rose-600 text-rose-800 bg-rose-50"
-                    : "border-amber-600 text-amber-800 bg-amber-50"
-                }`}
-              >
-                {isPaid ? "STATUS: LUNAS" : isOverdue ? "STATUS: JATUH TEMPO" : "STATUS: MENUNGGU PEMBAYARAN"}
-              </span>
+            <div className="flex items-center gap-3">
+              {invoice.invoice_number && (
+                <div className="hidden sm:block p-1 bg-white border border-slate-200 rounded">
+                  <Barcode128
+                    value={invoice.invoice_number}
+                    height={30}
+                    width={1.1}
+                    fontSize={8.5}
+                    caption="Scan Bayar Loket"
+                  />
+                </div>
+              )}
+              <div className="text-right">
+                <span
+                  className={`inline-block px-3 py-1 font-bold text-xs uppercase border rounded ${
+                    isPaid
+                      ? "border-emerald-600 text-emerald-800 bg-emerald-50"
+                      : isOverdue
+                      ? "border-rose-600 text-rose-800 bg-rose-50"
+                      : "border-amber-600 text-amber-800 bg-amber-50"
+                  }`}
+                >
+                  {isPaid ? "STATUS: LUNAS" : isOverdue ? "STATUS: JATUH TEMPO" : "STATUS: MENUNGGU PEMBAYARAN"}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -342,22 +356,35 @@ export function InvoicePrintDocument({
               </ul>
             </div>
 
-            {/* Verification QR Code */}
-            {isQrEnabled && (
-              <div className="flex items-center gap-2 border border-slate-300 rounded-lg p-2 bg-slate-50/70 max-w-[190px]">
-                <div className="w-12 h-12 bg-white p-0.5 border border-slate-300 rounded shrink-0 flex items-center justify-center">
-                  <img
-                    src={qrCodeUrl}
-                    alt="QR Verifikasi"
-                    className="w-full h-full object-contain"
+            {/* Verification QR Code & Barcode Loket */}
+            <div className="flex items-center gap-2.5">
+              {isQrEnabled && (
+                <div className="flex items-center gap-2 border border-slate-300 rounded-lg p-2 bg-slate-50/70 max-w-[190px]">
+                  <div className="w-12 h-12 bg-white p-0.5 border border-slate-300 rounded shrink-0 flex items-center justify-center">
+                    <img
+                      src={qrCodeUrl}
+                      alt="QR Verifikasi"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="text-[9px] leading-tight text-slate-700">
+                    <p className="font-extrabold text-slate-900 uppercase tracking-tight">VERIFIKASI RESMI</p>
+                    <p className="text-[8px] text-slate-500 mt-0.5 leading-snug">Pindai QR untuk validasi keabsahan dokumen faktur ini.</p>
+                  </div>
+                </div>
+              )}
+              {invoice.invoice_number && (
+                <div className="border border-slate-300 rounded-lg p-1.5 bg-white shrink-0">
+                  <Barcode128
+                    value={invoice.invoice_number}
+                    height={30}
+                    width={1.1}
+                    fontSize={8.5}
+                    caption="Kode Bayar Loket"
                   />
                 </div>
-                <div className="text-[9px] leading-tight text-slate-700">
-                  <p className="font-extrabold text-slate-900 uppercase tracking-tight">VERIFIKASI RESMI</p>
-                  <p className="text-[8px] text-slate-500 mt-0.5 leading-snug">Pindai QR untuk validasi keabsahan dokumen faktur ini.</p>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Official Signature Box */}
             <div className="text-center w-52">
@@ -561,26 +588,39 @@ export function InvoicePrintDocument({
                 ))}
               </ul>
             </div>
-            {isQrEnabled && (
-              <div className="flex items-center gap-2 p-2 rounded-xl border border-slate-200 bg-white shadow-2xs shrink-0">
-                <div className="w-12 h-12 bg-white p-0.5 border border-slate-200 rounded shrink-0 flex items-center justify-center">
-                  <img
-                    src={qrCodeUrl}
-                    alt="QR Verifikasi"
-                    className="w-full h-full object-contain"
+            <div className="flex items-center gap-2.5 shrink-0">
+              {isQrEnabled && (
+                <div className="flex items-center gap-2 p-2 rounded-xl border border-slate-200 bg-white shadow-2xs">
+                  <div className="w-12 h-12 bg-white p-0.5 border border-slate-200 rounded shrink-0 flex items-center justify-center">
+                    <img
+                      src={qrCodeUrl}
+                      alt="QR Verifikasi"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="text-left text-[9px] leading-tight">
+                    <span className="font-extrabold text-slate-900 uppercase tracking-tight block">
+                      VERIFIKASI SAH
+                    </span>
+                    <span className="text-[8px] text-slate-500 block mt-0.5">
+                      Pindai untuk cek status
+                    </span>
+                    <p className="text-[8px] text-slate-400 mt-0.5">{template.company_name}</p>
+                  </div>
+                </div>
+              )}
+              {invoice.invoice_number && (
+                <div className="p-2 rounded-xl border border-slate-200 bg-white shadow-2xs">
+                  <Barcode128
+                    value={invoice.invoice_number}
+                    height={30}
+                    width={1.1}
+                    fontSize={8.5}
+                    caption="Scan Kasir / Agen"
                   />
                 </div>
-                <div className="text-left text-[9px] leading-tight">
-                  <span className="font-extrabold text-slate-900 uppercase tracking-tight block">
-                    VERIFIKASI SAH
-                  </span>
-                  <span className="text-[8px] text-slate-500 block mt-0.5">
-                    Pindai untuk cek status
-                  </span>
-                  <p className="text-[8px] text-slate-400 mt-0.5">{template.company_name}</p>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -783,13 +823,18 @@ export function InvoicePrintDocument({
             </div>
           )}
 
-          {/* Barcode Mock */}
-          <div className="pt-1">
-            <div className="text-center font-mono tracking-widest text-[9px] font-bold text-slate-800 select-none">
-              ||| | ||||| || | |||| ||| |||| |
+          {/* Barcode Code 128 Nyata untuk Scanner Kasir POS */}
+          {invoice.invoice_number && (
+            <div className="pt-2 flex flex-col items-center justify-center">
+              <Barcode128
+                value={invoice.invoice_number}
+                height={is58mm ? 30 : 36}
+                width={is58mm ? 0.95 : 1.15}
+                fontSize={is58mm ? 8.5 : 9.5}
+                caption="Scan Loket / Kasir POS"
+              />
             </div>
-            <p className="font-mono text-[8.5px] text-slate-500">{invoice.invoice_number}</p>
-          </div>
+          )}
 
           <div className="pt-1 text-[8px] text-slate-400">
             - - - - - - - - GUNTING DISINI - - - - - - - -
@@ -893,6 +938,19 @@ export function InvoicePrintDocument({
                 </tr>
               </tbody>
             </table>
+            {invoice.invoice_number && (
+              <div className="mt-2.5 flex justify-end">
+                <div className="p-1 bg-slate-50 border border-slate-200 rounded-lg inline-block">
+                  <Barcode128
+                    value={invoice.invoice_number}
+                    height={28}
+                    width={1.05}
+                    fontSize={8.5}
+                    caption="Kode Bayar Loket / Agen"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1035,26 +1093,39 @@ export function InvoicePrintDocument({
             </ul>
           </div>
 
-          {isQrEnabled && (
-            <div className="flex items-center gap-2 p-2 rounded-xl border border-slate-200 bg-slate-50/80 shrink-0">
-              <div className="w-12 h-12 bg-white p-0.5 border border-slate-200 rounded shrink-0 flex items-center justify-center">
-                <img
-                  src={qrCodeUrl}
-                  alt="QR Verifikasi"
-                  className="w-full h-full object-contain"
+          <div className="flex items-center gap-2.5 shrink-0">
+            {isQrEnabled && (
+              <div className="flex items-center gap-2 p-2 rounded-xl border border-slate-200 bg-slate-50/80">
+                <div className="w-12 h-12 bg-white p-0.5 border border-slate-200 rounded shrink-0 flex items-center justify-center">
+                  <img
+                    src={qrCodeUrl}
+                    alt="QR Verifikasi"
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div className="text-left text-[9px] leading-tight">
+                  <span className="font-extrabold text-slate-800 uppercase tracking-tight block">
+                    VERIFIKASI SAH
+                  </span>
+                  <span className="text-[8px] text-slate-500 block mt-0.5">
+                    Pindai untuk cek status resmi online
+                  </span>
+                  <p className="text-[8px] text-slate-400 mt-0.5">Dokumen resmi {template.company_name}</p>
+                </div>
+              </div>
+            )}
+            {invoice.invoice_number && (
+              <div className="p-2 rounded-xl border border-slate-200 bg-slate-50/80">
+                <Barcode128
+                  value={invoice.invoice_number}
+                  height={30}
+                  width={1.1}
+                  fontSize={8.5}
+                  caption="Scan di Konter"
                 />
               </div>
-              <div className="text-left text-[9px] leading-tight">
-                <span className="font-extrabold text-slate-800 uppercase tracking-tight block">
-                  VERIFIKASI SAH
-                </span>
-                <span className="text-[8px] text-slate-500 block mt-0.5">
-                  Pindai untuk cek status resmi online
-                </span>
-                <p className="text-[8px] text-slate-400 mt-0.5">Dokumen resmi {template.company_name}</p>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

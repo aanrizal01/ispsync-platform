@@ -26,7 +26,9 @@ import {
   HelpCircle,
   Copy,
   Check,
+  Barcode,
 } from "lucide-react";
+import { Barcode128 } from "@/components/common/Barcode128";
 import {
   billingApi,
   type Invoice,
@@ -537,6 +539,28 @@ export default function PublicBillingCheckPage() {
                               : selectedInvoice.total_amount
                           )}
                         </span>
+                      </div>
+                    </div>
+
+                    {/* Barcode Loket Card (Kode Batang untuk Scan Kasir/Agen) */}
+                    <div className="p-3.5 bg-gradient-to-r from-slate-50 to-blue-50/40 border border-slate-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3">
+                      <div className="space-y-1 text-center sm:text-left">
+                        <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs font-bold text-slate-900">
+                          <Barcode className="w-4 h-4 text-blue-600" />
+                          <span>Kode Batang Pembayaran Loket &amp; Agen</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 max-w-sm leading-relaxed">
+                          Tunjukkan kode batang ini langsung dari layar HP Anda atau bawa lembar cetak ke agen / konter mitra terdekat. Kasir dapat memindai barcode ini langsung untuk pelunasan cepat.
+                        </p>
+                      </div>
+                      <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-2xs shrink-0 flex items-center justify-center">
+                        <Barcode128
+                          value={selectedInvoice.invoice_number}
+                          height={36}
+                          width={1.2}
+                          fontSize={9.5}
+                          caption="Scan di Konter"
+                        />
                       </div>
                     </div>
 

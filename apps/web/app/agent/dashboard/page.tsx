@@ -105,7 +105,7 @@ export default function AgentDashboardPage() {
   const [scratchTemplateId, setScratchTemplateId] = useState("");
   const [isActivating, setIsActivating] = useState(false);
   const [showCameraScanner, setShowCameraScanner] = useState(false);
-  const [cameraTarget, setCameraTarget] = useState<"single" | "start" | "end" | "inquiry">("single");
+  const [cameraTarget, setCameraTarget] = useState<"single" | "start" | "end" | "inquiry" | "bill">("single");
 
   // Inquiry & Reissue State
   const [inquirySN, setInquirySN] = useState("");
@@ -508,6 +508,48 @@ export default function AgentDashboardPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [showSettingsModal, showBillModal, showReceiptModal, showTopupModal, showGenerateModal, showPrinterModal, batchResult]);
 
+  // ── Global Barcode Scanner Gun Auto-Listener ──────────────────────
+  useEffect(() => {
+    let scanBuffer = "";
+    let lastScanTime = Date.now();
+
+    const handleBarcodeScannerWedge = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const isInput = target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable;
+
+      const now = Date.now();
+      const diff = now - lastScanTime;
+      lastScanTime = now;
+
+      if (e.key === "Enter") {
+        const candidate = scanBuffer.trim();
+        // If scanner captured an invoice or customer ID
+        if (candidate.length >= 4 && (candidate.toUpperCase().startsWith("INV-") || candidate.toUpperCase().startsWith("CUS"))) {
+          e.preventDefault();
+          scanBuffer = "";
+          setShowBillModal(true);
+          setBillSearch(candidate);
+          executeBillInquiry(candidate);
+          return;
+        }
+        scanBuffer = "";
+        return;
+      }
+
+      // Scanner guns type in fast bursts (< 75ms between characters)
+      if (diff > 75 && !isInput) {
+        scanBuffer = "";
+      }
+
+      if (!isInput && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        scanBuffer += e.key;
+      }
+    };
+
+    window.addEventListener("keydown", handleBarcodeScannerWedge);
+    return () => window.removeEventListener("keydown", handleBarcodeScannerWedge);
+  }, []);
+
   const showSuccess = (msg: string) => {
     setSuccessMessage(msg);
     setTimeout(() => setSuccessMessage(null), 4000);
@@ -575,10 +617,30 @@ export default function AgentDashboardPage() {
     }
   };
 
+  // ── Barcode POS Beep Audio Feedback ─────────────────────────────
+  const playScanBeep = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(1350, ctx.currentTime);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.12);
+    } catch {
+      // AudioContext policy suppression gracefully ignored
+    }
+  };
+
   // ── Bill Payment Handlers ─────────────────────────────────────────
-  const handleInquireBill = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const query = billSearch.trim();
+  const executeBillInquiry = async (rawQuery: string) => {
+    const query = rawQuery.trim();
     if (!query) {
       setBillSearchError("Masukkan ID Pelanggan, nomor invoice, atau nomor HP");
       return;
@@ -595,11 +657,17 @@ export default function AgentDashboardPage() {
       setBillInquiry(res);
       setSelectedInvoiceId(res.invoice_id);
       setBillAdminFee(res.admin_fee || dashboard?.agent.loket_admin_fee || 2500);
+      playScanBeep();
     } catch (err: any) {
       setBillSearchError(err.message || "Tagihan tidak ditemukan atau sudah lunas");
     } finally {
       setIsSearchingBill(false);
     }
+  };
+
+  const handleInquireBill = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    await executeBillInquiry(billSearch);
   };
 
   const handlePayBill = async () => {
@@ -907,6 +975,9 @@ export default function AgentDashboardPage() {
     } else if (cameraTarget === "inquiry") {
       setInquirySN(cleaned);
       handleCheckSN(cleaned);
+    } else if (cameraTarget === "bill") {
+      setBillSearch(cleaned);
+      executeBillInquiry(cleaned);
     }
   };
 
@@ -4214,6 +4285,20 @@ export default function AgentDashboardPage() {
                       </button>
                     )}
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCameraTarget("bill");
+                      setShowCameraScanner(true);
+                    }}
+                    className="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer"
+                    title="Buka Kamera untuk Scan Barcode Invoice"
+                  >
+                    <Camera className="w-4 h-4 text-emerald-600" />
+                    <span className="hidden sm:inline">Scan Barcode</span>
+                  </button>
+
                   <button
                     type="submit"
                     disabled={isSearchingBill || !billSearch.trim()}
@@ -4231,6 +4316,13 @@ export default function AgentDashboardPage() {
                       </>
                     )}
                   </button>
+                </div>
+
+                <div className="flex items-center gap-2 text-[11px] text-emerald-800 bg-emerald-50/80 px-3 py-2 rounded-xl border border-emerald-200/80 mt-2">
+                  <Barcode className="w-4 h-4 shrink-0 text-emerald-600" />
+                  <span>
+                    <strong>Mendukung Barcode Scanner Gun &amp; Kamera:</strong> Arahkan scanner laser atau kamera langsung ke kode batang pada lembar faktur atau kartu pelanggan untuk cek tagihan instan.
+                  </span>
                 </div>
               </div>
             </form>
@@ -5135,6 +5227,7 @@ export default function AgentDashboardPage() {
         isOpen={showCameraScanner}
         onClose={() => setShowCameraScanner(false)}
         onScan={handleScanSuccess}
+        target={cameraTarget}
       />
 
       {/* ── PRINTER SETTINGS MODAL ─────────────────────────────── */}
@@ -5186,14 +5279,22 @@ function CameraScannerModal({
   isOpen,
   onClose,
   onScan,
+  target,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onScan: (code: string) => void;
+  target?: string;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const isBillTarget = target === "bill";
+  const modalTitle = isBillTarget ? "Scan Barcode Faktur / Kartu Pelanggan" : "Scan Barcode Serial Number";
+  const instructions = isBillTarget
+    ? "Arahkan garis merah kamera tepat ke kode batang pada lembar faktur (INV-...) atau kartu pelanggan (CUST-...). Tagihan akan langsung dicek otomatis."
+    : "Arahkan garis merah kamera tepat ke barcode Serial Number pada kartu fisik. Jika menggunakan HP Android, kode akan terdeteksi otomatis. Anda juga dapat menggunakan Scanner Barcode Gun USB/Bluetooth secara langsung.";
 
   useEffect(() => {
     if (!isOpen) {
@@ -5272,8 +5373,8 @@ function CameraScannerModal({
       <div className="bg-white rounded-3xl max-w-md w-full p-5 shadow-2xl space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Camera className="w-5 h-5 text-amber-500" />
-            <h3 className="font-bold text-slate-900 text-sm">Scan Barcode Serial Number</h3>
+            <Camera className="w-5 h-5 text-emerald-500" />
+            <h3 className="font-bold text-slate-900 text-sm">{modalTitle}</h3>
           </div>
           <button
             onClick={onClose}
@@ -5305,13 +5406,13 @@ function CameraScannerModal({
           </div>
         )}
 
-        <div className="bg-amber-50 p-3 rounded-2xl border border-amber-200 text-[11.5px] text-amber-900 space-y-1">
+        <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-200 text-[11.5px] text-emerald-900 space-y-1">
           <div className="font-bold flex items-center gap-1">
-            <Info className="w-3.5 h-3.5 text-amber-600" />
+            <Info className="w-3.5 h-3.5 text-emerald-600" />
             <span>Petunjuk Pemindaian:</span>
           </div>
           <p className="leading-relaxed">
-            Arahkan garis merah kamera tepat ke barcode Serial Number pada kartu fisik. Jika menggunakan HP Android, kode akan terdeteksi otomatis. Anda juga dapat menggunakan <b>Scanner Barcode Gun USB/Bluetooth</b> secara langsung.
+            {instructions}
           </p>
         </div>
 
