@@ -235,6 +235,10 @@ https:// {
         header_regexp Host (^(fttx|fibergrid)\.|\.(fttx|fibergrid)\.)
     }
     handle @fttx {
+        header {
+            -X-Frame-Options
+            Content-Security-Policy "frame-ancestors 'self' https://*.ispsync.id https://*.*.ispsync.id"
+        }
         reverse_proxy 172.18.0.1:8082 {
             header_up Host {host}
             header_up X-Real-IP {remote_host}
@@ -246,6 +250,10 @@ https:// {
         header_regexp Host (^(nexus|portal|sales|teknisi|rekan|noc|noc-fo|carrier)\.|\.(nexus|portal|sales|teknisi|rekan|noc|noc-fo|carrier)\.)
     }
     handle @nexus {
+        header {
+            -X-Frame-Options
+            Content-Security-Policy "frame-ancestors 'self' https://*.ispsync.id https://*.*.ispsync.id"
+        }
         reverse_proxy 172.18.0.1:8081 {
             header_up Host {host}
             header_up X-Real-IP {remote_host}
