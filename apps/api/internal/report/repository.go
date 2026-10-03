@@ -174,7 +174,7 @@ func (r *Repository) GetRevenueByPlan(ctx context.Context) ([]PlanRevenue, error
 	}
 	defer rows.Close()
 
-	var plans []PlanRevenue
+	plans := make([]PlanRevenue, 0)
 	for rows.Next() {
 		var pr PlanRevenue
 		if err := rows.Scan(&pr.PlanID, &pr.PlanName, &pr.SubscriberCount, &pr.MonthlyPrice, &pr.MonthlyRevenue); err != nil {
@@ -207,7 +207,7 @@ func (r *Repository) GetRevenueTrends(ctx context.Context, limitMonths int) ([]R
 	}
 	defer rows.Close()
 
-	var trends []RevenueTrend
+	trends := make([]RevenueTrend, 0)
 	for rows.Next() {
 		var t RevenueTrend
 		if err := rows.Scan(&t.Month, &t.Invoiced, &t.Collected); err != nil {
@@ -287,7 +287,7 @@ func (r *Repository) GetInvoiceTransactions(ctx context.Context, from, to string
 	}
 	defer rows.Close()
 
-	var list []InvoiceTransaction
+	list := make([]InvoiceTransaction, 0)
 	for rows.Next() {
 		var it InvoiceTransaction
 		if err := rows.Scan(
@@ -381,7 +381,7 @@ func (r *Repository) GetVoucherTaxTransactions(ctx context.Context, from, to str
 	}
 	defer rows.Close()
 
-	var list []VoucherTaxTransaction
+	list := make([]VoucherTaxTransaction, 0)
 	for rows.Next() {
 		var vt VoucherTaxTransaction
 		if err := rows.Scan(

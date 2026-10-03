@@ -112,8 +112,8 @@ export default function ReportsPage() {
         reportsApi.getTrafficStats(),
       ]);
       setFinancial(finRes);
-      setPlans(planRes);
-      setTrends(trendRes);
+      setPlans(Array.isArray(planRes) ? planRes : []);
+      setTrends(Array.isArray(trendRes) ? trendRes : []);
       setTraffic(trafRes);
     } catch (err: any) {
       setError(err?.message || "Gagal memuat data laporan.");
@@ -326,7 +326,7 @@ export default function ReportsPage() {
               <div className="mt-3 pt-2.5 border-t border-emerald-200/50 flex items-center justify-between text-[11px]">
                 <span className="text-emerald-700">Collection Rate:</span>
                 <span className="font-mono font-bold text-emerald-800 px-1.5 py-0.2 rounded bg-emerald-100">
-                  {financial ? financial.collection_rate_percent.toFixed(1) : 0}%
+                  {financial ? (financial.collection_rate_percent || 0).toFixed(1) : 0}%
                 </span>
               </div>
             </div>
@@ -349,7 +349,7 @@ export default function ReportsPage() {
               <div className="mt-3 pt-2.5 border-t border-rose-200/50 flex items-center justify-between text-[11px]">
                 <span className="text-rose-700">Churn Rate 30 Hari:</span>
                 <span className="font-mono font-bold text-rose-800 px-1.5 py-0.2 rounded bg-rose-100">
-                  {financial ? financial.churn_rate_percent.toFixed(1) : 0}%
+                  {financial ? (financial.churn_rate_percent || 0).toFixed(1) : 0}%
                 </span>
               </div>
             </div>
@@ -813,7 +813,7 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-mono">
-                    {plans.length > 0 ? (
+                    {(plans?.length || 0) > 0 ? (
                       plans.map((p) => (
                         <tr key={p.plan_id} className="hover:bg-slate-50/70 transition-colors">
                           <td className="px-4 py-2.5 font-sans font-bold text-slate-900">{p.plan_name}</td>
