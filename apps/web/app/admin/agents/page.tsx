@@ -34,10 +34,16 @@ import {
   ExternalLink,
   Printer,
   X,
+  Eye,
+  ShieldCheck,
+  MapPin,
+  UserPlus,
+  Check,
+  Image as ImageIcon,
 } from "lucide-react";
 
 export default function AdminAgentsPage() {
-  const [activeTab, setActiveTab] = useState<"agents" | "topups" | "mutations">("agents");
+  const [activeTab, setActiveTab] = useState<"agents" | "pending" | "topups" | "mutations">("agents");
 
   // Data states
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -45,6 +51,12 @@ export default function AdminAgentsPage() {
   const [searchAgent, setSearchAgent] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [isLoadingAgents, setIsLoadingAgents] = useState(false);
+  const [pendingAgentsCount, setPendingAgentsCount] = useState(0);
+
+  const [showVerificationModal, setShowVerificationModal] = useState<Agent | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [isProcessingVerification, setIsProcessingVerification] = useState(false);
 
   const [topupRequests, setTopupRequests] = useState<TopupRequest[]>([]);
   const [topupMeta, setTopupMeta] = useState({ page: 1, limit: 10, total: 0, total_pages: 1 });
@@ -191,10 +203,50 @@ export default function AdminAgentsPage() {
     }
   }, [mutationAgentFilter, mutationTypeFilter]);
 
+  const fetchPendingCount = useCallback(async () => {
+    try {
+      const res = await agentApi.listAgents({ status: "PENDING", limit: 1 });
+      if (res.meta) setPendingAgentsCount(res.meta.total);
+    } catch {}
+  }, []);
+
+  const handleApproveAgent = async (agentId: string) => {
+    setIsProcessingVerification(true);
+    try {
+      await agentApi.approveRegistration(agentId);
+      setSuccessMessage("Pendaftaran agen berhasil disetujui! Akun agen telah aktif.");
+      setShowVerificationModal(null);
+      fetchAgents(agentsMeta.page);
+      fetchPendingCount();
+    } catch (err: any) {
+      setErrorMessage(err.message || "Gagal menyetujui pendaftaran agen");
+    } finally {
+      setIsProcessingVerification(false);
+    }
+  };
+
+  const handleRejectAgent = async (agentId: string) => {
+    setIsProcessingVerification(true);
+    try {
+      await agentApi.rejectRegistration(agentId, rejectReason);
+      setSuccessMessage("Pendaftaran agen telah ditolak.");
+      setShowVerificationModal(null);
+      setShowRejectForm(false);
+      setRejectReason("");
+      fetchAgents(agentsMeta.page);
+      fetchPendingCount();
+    } catch (err: any) {
+      setErrorMessage(err.message || "Gagal menolak pendaftaran agen");
+    } finally {
+      setIsProcessingVerification(false);
+    }
+  };
+
   useEffect(() => {
     fetchAgents(1);
     fetchTopups(1);
-  }, [fetchAgents, fetchTopups]);
+    fetchPendingCount();
+  }, [fetchAgents, fetchTopups, fetchPendingCount]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -484,7 +536,10 @@ export default function AdminAgentsPage() {
       {/* Tabs */}
       <div className="border-b border-slate-200 flex gap-6">
         <button
-          onClick={() => setActiveTab("agents")}
+          onClick={() => {
+            setActiveTab("agents");
+            setStatusFilter("");
+          }}
           className={cn(
             "pb-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2",
             activeTab === "agents"
@@ -497,7 +552,31 @@ export default function AdminAgentsPage() {
         </button>
 
         <button
-          onClick={() => setActiveTab("topups")}
+          onClick={() => {
+            setActiveTab("pending");
+            setStatusFilter("PENDING");
+          }}
+          className={cn(
+            "pb-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 relative",
+            activeTab === "pending"
+              ? "border-amber-600 text-amber-600"
+              : "border-transparent text-slate-500 hover:text-slate-900"
+          )}
+        >
+          <UserPlus className="w-4 h-4" />
+          Pendaftaran Baru
+          {pendingAgentsCount > 0 && (
+            <span className="px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-white rounded-full">
+              {pendingAgentsCount}
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveTab("topups");
+            setStatusFilter("");
+          }}
           className={cn(
             "pb-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 relative",
             activeTab === "topups"
@@ -515,7 +594,10 @@ export default function AdminAgentsPage() {
         </button>
 
         <button
-          onClick={() => setActiveTab("mutations")}
+          onClick={() => {
+            setActiveTab("mutations");
+            setStatusFilter("");
+          }}
           className={cn(
             "pb-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2",
             activeTab === "mutations"
@@ -524,7 +606,7 @@ export default function AdminAgentsPage() {
           )}
         >
           <TrendingUp className="w-4 h-4" />
-          Buku Besar & Tarik Saldo
+          Buku Besar &amp; Tarik Saldo
           {selectedAgentForMutations ? (
             <span className="px-1.5 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-700 rounded-full">
               {selectedAgentForMutations.name}
@@ -537,8 +619,8 @@ export default function AdminAgentsPage() {
         </button>
       </div>
 
-      {/* ── TAB 1: DAFTAR AGEN ────────────────────────────────────── */}
-      {activeTab === "agents" && (
+      {/* ── TAB 1 & 2: DAFTAR AGEN & PENDAFTARAN BARU ─────────────────── */}
+      {(activeTab === "agents" || activeTab === "pending") && (
         <div className="space-y-4">
           {/* Filter Bar */}
           <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-white p-3.5 rounded-xl border border-slate-200">
@@ -561,6 +643,8 @@ export default function AdminAgentsPage() {
               >
                 <option value="">Semua Status</option>
                 <option value="ACTIVE">Aktif</option>
+                <option value="PENDING">Menunggu Verifikasi (Pending)</option>
+                <option value="REJECTED">Ditolak (Rejected)</option>
                 <option value="SUSPENDED">Ditangguhkan (Suspended)</option>
                 <option value="TERMINATED">Nonaktif (Terminated)</option>
               </select>
@@ -659,58 +743,102 @@ export default function AdminAgentsPage() {
                               "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold",
                               agent.status === "ACTIVE"
                                 ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                : agent.status === "PENDING"
+                                ? "bg-amber-100 text-amber-800 border border-amber-300 font-bold"
+                                : agent.status === "REJECTED"
+                                ? "bg-rose-50 text-rose-700 border border-rose-200"
                                 : agent.status === "SUSPENDED"
                                 ? "bg-amber-50 text-amber-700 border border-amber-200"
-                                : "bg-rose-50 text-rose-700 border border-rose-200"
+                                : "bg-slate-100 text-slate-700 border border-slate-200"
                             )}
                           >
-                            {agent.status === "ACTIVE" ? "Aktif" : agent.status === "SUSPENDED" ? "Suspended" : "Terminated"}
+                            {agent.status === "ACTIVE"
+                              ? "Aktif"
+                              : agent.status === "PENDING"
+                              ? "Menunggu Verifikasi"
+                              : agent.status === "REJECTED"
+                              ? "Ditolak"
+                              : agent.status === "SUSPENDED"
+                              ? "Suspended"
+                              : "Terminated"}
                           </span>
                         </td>
 
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => {
-                                setShowTopupModal(agent);
-                                setManualTopupForm({ amount: 100000, notes: "Top-up saldo langsung oleh admin" });
-                              }}
-                              className="px-2.5 py-1.5 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors flex items-center gap-1"
-                              title="Isi Saldo Agen"
-                            >
-                              <Wallet className="w-3.5 h-3.5" />
-                              Top Up
-                            </button>
+                            {agent.status === "PENDING" ? (
+                              <button
+                                onClick={() => {
+                                  setShowVerificationModal(agent);
+                                  setShowRejectForm(false);
+                                  setRejectReason("");
+                                }}
+                                className="px-3 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+                                title="Verifikasi Pendaftaran & Berkas KTP"
+                              >
+                                <ShieldCheck className="w-3.5 h-3.5" />
+                                Verifikasi Berkas
+                              </button>
+                            ) : (
+                              <>
+                                {(agent.ktp_url || agent.business_photo_url) && (
+                                  <button
+                                    onClick={() => {
+                                      setShowVerificationModal(agent);
+                                      setShowRejectForm(false);
+                                      setRejectReason("");
+                                    }}
+                                    className="px-2.5 py-1.5 text-xs font-semibold bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                                    title="Lihat Foto KTP & Usaha"
+                                  >
+                                    <Eye className="w-3.5 h-3.5 text-slate-500" />
+                                    Berkas
+                                  </button>
+                                )}
 
-                            <button
-                              onClick={() => {
-                                setShowWithdrawModal(agent);
-                                setWithdrawForm({
-                                  amount: Math.min(100000, Number(agent.balance) || 0),
-                                  mutation_type: "WITHDRAWAL",
-                                  reference_id: "",
-                                  notes: "Pencairan saldo komisi agen",
-                                });
-                              }}
-                              className="px-2.5 py-1.5 text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors flex items-center gap-1"
-                              title="Tarik / Potong Saldo Agen"
-                            >
-                              <ArrowDownLeft className="w-3.5 h-3.5" />
-                              Tarik
-                            </button>
+                                <button
+                                  onClick={() => {
+                                    setShowTopupModal(agent);
+                                    setManualTopupForm({ amount: 100000, notes: "Top-up saldo langsung oleh admin" });
+                                  }}
+                                  className="px-2.5 py-1.5 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                                  title="Isi Saldo Agen"
+                                >
+                                  <Wallet className="w-3.5 h-3.5" />
+                                  Top Up
+                                </button>
 
-                            <button
-                              onClick={() => {
-                                setSelectedAgentForMutations(agent);
-                                setMutationAgentFilter(agent.id);
-                                setActiveTab("mutations");
-                              }}
-                              className="px-2.5 py-1.5 text-xs font-semibold bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors flex items-center gap-1"
-                              title="Riwayat Mutasi Saldo"
-                            >
-                              <TrendingUp className="w-3.5 h-3.5" />
-                              Mutasi
-                            </button>
+                                <button
+                                  onClick={() => {
+                                    setShowWithdrawModal(agent);
+                                    setWithdrawForm({
+                                      amount: Math.min(100000, Number(agent.balance) || 0),
+                                      mutation_type: "WITHDRAWAL",
+                                      reference_id: "",
+                                      notes: "Pencairan saldo komisi agen",
+                                    });
+                                  }}
+                                  className="px-2.5 py-1.5 text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                                  title="Tarik / Potong Saldo Agen"
+                                >
+                                  <ArrowDownLeft className="w-3.5 h-3.5" />
+                                  Tarik
+                                </button>
+
+                                <button
+                                  onClick={() => {
+                                    setSelectedAgentForMutations(agent);
+                                    setMutationAgentFilter(agent.id);
+                                    setActiveTab("mutations");
+                                  }}
+                                  className="px-2.5 py-1.5 text-xs font-semibold bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                                  title="Riwayat Mutasi Saldo"
+                                >
+                                  <TrendingUp className="w-3.5 h-3.5" />
+                                  Mutasi
+                                </button>
+                              </>
+                            )}
 
                             <button
                               onClick={() => {
@@ -2009,6 +2137,238 @@ export default function AdminAgentsPage() {
                   <p className="font-bold text-slate-900 underline mt-2">{selectedAgentForPks.name}</p>
                   <p className="text-[11px] text-slate-500">Pemilik / Penanggung Jawab Gerai</p>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: VERIFIKASI PENDAFTARAN & BERKAS AGEN ───────────────── */}
+      {showVerificationModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto border border-slate-200">
+            {/* Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Verifikasi Pendaftaran &amp; Berkas Agen
+                  </h3>
+                  <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                    <span className="font-mono bg-slate-100 px-2 py-0.5 rounded font-bold text-slate-800">
+                      {showVerificationModal.code}
+                    </span>
+                    <span>&bull; {showVerificationModal.name}</span>
+                    {showVerificationModal.company_name && (
+                      <span>&bull; <strong>{showVerificationModal.company_name}</strong></span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowVerificationModal(null);
+                  setShowRejectForm(false);
+                  setRejectReason("");
+                }}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Dokumen Unggahan: KTP & Foto Usaha */}
+            <div>
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <ImageIcon className="w-4 h-4 text-cyan-600" />
+                Dokumen Verifikasi yang Diunggah
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Foto KTP */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                    <span>Foto KTP Pemilik</span>
+                    {showVerificationModal.ktp_url && (
+                      <a
+                        href={showVerificationModal.ktp_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] text-cyan-600 hover:underline flex items-center gap-1"
+                      >
+                        <ExternalLink className="w-3 h-3" /> Buka Penuh
+                      </a>
+                    )}
+                  </div>
+                  {showVerificationModal.ktp_url ? (
+                    <div className="h-48 rounded-xl overflow-hidden bg-slate-900/5 flex items-center justify-center border border-slate-200">
+                      <img
+                        src={showVerificationModal.ktp_url}
+                        alt="Foto KTP"
+                        className="max-h-full max-w-full object-contain cursor-zoom-in"
+                        onClick={() => window.open(showVerificationModal.ktp_url, "_blank")}
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-48 rounded-xl bg-slate-100 flex flex-col items-center justify-center text-slate-400 text-xs">
+                      <CreditCard className="w-8 h-8 mb-1 opacity-50" />
+                      Belum ada foto KTP
+                    </div>
+                  )}
+                </div>
+
+                {/* Foto Loket/Tempat Usaha */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                    <span>Foto Tempat Usaha / Gerai</span>
+                    {showVerificationModal.business_photo_url && (
+                      <a
+                        href={showVerificationModal.business_photo_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] text-cyan-600 hover:underline flex items-center gap-1"
+                      >
+                        <ExternalLink className="w-3 h-3" /> Buka Penuh
+                      </a>
+                    )}
+                  </div>
+                  {showVerificationModal.business_photo_url ? (
+                    <div className="h-48 rounded-xl overflow-hidden bg-slate-900/5 flex items-center justify-center border border-slate-200">
+                      <img
+                        src={showVerificationModal.business_photo_url}
+                        alt="Foto Usaha"
+                        className="max-h-full max-w-full object-contain cursor-zoom-in"
+                        onClick={() => window.open(showVerificationModal.business_photo_url, "_blank")}
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-48 rounded-xl bg-slate-100 flex flex-col items-center justify-center text-slate-400 text-xs">
+                      <Building2 className="w-8 h-8 mb-1 opacity-50" />
+                      Belum ada foto gerai/loket
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Rincian Identitas Lengkap */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div>
+                <span className="text-slate-400 block text-[11px]">Nama Pemilik (PIC):</span>
+                <strong className="text-slate-900">{showVerificationModal.name}</strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">NIK KTP (16 Digit):</span>
+                <span className="font-mono font-bold text-slate-900">
+                  {showVerificationModal.id_card_number || "-"}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Nomor WhatsApp:</span>
+                <a
+                  href={`https://wa.me/${showVerificationModal.phone.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-mono text-cyan-700 hover:underline"
+                >
+                  {showVerificationModal.phone}
+                </a>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[11px]">Email Akun:</span>
+                <span className="font-mono text-slate-700">
+                  {showVerificationModal.email || showVerificationModal.user_email || "-"}
+                </span>
+              </div>
+              <div className="sm:col-span-2">
+                <span className="text-slate-400 block text-[11px]">Alamat Lengkap Gerai / Loket:</span>
+                <span className="text-slate-800">{showVerificationModal.address || "-"}</span>
+              </div>
+              <div className="sm:col-span-2 border-t border-slate-200/80 pt-2">
+                <span className="text-slate-400 block text-[11px]">Rekening Penampungan:</span>
+                <span className="text-slate-800 font-medium">
+                  {showVerificationModal.bank_name || "-"} {showVerificationModal.bank_account_number || "-"} a/n{" "}
+                  {showVerificationModal.bank_account_holder || "-"}
+                </span>
+              </div>
+            </div>
+
+            {/* Form Alasan Penolakan (if clicked) */}
+            {showRejectForm && (
+              <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 space-y-3">
+                <label className="block text-xs font-bold text-rose-900">
+                  Alasan Penolakan Pendaftaran:
+                </label>
+                <textarea
+                  rows={2}
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Misal: Foto KTP buram / lokasi di luar wilayah operasional coverage..."
+                  className="w-full p-2.5 text-xs border border-rose-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white text-slate-900"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowRejectForm(false)}
+                    className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isProcessingVerification}
+                    onClick={() => handleRejectAgent(showVerificationModal.id)}
+                    className="px-4 py-1.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {isProcessingVerification ? "Memproses..." : "Konfirmasi Tolak Pendaftaran"}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Footer Actions */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100">
+              <div className="text-xs text-slate-500">
+                Status saat ini:{" "}
+                <span className="font-bold text-slate-900">{showVerificationModal.status}</span>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                {showVerificationModal.status === "PENDING" && !showRejectForm && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setShowRejectForm(true)}
+                      disabled={isProcessingVerification}
+                      className="px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-300 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      Tolak
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isProcessingVerification}
+                      onClick={() => handleApproveAgent(showVerificationModal.id)}
+                      className="px-5 py-2 text-xs font-bold bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      <Check className="w-4 h-4" />
+                      {isProcessingVerification ? "Menyetujui..." : "Setujui Pendaftaran"}
+                    </button>
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowVerificationModal(null);
+                    setShowRejectForm(false);
+                    setRejectReason("");
+                  }}
+                  className="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                >
+                  Tutup
+                </button>
               </div>
             </div>
           </div>

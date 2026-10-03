@@ -14,8 +14,8 @@ export default function AgentLayout({
   const pathname = usePathname();
 
   useEffect(() => {
-    // Jangan redirect jika di halaman login
-    if (pathname === "/agent/login") return;
+    // Jangan redirect jika di halaman login atau registrasi agen
+    if (pathname === "/agent/login" || pathname === "/agent/register") return;
 
     if (!isLoading) {
       if (!isAuthenticated) {
@@ -26,8 +26,8 @@ export default function AgentLayout({
     }
   }, [isAuthenticated, isLoading, isCustomer, pathname, router]);
 
-  // Halaman login agen murni tampil penuh tanpa wrapper/navbar apa pun
-  if (pathname === "/agent/login") {
+  // Halaman login dan register agen murni tampil penuh tanpa wrapper/navbar apa pun
+  if (pathname === "/agent/login" || pathname === "/agent/register") {
     return <>{children}</>;
   }
 

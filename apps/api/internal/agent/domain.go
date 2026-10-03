@@ -12,6 +12,8 @@ type AgentStatus string
 
 const (
 	AgentStatusActive     AgentStatus = "ACTIVE"
+	AgentStatusPending    AgentStatus = "PENDING"
+	AgentStatusRejected   AgentStatus = "REJECTED"
 	AgentStatusSuspended  AgentStatus = "SUSPENDED"
 	AgentStatusTerminated AgentStatus = "TERMINATED"
 )
@@ -47,6 +49,10 @@ type Agent struct {
 	CompanyName        *string      `json:"company_name,omitempty"`
 	Phone              string       `json:"phone"`
 	Email              *string      `json:"email,omitempty"`
+	Address            *string      `json:"address,omitempty"`
+	IDCardNumber       *string      `json:"id_card_number,omitempty"`
+	KtpURL             *string      `json:"ktp_url,omitempty"`
+	BusinessPhotoURL   *string      `json:"business_photo_url,omitempty"`
 	Balance            money.Amount `json:"balance"`
 	OfflineCashbackPct float64      `json:"offline_cashback_pct"`
 	OnlineCashbackPct  float64      `json:"online_cashback_pct"`
@@ -112,6 +118,10 @@ type CreateAgentRequest struct {
 	CompanyName        *string  `json:"company_name"`
 	Phone              string   `json:"phone" validate:"required"`
 	Email              *string  `json:"email"`
+	Address            *string  `json:"address"`
+	IDCardNumber       *string  `json:"id_card_number"`
+	KtpURL             *string  `json:"ktp_url"`
+	BusinessPhotoURL   *string  `json:"business_photo_url"`
 	InitialBalance     int64    `json:"initial_balance" validate:"min=0"`
 	OfflineCashbackPct *float64 `json:"offline_cashback_pct"`
 	OnlineCashbackPct  *float64 `json:"online_cashback_pct"`
@@ -129,6 +139,10 @@ type UpdateAgentRequest struct {
 	CompanyName        *string  `json:"company_name"`
 	Phone              string   `json:"phone" validate:"required"`
 	Email              *string  `json:"email"`
+	Address            *string  `json:"address"`
+	IDCardNumber       *string  `json:"id_card_number"`
+	KtpURL             *string  `json:"ktp_url"`
+	BusinessPhotoURL   *string  `json:"business_photo_url"`
 	OfflineCashbackPct *float64 `json:"offline_cashback_pct"`
 	OnlineCashbackPct  *float64 `json:"online_cashback_pct"`
 	OnlineDiscountPct  *float64 `json:"online_discount_pct"`
@@ -137,6 +151,27 @@ type UpdateAgentRequest struct {
 	BankAccountHolder  *string  `json:"bank_account_holder"`
 	Status             *string  `json:"status"`
 	Notes              *string  `json:"notes"`
+}
+
+type RegisterAgentRequest struct {
+	Name              string  `json:"name" validate:"required,min=2"`
+	CompanyName       *string `json:"company_name"`
+	Phone             string  `json:"phone" validate:"required"`
+	Email             string  `json:"email" validate:"required,email"`
+	Password          string  `json:"password" validate:"required,min=6"`
+	Address           *string `json:"address"`
+	IDCardNumber      *string `json:"id_card_number"`
+	KtpURL            *string `json:"ktp_url"`
+	BusinessPhotoURL  *string `json:"business_photo_url"`
+	BankName          *string `json:"bank_name"`
+	BankAccountNumber *string `json:"bank_account_number"`
+	BankAccountHolder *string `json:"bank_account_holder"`
+	Notes             *string `json:"notes"`
+}
+
+type ProcessRegistrationRequest struct {
+	Action string  `json:"action" validate:"required"` // APPROVE or REJECT
+	Reason *string `json:"reason"`
 }
 
 type TopupManualRequest struct {

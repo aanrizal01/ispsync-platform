@@ -26,6 +26,8 @@ func NewHandler(service *Service, logger *slog.Logger) *Handler {
 func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 	// Public validation endpoint for /hotspot/buy checkout
 	r.Get("/hotspot/validate-promo", h.ValidatePromoCode)
+	// Public agent self-registration endpoint
+	r.Post("/agents/register", h.RegisterAgent)
 
 	// Admin Agent Management
 	r.Group(func(r chi.Router) {
@@ -36,6 +38,8 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 		r.With(authMW.RequirePermission("agents:read")).Get("/agents/mutations", h.ListAllMutations)
 		r.With(authMW.RequirePermission("agents:read")).Get("/agents/{id}", h.GetAgent)
 		r.With(authMW.RequirePermission("agents:write")).Put("/agents/{id}", h.UpdateAgent)
+		r.With(authMW.RequirePermission("agents:write")).Post("/agents/{id}/approve", h.ApproveAgent)
+		r.With(authMW.RequirePermission("agents:write")).Post("/agents/{id}/reject", h.RejectAgent)
 		r.With(authMW.RequirePermission("agents:write")).Post("/agents/{id}/topup", h.TopupManual)
 		r.With(authMW.RequirePermission("agents:write")).Post("/agents/{id}/withdraw", h.WithdrawManual)
 		r.With(authMW.RequirePermission("agents:read")).Get("/agents/{id}/mutations", h.ListAgentMutations)
@@ -92,6 +96,63 @@ func (h *Handler) CreateAgent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	middleware.JSON(w, http.StatusCreated, a)
+}
+
+func (h *Handler) RegisterAgent(w http.ResponseWriter, r *http.Request) {
+	var req RegisterAgentRequest
+	if err := middleware.DecodeJSON(r, &req); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	a, err := h.service.RegisterAgent(r.Context(), req)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusCreated, a)
+}
+
+func (h *Handler) ApproveAgent(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		middleware.JSONError(w, h.logger, apperrors.BadRequest("ID agen tidak valid"))
+		return
+	}
+
+	adminID := getUserIDFromContext(r)
+	a, err := h.service.ApproveAgentRegistration(r.Context(), id, adminID)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusOK, a)
+}
+
+func (h *Handler) RejectAgent(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		middleware.JSONError(w, h.logger, apperrors.BadRequest("ID agen tidak valid"))
+		return
+	}
+
+	var req struct {
+		Reason string `json:"reason"`
+	}
+	_ = middleware.DecodeJSON(r, &req)
+
+	adminID := getUserIDFromContext(r)
+	a, err := h.service.RejectAgentRegistration(r.Context(), id, req.Reason, adminID)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusOK, a)
 }
 
 func (h *Handler) GetAgent(w http.ResponseWriter, r *http.Request) {

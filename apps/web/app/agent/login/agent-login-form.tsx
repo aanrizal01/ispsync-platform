@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth/context";
 import { type ApiError } from "@/lib/api/client";
 import {
@@ -15,6 +16,7 @@ import {
   ArrowRight,
   ShieldCheck,
   MessageCircle,
+  UserPlus,
 } from "lucide-react";
 
 export type TenantInfo = {
@@ -332,20 +334,29 @@ export default function AgentLoginForm({ initialTenant }: { initialTenant: Tenan
 
             {/* Info Pendaftaran Agen Baru */}
             <div className="pt-6 mt-6 border-t border-slate-100 space-y-3">
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-1.5">
-                <span className="font-bold text-slate-800 block">Belum Terdaftar sebagai Mitra Agen?</span>
-                <p className="text-[11px] text-slate-500 leading-relaxed font-sans">
-                  Pendaftaran agen dikelola oleh Administrator {tenantName}. Silakan hubungi tim kami untuk aktivasi kemitraan &amp; pengisian deposit saldo.
-                </p>
-                <div className="pt-2">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-2">
+                <div>
+                  <span className="font-bold text-slate-800 block text-sm">Belum Terdaftar sebagai Mitra Agen?</span>
+                  <p className="text-[11px] text-slate-500 leading-relaxed font-sans mt-0.5">
+                    Daftar mandiri secara online dan dapatkan komisi penjualan voucher WiFi, Passpoint, serta loket pembayaran resmi {tenantName}.
+                  </p>
+                </div>
+                <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <Link
+                    href="/agent/register"
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-bold shadow-sm transition-all"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    Daftar Jadi Mitra Agen Baru
+                  </Link>
                   <a
                     href={`https://wa.me/${waPhone}?text=${encodeURIComponent(`Halo Admin ${tenantName}, saya tertarik mendaftar jadi Mitra Agen Voucher Hotspot.`)}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-600 hover:text-emerald-600 border border-slate-200 rounded-xl hover:border-emerald-300 transition-colors"
                   >
-                    <MessageCircle className="w-3.5 h-3.5" />
-                    Hubungi CS Kemitraan via WhatsApp
+                    <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />
+                    Tanya CS via WA
                   </a>
                 </div>
               </div>

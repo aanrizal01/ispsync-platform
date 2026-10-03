@@ -39,19 +39,22 @@ func (r *Repository) CreateAgent(ctx context.Context, a *Agent) error {
 			id, user_id, code, name, company_name, phone, email,
 			balance, offline_cashback_pct, online_cashback_pct, online_discount_pct,
 			bank_name, bank_account_number, bank_account_holder,
-			status, notes, created_at, updated_at
+			status, notes, address, id_card_number, ktp_url, business_photo_url,
+			created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7,
 			$8, $9, $10, $11,
 			$12, $13, $14,
-			$15, $16, $17, $18
+			$15, $16, $17, $18, $19, $20,
+			$21, $22
 		)
 	`
 	_, err := r.db.Exec(ctx, q,
 		a.ID, a.UserID, a.Code, a.Name, a.CompanyName, a.Phone, a.Email,
 		a.Balance, a.OfflineCashbackPct, a.OnlineCashbackPct, a.OnlineDiscountPct,
 		a.BankName, a.BankAccountNumber, a.BankAccountHolder,
-		a.Status, a.Notes, a.CreatedAt, a.UpdatedAt,
+		a.Status, a.Notes, a.Address, a.IDCardNumber, a.KtpURL, a.BusinessPhotoURL,
+		a.CreatedAt, a.UpdatedAt,
 	)
 	return err
 }
@@ -63,7 +66,8 @@ func (r *Repository) GetAgentByID(ctx context.Context, id uuid.UUID) (*Agent, er
 			a.balance, a.offline_cashback_pct, a.online_cashback_pct, a.online_discount_pct,
 			COALESCE(a.loket_admin_fee, 2500),
 			a.bank_name, a.bank_account_number, a.bank_account_holder,
-			a.status, a.notes, a.created_at, a.updated_at,
+			a.status, a.notes, a.address, a.id_card_number, a.ktp_url, a.business_photo_url,
+			a.created_at, a.updated_at,
 			(SELECT COUNT(*) FROM vouchers v WHERE v.agent_id = a.id) as total_sold,
 			(SELECT COALESCE(SUM(amount), 0) FROM agent_balance_mutations m WHERE m.agent_id = a.id AND m.mutation_type = 'VOUCHER_ONLINE_COMMISSION') as total_comm
 		FROM agents a
@@ -77,7 +81,8 @@ func (r *Repository) GetAgentByID(ctx context.Context, id uuid.UUID) (*Agent, er
 		&balance, &a.OfflineCashbackPct, &a.OnlineCashbackPct, &a.OnlineDiscountPct,
 		&a.LoketAdminFee,
 		&a.BankName, &a.BankAccountNumber, &a.BankAccountHolder,
-		&a.Status, &a.Notes, &a.CreatedAt, &a.UpdatedAt,
+		&a.Status, &a.Notes, &a.Address, &a.IDCardNumber, &a.KtpURL, &a.BusinessPhotoURL,
+		&a.CreatedAt, &a.UpdatedAt,
 		&a.TotalVouchersSold, &totalComm,
 	)
 	if err != nil {
@@ -98,7 +103,8 @@ func (r *Repository) GetAgentByUserID(ctx context.Context, userID uuid.UUID) (*A
 			a.balance, a.offline_cashback_pct, a.online_cashback_pct, a.online_discount_pct,
 			COALESCE(a.loket_admin_fee, 2500),
 			a.bank_name, a.bank_account_number, a.bank_account_holder,
-			a.status, a.notes, a.created_at, a.updated_at,
+			a.status, a.notes, a.address, a.id_card_number, a.ktp_url, a.business_photo_url,
+			a.created_at, a.updated_at,
 			(SELECT COUNT(*) FROM vouchers v WHERE v.agent_id = a.id) as total_sold,
 			(SELECT COALESCE(SUM(amount), 0) FROM agent_balance_mutations m WHERE m.agent_id = a.id AND m.mutation_type = 'VOUCHER_ONLINE_COMMISSION') as total_comm
 		FROM agents a
@@ -112,7 +118,8 @@ func (r *Repository) GetAgentByUserID(ctx context.Context, userID uuid.UUID) (*A
 		&balance, &a.OfflineCashbackPct, &a.OnlineCashbackPct, &a.OnlineDiscountPct,
 		&a.LoketAdminFee,
 		&a.BankName, &a.BankAccountNumber, &a.BankAccountHolder,
-		&a.Status, &a.Notes, &a.CreatedAt, &a.UpdatedAt,
+		&a.Status, &a.Notes, &a.Address, &a.IDCardNumber, &a.KtpURL, &a.BusinessPhotoURL,
+		&a.CreatedAt, &a.UpdatedAt,
 		&a.TotalVouchersSold, &totalComm,
 	)
 	if err != nil {
@@ -145,7 +152,7 @@ func (r *Repository) ListAgents(ctx context.Context, params pagination.Params, s
 	argIdx := 1
 
 	if search != "" {
-		conditions = append(conditions, fmt.Sprintf("(a.name ILIKE $%d OR a.code ILIKE $%d OR a.phone ILIKE $%d)", argIdx, argIdx, argIdx))
+		conditions = append(conditions, fmt.Sprintf("(a.name ILIKE $%d OR a.code ILIKE $%d OR a.phone ILIKE $%d OR a.company_name ILIKE $%d)", argIdx, argIdx, argIdx, argIdx))
 		args = append(args, "%"+search+"%")
 		argIdx++
 	}
@@ -172,7 +179,8 @@ func (r *Repository) ListAgents(ctx context.Context, params pagination.Params, s
 			a.balance, a.offline_cashback_pct, a.online_cashback_pct, a.online_discount_pct,
 			COALESCE(a.loket_admin_fee, 2500),
 			a.bank_name, a.bank_account_number, a.bank_account_holder,
-			a.status, a.notes, a.created_at, a.updated_at,
+			a.status, a.notes, a.address, a.id_card_number, a.ktp_url, a.business_photo_url,
+			a.created_at, a.updated_at,
 			(SELECT COUNT(*) FROM vouchers v WHERE v.agent_id = a.id) as total_sold,
 			(SELECT COALESCE(SUM(amount), 0) FROM agent_balance_mutations m WHERE m.agent_id = a.id AND m.mutation_type = 'VOUCHER_ONLINE_COMMISSION') as total_comm
 		FROM agents a
@@ -198,7 +206,8 @@ func (r *Repository) ListAgents(ctx context.Context, params pagination.Params, s
 			&balance, &a.OfflineCashbackPct, &a.OnlineCashbackPct, &a.OnlineDiscountPct,
 			&a.LoketAdminFee,
 			&a.BankName, &a.BankAccountNumber, &a.BankAccountHolder,
-			&a.Status, &a.Notes, &a.CreatedAt, &a.UpdatedAt,
+			&a.Status, &a.Notes, &a.Address, &a.IDCardNumber, &a.KtpURL, &a.BusinessPhotoURL,
+			&a.CreatedAt, &a.UpdatedAt,
 			&a.TotalVouchersSold, &totalComm,
 		)
 		if err != nil {
@@ -219,15 +228,29 @@ func (r *Repository) UpdateAgent(ctx context.Context, a *Agent) error {
 			name = $1, company_name = $2, phone = $3, email = $4,
 			offline_cashback_pct = $5, online_cashback_pct = $6, online_discount_pct = $7,
 			bank_name = $8, bank_account_number = $9, bank_account_holder = $10,
-			status = $11, notes = $12, updated_at = NOW()
-		WHERE id = $13
+			status = $11, notes = $12, address = $13, id_card_number = $14,
+			ktp_url = $15, business_photo_url = $16, updated_at = NOW()
+		WHERE id = $17
 	`
 	_, err := r.db.Exec(ctx, q,
 		a.Name, a.CompanyName, a.Phone, a.Email,
 		a.OfflineCashbackPct, a.OnlineCashbackPct, a.OnlineDiscountPct,
 		a.BankName, a.BankAccountNumber, a.BankAccountHolder,
-		a.Status, a.Notes, a.ID,
+		a.Status, a.Notes, a.Address, a.IDCardNumber,
+		a.KtpURL, a.BusinessPhotoURL, a.ID,
 	)
+	return err
+}
+
+func (r *Repository) SetAgentStatus(ctx context.Context, id uuid.UUID, status AgentStatus, notes *string) error {
+	const q = `
+		UPDATE agents SET
+			status = $1,
+			notes = COALESCE($2, notes),
+			updated_at = NOW()
+		WHERE id = $3
+	`
+	_, err := r.db.Exec(ctx, q, status, notes, id)
 	return err
 }
 

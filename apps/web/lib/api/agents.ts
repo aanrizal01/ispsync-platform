@@ -10,6 +10,10 @@ export interface Agent {
   company_name?: string;
   phone: string;
   email?: string;
+  address?: string;
+  id_card_number?: string;
+  ktp_url?: string;
+  business_photo_url?: string;
   balance: number;
   offline_cashback_pct: number;
   online_cashback_pct: number;
@@ -18,7 +22,7 @@ export interface Agent {
   bank_account_number?: string;
   bank_account_holder?: string;
   loket_admin_fee?: number;
-  status: "ACTIVE" | "SUSPENDED" | "TERMINATED";
+  status: "ACTIVE" | "PENDING" | "REJECTED" | "SUSPENDED" | "TERMINATED";
   notes?: string;
   total_vouchers_sold: number;
   total_commission: number;
@@ -139,6 +143,10 @@ export interface CreateAgentInput {
   company_name?: string;
   phone: string;
   email?: string;
+  address?: string;
+  id_card_number?: string;
+  ktp_url?: string;
+  business_photo_url?: string;
   initial_balance?: number;
   offline_cashback_pct?: number;
   online_cashback_pct?: number;
@@ -156,6 +164,10 @@ export interface UpdateAgentInput {
   company_name?: string;
   phone: string;
   email?: string;
+  address?: string;
+  id_card_number?: string;
+  ktp_url?: string;
+  business_photo_url?: string;
   offline_cashback_pct?: number;
   online_cashback_pct?: number;
   online_discount_pct?: number;
@@ -163,6 +175,22 @@ export interface UpdateAgentInput {
   bank_account_number?: string;
   bank_account_holder?: string;
   status?: string;
+  notes?: string;
+}
+
+export interface RegisterAgentInput {
+  name: string;
+  company_name?: string;
+  phone: string;
+  email: string;
+  password: string;
+  address?: string;
+  id_card_number?: string;
+  ktp_url?: string;
+  business_photo_url?: string;
+  bank_name?: string;
+  bank_account_number?: string;
+  bank_account_holder?: string;
   notes?: string;
 }
 
@@ -212,6 +240,23 @@ export const agentApi = {
     request<Agent>("/agents", {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+
+  register: (data: RegisterAgentInput) =>
+    request<Agent>("/agents/register", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  approveRegistration: (id: string) =>
+    request<Agent>(`/agents/${id}/approve`, {
+      method: "POST",
+    }),
+
+  rejectRegistration: (id: string, reason?: string) =>
+    request<Agent>(`/agents/${id}/reject`, {
+      method: "POST",
+      body: JSON.stringify({ reason }),
     }),
 
   updateAgent: (id: string, data: UpdateAgentInput) =>

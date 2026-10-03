@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"log/slog"
 	"time"
@@ -127,6 +128,10 @@ func (s *Service) CreateAgent(ctx context.Context, req CreateAgentRequest, admin
 		CompanyName:        req.CompanyName,
 		Phone:              req.Phone,
 		Email:              req.Email,
+		Address:            req.Address,
+		IDCardNumber:       req.IDCardNumber,
+		KtpURL:             req.KtpURL,
+		BusinessPhotoURL:   req.BusinessPhotoURL,
 		Balance:            money.Amount(0),
 		OfflineCashbackPct: offlineCashback,
 		OnlineCashbackPct:  onlineCashback,
@@ -200,6 +205,18 @@ func (s *Service) UpdateAgent(ctx context.Context, id uuid.UUID, req UpdateAgent
 	a.CompanyName = req.CompanyName
 	a.Phone = req.Phone
 	a.Email = req.Email
+	if req.Address != nil {
+		a.Address = req.Address
+	}
+	if req.IDCardNumber != nil {
+		a.IDCardNumber = req.IDCardNumber
+	}
+	if req.KtpURL != nil {
+		a.KtpURL = req.KtpURL
+	}
+	if req.BusinessPhotoURL != nil {
+		a.BusinessPhotoURL = req.BusinessPhotoURL
+	}
 	if req.OfflineCashbackPct != nil {
 		a.OfflineCashbackPct = *req.OfflineCashbackPct
 	}
@@ -229,6 +246,136 @@ func (s *Service) UpdateAgent(ctx context.Context, id uuid.UUID, req UpdateAgent
 		return nil, apperrors.Internal(err)
 	}
 
+	return s.repo.GetAgentByID(ctx, id)
+}
+
+func (s *Service) RegisterAgent(ctx context.Context, req RegisterAgentRequest) (*Agent, error) {
+	// Check existing email
+	var count int
+	_ = s.repo.DB().QueryRow(ctx, "SELECT COUNT(*) FROM users WHERE LOWER(email) = LOWER($1)", req.Email).Scan(&count)
+	if count > 0 {
+		return nil, apperrors.BadRequest("Alamat email sudah terdaftar di sistem")
+	}
+
+	// Generate unique agent code
+	var code string
+	for i := 0; i < 10; i++ {
+		b := make([]byte, 3)
+		_, _ = rand.Read(b)
+		code = fmt.Sprintf("AGN-%X", b)
+		existing, _ := s.repo.GetAgentByCode(ctx, code)
+		if existing == nil {
+			break
+		}
+	}
+
+	now := time.Now()
+	agentID := uuid.New()
+	uID := uuid.New()
+
+	hash, err := crypto.HashPassword(req.Password)
+	if err != nil {
+		return nil, apperrors.Internal(fmt.Errorf("hash password: %w", err))
+	}
+
+	// Create user account with active=false until approved by admin
+	const insertUserQ = `
+		INSERT INTO users (id, email, password_hash, full_name, phone, is_active, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, false, NOW(), NOW())
+	`
+	_, err = s.repo.DB().Exec(ctx, insertUserQ, uID, req.Email, hash, req.Name, req.Phone)
+	if err != nil {
+		return nil, apperrors.Internal(fmt.Errorf("create user: %w", err))
+	}
+
+	// Assign role voucher_agent
+	const assignRoleQ = `
+		INSERT INTO user_roles (user_id, role_id, assigned_at)
+		SELECT $1, r.id, NOW() FROM roles r WHERE r.slug = 'voucher_agent'
+		ON CONFLICT DO NOTHING
+	`
+	_, _ = s.repo.DB().Exec(ctx, assignRoleQ, uID)
+
+	agent := &Agent{
+		ID:                 agentID,
+		UserID:             &uID,
+		Code:               code,
+		Name:               req.Name,
+		CompanyName:        req.CompanyName,
+		Phone:              req.Phone,
+		Email:              &req.Email,
+		Address:            req.Address,
+		IDCardNumber:       req.IDCardNumber,
+		KtpURL:             req.KtpURL,
+		BusinessPhotoURL:   req.BusinessPhotoURL,
+		Balance:            money.Amount(0),
+		OfflineCashbackPct: 15.00,
+		OnlineCashbackPct:  10.00,
+		OnlineDiscountPct:  10.00,
+		BankName:           req.BankName,
+		BankAccountNumber:  req.BankAccountNumber,
+		BankAccountHolder:  req.BankAccountHolder,
+		Status:             AgentStatusPending,
+		Notes:              req.Notes,
+		CreatedAt:          now,
+		UpdatedAt:          now,
+	}
+
+	if err := s.repo.CreateAgent(ctx, agent); err != nil {
+		s.logger.Error("failed to create registered agent", "error", err)
+		return nil, apperrors.Internal(err)
+	}
+
+	s.logger.Info("agent registration submitted", "agent_id", agentID, "code", code, "name", req.Name, "email", req.Email)
+	return s.repo.GetAgentByID(ctx, agentID)
+}
+
+func (s *Service) ApproveAgentRegistration(ctx context.Context, id uuid.UUID, adminID *uuid.UUID) (*Agent, error) {
+	a, err := s.repo.GetAgentByID(ctx, id)
+	if err != nil {
+		return nil, apperrors.Internal(err)
+	}
+	if a == nil {
+		return nil, apperrors.NotFound("Agen")
+	}
+
+	note := "Pendaftaran agen telah disetujui oleh administrator"
+	if err := s.repo.SetAgentStatus(ctx, id, AgentStatusActive, &note); err != nil {
+		return nil, apperrors.Internal(err)
+	}
+
+	// Activate user account
+	if a.UserID != nil {
+		_, _ = s.repo.DB().Exec(ctx, "UPDATE users SET is_active = true, updated_at = NOW() WHERE id = $1", *a.UserID)
+	}
+
+	s.logger.Info("agent registration approved", "agent_id", id, "admin_id", adminID)
+	return s.repo.GetAgentByID(ctx, id)
+}
+
+func (s *Service) RejectAgentRegistration(ctx context.Context, id uuid.UUID, reason string, adminID *uuid.UUID) (*Agent, error) {
+	a, err := s.repo.GetAgentByID(ctx, id)
+	if err != nil {
+		return nil, apperrors.Internal(err)
+	}
+	if a == nil {
+		return nil, apperrors.NotFound("Agen")
+	}
+
+	note := "Pendaftaran agen ditolak"
+	if reason != "" {
+		note = fmt.Sprintf("Pendaftaran agen ditolak: %s", reason)
+	}
+	if err := s.repo.SetAgentStatus(ctx, id, AgentStatusRejected, &note); err != nil {
+		return nil, apperrors.Internal(err)
+	}
+
+	// Deactivate user account
+	if a.UserID != nil {
+		_, _ = s.repo.DB().Exec(ctx, "UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1", *a.UserID)
+	}
+
+	s.logger.Info("agent registration rejected", "agent_id", id, "reason", reason, "admin_id", adminID)
 	return s.repo.GetAgentByID(ctx, id)
 }
 
