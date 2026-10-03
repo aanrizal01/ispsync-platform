@@ -282,6 +282,24 @@ func (s *Service) RegisterAgent(ctx context.Context, req RegisterAgentRequest) (
 		return nil, apperrors.BadRequest("Alamat email sudah terdaftar di sistem")
 	}
 
+	// Check existing phone / WhatsApp
+	if strings.TrimSpace(req.Phone) != "" {
+		var phoneCount int
+		_ = s.repo.DB().QueryRow(ctx, "SELECT COUNT(*) FROM users WHERE phone = $1", strings.TrimSpace(req.Phone)).Scan(&phoneCount)
+		if phoneCount > 0 {
+			return nil, apperrors.BadRequest("Nomor telepon/WhatsApp sudah terdaftar di sistem")
+		}
+	}
+
+	// Check existing NIK KTP
+	if req.IDCardNumber != nil && strings.TrimSpace(*req.IDCardNumber) != "" {
+		var nikCount int
+		_ = s.repo.DB().QueryRow(ctx, "SELECT COUNT(*) FROM agents WHERE id_card_number = $1", strings.TrimSpace(*req.IDCardNumber)).Scan(&nikCount)
+		if nikCount > 0 {
+			return nil, apperrors.BadRequest("Nomor NIK KTP sudah pernah diajukan untuk pendaftaran agen")
+		}
+	}
+
 	// Generate unique agent code
 	var code string
 	for i := 0; i < 10; i++ {

@@ -3,6 +3,7 @@ package agent
 import (
 	"log/slog"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -10,10 +11,44 @@ import (
 
 	"github.com/gigabill/isp/internal/auth"
 	"github.com/gigabill/isp/internal/passpoint"
+	"github.com/gigabill/isp/internal/settings"
 	apperrors "github.com/gigabill/isp/internal/shared/errors"
 	"github.com/gigabill/isp/internal/shared/middleware"
 	"github.com/gigabill/isp/internal/shared/pagination"
 )
+
+var (
+	regRateLimitMu sync.Mutex
+	regRateLimits  = make(map[string][]time.Time)
+)
+
+func checkRegistrationRateLimit(ip string) bool {
+	if ip == "" || ip == "127.0.0.1" || ip == "::1" {
+		return true
+	}
+	regRateLimitMu.Lock()
+	defer regRateLimitMu.Unlock()
+
+	now := time.Now()
+	cutoff := now.Add(-10 * time.Minute)
+
+	validTimes := make([]time.Time, 0, len(regRateLimits[ip]))
+	for _, t := range regRateLimits[ip] {
+		if t.After(cutoff) {
+			validTimes = append(validTimes, t)
+		}
+	}
+
+	// Max 5 registration submissions per IP per 10 minutes
+	if len(validTimes) >= 5 {
+		regRateLimits[ip] = validTimes
+		return false
+	}
+
+	validTimes = append(validTimes, now)
+	regRateLimits[ip] = validTimes
+	return true
+}
 
 type Handler struct {
 	service *Service
@@ -100,6 +135,12 @@ func (h *Handler) CreateAgent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) RegisterAgent(w http.ResponseWriter, r *http.Request) {
+	clientIP := settings.ExtractClientIP(r)
+	if !checkRegistrationRateLimit(clientIP) {
+		middleware.JSONError(w, h.logger, apperrors.New("RATE_LIMITED", "Terlalu banyak permintaan pendaftaran dari IP ini. Silakan coba kembali dalam 10 menit.", http.StatusTooManyRequests))
+		return
+	}
+
 	var req RegisterAgentRequest
 	if err := middleware.DecodeJSON(r, &req); err != nil {
 		middleware.JSONError(w, h.logger, err)

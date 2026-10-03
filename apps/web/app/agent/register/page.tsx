@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { agentApi } from "@/lib/api/agents";
+import { compressImage } from "@/lib/utils/image-compressor";
 import {
   Store,
   Wallet,
@@ -55,6 +56,12 @@ export default function AgentRegisterPage() {
   const [businessPhotoUrl, setBusinessPhotoUrl] = useState<string>("");
   const [ktpUploading, setKtpUploading] = useState(false);
   const [businessPhotoUploading, setBusinessPhotoUploading] = useState(false);
+  const [ktpStats, setKtpStats] = useState<{ orig: number; comp: number; pct: number } | null>(null);
+  const [businessStats, setBusinessStats] = useState<{ orig: number; comp: number; pct: number } | null>(null);
+
+  // Anti-Bot & Anti-Flooding safeguards (Honeypot + Cooldown + Timing)
+  const [honeypot, setHoneypot] = useState("");
+  const formLoadTimeRef = useRef(Date.now());
 
   const [showPassword, setShowPassword] = useState(false);
   const [agreedPks, setAgreedPks] = useState(false);
@@ -86,6 +93,13 @@ export default function AgentRegisterPage() {
         setTenantLogo(`/web/${detectedSlug}_logo.svg`);
         setTenantName(detectedSlug.toUpperCase());
       }
+
+      // Auto-populate referral code from URL query: ?ref=... or ?sales=... or ?agent=...
+      const searchParams = new URLSearchParams(window.location.search);
+      const refParam = searchParams.get("ref") || searchParams.get("sales") || searchParams.get("agent") || searchParams.get("promo");
+      if (refParam) {
+        setForm((prev) => ({ ...prev, referral_code: refParam.toUpperCase().trim() }));
+      }
     }
 
     fetch("/api/tenant/profile")
@@ -100,7 +114,7 @@ export default function AgentRegisterPage() {
       .catch(() => {});
   }, []);
 
-  // Upload handler
+  // Upload handler with Smart Client-Side Image Compression
   const handleFileUpload = async (file: File, type: "ktp" | "business") => {
     if (!file) return;
 
@@ -108,18 +122,20 @@ export default function AgentRegisterPage() {
     else setBusinessPhotoUploading(true);
 
     try {
-      // Instant base64 preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        if (type === "ktp") setKtpUrl(base64);
-        else setBusinessPhotoUrl(base64);
-      };
-      reader.readAsDataURL(file);
+      // 1. Client-Side Smart Compression: resizes 5-15MB phone camera photos down to max 1280px (~150-250KB)
+      const compressed = await compressImage(file, 1280, 0.8);
 
-      // Server upload
+      if (type === "ktp") {
+        setKtpUrl(compressed.previewUrl);
+        setKtpStats({ orig: compressed.originalSizeKb, comp: compressed.compressedSizeKb, pct: compressed.reductionPct });
+      } else {
+        setBusinessPhotoUrl(compressed.previewUrl);
+        setBusinessStats({ orig: compressed.originalSizeKb, comp: compressed.compressedSizeKb, pct: compressed.reductionPct });
+      }
+
+      // 2. Upload lightweight compressed file to server
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", compressed.file);
       formData.append("folder", "agents");
 
       const res = await fetch("/api/upload", {
@@ -132,7 +148,7 @@ export default function AgentRegisterPage() {
         else setBusinessPhotoUrl(data.url);
       }
     } catch (err: any) {
-      console.warn("Upload failed, keeping base64 preview", err);
+      console.warn("Upload failed, keeping compressed preview", err);
     } finally {
       if (type === "ktp") setKtpUploading(false);
       else setBusinessPhotoUploading(false);
@@ -142,6 +158,28 @@ export default function AgentRegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+
+    // Safeguard 1: Anti-Bot Honeypot Trap
+    if (honeypot.trim()) {
+      console.warn("Automated bot submission blocked by honeypot");
+      setErrorMessage("Permintaan pendaftaran tidak valid.");
+      return;
+    }
+
+    // Safeguard 2: Anti-Flooding Form Timing Check (Humans take at least 2.5 seconds)
+    const elapsedSeconds = (Date.now() - formLoadTimeRef.current) / 1000;
+    if (elapsedSeconds < 2.5) {
+      setErrorMessage("Pengisian formulir terlalu cepat. Silakan periksa kembali kelengkapan data Anda.");
+      return;
+    }
+
+    // Safeguard 3: Client Submission Cooldown (Prevent rapid-fire spam clicks)
+    const lastSubmitTime = typeof window !== "undefined" ? sessionStorage.getItem("last_agent_reg_time") : null;
+    if (lastSubmitTime && Date.now() - parseInt(lastSubmitTime, 10) < 60000) {
+      const waitSec = Math.ceil((60000 - (Date.now() - parseInt(lastSubmitTime, 10))) / 1000);
+      setErrorMessage(`Terlalu banyak permintaan pendaftaran. Mohon tunggu ${waitSec} detik sebelum mencoba mendaftar kembali.`);
+      return;
+    }
 
     if (!form.name.trim()) return setErrorMessage("Nama lengkap pemilik wajib diisi");
     if (!form.phone.trim()) return setErrorMessage("Nomor WhatsApp wajib diisi");
@@ -172,6 +210,7 @@ export default function AgentRegisterPage() {
         bank_account_holder: form.bank_account_holder.trim() || undefined,
       });
 
+      sessionStorage.setItem("last_agent_reg_time", Date.now().toString());
       setSuccessResult({
         code: res.code,
         name: res.name,
@@ -399,6 +438,20 @@ export default function AgentRegisterPage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Anti-Bot Honeypot Field (Invisible to human users, traps automated scrapers) */}
+              <div className="absolute opacity-0 pointer-events-none -z-50 h-0 w-0 overflow-hidden" tabIndex={-1} aria-hidden="true">
+                <label htmlFor="agent_reg_hp_verification">Jangan isi kolom ini</label>
+                <input
+                  id="agent_reg_hp_verification"
+                  name="agent_reg_hp_verification"
+                  type="text"
+                  value={honeypot}
+                  onChange={(e) => setHoneypot(e.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </div>
+
               {/* ── BAGIAN 1: IDENTITAS PEMILIK & LOGIN ── */}
               <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-4">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-200 text-xs font-bold text-slate-900 uppercase tracking-wider">
@@ -571,9 +624,14 @@ export default function AgentRegisterPage() {
 
               {/* ── BAGIAN 3: UNGGAH DOKUMEN (KTP & FOTO USAHA) ── */}
               <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-slate-200 text-xs font-bold text-slate-900 uppercase tracking-wider">
-                  <UploadCloud className="w-4 h-4 text-cyan-600" />
-                  <span>3. Unggah Dokumen Verifikasi (KTP &amp; Foto Usaha)</span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-2 border-b border-slate-200">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900 uppercase tracking-wider">
+                    <UploadCloud className="w-4 h-4 text-cyan-600" />
+                    <span>3. Unggah Dokumen Verifikasi (KTP &amp; Foto Usaha)</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 font-mono inline-flex items-center gap-1 w-fit">
+                    <Check className="w-3 h-3 text-emerald-600" /> Auto-Kompresi Gambar Aktif
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -617,16 +675,22 @@ export default function AgentRegisterPage() {
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                           </svg>
-                          <span className="text-[11px] font-medium">Mengunggah KTP...</span>
+                          <span className="text-[11px] font-medium">Mengompres &amp; Mengunggah KTP...</span>
                         </div>
                       ) : (
                         <div className="flex flex-col items-center gap-1 text-slate-500">
                           <CreditCard className="w-7 h-7 text-slate-400" />
                           <span className="text-xs font-bold text-slate-800">Pilih / Jepret Foto KTP</span>
-                          <span className="text-[10px] text-slate-400">JPG, PNG, atau WEBP maks 5MB</span>
+                          <span className="text-[10px] text-slate-400">JPG, PNG, atau WEBP (Auto-Kompres)</span>
                         </div>
                       )}
                     </div>
+                    {ktpStats && ktpStats.pct > 0 && (
+                      <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-600 bg-emerald-50/60 px-2.5 py-1 rounded-lg border border-emerald-200/80 font-mono">
+                        <span>Ukuran: {ktpStats.orig}KB ➔ <strong className="text-emerald-700">{ktpStats.comp}KB</strong></span>
+                        <span className="text-emerald-700 font-bold">Hemat {ktpStats.pct}%</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Upload Foto Usaha */}
@@ -669,16 +733,22 @@ export default function AgentRegisterPage() {
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                           </svg>
-                          <span className="text-[11px] font-medium">Mengunggah Foto...</span>
+                          <span className="text-[11px] font-medium">Mengompres &amp; Mengunggah Foto...</span>
                         </div>
                       ) : (
                         <div className="flex flex-col items-center gap-1 text-slate-500">
                           <ImageIcon className="w-7 h-7 text-slate-400" />
                           <span className="text-xs font-bold text-slate-800">Pilih Foto Tampak Gerai/Usaha</span>
-                          <span className="text-[10px] text-slate-400">Etalase / Tampak Depan Konter</span>
+                          <span className="text-[10px] text-slate-400">Etalase / Tampak Depan (Auto-Kompres)</span>
                         </div>
                       )}
                     </div>
+                    {businessStats && businessStats.pct > 0 && (
+                      <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-600 bg-emerald-50/60 px-2.5 py-1 rounded-lg border border-emerald-200/80 font-mono">
+                        <span>Ukuran: {businessStats.orig}KB ➔ <strong className="text-emerald-700">{businessStats.comp}KB</strong></span>
+                        <span className="text-emerald-700 font-bold">Hemat {businessStats.pct}%</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

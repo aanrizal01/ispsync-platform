@@ -12,6 +12,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: "File tidak ditemukan" }, { status: 400 });
     }
 
+    // Limit upload file size (max 10MB raw)
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ success: false, message: "Ukuran file melebihi batas maksimal 10MB" }, { status: 400 });
+    }
+
+    const originalExt = path.extname(file.name) || ".jpg";
+    const cleanExt = originalExt.toLowerCase().replace(/[^a-z0-9.]/g, "");
+    if (![".jpg", ".jpeg", ".png", ".webp", ".pdf"].includes(cleanExt)) {
+      return NextResponse.json({ success: false, message: "Format file tidak diizinkan. Gunakan JPG, PNG, atau WEBP" }, { status: 400 });
+    }
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
