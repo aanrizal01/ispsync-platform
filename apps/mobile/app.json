@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "ISPSYNC Connect",
+    "slug": "ispsync-connect",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#020617"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "id.ispsync.connect",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Diperlukan untuk memindai QR Code tagihan dan Barcode Serial Number voucher fisik.",
+        "NSBluetoothAlwaysUsageDescription": "Diperlukan untuk menghubungkan dan mencetak struk tagihan ke Printer Thermal Bluetooth kasir.",
+        "NSBluetoothPeripheralUsageDescription": "Diperlukan untuk berkomunikasi dengan printer kasir loket mitra agen.",
+        "NSLocationWhenInUseUsageDescription": "Diperlukan untuk mendeteksi jaringan hotspot WiFi terdekat dan auto-connect Passpoint."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#020617"
+      },
+      "package": "id.ispsync.connect",
+      "permissions": [
+        "CAMERA",
+        "BLUETOOTH",
+        "BLUETOOTH_ADMIN",
+        "BLUETOOTH_CONNECT",
+        "BLUETOOTH_SCAN",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_WIFI_STATE",
+        "CHANGE_WIFI_STATE",
+        "INTERNET"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
