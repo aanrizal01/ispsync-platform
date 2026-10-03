@@ -278,11 +278,13 @@ func (s *Service) Purchase(ctx context.Context, req PasspointPurchaseRequest) (*
 	}
 
 	finalPrice := selectedPkg.Price
-	var originalPrice, discountAmount int64
+	var originalPrice, discountAmount, agentCommission int64
 	var agentName string
+	var agentUUID *uuid.UUID
 
 	if req.PromoCode != "" {
-		if _, aName, discPct, _, err := s.repo.ValidateAgentReferral(ctx, req.PromoCode); err == nil {
+		if aID, aName, discPct, cashPct, err := s.repo.ValidateAgentReferral(ctx, req.PromoCode); err == nil {
+			agentUUID = &aID
 			agentName = aName
 			if discPct > 0 {
 				originalPrice = selectedPkg.Price
@@ -292,17 +294,34 @@ func (s *Service) Purchase(ctx context.Context, req PasspointPurchaseRequest) (*
 					finalPrice = 0
 				}
 			}
+			if cashPct > 0 {
+				agentCommission = int64(float64(selectedPkg.Price) * (cashPct / 100.0))
+			}
 		}
 	}
 
 	randSecret, _ := crypto.GenerateSecret(3)
 	orderID := "ORD-PP-" + time.Now().Format("20060102150405") + "-" + randSecret
+	randNum := time.Now().UnixNano()%90000 + 10000
+	cashierCode := fmt.Sprintf("PP-%d", randNum)
+
+	isCounter := req.PaymentMethod == "COUNTER"
+	var adminFee int64
+	if isCounter {
+		adminFee = 2500
+	}
+	totalToPay := finalPrice + adminFee
+
+	expiresAt := time.Now().Add(15 * time.Minute)
+	if isCounter {
+		expiresAt = time.Now().Add(24 * time.Hour)
+	}
 
 	qrString := "00020101021126590014ID.GIGABILL.PASS01189360001000000000000215" + orderID + "520458125303360540" + req.PackageID
 	qrImageURL := "https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=10&data=" + qrString
 	var paymentURL, snapToken string
 
-	if s.paymentCreator != nil {
+	if !isCounter && s.paymentCreator != nil {
 		if pURL, qURL, sTok, err := s.paymentCreator(ctx, orderID, selectedPkg.Name, req.CustomerName, req.Phone, req.Email, finalPrice); err == nil {
 			if pURL != "" {
 				paymentURL = pURL
@@ -316,10 +335,40 @@ func (s *Service) Purchase(ctx context.Context, req PasspointPurchaseRequest) (*
 		}
 	}
 
+	// Persist order in DB
+	order := &PasspointOrder{
+		ID:              uuid.New(),
+		OrderID:         orderID,
+		CashierCode:     cashierCode,
+		OrderType:       "NEW_ACCESS",
+		PackageID:       selectedPkg.ID,
+		PackageName:     selectedPkg.Name,
+		DurationDays:    selectedPkg.DurationDays,
+		CustomerName:    req.CustomerName,
+		CustomerPhone:   req.Phone,
+		CustomerEmail:   req.Email,
+		OriginalPrice:   selectedPkg.Price,
+		DiscountAmount:  discountAmount,
+		AdminFee:        adminFee,
+		FinalPrice:      finalPrice,
+		AgentID:         agentUUID,
+		PromoCode:       req.PromoCode,
+		AgentCommission: agentCommission,
+		PaymentMethod:   req.PaymentMethod,
+		Status:          "PENDING",
+		ExpiresAt:       expiresAt,
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
+	}
+	_ = s.repo.CreateOrder(ctx, order)
+
 	return &PasspointPurchaseResponse{
 		OrderID:        orderID,
+		CashierCode:    cashierCode,
 		PackageName:    selectedPkg.Name,
 		Amount:         finalPrice,
+		AdminFee:       adminFee,
+		TotalToPay:     totalToPay,
 		OriginalPrice:  originalPrice,
 		DiscountAmount: discountAmount,
 		PromoCode:      req.PromoCode,
@@ -329,12 +378,36 @@ func (s *Service) Purchase(ctx context.Context, req PasspointPurchaseRequest) (*
 		SnapToken:      snapToken,
 		QrString:       qrString,
 		QrImageURL:     qrImageURL,
-		ExpiresAt:      time.Now().Add(15 * time.Minute),
+		ExpiresAt:      expiresAt,
 		Status:         "PENDING",
 	}, nil
 }
 
 func (s *Service) CheckPurchase(ctx context.Context, req PasspointCheckRequest) (*PasspointCheckResponse, error) {
+	// 1. Check if order in database is already PAID (e.g. verified by counter agent)
+	if req.OrderID != "" {
+		if ord, _ := s.repo.GetOrderByOrderID(ctx, req.OrderID); ord != nil && ord.Status == "PAID" && ord.CredentialID != nil {
+			if cred, err := s.repo.GetCredentialByID(ctx, *ord.CredentialID); err == nil && cred != nil {
+				realm := "ispsync.id"
+				domain := "hotspot.ispsync.id"
+				if prof, err := s.repo.GetDefaultProfile(ctx); err == nil && prof != nil {
+					realm = prof.Realm
+					domain = prof.DomainName
+				}
+				return &PasspointCheckResponse{
+					Status:          "PAID",
+					CredentialID:    cred.ID.String(),
+					Username:        cred.Username,
+					Password:        cred.Password,
+					Realm:           realm,
+					DomainName:      domain,
+					AppleProfileURL: fmt.Sprintf("/api/v1/passpoint/credentials/%s/apple-profile", cred.ID.String()),
+					Message:         "Pembayaran diverifikasi! Kredensial Passpoint Anda siap dipasang.",
+				}, nil
+			}
+		}
+	}
+
 	isPaid := false
 	if req.SimulatePay {
 		isPaid = true
@@ -348,7 +421,7 @@ func (s *Service) CheckPurchase(ctx context.Context, req PasspointCheckRequest) 
 	if !isPaid {
 		return &PasspointCheckResponse{
 			Status:  "PENDING",
-			Message: "Menunggu pembayaran dari payment gateway.",
+			Message: "Menunggu pembayaran diverifikasi.",
 		}, nil
 	}
 
@@ -366,8 +439,8 @@ func (s *Service) CheckPurchase(ctx context.Context, req PasspointCheckRequest) 
 		realm = prof.Realm
 		domain = prof.DomainName
 
-		// Create credential in DB
-		customerID := uuid.New()
+		// Resolve or create customer in DB
+		customerID, _ := s.repo.ResolveOrCreateCustomer(ctx, "Pelanggan Passpoint", "", "")
 		now := time.Now()
 		cred := &Credential{
 			ID:         credID,
@@ -383,9 +456,13 @@ func (s *Service) CheckPurchase(ctx context.Context, req PasspointCheckRequest) 
 
 		// Sync to FreeRADIUS
 		_ = s.radiusSvc.SyncCredential(ctx, username, password, "")
+
+		// Mark order as PAID in DB and credit agent if applicable
+		if req.OrderID != "" {
+			_ = s.repo.MarkOrderPaid(ctx, req.OrderID, credID)
+		}
 	}
 
-	apiBase := "http://localhost:8080"
 	return &PasspointCheckResponse{
 		Status:          "PAID",
 		CredentialID:    credID.String(),
@@ -393,7 +470,7 @@ func (s *Service) CheckPurchase(ctx context.Context, req PasspointCheckRequest) 
 		Password:        password,
 		Realm:           realm,
 		DomainName:      domain,
-		AppleProfileURL: fmt.Sprintf("%s/api/v1/passpoint/credentials/%s/apple-profile", apiBase, credID.String()),
+		AppleProfileURL: fmt.Sprintf("/api/v1/passpoint/credentials/%s/apple-profile", credID.String()),
 		Message:         "Pembayaran diverifikasi! Kredensial Passpoint Anda siap diunduh.",
 	}, nil
 }
@@ -412,11 +489,13 @@ func (s *Service) Renew(ctx context.Context, req PasspointRenewRequest) (*Passpo
 	}
 
 	finalPrice := selectedPkg.Price
-	var originalPrice, discountAmount int64
+	var originalPrice, discountAmount, agentCommission int64
 	var agentName string
+	var agentUUID *uuid.UUID
 
 	if req.PromoCode != "" {
-		if _, aName, discPct, _, err := s.repo.ValidateAgentReferral(ctx, req.PromoCode); err == nil {
+		if aID, aName, discPct, cashPct, err := s.repo.ValidateAgentReferral(ctx, req.PromoCode); err == nil {
+			agentUUID = &aID
 			agentName = aName
 			if discPct > 0 {
 				originalPrice = selectedPkg.Price
@@ -426,21 +505,67 @@ func (s *Service) Renew(ctx context.Context, req PasspointRenewRequest) (*Passpo
 					finalPrice = 0
 				}
 			}
+			if cashPct > 0 {
+				agentCommission = int64(float64(selectedPkg.Price) * (cashPct / 100.0))
+			}
 		}
 	}
 
 	randSecret, _ := crypto.GenerateSecret(3)
 	orderID := "ORD-RNW-" + time.Now().Format("20060102150405") + "-" + randSecret
+	randNum := time.Now().UnixNano()%90000 + 10000
+	cashierCode := fmt.Sprintf("PP-%d", randNum)
+
+	isCounter := req.PaymentMethod == "COUNTER"
+	var adminFee int64
+	if isCounter {
+		adminFee = 2500
+	}
+	totalToPay := finalPrice + adminFee
+
+	expiresAt := time.Now().Add(15 * time.Minute)
+	if isCounter {
+		expiresAt = time.Now().Add(24 * time.Hour)
+	}
 
 	qrString := "00020101021126590014ID.GIGABILL.RENEW01189360001000000000000215" + orderID + "520458125303360540" + req.PackageID
 	qrImageURL := "https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=10&data=" + qrString
 
+	// Persist order in DB
+	order := &PasspointOrder{
+		ID:              uuid.New(),
+		OrderID:         orderID,
+		CashierCode:     cashierCode,
+		OrderType:       "RENEWAL",
+		PackageID:       selectedPkg.ID,
+		PackageName:     selectedPkg.Name,
+		DurationDays:    selectedPkg.DurationDays,
+		CustomerName:    "Perpanjangan Profil",
+		CustomerPhone:   req.CredentialID,
+		OriginalPrice:   selectedPkg.Price,
+		DiscountAmount:  discountAmount,
+		AdminFee:        adminFee,
+		FinalPrice:      finalPrice,
+		AgentID:         agentUUID,
+		PromoCode:       req.PromoCode,
+		AgentCommission: agentCommission,
+		PaymentMethod:   req.PaymentMethod,
+		Status:          "PENDING",
+		ExpiresAt:       expiresAt,
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
+	}
+	_ = s.repo.CreateOrder(ctx, order)
+
 	return &PasspointRenewResponse{
 		OrderID:        orderID,
+		CashierCode:    cashierCode,
 		CredentialID:   req.CredentialID,
 		PackageName:    selectedPkg.Name,
 		DurationDays:   selectedPkg.DurationDays,
 		Amount:         finalPrice,
+		AdminFee:       adminFee,
+		TotalToPay:     totalToPay,
 		OriginalPrice:  originalPrice,
 		DiscountAmount: discountAmount,
 		PromoCode:      req.PromoCode,
@@ -448,20 +573,123 @@ func (s *Service) Renew(ctx context.Context, req PasspointRenewRequest) (*Passpo
 		PaymentMethod:  req.PaymentMethod,
 		QrString:       qrString,
 		QrImageURL:     qrImageURL,
-		ExpiresAt:      time.Now().Add(15 * time.Minute),
+		ExpiresAt:      expiresAt,
 		Status:         "PENDING",
 	}, nil
 }
 
 func (s *Service) CheckRenew(ctx context.Context, req PasspointCheckRenewRequest) (*PasspointCheckRenewResponse, error) {
-	newExpiry := time.Now().AddDate(0, 0, 30).Format("02 Jan 2006, 15:04 WIB")
+	if req.OrderID != "" {
+		if ord, _ := s.repo.GetOrderByOrderID(ctx, req.OrderID); ord != nil && ord.Status == "PAID" {
+			newExpiry := time.Now().AddDate(0, 0, ord.DurationDays).Format("02 Jan 2006, 15:04 WIB")
+			return &PasspointCheckRenewResponse{
+				Status:       "PAID",
+				CredentialID: req.OrderID,
+				NewExpiresAt: newExpiry,
+				Message:      "Perpanjangan berhasil diverifikasi! Masa aktif profil Anda telah diperpanjang.",
+			}, nil
+		}
+	}
 
+	newExpiry := time.Now().AddDate(0, 0, 30).Format("02 Jan 2006, 15:04 WIB")
 	return &PasspointCheckRenewResponse{
 		Status:       "PAID",
 		CredentialID: req.OrderID,
 		NewExpiresAt: newExpiry,
 		Message:      "Perpanjangan berhasil! Masa aktif profil Anda telah diperpanjang. Perangkat Anda langsung dapat terhubung kembali ke internet otomatis.",
 	}, nil
+}
+
+// ──────────────────────────────────────────
+// Loket Agen: Inquire, Bayar Kasir & Terbitkan Manual
+// ──────────────────────────────────────────
+
+func (s *Service) InquireCashierOrder(ctx context.Context, agentID uuid.UUID, code string) (*PasspointInquiryResult, error) {
+	return s.repo.InquireCashierOrder(ctx, code, 2500)
+}
+
+func (s *Service) PayOrderWithAgentBalance(ctx context.Context, agentID uuid.UUID, req PayPasspointByAgentRequest) (*PasspointReceipt, error) {
+	code := req.CashierCode
+	if code == "" {
+		code = req.OrderID
+	}
+	if code == "" {
+		return nil, apperrors.BadRequest("Kode kasir atau Order ID harus diisi")
+	}
+
+	prof, err := s.repo.GetDefaultProfile(ctx)
+	if err != nil || prof == nil {
+		return nil, apperrors.Internal(fmt.Errorf("profil default passpoint belum disetting"))
+	}
+
+	randPart, _ := crypto.GenerateSecret(4)
+	username := "pp_" + randPart
+	password, _ := crypto.GeneratePassword(10)
+
+	receipt, cred, err := s.repo.PayOrderWithAgentBalance(ctx, agentID, code, prof, username, password)
+	if err != nil {
+		return nil, apperrors.BadRequest(err.Error())
+	}
+
+	// Sync to FreeRADIUS
+	if cred != nil {
+		_ = s.radiusSvc.SyncCredential(ctx, cred.Username, cred.Password, "")
+	}
+
+	s.logger.Info("passpoint counter order paid by agent",
+		"agent_id", agentID,
+		"cashier_code", receipt.CashierCode,
+		"package", receipt.PackageName,
+		"customer_phone", receipt.CustomerPhone,
+	)
+
+	return receipt, nil
+}
+
+func (s *Service) IssueManualPasspoint(ctx context.Context, agentID uuid.UUID, req IssueManualPasspointRequest) (*PasspointReceipt, error) {
+	if req.Phone == "" {
+		return nil, apperrors.BadRequest("Nomor HP pelanggan harus diisi")
+	}
+
+	pkgs, _ := s.GetPackages(ctx)
+	var selectedPkg *PasspointPackage
+	for _, p := range pkgs {
+		if p.ID == req.PackageID {
+			selectedPkg = &p
+			break
+		}
+	}
+	if selectedPkg == nil {
+		selectedPkg = &pkgs[1] // default 30d
+	}
+
+	prof, err := s.repo.GetDefaultProfile(ctx)
+	if err != nil || prof == nil {
+		return nil, apperrors.Internal(fmt.Errorf("profil default passpoint belum disetting"))
+	}
+
+	randPart, _ := crypto.GenerateSecret(4)
+	username := "pp_" + randPart
+	password, _ := crypto.GeneratePassword(10)
+
+	receipt, cred, err := s.repo.IssueManualPasspoint(ctx, agentID, *selectedPkg, req, prof, username, password)
+	if err != nil {
+		return nil, apperrors.BadRequest(err.Error())
+	}
+
+	// Sync to FreeRADIUS
+	if cred != nil {
+		_ = s.radiusSvc.SyncCredential(ctx, cred.Username, cred.Password, "")
+	}
+
+	s.logger.Info("passpoint manual issued by agent loket",
+		"agent_id", agentID,
+		"cashier_code", receipt.CashierCode,
+		"package", receipt.PackageName,
+		"customer_phone", receipt.CustomerPhone,
+	)
+
+	return receipt, nil
 }
 
 

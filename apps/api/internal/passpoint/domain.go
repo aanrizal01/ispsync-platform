@@ -74,10 +74,41 @@ type PasspointPurchaseRequest struct {
 	PromoCode     string `json:"promo_code,omitempty"`
 }
 
+type PasspointOrder struct {
+	ID              uuid.UUID  `json:"id"`
+	OrderID         string     `json:"order_id"`
+	CashierCode     string     `json:"cashier_code"`
+	OrderType       string     `json:"order_type"`
+	PackageID       string     `json:"package_id"`
+	PackageName     string     `json:"package_name"`
+	DurationDays    int        `json:"duration_days"`
+	CustomerName    string     `json:"customer_name"`
+	CustomerPhone   string     `json:"customer_phone"`
+	CustomerEmail   string     `json:"customer_email"`
+	OriginalPrice   int64      `json:"original_price"`
+	DiscountAmount  int64      `json:"discount_amount"`
+	AdminFee        int64      `json:"admin_fee"`
+	FinalPrice      int64      `json:"final_price"`
+	AgentID         *uuid.UUID `json:"agent_id,omitempty"`
+	PromoCode       string     `json:"promo_code,omitempty"`
+	AgentCommission int64      `json:"agent_commission"`
+	PaymentMethod   string     `json:"payment_method"`
+	Status          string     `json:"status"`
+	CredentialID    *uuid.UUID `json:"credential_id,omitempty"`
+	PaidByAgentID   *uuid.UUID `json:"paid_by_agent_id,omitempty"`
+	PaidAt          *time.Time `json:"paid_at,omitempty"`
+	ExpiresAt       time.Time  `json:"expires_at"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
+}
+
 type PasspointPurchaseResponse struct {
 	OrderID        string    `json:"order_id"`
+	CashierCode    string    `json:"cashier_code,omitempty"`
 	PackageName    string    `json:"package_name"`
 	Amount         int64     `json:"amount"`
+	AdminFee       int64     `json:"admin_fee,omitempty"`
+	TotalToPay     int64     `json:"total_to_pay,omitempty"`
 	OriginalPrice  int64     `json:"original_price,omitempty"`
 	DiscountAmount int64     `json:"discount_amount,omitempty"`
 	PromoCode      string    `json:"promo_code,omitempty"`
@@ -116,10 +147,13 @@ type PasspointRenewRequest struct {
 
 type PasspointRenewResponse struct {
 	OrderID        string    `json:"order_id"`
+	CashierCode    string    `json:"cashier_code,omitempty"`
 	CredentialID   string    `json:"credential_id"`
 	PackageName    string    `json:"package_name"`
 	DurationDays   int       `json:"duration_days"`
 	Amount         int64     `json:"amount"`
+	AdminFee       int64     `json:"admin_fee,omitempty"`
+	TotalToPay     int64     `json:"total_to_pay,omitempty"`
 	OriginalPrice  int64     `json:"original_price,omitempty"`
 	DiscountAmount int64     `json:"discount_amount,omitempty"`
 	PromoCode      string    `json:"promo_code,omitempty"`
@@ -141,6 +175,60 @@ type PasspointCheckRenewResponse struct {
 	CredentialID string `json:"credential_id"`
 	NewExpiresAt string `json:"new_expires_at"`
 	Message      string `json:"message"`
+}
+
+type PasspointInquiryResult struct {
+	OrderID           string `json:"order_id"`
+	CashierCode       string `json:"cashier_code"`
+	OrderType         string `json:"order_type"`
+	PackageID         string `json:"package_id"`
+	PackageName       string `json:"package_name"`
+	DurationDays      int    `json:"duration_days"`
+	CustomerName      string `json:"customer_name"`
+	CustomerPhone     string `json:"customer_phone"`
+	OriginalPrice     int64  `json:"original_price"`
+	DiscountAmount    int64  `json:"discount_amount"`
+	PackagePrice      int64  `json:"package_price"`
+	AdminFee          int64  `json:"admin_fee"`
+	TotalCustomerPays int64  `json:"total_customer_pays"`
+	AgentCommission   int64  `json:"agent_commission"`
+	AgentDebitAmount  int64  `json:"agent_debit_amount"`
+	AgentProfit       int64  `json:"agent_profit"`
+	Status            string `json:"status"`
+	ExpiresAt         string `json:"expires_at"`
+}
+
+type PayPasspointByAgentRequest struct {
+	CashierCode string `json:"cashier_code"`
+	OrderID     string `json:"order_id,omitempty"`
+}
+
+type IssueManualPasspointRequest struct {
+	PackageID    string `json:"package_id"`
+	CustomerName string `json:"customer_name"`
+	Phone        string `json:"phone"`
+	Email        string `json:"email,omitempty"`
+}
+
+type PasspointReceipt struct {
+	ReceiptNumber     string `json:"receipt_number"`
+	TransactionTime   string `json:"transaction_time"`
+	CashierCode       string `json:"cashier_code"`
+	AgentName         string `json:"agent_name"`
+	AgentCode         string `json:"agent_code"`
+	CustomerName      string `json:"customer_name"`
+	CustomerPhone     string `json:"customer_phone"`
+	PackageName       string `json:"package_name"`
+	DurationDays      int    `json:"duration_days"`
+	TotalCustomerPays int64  `json:"total_customer_pays"`
+	AgentDebitAmount  int64  `json:"agent_debit_amount"`
+	AgentProfit       int64  `json:"agent_profit"`
+	Username          string `json:"username"`
+	Password          string `json:"password"`
+	Realm             string `json:"realm"`
+	DomainName        string `json:"domain_name"`
+	AppleProfileURL   string `json:"apple_profile_url"`
+	BalanceAfter      int64  `json:"balance_after"`
 }
 
 

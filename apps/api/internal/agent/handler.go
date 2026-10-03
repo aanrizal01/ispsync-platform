@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/gigabill/isp/internal/auth"
+	"github.com/gigabill/isp/internal/passpoint"
 	apperrors "github.com/gigabill/isp/internal/shared/errors"
 	"github.com/gigabill/isp/internal/shared/middleware"
 	"github.com/gigabill/isp/internal/shared/pagination"
@@ -56,6 +57,9 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 			r.Get("/templates", h.ListTemplates)
 			r.Get("/invoices/inquiry", h.InquireInvoice)
 			r.Post("/invoices/pay", h.PayInvoice)
+			r.Get("/passpoint/inquiry", h.InquirePasspoint)
+			r.Post("/passpoint/pay", h.PayPasspoint)
+			r.Post("/passpoint/issue-manual", h.IssueManualPasspoint)
 			r.Put("/settings", h.UpdateMySettings)
 		})
 	})
@@ -556,4 +560,74 @@ func (h *Handler) UpdateMySettings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	middleware.JSON(w, http.StatusOK, updated)
+}
+
+// ──────────────────────────────────────────
+// Loket Passpoint Wi-Fi
+// ──────────────────────────────────────────
+
+func (h *Handler) InquirePasspoint(w http.ResponseWriter, r *http.Request) {
+	agent, err := h.getAuthenticatedAgent(r)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	code := r.URL.Query().Get("code")
+	if code == "" {
+		middleware.JSONError(w, h.logger, apperrors.BadRequest("Kode kasir atau Order ID harus diisi"))
+		return
+	}
+
+	res, err := h.service.InquirePasspoint(r.Context(), agent.ID, code)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusOK, res)
+}
+
+func (h *Handler) PayPasspoint(w http.ResponseWriter, r *http.Request) {
+	agent, err := h.getAuthenticatedAgent(r)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	var req passpoint.PayPasspointByAgentRequest
+	if err := middleware.DecodeJSON(r, &req); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	receipt, err := h.service.PayPasspoint(r.Context(), agent.ID, req)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusOK, receipt)
+}
+
+func (h *Handler) IssueManualPasspoint(w http.ResponseWriter, r *http.Request) {
+	agent, err := h.getAuthenticatedAgent(r)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	var req passpoint.IssueManualPasspointRequest
+	if err := middleware.DecodeJSON(r, &req); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	receipt, err := h.service.IssueManualPasspoint(r.Context(), agent.ID, req)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusOK, receipt)
 }

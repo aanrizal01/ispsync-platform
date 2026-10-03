@@ -59,9 +59,11 @@ import {
   Landmark,
   Lock,
   X,
+  Wifi,
 } from "lucide-react";
 import { PrinterSettingsModal } from "./PrinterSettingsModal";
 import { ThermalPrinterService, type VoucherTicketData } from "@/lib/thermal-printer";
+import { passpointApi, type PasspointInquiryResult, type PasspointReceipt, type PasspointPackage } from "@/lib/api/passpoint";
 
 export default function AgentDashboardPage() {
   const { logout } = useAuth();
@@ -77,7 +79,22 @@ export default function AgentDashboardPage() {
   }, []);
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState<"vouchers" | "scratch_cards" | "bill_payment" | "mutations" | "topups">("vouchers");
+  const [activeTab, setActiveTab] = useState<"vouchers" | "scratch_cards" | "bill_payment" | "passpoint" | "mutations" | "topups">("vouchers");
+
+  // ── Passpoint Wi-Fi State ─────────────────────────────────────────
+  const [passpointSubTab, setPasspointSubTab] = useState<"counter" | "manual">("counter");
+  const [passpointCodeSearch, setPasspointCodeSearch] = useState("");
+  const [passpointInquiry, setPasspointInquiry] = useState<PasspointInquiryResult | null>(null);
+  const [passpointInquiryLoading, setPasspointInquiryLoading] = useState(false);
+  const [passpointInquiryError, setPasspointInquiryError] = useState<string | null>(null);
+  const [passpointPayLoading, setPasspointPayLoading] = useState(false);
+  const [passpointReceipt, setPasspointReceipt] = useState<PasspointReceipt | null>(null);
+  const [passpointPackages, setPasspointPackages] = useState<PasspointPackage[]>([]);
+  const [passpointManualPackageId, setPasspointManualPackageId] = useState("");
+  const [passpointManualName, setPasspointManualName] = useState("");
+  const [passpointManualPhone, setPasspointManualPhone] = useState("");
+  const [passpointManualLoading, setPasspointManualLoading] = useState(false);
+  const [passpointManualError, setPasspointManualError] = useState<string | null>(null);
 
   // ── Scratch Cards State ───────────────────────────────────────────
   const [scratchSubTab, setScratchSubTab] = useState<"activate" | "inquiry" | "history">("activate");
@@ -399,7 +416,74 @@ export default function AgentDashboardPage() {
     if (activeTab === "scratch_cards") fetchScratchHistory(1, scratchHistorySearch);
     if (activeTab === "mutations") fetchMutations();
     if (activeTab === "topups") fetchTopups();
-  }, [activeTab, fetchVouchers, fetchScratchHistory, fetchMutations, fetchTopups, scratchHistorySearch]);
+    if (activeTab === "passpoint" && passpointPackages.length === 0) {
+      passpointApi.getPackages().then((pkgs) => {
+        setPasspointPackages(pkgs);
+        if (pkgs.length > 0) {
+          const pop = pkgs.find((p) => p.is_popular) || pkgs[0];
+          setPasspointManualPackageId(pop.id);
+        }
+      }).catch(() => {});
+    }
+  }, [activeTab, fetchVouchers, fetchScratchHistory, fetchMutations, fetchTopups, scratchHistorySearch, passpointPackages.length]);
+
+  const handleInquirePasspoint = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const code = passpointCodeSearch.trim();
+    if (!code) return;
+    setPasspointInquiryLoading(true);
+    setPasspointInquiryError(null);
+    setPasspointInquiry(null);
+    try {
+      const res = await passpointApi.inquireAgentOrder(code);
+      setPasspointInquiry(res);
+    } catch (err: any) {
+      setPasspointInquiryError(err.message || "Pesanan Passpoint tidak ditemukan atau sudah kadaluwarsa");
+    } finally {
+      setPasspointInquiryLoading(false);
+    }
+  };
+
+  const handlePayPasspoint = async () => {
+    if (!passpointInquiry) return;
+    setPasspointPayLoading(true);
+    try {
+      const receipt = await passpointApi.payAgentOrder({
+        cashier_code: passpointInquiry.cashier_code,
+        order_id: passpointInquiry.order_id,
+      });
+      setPasspointReceipt(receipt);
+      setPasspointInquiry(null);
+      setPasspointCodeSearch("");
+      fetchDashboard();
+    } catch (err: any) {
+      alert(err.message || "Gagal memproses pembayaran Passpoint");
+    } finally {
+      setPasspointPayLoading(false);
+    }
+  };
+
+  const handleIssueManualPasspoint = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passpointManualPackageId || !passpointManualPhone.trim()) return;
+    setPasspointManualLoading(true);
+    setPasspointManualError(null);
+    try {
+      const receipt = await passpointApi.issueManualAgent({
+        package_id: passpointManualPackageId,
+        customer_name: passpointManualName.trim() || "Pelanggan Passpoint",
+        phone: passpointManualPhone.trim().replace(/\D/g, "").replace(/^0/, "62"),
+      });
+      setPasspointReceipt(receipt);
+      setPasspointManualPhone("");
+      setPasspointManualName("");
+      fetchDashboard();
+    } catch (err: any) {
+      setPasspointManualError(err.message || "Gagal menerbitkan Passpoint di konter");
+    } finally {
+      setPasspointManualLoading(false);
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1202,6 +1286,22 @@ export default function AgentDashboardPage() {
           <span>Voucher Gesek</span>
           <span className="inline-block text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-black/20 text-white font-bold">
             SN
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("passpoint")}
+          className={cn(
+            "shrink-0 sm:flex-1 py-2.5 px-3.5 sm:px-3 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 whitespace-nowrap",
+            activeTab === "passpoint"
+              ? "bg-cyan-600 text-white shadow-xs"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+          )}
+        >
+          <Wifi className="w-4 h-4 shrink-0" />
+          <span>Passpoint Wi-Fi</span>
+          <span className="inline-block text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-cyan-700/60 text-cyan-100 font-bold">
+            15%
           </span>
         </button>
 
@@ -2940,6 +3040,405 @@ export default function AgentDashboardPage() {
         </div>
       )}
 
+      {/* ── TAB: LOKET PASSPOINT WI-FI 2.0 ───────────────────────── */}
+      {activeTab === "passpoint" && (
+        <div className="space-y-6">
+          {/* Header Banner */}
+          <div className="bg-gradient-to-r from-cyan-900 via-slate-900 to-blue-950 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
+            <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-48 h-48 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-mono font-bold mb-3 border border-cyan-500/30">
+                  <Wifi className="w-3.5 h-3.5" />
+                  HOTSPOT 2.0 CARRIER-GRADE
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                  Loket Passpoint Wi-Fi 2.0
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
+                  Layani pembayaran kode pesanan pelanggan online (+ Biaya Kasir Rp {dashboard?.agent.loket_admin_fee?.toLocaleString() || "2.500"} Tunai) atau terbitkan akses Passpoint manual langsung di konter kasir dengan margin {dashboard?.agent.offline_cashback_pct || 15}%.
+                </p>
+              </div>
+
+              {/* Quick Commission Stats */}
+              <div className="flex gap-2 sm:gap-3 shrink-0">
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 text-center min-w-[120px]">
+                  <p className="text-[10px] text-cyan-200 font-mono uppercase">Komisi Kasir Online</p>
+                  <p className="text-lg font-black text-white font-mono mt-0.5">
+                    {dashboard?.agent.online_cashback_pct || 10}% <span className="text-xs font-normal text-cyan-300">+ Admin</span>
+                  </p>
+                </div>
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 text-center min-w-[120px]">
+                  <p className="text-[10px] text-cyan-200 font-mono uppercase">Margin Manual Konter</p>
+                  <p className="text-lg font-black text-white font-mono mt-0.5">
+                    {dashboard?.agent.offline_cashback_pct || 15}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sub-Tabs Switcher */}
+          <div className="flex border-b border-slate-200 gap-6">
+            <button
+              onClick={() => {
+                setPasspointSubTab("counter");
+                setPasspointInquiry(null);
+                setPasspointInquiryError(null);
+              }}
+              className={cn(
+                "pb-3 text-sm font-bold transition-all relative flex items-center gap-2 cursor-pointer",
+                passpointSubTab === "counter"
+                  ? "text-cyan-700 border-b-2 border-cyan-600"
+                  : "text-slate-500 hover:text-slate-800"
+              )}
+            >
+              <Store className="w-4 h-4" />
+              <span>1. Konfirmasi Pesanan Kasir (Kode PP-XXXXX)</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setPasspointSubTab("manual");
+                setPasspointInquiry(null);
+                setPasspointInquiryError(null);
+              }}
+              className={cn(
+                "pb-3 text-sm font-bold transition-all relative flex items-center gap-2 cursor-pointer",
+                passpointSubTab === "manual"
+                  ? "text-cyan-700 border-b-2 border-cyan-600"
+                  : "text-slate-500 hover:text-slate-800"
+              )}
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>2. Terbitkan Akses Manual di Konter (15%)</span>
+            </button>
+          </div>
+
+          {/* SUB-TAB 1: Konfirmasi Pesanan Kasir */}
+          {passpointSubTab === "counter" && (
+            <div className="space-y-6">
+              <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Cek &amp; Lunasi Kode Bayar Pelanggan
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Masukkan kode kasir Passpoint (contoh: <b>PP-48192</b> atau <b>ORD-PP-...</b>) yang ditunjukkan oleh pelanggan di konter Anda.
+                  </p>
+                </div>
+
+                <form onSubmit={handleInquirePasspoint} className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Masukkan Kode Bayar (contoh: PP-48192)"
+                      value={passpointCodeSearch}
+                      onChange={(e) => setPasspointCodeSearch(e.target.value.toUpperCase())}
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono uppercase font-bold outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition"
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={passpointInquiryLoading || !passpointCodeSearch.trim()}
+                    className="px-6 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-mono font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {passpointInquiryLoading ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Memeriksa...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-4 h-4" />
+                        <span>Cek Pesanan</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+
+                {passpointInquiryError && (
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                    <span>{passpointInquiryError}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Inquiry Result Card */}
+              {passpointInquiry && (
+                <div className="bg-white rounded-2xl border-2 border-cyan-500/40 p-6 shadow-xl space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono uppercase px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 font-bold">
+                          {passpointInquiry.status}
+                        </span>
+                        <span className="text-xs text-slate-400 font-mono">
+                          Kadaluwarsa: {passpointInquiry.expires_at}
+                        </span>
+                      </div>
+                      <h4 className="text-lg font-black text-slate-900 mt-1 font-mono">
+                        Kode: {passpointInquiry.cashier_code}
+                      </h4>
+                      <p className="text-xs text-slate-500">Order ID: {passpointInquiry.order_id}</p>
+                    </div>
+
+                    <div className="text-left sm:text-right">
+                      <span className="text-xs text-slate-400">Total Wajib Diterima dari Pelanggan:</span>
+                      <p className="text-2xl font-black text-emerald-600 font-mono">
+                        {formatRupiah(passpointInquiry.total_customer_pays)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Detail Pelanggan & Paket */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+                      <span className="text-[10px] font-mono uppercase text-slate-400 font-bold">Informasi Pelanggan</span>
+                      <p className="text-sm font-bold text-slate-900">{passpointInquiry.customer_name || "Pelanggan Passpoint"}</p>
+                      <p className="text-xs text-slate-600 font-mono">{passpointInquiry.customer_phone}</p>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+                      <span className="text-[10px] font-mono uppercase text-slate-400 font-bold">Paket Internet Passpoint</span>
+                      <p className="text-sm font-bold text-slate-900">{passpointInquiry.package_name}</p>
+                      <p className="text-xs text-cyan-700 font-mono font-bold">Masa Aktif +{passpointInquiry.duration_days} Hari Unlimited</p>
+                    </div>
+                  </div>
+
+                  {/* Kalkulasi Kasir & Komisi */}
+                  <div className="p-4 rounded-xl bg-cyan-950 text-white space-y-2.5 font-mono text-xs">
+                    <div className="flex justify-between text-slate-300">
+                      <span>Harga Asli Paket:</span>
+                      <span>{formatRupiah(passpointInquiry.original_price)}</span>
+                    </div>
+                    {passpointInquiry.discount_amount > 0 && (
+                      <div className="flex justify-between text-emerald-400">
+                        <span>Diskon Online Pelanggan:</span>
+                        <span>-{formatRupiah(passpointInquiry.discount_amount)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-slate-300">
+                      <span>Biaya Layanan Kasir Konter Anda:</span>
+                      <span className="text-cyan-300">+{formatRupiah(passpointInquiry.admin_fee)}</span>
+                    </div>
+                    <div className="pt-2 border-t border-cyan-800 flex justify-between text-sm font-bold text-white">
+                      <span>Total Uang Diterima dari Pelanggan:</span>
+                      <span className="text-emerald-400 font-black">{formatRupiah(passpointInquiry.total_customer_pays)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-300 pt-1">
+                      <span>Modal Saldo Agen Dipotong (Nett):</span>
+                      <span className="text-red-400 font-bold">-{formatRupiah(passpointInquiry.agent_debit_amount)}</span>
+                    </div>
+                    <div className="flex justify-between text-emerald-300 font-bold bg-cyan-900/60 p-2 rounded-lg border border-cyan-700">
+                      <span>Keuntungan Kasir Bersih (Cash di Tangan):</span>
+                      <span className="text-sm font-black">+{formatRupiah(passpointInquiry.agent_profit)}</span>
+                    </div>
+                  </div>
+
+                  {/* Payment Button */}
+                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                    <button
+                      type="button"
+                      disabled={passpointPayLoading || (dashboard?.agent.balance ?? 0) < passpointInquiry.agent_debit_amount}
+                      onClick={handlePayPasspoint}
+                      className="flex-1 py-3 px-6 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-600 text-white font-mono font-bold rounded-xl text-xs uppercase tracking-wider transition shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                    >
+                      {passpointPayLoading ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Memproses Pelunasan...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Bayar via Saldo Agen ({formatRupiah(passpointInquiry.agent_debit_amount)})</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPasspointInquiry(null)}
+                      className="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                  </div>
+
+                  {(dashboard?.agent.balance ?? 0) < passpointInquiry.agent_debit_amount && (
+                    <p className="text-xs text-red-600 text-center font-semibold">
+                      ⚠️ Saldo modal agen Anda tidak mencukupi (Perlu {formatRupiah(passpointInquiry.agent_debit_amount)}, Saldo Anda {formatRupiah(dashboard?.agent.balance || 0)}). Silakan top-up saldo terlebih dahulu.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SUB-TAB 2: Terbitkan Manual di Konter */}
+          {passpointSubTab === "manual" && (
+            <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/80 shadow-xs space-y-6">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Penerbitan Passpoint Baru Manual (Margin {dashboard?.agent.offline_cashback_pct || 15}%)
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Gunakan form ini jika pelanggan datang langsung ke konter Anda tanpa melakukan pemesanan online sebelumnya. Saldo modal Anda otomatis dipotong dengan margin {dashboard?.agent.offline_cashback_pct || 15}%.
+                </p>
+              </div>
+
+              {passpointManualError && (
+                <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                  <span>{passpointManualError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleIssueManualPasspoint} className="space-y-6">
+                {/* Package Cards */}
+                <div>
+                  <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-2">
+                    Pilih Paket Passpoint *
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {passpointPackages.map((pkg) => {
+                      const isSelected = passpointManualPackageId === pkg.id;
+                      const cashback = Math.round(pkg.price * ((dashboard?.agent.offline_cashback_pct || 15) / 100));
+                      const debit = pkg.price - cashback;
+                      return (
+                        <div
+                          key={pkg.id}
+                          onClick={() => setPasspointManualPackageId(pkg.id)}
+                          className={cn(
+                            "p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between",
+                            isSelected
+                              ? "border-cyan-600 bg-cyan-50/50 shadow-xs"
+                              : "border-slate-200 hover:border-slate-300 bg-white"
+                          )}
+                        >
+                          <div>
+                            <div className="flex justify-between items-start gap-1">
+                              <h4 className="text-sm font-bold text-slate-900">{pkg.name}</h4>
+                              {pkg.is_popular && (
+                                <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+                                  Laris
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-lg font-black text-cyan-700 font-mono mt-1">
+                              {formatRupiah(pkg.price)}
+                            </p>
+                            <p className="text-[11px] text-slate-500 mt-1">{pkg.description}</p>
+                          </div>
+                          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                            <span className="text-slate-500 font-mono">Modal: <b className="text-slate-800">{formatRupiah(debit)}</b></span>
+                            <span className="text-emerald-600 font-bold font-mono">Untung: +{formatRupiah(cashback)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Customer Details */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                      Nomor WhatsApp Pelanggan *
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="Contoh: 081234567890"
+                      value={passpointManualPhone}
+                      onChange={(e) => setPasspointManualPhone(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-mono outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                      Nama Pelanggan (Opsional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: Pak Budi"
+                      value={passpointManualName}
+                      onChange={(e) => setPasspointManualName(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition"
+                    />
+                  </div>
+                </div>
+
+                {/* Real-time Summary Bar */}
+                {(() => {
+                  const sel = passpointPackages.find((p) => p.id === passpointManualPackageId);
+                  if (!sel) return null;
+                  const comm = Math.round(sel.price * ((dashboard?.agent.offline_cashback_pct || 15) / 100));
+                  const debit = sel.price - comm;
+                  const canAfford = (dashboard?.agent.balance ?? 0) >= debit;
+                  return (
+                    <div className="p-4 rounded-xl bg-slate-900 text-white font-mono text-xs space-y-2">
+                      <div className="flex justify-between text-slate-300">
+                        <span>Paket Terpilih:</span>
+                        <span className="font-bold text-white">{sel.name}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-300">
+                        <span>Uang Diterima dari Pelanggan:</span>
+                        <span className="text-emerald-400 font-bold">{formatRupiah(sel.price)}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-300">
+                        <span>Potong Saldo Modal Agen:</span>
+                        <span className="text-red-400 font-bold">-{formatRupiah(debit)}</span>
+                      </div>
+                      <div className="pt-2 border-t border-slate-800 flex justify-between text-sm font-bold text-emerald-400">
+                        <span>Keuntungan Langsung Kasir:</span>
+                        <span className="text-base font-black">+{formatRupiah(comm)}</span>
+                      </div>
+                      {!canAfford && (
+                        <p className="text-red-400 pt-1 text-center font-bold">
+                          ⚠️ Saldo agen tidak cukup ({formatRupiah(dashboard?.agent.balance || 0)} &lt; {formatRupiah(debit)}). Silakan top-up terlebih dahulu.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                <button
+                  type="submit"
+                  disabled={
+                    passpointManualLoading ||
+                    !passpointManualPackageId ||
+                    !passpointManualPhone.trim() ||
+                    (() => {
+                      const sel = passpointPackages.find((p) => p.id === passpointManualPackageId);
+                      if (!sel) return true;
+                      const comm = Math.round(sel.price * ((dashboard?.agent.offline_cashback_pct || 15) / 100));
+                      return (dashboard?.agent.balance ?? 0) < sel.price - comm;
+                    })()
+                  }
+                  className="w-full py-3.5 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-mono font-bold rounded-xl text-xs uppercase tracking-wider transition shadow-md shadow-cyan-600/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {passpointManualLoading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Menerbitkan Akses Passpoint...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Terbitkan Passpoint Sekarang</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── TAB 4: MUTASI SALDO ───────────────────────────────────── */}
       {activeTab === "mutations" && (
         <div className="space-y-4">
@@ -4109,6 +4608,135 @@ export default function AgentDashboardPage() {
                 className="w-full py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs transition-colors"
               >
                 Selesai / Transaksi Baru
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: STRUK TRANSAKSI PASSPOINT WI-FI ──────────────────── */}
+      {passpointReceipt && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setPasspointReceipt(null);
+            }
+          }}
+        >
+          <div className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] flex flex-col p-6 shadow-2xl space-y-5 overflow-y-auto my-auto animate-in fade-in zoom-in-95 duration-150">
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 bg-cyan-100 text-cyan-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+                <Wifi className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900">Transaksi Passpoint Berhasil!</h3>
+              <p className="text-xs text-slate-500">
+                Akses Wi-Fi Passpoint pelanggan telah aktif otomatis di seluruh jaringan.
+              </p>
+            </div>
+
+            {/* Receipt Card */}
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 font-mono text-xs space-y-2.5 text-slate-700">
+              <div className="text-center pb-2 border-b border-dashed border-slate-300">
+                <div className="font-bold text-sm text-slate-900">{passpointReceipt.agent_name.toUpperCase()}</div>
+                <div className="text-[11px] text-slate-500">LOKET RESMI PASSPOINT WI-FI 2.0</div>
+              </div>
+
+              <div className="space-y-1 text-[11.5px]">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">No. Bukti:</span>
+                  <span className="font-bold">{passpointReceipt.receipt_number}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Kode Kasir:</span>
+                  <span className="font-bold text-cyan-700">{passpointReceipt.cashier_code}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Waktu:</span>
+                  <span>{passpointReceipt.transaction_time}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Pelanggan:</span>
+                  <span className="font-bold">{passpointReceipt.customer_name || "Pelanggan Passpoint"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">No. HP:</span>
+                  <span>{passpointReceipt.customer_phone}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Paket:</span>
+                  <span className="font-bold text-slate-900">{passpointReceipt.package_name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Masa Aktif:</span>
+                  <span>+{passpointReceipt.duration_days} Hari</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-dashed border-slate-300 space-y-1 text-[11.5px]">
+                <div className="flex justify-between text-slate-900 font-bold">
+                  <span>Total Diterima Tunai:</span>
+                  <span className="text-sm font-black text-emerald-600">{formatRupiah(passpointReceipt.total_customer_pays)}</span>
+                </div>
+                <div className="flex justify-between text-slate-500">
+                  <span>Modal Saldo Terpotong:</span>
+                  <span>{formatRupiah(passpointReceipt.agent_debit_amount)}</span>
+                </div>
+                <div className="flex justify-between text-emerald-700 font-bold bg-emerald-50 px-2 py-1 rounded">
+                  <span>Keuntungan Bersih Kasir:</span>
+                  <span>+{formatRupiah(passpointReceipt.agent_profit)}</span>
+                </div>
+              </div>
+
+              {/* Kredensial Box */}
+              <div className="pt-2 border-t border-slate-200 p-2.5 bg-slate-900 text-white rounded-xl space-y-1 text-[11px]">
+                <div className="text-[10px] text-cyan-400 uppercase font-bold tracking-wider mb-1">
+                  Kredensial Login Wi-Fi Passpoint:
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Username:</span>
+                  <span className="font-bold text-cyan-300">{passpointReceipt.username}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Password:</span>
+                  <span className="font-bold text-white">{passpointReceipt.password}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Domain / Realm:</span>
+                  <span className="text-slate-300">{passpointReceipt.realm}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-2 pt-1">
+              <a
+                href={`https://wa.me/${passpointReceipt.customer_phone}?text=${encodeURIComponent(
+                  `Halo ${passpointReceipt.customer_name || "Pelanggan"},\n\nTerima kasih! Akses Passpoint Wi-Fi 2.0 Anda telah AKTIF.\n\n*Rincian Akses:*\n• Paket: ${passpointReceipt.package_name} (+${passpointReceipt.duration_days} Hari)\n• Username: ${passpointReceipt.username}\n• Password: ${passpointReceipt.password}\n• Pasang Profil Apple / Android: ${typeof window !== "undefined" ? window.location.origin : ""}/passpoint?lookup=${passpointReceipt.username}\n\nPerangkat Anda otomatis langsung terhubung ke Wi-Fi di area jaringan kami.`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-mono font-bold text-xs uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-2 shadow-xs"
+              >
+                <Share2 className="w-4 h-4" />
+                <span>Kirim Bukti via WhatsApp</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-mono font-bold text-xs uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Cetak Struk Transaksi</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPasspointReceipt(null)}
+                className="w-full py-2.5 text-xs text-slate-500 hover:text-slate-800 transition font-bold cursor-pointer"
+              >
+                Tutup Jendela
               </button>
             </div>
           </div>

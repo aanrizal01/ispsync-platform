@@ -23,6 +23,8 @@ const (
 	MutationTopupBankTransfer    MutationType = "TOPUP_BANK_TRANSFER"
 	MutationVoucherOfflineBuy    MutationType = "VOUCHER_OFFLINE_BUY"
 	MutationVoucherOnlineComm    MutationType = "VOUCHER_ONLINE_COMMISSION"
+	MutationPasspointCounterPay  MutationType = "PASSPOINT_COUNTER_PAY"
+	MutationPasspointOfflineBuy  MutationType = "PASSPOINT_OFFLINE_BUY"
 	MutationInvoicePaymentAgent  MutationType = "INVOICE_PAYMENT_AGENT"
 	MutationWithdrawal           MutationType = "WITHDRAWAL"
 	MutationAdjustment           MutationType = "ADJUSTMENT"

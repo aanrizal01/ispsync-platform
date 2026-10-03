@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/gigabill/isp/internal/passpoint"
 	apperrors "github.com/gigabill/isp/internal/shared/errors"
 	"github.com/gigabill/isp/internal/shared/pagination"
 	"github.com/gigabill/isp/internal/voucher"
@@ -16,9 +17,10 @@ import (
 )
 
 type Service struct {
-	repo       *Repository
-	voucherSvc *voucher.Service
-	logger     *slog.Logger
+	repo         *Repository
+	voucherSvc   *voucher.Service
+	passpointSvc *passpoint.Service
+	logger       *slog.Logger
 }
 
 func NewService(repo *Repository, voucherSvc *voucher.Service, logger *slog.Logger) *Service {
@@ -27,6 +29,31 @@ func NewService(repo *Repository, voucherSvc *voucher.Service, logger *slog.Logg
 		voucherSvc: voucherSvc,
 		logger:     logger,
 	}
+}
+
+func (s *Service) SetPasspointService(svc *passpoint.Service) {
+	s.passpointSvc = svc
+}
+
+func (s *Service) InquirePasspoint(ctx context.Context, agentID uuid.UUID, code string) (*passpoint.PasspointInquiryResult, error) {
+	if s.passpointSvc == nil {
+		return nil, apperrors.BadRequest("Fitur passpoint belum diaktifkan")
+	}
+	return s.passpointSvc.InquireCashierOrder(ctx, agentID, code)
+}
+
+func (s *Service) PayPasspoint(ctx context.Context, agentID uuid.UUID, req passpoint.PayPasspointByAgentRequest) (*passpoint.PasspointReceipt, error) {
+	if s.passpointSvc == nil {
+		return nil, apperrors.BadRequest("Fitur passpoint belum diaktifkan")
+	}
+	return s.passpointSvc.PayOrderWithAgentBalance(ctx, agentID, req)
+}
+
+func (s *Service) IssueManualPasspoint(ctx context.Context, agentID uuid.UUID, req passpoint.IssueManualPasspointRequest) (*passpoint.PasspointReceipt, error) {
+	if s.passpointSvc == nil {
+		return nil, apperrors.BadRequest("Fitur passpoint belum diaktifkan")
+	}
+	return s.passpointSvc.IssueManualPasspoint(ctx, agentID, req)
 }
 
 func (s *Service) Repo() *Repository {

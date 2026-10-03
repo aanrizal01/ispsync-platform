@@ -77,8 +77,11 @@ export interface PasspointPurchaseInput {
 
 export interface PasspointPurchaseResponse {
   order_id: string;
+  cashier_code?: string;
   package_name: string;
   amount: number;
+  admin_fee?: number;
+  total_to_pay?: number;
   original_price?: number;
   discount_amount?: number;
   promo_code?: string;
@@ -117,10 +120,13 @@ export interface PasspointRenewInput {
 
 export interface PasspointRenewResponse {
   order_id: string;
+  cashier_code?: string;
   credential_id: string;
   package_name: string;
   duration_days: number;
   amount: number;
+  admin_fee?: number;
+  total_to_pay?: number;
   original_price?: number;
   discount_amount?: number;
   promo_code?: string;
@@ -142,6 +148,60 @@ export interface PasspointCheckRenewResponse {
   credential_id: string;
   new_expires_at: string;
   message: string;
+}
+
+export interface PasspointInquiryResult {
+  order_id: string;
+  cashier_code: string;
+  order_type: string;
+  package_id: string;
+  package_name: string;
+  duration_days: number;
+  customer_name: string;
+  customer_phone: string;
+  original_price: number;
+  discount_amount: number;
+  package_price: number;
+  admin_fee: number;
+  total_customer_pays: number;
+  agent_commission: number;
+  agent_debit_amount: number;
+  agent_profit: number;
+  status: string;
+  expires_at: string;
+}
+
+export interface PayPasspointInput {
+  cashier_code: string;
+  order_id?: string;
+}
+
+export interface IssueManualPasspointInput {
+  package_id: string;
+  customer_name: string;
+  phone: string;
+  email?: string;
+}
+
+export interface PasspointReceipt {
+  receipt_number: string;
+  transaction_time: string;
+  cashier_code: string;
+  agent_name: string;
+  agent_code: string;
+  customer_name: string;
+  customer_phone: string;
+  package_name: string;
+  duration_days: number;
+  total_customer_pays: number;
+  agent_debit_amount: number;
+  agent_profit: number;
+  username: string;
+  password: string;
+  realm: string;
+  domain_name: string;
+  apple_profile_url: string;
+  balance_after: number;
 }
 
 export const passpointApi = {
@@ -208,6 +268,21 @@ export const passpointApi = {
 
   validateReferral: (code: string) =>
     request<ValidatePromoResponse>(`/hotspot/validate-promo?code=${encodeURIComponent(code)}`),
+
+  inquireAgentOrder: (code: string) =>
+    request<PasspointInquiryResult>(`/agent-portal/passpoint/inquiry?code=${encodeURIComponent(code)}`),
+
+  payAgentOrder: (data: PayPasspointInput) =>
+    request<PasspointReceipt>("/agent-portal/passpoint/pay", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  issueManualAgent: (data: IssueManualPasspointInput) =>
+    request<PasspointReceipt>("/agent-portal/passpoint/issue-manual", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 
   getAppleProfileUrl: (credentialId: string) => {
     const apiBase =

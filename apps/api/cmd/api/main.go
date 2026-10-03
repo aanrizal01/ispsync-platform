@@ -506,6 +506,7 @@ func main() {
 	partnerHandler := partner.NewHandler(partnerSvc, log)
 	agentRepo := agent.NewRepository(db)
 	agentSvc := agent.NewService(agentRepo, voucherSvc, log)
+	agentSvc.SetPasspointService(passpointSvc)
 	agentHandler := agent.NewHandler(agentSvc, log)
 	acsHandler := acs.NewHandler(acsSvc, log)
 	auditHandler := audit.NewHandler(auditSvc, log)

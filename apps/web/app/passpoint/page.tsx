@@ -19,6 +19,8 @@ import {
   Store,
   Tag,
   Check,
+  Copy,
+  QrCode,
 } from "lucide-react";
 import {
   passpointApi,
@@ -60,6 +62,8 @@ export default function PasspointOnboardingPage() {
   const [phone, setPhone] = useState("");
   const [buyStep, setBuyStep] = useState<"SELECT" | "PAY" | "DONE">("SELECT");
   const [order, setOrder] = useState<PasspointPurchaseResponse | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<"QRIS" | "COUNTER">("QRIS");
+  const [copiedCode, setCopiedCode] = useState(false);
 
   // Renewal state
   const [isRenewOpen, setIsRenewOpen] = useState(false);
@@ -296,7 +300,7 @@ export default function PasspointOnboardingPage() {
         package_id: selectedPkg.id,
         customer_name: customerName.trim(),
         phone: phone.trim().replace(/\D/g, "").replace(/^0/, "62"),
-        payment_method: "QRIS",
+        payment_method: paymentMethod,
         promo_code: appliedPromo ? appliedPromo.promo_code : promoCode.trim() || undefined,
       });
       setOrder(res);
@@ -307,6 +311,63 @@ export default function PasspointOnboardingPage() {
       setLoading(false);
     }
   };
+
+  // Auto-poll status when waiting for payment (both QRIS and COUNTER)
+  useEffect(() => {
+    if (buyStep !== "PAY" || !order) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await passpointApi.checkPurchase({
+          order_id: order.order_id,
+        });
+        if (res.status === "PAID") {
+          setCredential({
+            id: res.credential_id,
+            customer_id: "00000000-0000-0000-0000-000000000000",
+            customer_name: customerName,
+            profile_id: "00000000-0000-0000-0000-000000000001",
+            profile_name: `${tenantName} Passpoint Wi-Fi`,
+            username: res.username,
+            password: res.password,
+            status: "ACTIVE",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+          setBuyStep("DONE");
+        }
+      } catch (e) {
+        // silent polling
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [buyStep, order, customerName, tenantName]);
+
+  // Auto-poll status when waiting for renewal payment
+  useEffect(() => {
+    if (!renewOrder) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await passpointApi.checkRenew({
+          order_id: renewOrder.order_id,
+        });
+        if (res.status === "PAID") {
+          setRenewSuccess(res);
+          setRenewOrder(null);
+          setIsRenewOpen(false);
+          if (credential) {
+            setCredential({
+              ...credential,
+              status: "ACTIVE",
+              updated_at: new Date().toISOString(),
+            });
+          }
+        }
+      } catch (e) {
+        // silent polling
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [renewOrder, credential]);
 
   const handleConfirmPayment = async () => {
     if (!order) return;
@@ -347,7 +408,7 @@ export default function PasspointOnboardingPage() {
       const res = await passpointApi.renew({
         credential_id: credential.id,
         package_id: renewPkg.id,
-        payment_method: "QRIS",
+        payment_method: paymentMethod,
         promo_code: appliedPromo ? appliedPromo.promo_code : promoCode.trim() || undefined,
       });
       setRenewOrder(res);
@@ -594,55 +655,206 @@ export default function PasspointOnboardingPage() {
                   {/* Referral Code Box */}
                   {renderPromoBox()}
 
+                  {/* Pilihan Metode Pembayaran */}
+                  <div className="space-y-2 pt-2">
+                    <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300">
+                      Pilihan Metode Pembayaran *
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div
+                        onClick={() => setPaymentMethod("QRIS")}
+                        className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 ${
+                          paymentMethod === "QRIS"
+                            ? "border-cyan-500 bg-cyan-950/20 ring-1 ring-cyan-500/30"
+                            : "border-slate-800 bg-slate-900/60 hover:border-slate-700"
+                        }`}
+                      >
+                        <div
+                          className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border ${
+                            paymentMethod === "QRIS"
+                              ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400"
+                              : "bg-slate-800 border-slate-700 text-slate-400"
+                          }`}
+                        >
+                          <QrCode className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-bold text-white">QRIS Mandiri</h4>
+                            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                              Instan
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                            Scan mandiri via BCA, Mandiri, BRI, GoPay, OVO, DANA.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div
+                        onClick={() => setPaymentMethod("COUNTER")}
+                        className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 ${
+                          paymentMethod === "COUNTER"
+                            ? "border-cyan-500 bg-cyan-950/20 ring-1 ring-cyan-500/30"
+                            : "border-slate-800 bg-slate-900/60 hover:border-slate-700"
+                        }`}
+                      >
+                        <div
+                          className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border ${
+                            paymentMethod === "COUNTER"
+                              ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400"
+                              : "bg-slate-800 border-slate-700 text-slate-400"
+                          }`}
+                        >
+                          <Store className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-bold text-white">Bayar di Konter</h4>
+                            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                              Tunai
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                            Dapatkan kode bayar, bayar tunai di agen (+ Admin Rp 2.500).
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <button
                     type="submit"
                     disabled={loading || !selectedPkg}
                     className="w-full mt-4 py-3.5 px-4 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-mono font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md shadow-cyan-600/20 active:scale-[0.99] cursor-pointer disabled:opacity-50"
                   >
-                    <span>Lanjut ke Pembayaran QRIS ({selectedPkg ? formatRupiah(getDiscountedPrice(selectedPkg.price)) : ""})</span>
+                    <span>
+                      Lanjut ke Pembayaran ({paymentMethod === "QRIS" ? "QRIS Mandiri" : "Tunai di Konter"}) -{" "}
+                      {selectedPkg
+                        ? formatRupiah(
+                            getDiscountedPrice(selectedPkg.price) +
+                              (paymentMethod === "COUNTER" ? 2500 : 0)
+                          )
+                        : ""}
+                    </span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </form>
               </div>
             )}
 
-            {/* Sub-step 2: QRIS Payment Display */}
+            {/* Sub-step 2: Payment Display (QRIS or Cashier Code) */}
             {buyStep === "PAY" && order && (
               <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl p-6 sm:p-8 shadow-xl border border-slate-800 text-center space-y-6">
-                <div>
-                  <h2 className="text-xl font-black text-white">Selesaikan Pembayaran QRIS</h2>
-                  <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                    Scan kode QRIS di bawah menggunakan m-Banking atau aplikasi e-wallet apa pun.
-                  </p>
-                </div>
-
-                <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 inline-block max-w-sm w-full">
-                  <p className="text-xs text-slate-400 mb-1">Total Pembayaran Passpoint:</p>
-                  <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-mono">
-                    {formatRupiah(order.amount)}
-                  </p>
-                  {order.discount_amount && order.discount_amount > 0 ? (
-                    <div className="text-[11px] text-emerald-400 font-mono mt-1">
-                      Hemat {formatRupiah(order.discount_amount)} via Agen {order.agent_name || appliedPromo?.agent_name}
+                {order.payment_method === "COUNTER" ? (
+                  /* ── Tampilan Bayar Tunai di Konter Kasir ── */
+                  <div className="space-y-6">
+                    <div>
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono font-bold mb-3">
+                        <Store className="w-3.5 h-3.5" />
+                        PEMBAYARAN TUNAI DI KONTER / KASIR
+                      </div>
+                      <h2 className="text-2xl font-black text-white">Tunjukkan Kode Ini ke Kasir</h2>
+                      <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-md mx-auto">
+                        Kunjungi agen / warung WiFi terdekat dan sebutkan kode bayar kasir berikut:
+                      </p>
                     </div>
-                  ) : null}
-                  <p className="text-xs font-semibold text-slate-300 mt-1">{order.package_name}</p>
-                </div>
 
-                <div className="p-4 bg-white rounded-2xl border-2 border-slate-700 inline-block">
-                  <img
-                    src={order.qr_image_url}
-                    alt="QRIS Passpoint"
-                    className="w-56 h-56 object-contain rounded-lg mx-auto"
-                  />
-                  <p className="text-[10px] text-slate-500 mt-1 font-mono">Order: {order.order_id}</p>
-                </div>
+                    {/* Cashier Code Box */}
+                    <div className="p-6 bg-slate-950 rounded-2xl border-2 border-cyan-500/40 shadow-xl shadow-cyan-500/5 max-w-md mx-auto relative overflow-hidden">
+                      <div className="absolute top-0 right-0 -translate-y-4 translate-x-4 w-24 h-24 bg-cyan-500/10 rounded-full blur-xl pointer-events-none" />
+                      <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Kode Bayar Kasir Agen</span>
+                      <div className="text-4xl sm:text-5xl font-mono font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-400 my-2 tracking-widest">
+                        {order.cashier_code || order.order_id}
+                      </div>
 
-                <p className="text-xs text-slate-400 max-w-xs mx-auto">
-                  Mendukung BCA, Mandiri, BRI, BNI, GoPay, OVO, ShopeePay, DANA, LinkAja, dsb.
-                </p>
+                      <div className="flex items-center justify-center gap-2 mt-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(order.cashier_code || order.order_id);
+                            setCopiedCode(true);
+                            setTimeout(() => setCopiedCode(false), 2000);
+                          }}
+                          className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono font-semibold border border-slate-700 transition flex items-center gap-1.5 cursor-pointer"
+                        >
+                          {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span>{copiedCode ? "Tersalin!" : "Salin Kode"}</span>
+                        </button>
+                      </div>
 
-                <div className="max-w-md mx-auto pt-2">
+                      {/* Breakdown Table */}
+                      <div className="mt-5 pt-4 border-t border-slate-800/80 space-y-2 text-left text-xs font-mono">
+                        <div className="flex justify-between text-slate-400">
+                          <span>Paket Passpoint:</span>
+                          <span className="text-slate-200 font-bold">{order.package_name}</span>
+                        </div>
+                        {order.discount_amount && order.discount_amount > 0 ? (
+                          <div className="flex justify-between text-emerald-400">
+                            <span>Diskon Promo Online (10%):</span>
+                            <span>-{formatRupiah(order.discount_amount)}</span>
+                          </div>
+                        ) : null}
+                        <div className="flex justify-between text-slate-400">
+                          <span>Biaya Layanan Kasir:</span>
+                          <span className="text-slate-200">+{formatRupiah(order.admin_fee || 2500)}</span>
+                        </div>
+                        <div className="flex justify-between text-base font-bold text-white pt-2 border-t border-slate-800">
+                          <span>Total Bayar ke Kasir:</span>
+                          <span className="text-cyan-400 font-black">
+                            {formatRupiah(order.total_to_pay || order.amount + 2500)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Pulse Indicator */}
+                    <div className="p-3.5 bg-slate-950/60 rounded-xl border border-slate-800 max-w-md mx-auto flex items-center justify-center gap-3">
+                      <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+                      <span className="text-xs text-slate-300 font-mono">
+                        Menunggu konfirmasi kasir... Profil langsung aktif otomatis setelah kasir klik lunas.
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  /* ── Tampilan QRIS Mandiri ── */
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-xl font-black text-white">Selesaikan Pembayaran QRIS</h2>
+                      <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                        Scan kode QRIS di bawah menggunakan m-Banking atau aplikasi e-wallet apa pun.
+                      </p>
+                    </div>
+
+                    <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 inline-block max-w-sm w-full">
+                      <p className="text-xs text-slate-400 mb-1">Total Pembayaran Passpoint:</p>
+                      <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-mono">
+                        {formatRupiah(order.amount)}
+                      </p>
+                      {order.discount_amount && order.discount_amount > 0 ? (
+                        <div className="text-[11px] text-emerald-400 font-mono mt-1">
+                          Hemat {formatRupiah(order.discount_amount)} via Agen {order.agent_name || appliedPromo?.agent_name}
+                        </div>
+                      ) : null}
+                      <p className="text-xs font-semibold text-slate-300 mt-1">{order.package_name}</p>
+                    </div>
+
+                    <div className="p-4 bg-white rounded-2xl border-2 border-slate-700 inline-block">
+                      <img
+                        src={order.qr_image_url}
+                        alt="QRIS Passpoint"
+                        className="w-56 h-56 object-contain rounded-lg mx-auto"
+                      />
+                      <p className="text-[10px] text-slate-500 mt-1 font-mono">Order: {order.order_id}</p>
+                    </div>
+
+                    <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                      Mendukung BCA, Mandiri, BRI, BNI, GoPay, OVO, ShopeePay, DANA, LinkAja, dsb.
+                    </p>
+                  </div>
+                )}
+
+                <div className="max-w-md mx-auto pt-2 space-y-2">
                   <button
                     type="button"
                     disabled={loading}
@@ -655,7 +867,7 @@ export default function PasspointOnboardingPage() {
                   <button
                     type="button"
                     onClick={() => setBuyStep("SELECT")}
-                    className="mt-3 text-xs text-slate-400 hover:text-slate-200 transition"
+                    className="text-xs text-slate-400 hover:text-slate-200 transition"
                   >
                     &larr; Batalkan atau ganti paket
                   </button>
@@ -784,40 +996,115 @@ export default function PasspointOnboardingPage() {
                     </div>
                   </div>
                 ) : renewOrder ? (
-                  /* Sub-step B: QRIS Payment Display for Renewal */
+                  /* Sub-step B: Payment Display for Renewal (QRIS or Cashier Code) */
                   <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl p-6 sm:p-8 shadow-xl border border-slate-800 text-center space-y-6">
-                    <div>
-                      <h2 className="text-xl font-black text-white">Selesaikan Pembayaran QRIS Perpanjangan</h2>
-                      <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                        Scan kode QRIS di bawah menggunakan m-Banking atau aplikasi e-wallet apa pun.
-                      </p>
-                    </div>
-
-                    <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 inline-block max-w-xs w-full mx-auto">
-                      <p className="text-xs text-slate-400 mb-1">Total Pembayaran Perpanjangan:</p>
-                      <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-mono mb-1">
-                        {formatRupiah(renewOrder.amount)}
-                      </p>
-                      {renewOrder.discount_amount && renewOrder.discount_amount > 0 ? (
-                        <div className="text-[11px] text-emerald-400 font-mono mb-1">
-                          Hemat {formatRupiah(renewOrder.discount_amount)} via Agen {renewOrder.agent_name || appliedPromo?.agent_name}
+                    {renewOrder.payment_method === "COUNTER" ? (
+                      /* Cashier Code Card for Renewal */
+                      <div className="space-y-6">
+                        <div>
+                          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-mono font-bold mb-3">
+                            <Store className="w-3.5 h-3.5" />
+                            PERPANJANGAN TUNAI DI KONTER KASIR
+                          </div>
+                          <h2 className="text-2xl font-black text-white">Tunjukkan Kode Ini ke Kasir</h2>
+                          <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-md mx-auto">
+                            Sebutkan kode kasir berikut ke agen terdekat untuk memperpanjang paket Passpoint Anda:
+                          </p>
                         </div>
-                      ) : null}
-                      <p className="text-xs font-semibold text-slate-300">
-                        {renewOrder.package_name} (+{renewOrder.duration_days} Hari)
-                      </p>
-                    </div>
 
-                    <div className="p-4 bg-white rounded-3xl border-4 border-slate-700 inline-block shadow-2xl">
-                      <img
-                        src={renewOrder.qr_image_url}
-                        alt="QRIS Perpanjangan Passpoint"
-                        className="w-56 h-56 object-contain rounded-xl mx-auto"
-                      />
-                      <p className="text-[10px] text-slate-500 mt-2 font-mono">Invoice Order: {renewOrder.order_id}</p>
-                    </div>
+                        {/* Cashier Code Box */}
+                        <div className="p-6 bg-slate-950 rounded-2xl border-2 border-cyan-500/40 shadow-xl shadow-cyan-500/5 max-w-md mx-auto relative overflow-hidden">
+                          <div className="absolute top-0 right-0 -translate-y-4 translate-x-4 w-24 h-24 bg-cyan-500/10 rounded-full blur-xl pointer-events-none" />
+                          <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400">Kode Bayar Kasir Agen</span>
+                          <div className="text-4xl sm:text-5xl font-mono font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-400 my-2 tracking-widest">
+                            {renewOrder.cashier_code || renewOrder.order_id}
+                          </div>
 
-                    <div className="max-w-md mx-auto space-y-3">
+                          <div className="flex items-center justify-center gap-2 mt-3">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(renewOrder.cashier_code || renewOrder.order_id);
+                                setCopiedCode(true);
+                                setTimeout(() => setCopiedCode(false), 2000);
+                              }}
+                              className="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono font-semibold border border-slate-700 transition flex items-center gap-1.5 cursor-pointer"
+                            >
+                              {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                              <span>{copiedCode ? "Tersalin!" : "Salin Kode"}</span>
+                            </button>
+                          </div>
+
+                          {/* Breakdown Table */}
+                          <div className="mt-5 pt-4 border-t border-slate-800/80 space-y-2 text-left text-xs font-mono">
+                            <div className="flex justify-between text-slate-400">
+                              <span>Paket Perpanjangan:</span>
+                              <span className="text-slate-200 font-bold">{renewOrder.package_name} (+{renewOrder.duration_days} Hari)</span>
+                            </div>
+                            {renewOrder.discount_amount && renewOrder.discount_amount > 0 ? (
+                              <div className="flex justify-between text-emerald-400">
+                                <span>Diskon Promo Online (10%):</span>
+                                <span>-{formatRupiah(renewOrder.discount_amount)}</span>
+                              </div>
+                            ) : null}
+                            <div className="flex justify-between text-slate-400">
+                              <span>Biaya Layanan Kasir:</span>
+                              <span className="text-slate-200">+{formatRupiah(renewOrder.admin_fee || 2500)}</span>
+                            </div>
+                            <div className="flex justify-between text-base font-bold text-white pt-2 border-t border-slate-800">
+                              <span>Total Bayar ke Kasir:</span>
+                              <span className="text-cyan-400 font-black">
+                                {formatRupiah(renewOrder.total_to_pay || renewOrder.amount + 2500)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Pulse Indicator */}
+                        <div className="p-3.5 bg-slate-950/60 rounded-xl border border-slate-800 max-w-md mx-auto flex items-center justify-center gap-3">
+                          <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+                          <span className="text-xs text-slate-300 font-mono">
+                            Menunggu konfirmasi kasir... Masa aktif langsung bertambah seketika setelah kasir klik lunas.
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      /* QRIS Display for Renewal */
+                      <div className="space-y-6">
+                        <div>
+                          <h2 className="text-xl font-black text-white">Selesaikan Pembayaran QRIS Perpanjangan</h2>
+                          <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                            Scan kode QRIS di bawah menggunakan m-Banking atau aplikasi e-wallet apa pun.
+                          </p>
+                        </div>
+
+                        <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 inline-block max-w-xs w-full mx-auto">
+                          <p className="text-xs text-slate-400 mb-1">Total Pembayaran Perpanjangan:</p>
+                          <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-mono mb-1">
+                            {formatRupiah(renewOrder.amount)}
+                          </p>
+                          {renewOrder.discount_amount && renewOrder.discount_amount > 0 ? (
+                            <div className="text-[11px] text-emerald-400 font-mono mb-1">
+                              Hemat {formatRupiah(renewOrder.discount_amount)} via Agen {renewOrder.agent_name || appliedPromo?.agent_name}
+                            </div>
+                          ) : null}
+                          <p className="text-xs font-semibold text-slate-300">
+                            {renewOrder.package_name} (+{renewOrder.duration_days} Hari)
+                          </p>
+                        </div>
+
+                        <div className="p-4 bg-white rounded-3xl border-4 border-slate-700 inline-block shadow-2xl">
+                          <img
+                            src={renewOrder.qr_image_url}
+                            alt="QRIS Perpanjangan Passpoint"
+                            className="w-56 h-56 object-contain rounded-xl mx-auto"
+                          />
+                          <p className="text-[10px] text-slate-500 mt-2 font-mono">Invoice Order: {renewOrder.order_id}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="max-w-md mx-auto space-y-3 pt-2">
                       <button
                         type="button"
                         disabled={renewLoading}
@@ -825,7 +1112,7 @@ export default function PasspointOnboardingPage() {
                         className="w-full py-3.5 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-mono font-bold rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-600/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                       >
                         <CheckCircle2 className="w-4 h-4" />
-                        <span>{renewLoading ? "Memverifikasi..." : "SAYA SUDAH MEMBAYAR / KONFIRMASI"}</span>
+                        <span>{renewLoading ? "Memverifikasi..." : "SAYA SUDAH MEMBAYAR / CEK SEKARANG"}</span>
                       </button>
 
                       <button
@@ -897,13 +1184,89 @@ export default function PasspointOnboardingPage() {
                       {renderPromoBox()}
                     </div>
 
+                    {/* Pilihan Metode Pembayaran Renewal */}
+                    <div className="space-y-2 mb-6">
+                      <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300">
+                        Pilihan Metode Pembayaran *
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div
+                          onClick={() => setPaymentMethod("QRIS")}
+                          className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 ${
+                            paymentMethod === "QRIS"
+                              ? "border-cyan-500 bg-cyan-950/20 ring-1 ring-cyan-500/30"
+                              : "border-slate-800 bg-slate-900/60 hover:border-slate-700"
+                          }`}
+                        >
+                          <div
+                            className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border ${
+                              paymentMethod === "QRIS"
+                                ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400"
+                                : "bg-slate-800 border-slate-700 text-slate-400"
+                            }`}
+                          >
+                            <QrCode className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-xs font-bold text-white">QRIS Mandiri</h4>
+                              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                Instan
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                              Scan mandiri via BCA, Mandiri, BRI, GoPay, OVO, DANA.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div
+                          onClick={() => setPaymentMethod("COUNTER")}
+                          className={`p-3.5 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-3 ${
+                            paymentMethod === "COUNTER"
+                              ? "border-cyan-500 bg-cyan-950/20 ring-1 ring-cyan-500/30"
+                              : "border-slate-800 bg-slate-900/60 hover:border-slate-700"
+                          }`}
+                        >
+                          <div
+                            className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border ${
+                              paymentMethod === "COUNTER"
+                                ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400"
+                                : "bg-slate-800 border-slate-700 text-slate-400"
+                            }`}
+                          >
+                            <Store className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-xs font-bold text-white">Bayar di Konter</h4>
+                              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                Tunai
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                              Dapatkan kode bayar, bayar tunai di agen (+ Admin Rp 2.500).
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <button
                       type="button"
                       disabled={renewLoading || !renewPkg}
                       onClick={handleRenewSubmit}
                       className="w-full py-3.5 px-4 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-mono font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md shadow-cyan-600/20 active:scale-[0.99] cursor-pointer disabled:opacity-50"
                     >
-                      <span>Lanjut Pembayaran QRIS ({renewPkg ? formatRupiah(getDiscountedPrice(renewPkg.price)) : ""})</span>
+                      <span>
+                        Lanjut ke Pembayaran ({paymentMethod === "QRIS" ? "QRIS Mandiri" : "Tunai di Konter"}) -{" "}
+                        {renewPkg
+                          ? formatRupiah(
+                              getDiscountedPrice(renewPkg.price) +
+                                (paymentMethod === "COUNTER" ? 2500 : 0)
+                            )
+                          : ""}
+                      </span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
