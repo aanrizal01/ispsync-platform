@@ -3183,13 +3183,6 @@ export default function AdminSettingsPage() {
                   </p>
                 </div>
               </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                  On-Demand TLS Ready
-                </span>
-              </div>
             </div>
           </div>
 
