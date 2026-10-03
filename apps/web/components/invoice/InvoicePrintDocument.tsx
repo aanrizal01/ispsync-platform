@@ -143,8 +143,8 @@ export function InvoicePrintDocument({
         id={elementId}
         className={`bg-white text-slate-900 w-full ${
           isCompactPreview
-            ? "p-4 text-[10px]"
-            : "max-w-[210mm] min-h-[280mm] p-6 sm:p-10 shadow-md sm:rounded-lg border border-slate-200 print:shadow-none print:border-none print:p-0"
+            ? "p-6 text-[10px] sm:text-[11px] rounded-none border border-slate-300 shadow-2xl"
+            : "max-w-[210mm] min-h-[297mm] p-6 sm:p-10 shadow-2xl rounded-none border border-slate-300 print:shadow-none print:border-none print:p-0"
         } flex flex-col justify-between`}
       >
         <div>
@@ -412,8 +412,8 @@ export function InvoicePrintDocument({
         id={elementId}
         className={`bg-white text-slate-900 w-full ${
           isCompactPreview
-            ? "p-0 text-[10px]"
-            : "max-w-[210mm] min-h-[280mm] shadow-md sm:rounded-2xl border border-slate-200 overflow-hidden print:shadow-none print:border-none print:rounded-none"
+            ? "p-0 text-[10px] sm:text-[11px] rounded-none border border-slate-300 shadow-2xl overflow-hidden"
+            : "max-w-[210mm] min-h-[297mm] shadow-2xl rounded-none border border-slate-300 overflow-hidden print:shadow-none print:border-none print:rounded-none"
         } flex flex-col justify-between`}
       >
         <div>
@@ -637,8 +637,8 @@ export function InvoicePrintDocument({
           is58mm ? "max-w-[58mm] text-[9.5px] p-2" : "max-w-[80mm] text-[11px] p-3 sm:p-4"
         } ${
           isCompactPreview
-            ? "shadow-sm border border-slate-300 rounded"
-            : "shadow-md sm:rounded-lg border border-slate-300 print:shadow-none print:border-none print:p-0 print:m-0 print:w-full print:max-w-none"
+            ? "shadow-2xl border border-slate-300 rounded-none"
+            : "shadow-2xl rounded-none border border-slate-300 print:shadow-none print:border-none print:p-0 print:m-0 print:w-full print:max-w-none"
         } font-mono leading-tight flex flex-col justify-between`}
       >
         <div>
@@ -850,8 +850,8 @@ export function InvoicePrintDocument({
       id={elementId}
       className={`bg-white text-slate-900 w-full ${
         isCompactPreview
-          ? "p-4 text-[10px]"
-          : "max-w-[210mm] min-h-[280mm] p-6 sm:p-10 shadow-md sm:rounded-lg border border-slate-200 print:shadow-none print:border-none print:p-0"
+          ? "p-6 sm:p-7 text-[10px] sm:text-[11px] rounded-none border border-slate-300 shadow-2xl"
+          : "max-w-[210mm] min-h-[297mm] p-6 sm:p-10 shadow-2xl rounded-none border border-slate-300 print:shadow-none print:border-none print:p-0"
       } flex flex-col justify-between`}
     >
       <div>
@@ -1125,6 +1125,28 @@ export function InvoicePrintDocument({
                 />
               </div>
             )}
+
+            {/* Official Company Seal & Signature */}
+            <div className="text-center w-36 sm:w-40 relative shrink-0">
+              <p className="text-[8.5px] text-slate-500 mb-0.5">Diterbitkan sah oleh:</p>
+              <p className="text-[9.5px] font-bold text-slate-800 truncate">{template.company_name || "PT Inovasi Sistem Pintar"}</p>
+              <div className="h-12 relative flex items-center justify-center">
+                {/* Official Stamp Seal (Stempel Basah Digital) */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-85 -rotate-6">
+                  <div className="border-2 border-dashed border-rose-600/70 rounded-full w-24 h-11 flex flex-col items-center justify-center p-0.5 text-rose-600 uppercase font-black text-[7px] leading-tight text-center">
+                    <span className="tracking-widest">★ LUNAS ★</span>
+                    <span className="text-[6px] font-bold truncate max-w-[75px]">{template.brand_name || "ISPSYNC"}</span>
+                    <span className="text-[5px] font-mono">BILLING OFFICIAL</span>
+                  </div>
+                </div>
+                <div className="text-slate-300 text-[8.5px] italic z-10">
+                  ( Tanda Tangan Digital )
+                </div>
+              </div>
+              <div className="border-t border-slate-400 pt-0.5 font-bold text-slate-800 text-[9px]">
+                Bagian Keuangan &amp; Kasir
+              </div>
+            </div>
           </div>
         </div>
       </div>

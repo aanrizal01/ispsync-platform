@@ -34,6 +34,7 @@ import {
   Plus,
   Trash2,
   Smartphone,
+  Receipt,
 } from "lucide-react";
 import {
   settingsApi,
@@ -1061,55 +1062,193 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            {/* Right Column: Live Interactive A4 Invoice Preview */}
+            {/* Right Column: Live Interactive Real Paper Studio Preview */}
             <div className="lg:col-span-6 sticky top-6 space-y-3">
-              <div className="flex items-center justify-between px-1">
-                <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5 uppercase tracking-wider">
-                  <Printer className="w-4 h-4 text-blue-600" />
-                  Pratinjau Lembar Faktur Standar A4 (Live Preview)
-                </span>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  ● Realtime Sync &bull; Model: {(invoiceTemplate.layout || "modern").toUpperCase()}
-                </span>
+              {/* Studio Header Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
+                <div>
+                  <span className="text-xs font-black text-slate-800 flex items-center gap-1.5 uppercase tracking-wider">
+                    {invoiceTemplate.layout === "compact" ? (
+                      <Receipt className="w-4 h-4 text-amber-600" />
+                    ) : (
+                      <Printer className="w-4 h-4 text-blue-600" />
+                    )}
+                    <span>
+                      {invoiceTemplate.layout === "compact"
+                        ? "Pratinjau Kertas Roll Kasir POS (80mm)"
+                        : "Pratinjau Lembar Kertas Fisik A4"}
+                    </span>
+                  </span>
+                  <p className="text-[10px] text-slate-500 font-mono">
+                    {invoiceTemplate.layout === "compact"
+                      ? "Format Struk Thermal Roll • Monospace Kasir POS"
+                      : "Standar Fisik ISO 216 (210 × 297 mm) • HVS 80 GSM"}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    ● Realtime Sync
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const printContent = document.getElementById("preview-invoice-sheet");
+                      if (!printContent) return;
+                      const win = window.open("", "_blank");
+                      if (!win) return;
+                      win.document.write(`
+                        <!DOCTYPE html>
+                        <html>
+                          <head>
+                            <title>Cetak Faktur - ${invoiceTemplate.brand_name || "ISPSYNC"}</title>
+                            <meta charset="utf-8" />
+                            <style>
+                              @page {
+                                size: ${invoiceTemplate.layout === "compact" ? "80mm auto" : "A4 portrait"};
+                                margin: ${invoiceTemplate.layout === "compact" ? "0mm" : "10mm"};
+                              }
+                              body {
+                                margin: 0;
+                                padding: 0;
+                                background: #ffffff;
+                                -webkit-print-color-adjust: exact !important;
+                                print-color-adjust: exact !important;
+                              }
+                            </style>
+                            <script src="https://cdn.tailwindcss.com"></script>
+                          </head>
+                          <body onload="window.print();">
+                            ${printContent.outerHTML}
+                          </body>
+                        </html>
+                      `);
+                      win.document.close();
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-mono font-bold text-[10px] flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+                    title="Coba simulasi cetak dokumen ini ke printer atau PDF"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Cetak Contoh</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Scaled Preview Sheet */}
-              <div className="bg-slate-200/80 p-4 rounded-3xl border border-slate-300/80 shadow-inner overflow-hidden">
-                <div className="rounded-2xl shadow-xl border border-slate-300 overflow-hidden select-none bg-white">
-                  <InvoicePrintDocument
-                    template={invoiceTemplate}
-                    invoice={{
-                      invoice_number: "INV-2026-09-DEMO",
-                      issue_date: new Date().toISOString(),
-                      due_date: new Date(Date.now() + 7 * 86400000).toISOString(),
-                      status: "UNPAID",
-                      billing_period_start: "2026-10-01",
-                      billing_period_end: "2026-10-31",
-                      subtotal: 250000,
-                      tax_amount: 27500,
-                      total_amount: 277500,
-                      amount_paid: 0,
-                      amount_due: 277500,
-                      notes: "Pembayaran tepat waktu menjaga koneksi internet tetap optimal.",
-                      items: [
-                        {
-                          description: "Langganan Internet Dedicated Fiber 50 Mbps (Oktober 2026)",
-                          quantity: 1,
-                          unit_price: 250000,
-                          total: 250000,
-                        },
-                      ],
-                    }}
-                    customer={{
-                      customer_name: "Budi Santoso",
-                      customer_number: "CUS-2026-DEMO",
-                      phone: "0812-3456-7890",
-                      email: "budi.santoso@example.com",
-                      address: "Jl. Sudirman No. 42, RT 02/04, Harau",
-                    }}
-                    elementId="preview-invoice-sheet"
-                    isCompactPreview={true}
-                  />
+              {/* Realistic Document Workbench / Desk Canvas */}
+              <div className="bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 p-5 sm:p-7 rounded-2xl border border-slate-800 shadow-2xl relative overflow-hidden">
+                {/* Desk Texture Grid Pattern */}
+                <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:18px_18px] opacity-35 pointer-events-none" />
+                
+                {/* Ambient Radial Aurora Glow */}
+                <div className="absolute -top-24 -right-24 w-60 h-60 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-24 -left-24 w-60 h-60 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none" />
+
+                {/* Desk Workspace Container */}
+                <div className="relative z-10 flex justify-center items-start overflow-y-auto max-h-[820px] scrollbar-thin scrollbar-thumb-slate-700">
+                  {invoiceTemplate.layout === "compact" ? (
+                    /* ── THERMAL RECEIPT ROLL PAPER ──────────────── */
+                    <div className="relative w-full max-w-[340px] bg-white text-slate-900 rounded-none shadow-[0_2px_4px_rgba(0,0,0,0.2),0_12px_32px_rgba(0,0,0,0.5),0_0_0_1px_rgba(0,0,0,0.12)] border-x border-t border-slate-300 select-none overflow-hidden my-2">
+                      {/* Top Thermal Feed Indicator */}
+                      <div className="bg-slate-100/90 px-3 py-1 border-b border-dashed border-slate-300 flex items-center justify-between text-[8px] font-mono text-slate-500">
+                        <span className="font-bold text-slate-700">ROLL THERMAL POS (80 MM)</span>
+                        <span>AUTO CUT READY</span>
+                      </div>
+
+                      <InvoicePrintDocument
+                        template={invoiceTemplate}
+                        invoice={{
+                          invoice_number: "INV-2026-09-DEMO",
+                          issue_date: new Date().toISOString(),
+                          due_date: new Date(Date.now() + 7 * 86400000).toISOString(),
+                          status: "UNPAID",
+                          billing_period_start: "2026-10-01",
+                          billing_period_end: "2026-10-31",
+                          subtotal: 250000,
+                          tax_amount: 27500,
+                          total_amount: 277500,
+                          amount_paid: 0,
+                          amount_due: 277500,
+                          notes: "Pembayaran tepat waktu menjaga koneksi internet tetap optimal.",
+                          items: [
+                            {
+                              description: "Langganan Internet Dedicated Fiber 50 Mbps (Oktober 2026)",
+                              quantity: 1,
+                              unit_price: 250000,
+                              total: 250000,
+                            },
+                          ],
+                        }}
+                        customer={{
+                          customer_name: "Budi Santoso",
+                          customer_number: "CUS-2026-DEMO",
+                          phone: "0812-3456-7890",
+                          email: "budi.santoso@example.com",
+                          address: "Jl. Sudirman No. 42, RT 02/04, Harau",
+                        }}
+                        elementId="preview-invoice-sheet"
+                        isCompactPreview={true}
+                      />
+
+                      {/* Authentic Serrated Paper Tear-Off Edge (Zig-zag Cutter) */}
+                      <div
+                        className="w-full h-3.5 bg-white -mt-0.5 border-t border-dashed border-slate-200"
+                        style={{
+                          clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 96% 35%, 92% 100%, 88% 35%, 84% 100%, 80% 35%, 76% 100%, 72% 35%, 68% 100%, 64% 35%, 60% 100%, 56% 35%, 52% 100%, 48% 35%, 44% 100%, 40% 35%, 36% 100%, 32% 35%, 28% 100%, 24% 35%, 20% 100%, 16% 35%, 12% 100%, 8% 35%, 4% 100%, 0% 35%)"
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    /* ── STANDARD PHYSICAL A4 PAPER SHEET ───────── */
+                    <div className="relative w-full max-w-[560px] bg-white text-slate-900 rounded-none shadow-[0_1px_3px_rgba(0,0,0,0.15),0_14px_32px_-4px_rgba(0,0,0,0.45),0_28px_64px_-12px_rgba(0,0,0,0.55),0_0_0_1px_rgba(0,0,0,0.08)] border border-slate-300/80 select-none overflow-hidden my-2">
+                      {/* Paper Top Spec Header Line */}
+                      <div className="bg-slate-100/90 px-4 py-1 border-b border-slate-200 flex items-center justify-between text-[9px] font-mono text-slate-500">
+                        <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          LEMBAR KERTAS A4 (210 × 297 MM)
+                        </span>
+                        <span>HVS 80 GSM &bull; MARGIN STANDAR 15MM</span>
+                      </div>
+
+                      {/* Paper 2-Hole Binder Punch Marks (Left Edge) */}
+                      <div className="absolute left-2 top-[32%] w-3 h-3 rounded-full bg-slate-900 shadow-inner border border-slate-400/40 pointer-events-none opacity-75 z-20" title="Lubang Binder Filing A4" />
+                      <div className="absolute left-2 top-[68%] w-3 h-3 rounded-full bg-slate-900 shadow-inner border border-slate-400/40 pointer-events-none opacity-75 z-20" title="Lubang Binder Filing A4" />
+
+                      <InvoicePrintDocument
+                        template={invoiceTemplate}
+                        invoice={{
+                          invoice_number: "INV-2026-09-DEMO",
+                          issue_date: new Date().toISOString(),
+                          due_date: new Date(Date.now() + 7 * 86400000).toISOString(),
+                          status: "UNPAID",
+                          billing_period_start: "2026-10-01",
+                          billing_period_end: "2026-10-31",
+                          subtotal: 250000,
+                          tax_amount: 27500,
+                          total_amount: 277500,
+                          amount_paid: 0,
+                          amount_due: 277500,
+                          notes: "Pembayaran tepat waktu menjaga koneksi internet tetap optimal.",
+                          items: [
+                            {
+                              description: "Langganan Internet Dedicated Fiber 50 Mbps (Oktober 2026)",
+                              quantity: 1,
+                              unit_price: 250000,
+                              total: 250000,
+                            },
+                          ],
+                        }}
+                        customer={{
+                          customer_name: "Budi Santoso",
+                          customer_number: "CUS-2026-DEMO",
+                          phone: "0812-3456-7890",
+                          email: "budi.santoso@example.com",
+                          address: "Jl. Sudirman No. 42, RT 02/04, Harau",
+                        }}
+                        elementId="preview-invoice-sheet"
+                        isCompactPreview={true}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
