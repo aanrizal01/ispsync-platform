@@ -40,7 +40,9 @@ import {
   UserPlus,
   Check,
   Image as ImageIcon,
+  Award,
 } from "lucide-react";
+import AgentCertificateModal from "@/components/agent/AgentCertificateModal";
 
 export default function AdminAgentsPage() {
   const [activeTab, setActiveTab] = useState<"agents" | "pending" | "topups" | "mutations">("agents");
@@ -57,6 +59,7 @@ export default function AdminAgentsPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [isProcessingVerification, setIsProcessingVerification] = useState(false);
+  const [selectedAgentForCertificate, setSelectedAgentForCertificate] = useState<Agent | null>(null);
 
   const [topupRequests, setTopupRequests] = useState<TopupRequest[]>([]);
   const [topupMeta, setTopupMeta] = useState({ page: 1, limit: 10, total: 0, total_pages: 1 });
@@ -868,11 +871,20 @@ export default function AdminAgentsPage() {
                                 setSelectedAgentForPks(agent);
                                 setShowPksModal(true);
                               }}
-                              className="px-2.5 py-1.5 text-xs font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors flex items-center gap-1"
+                              className="px-2.5 py-1.5 text-xs font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
                               title="Cetak Dokumen PKS Kemitraan Resmi"
                             >
                               <FileText className="w-3.5 h-3.5" />
                               PKS
+                            </button>
+
+                            <button
+                              onClick={() => setSelectedAgentForCertificate(agent)}
+                              className="px-2.5 py-1.5 text-xs font-semibold bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                              title="Cetak Sertifikat Kemitraan Resmi (A4 Landscape)"
+                            >
+                              <Award className="w-3.5 h-3.5 text-amber-600" />
+                              Sertifikat
                             </button>
                           </div>
                         </td>
@@ -2374,6 +2386,14 @@ export default function AdminAgentsPage() {
           </div>
         </div>
       )}
+
+      {/* ── MODAL: SERTIFIKAT KEMITRAAN AGEN RESMI ───────────────────── */}
+      <AgentCertificateModal
+        isOpen={!!selectedAgentForCertificate}
+        onClose={() => setSelectedAgentForCertificate(null)}
+        agent={selectedAgentForCertificate}
+        companyProfile={companyProfile}
+      />
     </div>
   );
 }

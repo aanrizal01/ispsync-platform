@@ -60,8 +60,10 @@ import {
   Lock,
   X,
   Wifi,
+  Award,
 } from "lucide-react";
 import { PrinterSettingsModal } from "./PrinterSettingsModal";
+import AgentCertificateModal, { type CompanyCertificateProfile } from "@/components/agent/AgentCertificateModal";
 import { ThermalPrinterService, type VoucherTicketData } from "@/lib/thermal-printer";
 import { passpointApi, type PasspointInquiryResult, type PasspointReceipt, type PasspointPackage } from "@/lib/api/passpoint";
 
@@ -71,11 +73,54 @@ export default function AgentDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [copiedPromo, setCopiedPromo] = useState(false);
   const [showPrinterModal, setShowPrinterModal] = useState(false);
+  const [showCertificateModal, setShowCertificateModal] = useState(false);
+  const [companyProfile, setCompanyProfile] = useState<CompanyCertificateProfile>({
+    companyName: "PT. Inovasi Sistem Pintar",
+    brandName: "ISPSYNC",
+    npwp: "03.882.194.5-014.000",
+    address: "Sentra Telekomunikasi Internet Nusantara",
+    phone: "+62 811-0000-0000",
+    emailSupport: "admin@ispsync.id",
+    logoUrl: "/web/dev_logo.svg",
+  });
   const [isNativeApp, setIsNativeApp] = useState(false);
   const [hideAppBanner, setHideAppBanner] = useState(false);
 
   useEffect(() => {
     setIsNativeApp(ThermalPrinterService.isNativeAndroid());
+
+    if (typeof window !== "undefined") {
+      const parts = window.location.hostname.split(".");
+      let detectedSlug = "dev";
+      if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "hotspot")) {
+        detectedSlug = parts[1].toLowerCase();
+      } else if (parts.length >= 3 && parts[0] !== "www") {
+        detectedSlug = parts[0].toLowerCase();
+      }
+      if (detectedSlug && detectedSlug !== "localhost" && detectedSlug !== "127") {
+        setCompanyProfile((prev) => ({
+          ...prev,
+          logoUrl: `/web/${detectedSlug}_logo.svg`,
+        }));
+      }
+    }
+
+    fetch("/api/tenant/profile")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.success) {
+          setCompanyProfile({
+            companyName: data.companyName || "PT. Inovasi Sistem Pintar",
+            brandName: data.brandName || "ISPSYNC",
+            npwp: data.npwp || "03.882.194.5-014.000",
+            address: data.address || "Sentra Telekomunikasi Internet Nusantara",
+            phone: data.phone || "+62 811-0000-0000",
+            emailSupport: data.emailSupport || "admin@ispsync.id",
+            logoUrl: data.logoUrl || `/web/${data.slug || "dev"}_logo.svg`,
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Active Tab
@@ -4931,6 +4976,27 @@ export default function AgentDashboardPage() {
               </button>
             </div>
 
+            {/* Sertifikat Kemitraan Resmi Card */}
+            <div className="bg-gradient-to-r from-amber-50 to-yellow-50/70 border border-amber-200/80 p-3.5 rounded-2xl flex items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Award className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="font-bold text-xs text-slate-900 block">Sertifikat Kemitraan Resmi</span>
+                  <p className="text-[11px] text-slate-500">Legalitas kemitraan resmi {companyProfile.brandName} untuk dipajang di gerai/konter.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCertificateModal(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-900 bg-white hover:bg-amber-100/60 border border-amber-300 shadow-2xs transition-colors shrink-0 cursor-pointer"
+              >
+                <Award className="w-3.5 h-3.5 text-amber-600" />
+                <span>Lihat &amp; Cetak</span>
+              </button>
+            </div>
+
             {/* Form 1: Profile & Loket Fee */}
             <form onSubmit={handleSaveSettings} className="space-y-4">
               <div className="text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -5236,40 +5302,50 @@ export default function AgentDashboardPage() {
         onClose={() => setShowPrinterModal(false)}
       />
 
-      <style jsx global>{`
-        @media print {
-          body * {
-            visibility: hidden !important;
+      {/* ── MODAL: SERTIFIKAT KEMITRAAN AGEN RESMI ───────────────────── */}
+      <AgentCertificateModal
+        isOpen={showCertificateModal}
+        onClose={() => setShowCertificateModal(false)}
+        agent={dashboard?.agent || null}
+        companyProfile={companyProfile}
+      />
+
+      {!showCertificateModal && (
+        <style jsx global>{`
+          @media print {
+            body * {
+              visibility: hidden !important;
+            }
+            #thermal-print-area,
+            #thermal-print-area * {
+              visibility: visible !important;
+            }
+            #thermal-print-area {
+              display: block !important;
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 58mm;
+              padding: 0;
+              margin: 0;
+              background: #fff;
+              color: #000;
+              font-family: monospace, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            }
+            .thermal-receipt {
+              width: 58mm;
+              page-break-after: always;
+              break-after: page;
+              padding: 4mm 2mm;
+              box-sizing: border-box;
+            }
+            @page {
+              size: 58mm auto;
+              margin: 0;
+            }
           }
-          #thermal-print-area,
-          #thermal-print-area * {
-            visibility: visible !important;
-          }
-          #thermal-print-area {
-            display: block !important;
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 58mm;
-            padding: 0;
-            margin: 0;
-            background: #fff;
-            color: #000;
-            font-family: monospace, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-          }
-          .thermal-receipt {
-            width: 58mm;
-            page-break-after: always;
-            break-after: page;
-            padding: 4mm 2mm;
-            box-sizing: border-box;
-          }
-          @page {
-            size: 58mm auto;
-            margin: 0;
-          }
-        }
-      `}</style>
+        `}</style>
+      )}
     </div>
   );
 }
