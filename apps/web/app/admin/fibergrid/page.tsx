@@ -371,7 +371,7 @@ export default function AdminFibergridPage() {
             Fibergrid &amp; Nexus GIS — Topologi &amp; Sebaran ODP
           </h1>
           <p className="text-sm text-slate-500">
-            Pusat pemetaan geospasial titik ODP, jalur fiber optik backbone/feeder, dan sebaran ODP mitra Jartaplok dari EngineNexus.
+            Monitoring sebaran titik ODP, ketersediaan port, dan uji kelayakan jangkauan pelanggan (Coverage Feasibility) berbasis data spasial dari EngineNexus &amp; Wholesale Jartaplok.
           </p>
         </div>
 
