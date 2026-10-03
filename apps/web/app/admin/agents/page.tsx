@@ -87,6 +87,8 @@ export default function AdminAgentsPage() {
     companyName: string;
     brandName: string;
     npwp: string;
+    nib?: string;
+    sklo?: string;
     address: string;
     phone: string;
     emailSupport: string;
@@ -95,6 +97,8 @@ export default function AdminAgentsPage() {
     companyName: "PT. Inovasi Sistem Pintar",
     brandName: "ISPSYNC",
     npwp: "03.882.194.5-014.000",
+    nib: "0220208123456",
+    sklo: "No. 128/TEL.04.02/KOMINFO",
     address: "Sentra Telekomunikasi Internet Nusantara",
     phone: "+62 811-0000-0000",
     emailSupport: "admin@ispsync.id",
@@ -287,6 +291,8 @@ export default function AdminAgentsPage() {
             companyName: data.companyName || "PT. Inovasi Sistem Pintar",
             brandName: data.brandName || "ISPSYNC",
             npwp: data.npwp || "03.882.194.5-014.000",
+            nib: data.nib || "0220208123456",
+            sklo: data.sklo || "No. 128/TEL.04.02/KOMINFO",
             address: data.address || "Sentra Telekomunikasi Internet Nusantara",
             phone: data.phone || "+62 811-0000-0000",
             emailSupport: data.emailSupport || "admin@ispsync.id",

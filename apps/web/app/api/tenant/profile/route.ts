@@ -10,6 +10,21 @@ const TENANT_LEGAL_MAP: Record<string, string> = {
   dev: "ISPSYNC Staging Lab",
 };
 
+const TENANT_TELCO_LICENSES: Record<string, { nib: string; sklo: string }> = {
+  ispmu: {
+    nib: "0220208123456",
+    sklo: "No. 128/TEL.04.02/KOMINFO",
+  },
+  ispku: {
+    nib: "0220107654321",
+    sklo: "No. 095/TEL.04.02/KOMINFO",
+  },
+  dev: {
+    nib: "0220008819201",
+    sklo: "No. 014/TEL.04.02/KOMINFO",
+  },
+};
+
 interface MemberRecord {
   id: string;
   email: string;
@@ -18,6 +33,8 @@ interface MemberRecord {
   phone: string;
   address: string;
   npwp: string;
+  nib?: string;
+  sklo?: string;
   domain: string;
   logoUrl?: string;
   brandColor?: string;
@@ -84,7 +101,12 @@ export async function GET(req: NextRequest) {
   const domain = member?.domain || `${slug}.ispsync.id`;
   const website = `https://${domain}`;
   const logoUrl = `/web/${slug}_logo.svg`;
-  const faviconUrl = `/web/${slug}_favicon.svg`;
+  const telcoLicense = TENANT_TELCO_LICENSES[slug] || {
+    nib: member?.nib || "0220208123456",
+    sklo: member?.sklo || "No. 128/TEL.04.02/KOMINFO",
+  };
+  const nib = member?.nib || telcoLicense.nib;
+  const sklo = member?.sklo || telcoLicense.sklo;
 
   return NextResponse.json({
     success: true,
@@ -92,6 +114,8 @@ export async function GET(req: NextRequest) {
     companyName: legalName,
     brandName,
     npwp,
+    nib,
+    sklo,
     phone,
     whatsappCS: phone,
     emailSupport: email,

@@ -9,6 +9,8 @@
       "phone": "081166012345",
       "address": "Jl. Pulutan, Koto Tuo, Kec. Harau, Kab. 50 Kota, Sumatera Barat 26271",
       "npwp": "03.882.194.5-014.000",
+      "nib": "0220008819201",
+      "sklo": "No. 014/TEL.04.02/KOMINFO",
       "plan": "private",
       "planName": "Private Telco",
       "planPrice": "65000000",
@@ -94,6 +96,8 @@
       "phone": "081288889999",
       "address": "Jalan Merdeka No. 12, Padang, Sumatera Barat",
       "npwp": "04.112.334.5-015.000",
+      "nib": "0220107654321",
+      "sklo": "No. 095/TEL.04.02/KOMINFO",
       "plan": "professional",
       "planName": "Professional",
       "planPrice": "6500000",
@@ -103,7 +107,7 @@
       "expiresAt": "2027-02-01",
       "autoRenew": true,
       "domain": "ispku.ispsync.id",
-      "note": "Tenant Resmi Demo 1 \u2014 Jartaplok Partner ISPSYNC",
+      "note": "Tenant Resmi Demo 1 — Jartaplok Partner ISPSYNC",
       "invoices": [
         {
           "id": "INV-2026-ISPKU-01",
@@ -127,6 +131,8 @@
       "phone": "081377778888",
       "address": "Jalan Sudirman No. 88, Bukittinggi, Sumatera Barat",
       "npwp": "05.223.445.6-016.000",
+      "nib": "0220208123456",
+      "sklo": "No. 128/TEL.04.02/KOMINFO",
       "plan": "starter",
       "planName": "Starter",
       "planPrice": "2500000",
@@ -136,7 +142,7 @@
       "expiresAt": "2027-03-01",
       "autoRenew": true,
       "domain": "ispmu.ispsync.id",
-      "note": "Tenant Resmi Demo 2 \u2014 Jartaplok Client ISPSYNC",
+      "note": "Tenant Resmi Demo 2 — Jartaplok Client ISPSYNC",
       "invoices": [
         {
           "id": "INV-2026-ISPMU-01",
@@ -160,6 +166,8 @@
       "phone": "081100000000",
       "address": "Payakumbuh Staging Lab, Sumatera Barat",
       "npwp": "99.999.999.9-999.000",
+      "nib": "0220008819201",
+      "sklo": "No. 014/TEL.04.02/KOMINFO",
       "plan": "enterprise",
       "planName": "Carrier-Grade Enterprise",
       "planPrice": "14500000",

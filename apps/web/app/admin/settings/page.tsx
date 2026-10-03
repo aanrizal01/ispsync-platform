@@ -91,6 +91,8 @@ export default function AdminSettingsPage() {
     companyName: "",
     brandName: "",
     npwp: "",
+    nib: "",
+    sklo: "",
     address: "",
     phone: "",
     whatsappCS: "",
@@ -241,6 +243,8 @@ export default function AdminSettingsPage() {
               companyName: data.companyName,
               brandName: data.brandName,
               npwp: data.npwp,
+              nib: data.nib || "0220208123456",
+              sklo: data.sklo || "No. 128/TEL.04.02/KOMINFO",
               phone: data.phone,
               whatsappCS: data.whatsappCS,
               emailSupport: data.emailSupport,
@@ -601,6 +605,26 @@ export default function AdminSettingsPage() {
                 value={settings.npwp}
                 onChange={(e) => setSettings({ ...settings, npwp: e.target.value })}
                 placeholder="01.234.567.8-901.000"
+                className="w-full px-3.5 py-2 text-xs font-mono border border-slate-300 rounded-xl"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Nomor Induk Berusaha (NIB OSS)</label>
+              <input
+                type="text"
+                value={settings.nib}
+                onChange={(e) => setSettings({ ...settings, nib: e.target.value })}
+                placeholder="Contoh: 0220208123456"
+                className="w-full px-3.5 py-2 text-xs font-mono border border-slate-300 rounded-xl"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Surat Keterangan Laik Operasi (SKLO Kominfo)</label>
+              <input
+                type="text"
+                value={settings.sklo}
+                onChange={(e) => setSettings({ ...settings, sklo: e.target.value })}
+                placeholder="Contoh: No. 128/TEL.04.02/KOMINFO"
                 className="w-full px-3.5 py-2 text-xs font-mono border border-slate-300 rounded-xl"
               />
             </div>

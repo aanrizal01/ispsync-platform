@@ -19,7 +19,9 @@ export interface AgentCertificateData {
 export interface CompanyCertificateProfile {
   companyName: string;
   brandName: string;
-  npwp: string;
+  npwp?: string;
+  nib?: string;
+  sklo?: string;
   address: string;
   phone: string;
   emailSupport: string;
@@ -185,7 +187,7 @@ export default function AgentCertificateModal({
                 Penyelenggara Jasa Akses Internet (Internet Service Provider) Berizin Resmi
               </p>
               <p className="text-[9px] text-slate-500 font-mono mt-0.5">
-                NPWP: {companyProfile.npwp} &bull; SK Izin Kominfo RI
+                NIB: {companyProfile.nib || "0220208123456"} &bull; SKLO Kominfo RI: {companyProfile.sklo || "No. 128/TEL.04.02/KOMINFO"}
               </p>
 
               {/* Title Lockup */}

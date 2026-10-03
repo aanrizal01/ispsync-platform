@@ -26,7 +26,9 @@ export interface AgentPksData {
 export interface CompanyPksProfile {
   companyName: string;
   brandName: string;
-  npwp: string;
+  npwp?: string;
+  nib?: string;
+  sklo?: string;
   address: string;
   phone: string;
   emailSupport: string;
@@ -356,7 +358,7 @@ export default function AgentPksModal({
                 Penyelenggara Jasa Akses Internet (Internet Service Provider)
               </p>
               <p className="text-[10px] text-slate-600 font-mono mt-0.5">
-                NPWP: {companyProfile.npwp}
+                NIB: {companyProfile.nib || "0220208123456"} &bull; SKLO Kominfo RI: {companyProfile.sklo || "No. 128/TEL.04.02/KOMINFO"}
               </p>
               <p className="text-[10px] text-slate-600 mt-0.5">
                 Kantor: {companyProfile.address} &bull; Telp/WA: {companyProfile.phone} &bull; Email: {companyProfile.emailSupport}
@@ -399,7 +401,7 @@ export default function AgentPksModal({
             <div className="pks-pasal-block">
               <h4 className="font-bold text-slate-950 font-serif text-xs sm:text-sm">PASAL 1 — DASAR KEMITRAAN &amp; LEGALITAS</h4>
               <p className="text-[11px] sm:text-xs text-slate-700 mt-0.5 leading-relaxed">
-                1. PIHAK PERTAMA adalah Badan Hukum Penyelenggara Jasa Internet (ISP) berizin resmi dari Kementerian Komunikasi dan Informatika RI.<br />
+                1. PIHAK PERTAMA adalah Badan Hukum Penyelenggara Jasa Internet (ISP) berizin resmi Kementerian Komunikasi dan Informatika RI (NIB: {companyProfile.nib || "0220208123456"} &bull; SKLO: {companyProfile.sklo || "No. 128/TEL.04.02/KOMINFO"}).<br />
                 2. PIHAK KEDUA bertindak semata-mata sebagai <strong>Mitra Saluran Distribusi Resmi (Channel Partner)</strong> bagi produk PIHAK PERTAMA, dan hubungan ini merupakan kemitraan bisnis keagenan, bukan ketenagakerjaan/karyawan, serta bukan pengalihan izin telekomunikasi.
               </p>
             </div>
