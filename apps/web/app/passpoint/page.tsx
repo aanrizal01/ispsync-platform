@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   Wifi,
   Apple,
@@ -121,6 +122,11 @@ export default function PasspointOnboardingPage() {
             }
           })
           .catch(() => {});
+      }
+
+      const modeParam = urlParams.get("mode") || urlParams.get("tab");
+      if (modeParam && (modeParam.toUpperCase() === "RENEW" || modeParam.toUpperCase() === "LOOKUP")) {
+        setPageMode(modeParam.toUpperCase() as any);
       }
     }
   }, []);
@@ -469,8 +475,25 @@ export default function PasspointOnboardingPage() {
         <div className="absolute top-1/2 -right-32 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 left-1/4 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="max-w-4xl mx-auto relative z-10 text-center space-y-4">
-          {/* Top Brand & Badge */}
+        <div className="max-w-4xl mx-auto relative z-10">
+          {/* Top Bar with Self-Care Portal Link */}
+          <div className="flex items-center justify-between pb-6 mb-4 border-b border-slate-800/60">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
+                PORTAL RESMI PASSPOINT
+              </span>
+            </div>
+            <Link
+              href="/passpoint/status"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-cyan-400 hover:text-cyan-300 border border-slate-700 text-xs font-semibold transition shadow-xs"
+            >
+              <Clock className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Cek Status Pelanggan</span>
+            </Link>
+          </div>
+
+          <div className="text-center space-y-4">
+            {/* Top Brand & Badge */}
           <div className="flex items-center justify-center gap-3">
             {tenantLogo ? (
               <img
@@ -507,6 +530,7 @@ export default function PasspointOnboardingPage() {
             Internet cepat terenkripsi standar industri WPA2/WPA3 Enterprise (EAP-TTLS).
             Sekali pasang profil, iPhone, iPad, Mac, dan Android Anda langsung tersambung otomatis saat berada di jangkauan hotspot {tenantName}.
           </p>
+        </div>
         </div>
       </header>
 
@@ -554,6 +578,26 @@ export default function PasspointOnboardingPage() {
             <Download className="w-4 h-4 shrink-0" />
             <span>Pasang Ulang Profil</span>
           </button>
+        </div>
+
+        {/* Quick Self-Care Link Banner */}
+        <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs">
+          <div className="flex items-center gap-2.5 text-slate-300">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+              <Clock className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="font-semibold text-slate-200">Sudah memiliki akun Wi-Fi Passpoint?</p>
+              <p className="text-[11px] text-slate-400">Periksa sisa masa aktif, unduh ulang profil, atau perpanjang paket secara mandiri.</p>
+            </div>
+          </div>
+          <Link
+            href="/passpoint/status"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 text-xs font-semibold border border-slate-700 transition shrink-0"
+          >
+            <span>Cek Status Pelanggan</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
 
         {error && (
@@ -1030,6 +1074,17 @@ export default function PasspointOnboardingPage() {
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
+
+            <div className="mt-4 pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+              <span className="text-slate-400">Tidak tahu atau lupa ID Kredensial UUID Anda?</span>
+              <Link
+                href="/passpoint/status"
+                className="text-cyan-400 hover:text-cyan-300 font-semibold inline-flex items-center gap-1.5 transition"
+              >
+                <span>Cari dengan Nomor WhatsApp atau Username EAP</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
         )}
 
@@ -1360,9 +1415,17 @@ export default function PasspointOnboardingPage() {
         {/* Global Footer */}
         <footer className="pt-10 border-t border-slate-800/80 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-3">
           <p>&copy; {new Date().getFullYear()} {tenantLegalName}. All rights reserved.</p>
-          <div className="flex items-center gap-1.5 text-slate-400">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Enkripsi WPA2/WPA3-Enterprise EAP-TTLS</span>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/passpoint/status"
+              className="text-slate-400 hover:text-cyan-400 transition underline underline-offset-4"
+            >
+              Cek Status Layanan
+            </Link>
+            <div className="flex items-center gap-1.5 text-slate-400">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <span>Enkripsi WPA2/WPA3-Enterprise EAP-TTLS</span>
+            </div>
           </div>
         </footer>
       </main>

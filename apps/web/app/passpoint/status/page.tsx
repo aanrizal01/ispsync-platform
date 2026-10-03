@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -16,11 +16,42 @@ import {
 } from "lucide-react";
 import { passpointApi, PasspointCustomerStatus } from "@/lib/api/passpoint";
 
+const TENANT_LEGAL_MAP: Record<string, string> = {
+  ispmu: "PT. Mitra Usaha Data",
+  ispku: "PT. ISP Kita Nusantara",
+  dev: "Laboratorium ISPSYNC R&D",
+};
+
 export default function PasspointStatusPage() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusData, setStatusData] = useState<PasspointCustomerStatus | null>(null);
+  const [tenantName, setTenantName] = useState("ISPSYNC");
+  const [tenantLegalName, setTenantLegalName] = useState("PT. ISP Kita Nusantara");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const h = window.location.hostname.toLowerCase();
+      const parts = h.split(".");
+      let detectedSlug = "";
+
+      if (parts.length >= 4 && (parts[0] === "passpoint" || parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "wifi")) {
+        detectedSlug = parts[1].toLowerCase();
+      } else if (parts.length === 3 && (parts[0] === "passpoint" || parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "wifi")) {
+        detectedSlug = parts[1].toLowerCase();
+      } else if (parts.length >= 3 && parts[0] !== "www") {
+        detectedSlug = parts[0].toLowerCase();
+      }
+
+      if (detectedSlug && detectedSlug !== "ispsync") {
+        const upper = detectedSlug.toUpperCase();
+        setTenantName(upper);
+        setTenantLegalName(TENANT_LEGAL_MAP[detectedSlug] || `PT. ${upper} Data Nusantara`);
+        document.title = `Cek Status | ${upper} Passpoint`;
+      }
+    }
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +115,7 @@ export default function PasspointStatusPage() {
             <Wifi className="w-6 h-6" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">
-            Cek Status Akses WiFi Passpoint
+            Cek Status Akses WiFi Passpoint {tenantName}
           </h1>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
             Masukkan nomor WhatsApp atau Username akun Passpoint Anda untuk memeriksa sisa masa aktif dan paket.
@@ -196,8 +227,8 @@ export default function PasspointStatusPage() {
             {/* Action Buttons */}
             <div className="space-y-2 pt-2 border-t border-slate-800">
               <Link
-                href={`/passpoint/renew?order_id=${encodeURIComponent(statusData.last_order_id || statusData.username)}`}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold transition shadow-sm"
+                href="/passpoint?mode=RENEW"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white text-xs font-semibold transition shadow-sm"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Perpanjang Masa Aktif WiFi Sekarang</span>
@@ -218,7 +249,7 @@ export default function PasspointStatusPage() {
 
       {/* Footer */}
       <footer className="border-t border-slate-800/80 bg-slate-950 py-6 text-center text-xs text-slate-500">
-        <p>&copy; 2026 PT. Mitra Usaha Data. Seluruh hak cipta dilindungi.</p>
+        <p>&copy; {new Date().getFullYear()} {tenantLegalName}. Seluruh hak cipta dilindungi.</p>
       </footer>
     </div>
   );
