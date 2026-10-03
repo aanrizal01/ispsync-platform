@@ -71,6 +71,12 @@ export default function AdminNotificationsPage() {
   };
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("tab") === "templates") {
+        setActiveTab("templates");
+      }
+    }
     fetchData();
   }, []);
 

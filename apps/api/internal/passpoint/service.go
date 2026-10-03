@@ -1042,6 +1042,31 @@ func (s *Service) sendPurchaseWhatsApp(ctx context.Context, ord *PasspointOrder,
 	}
 
 	subject := "Kredensial Akses Wi-Fi Passpoint"
+	profileURL := fmt.Sprintf("https://%s/api/v1/passpoint/credentials/%s/apple-profile", baseDomain, credID.String())
+	statusURL := fmt.Sprintf("https://%s/passpoint/status?query=%s", baseDomain, username)
+
+	// Try dispatching configured template from database
+	_, notifErr := s.notifSvc.DispatchTemplate(ctx, notification.DispatchTemplateRequest{
+		TemplateCode: "PASSPOINT_PURCHASE_WA",
+		Recipient:    phone,
+		Data: map[string]string{
+			"customer_name": custName,
+			"package_name":  pkgName,
+			"duration_days": fmt.Sprintf("%d", durationDays),
+			"expiry_date":   expiryDate,
+			"username":      username,
+			"password":      password,
+			"realm":         realm,
+			"domain":        domain,
+			"profile_url":   profileURL,
+			"status_url":    statusURL,
+		},
+	})
+	if notifErr == nil {
+		s.logger.Info("passpoint purchase whatsapp template dispatched successfully", "phone", phone, "username", username)
+		return
+	}
+
 	body := fmt.Sprintf("PEMBELIAN PASSPOINT WI-FI BERHASIL\n\n"+
 		"Halo %s,\n"+
 		"Terima kasih telah berlangganan akses Wi-Fi Passpoint (Hotspot 2.0).\n\n"+
@@ -1052,7 +1077,7 @@ func (s *Service) sendPurchaseWhatsApp(ctx context.Context, ord *PasspointOrder,
 		"- Password: %s\n"+
 		"- Domain / Realm: %s\n\n"+
 		"Pemasangan Otomatis di Apple (iPhone / iPad / Mac):\n"+
-		"https://%s/api/v1/passpoint/credentials/%s/apple-profile\n\n"+
+		"%s\n\n"+
 		"Pengaturan di Android (Samsung, Xiaomi, Oppo, Vivo):\n"+
 		"1. Pilih Wi-Fi: Passpoint\n"+
 		"2. Metode EAP: TTLS\n"+
@@ -1062,11 +1087,11 @@ func (s *Service) sendPurchaseWhatsApp(ctx context.Context, ord *PasspointOrder,
 		"6. Identitas: %s\n"+
 		"7. Kata Sandi: %s\n\n"+
 		"Periksa Sisa Masa Aktif Mandiri:\n"+
-		"https://%s/passpoint/status?query=%s\n\n"+
+		"%s\n\n"+
 		"Simpan pesan ini sebagai bukti pendaftaran resmi.",
 		custName, pkgName, durationDays, expiryDate, username, password, realm,
-		baseDomain, credID.String(), domain, username, password,
-		baseDomain, username,
+		profileURL, domain, username, password,
+		statusURL,
 	)
 
 	_, err := s.notifSvc.SendNotification(ctx, notification.SendNotificationRequest{
@@ -1113,6 +1138,26 @@ func (s *Service) sendRenewalWhatsApp(ctx context.Context, ord *PasspointOrder, 
 	}
 
 	subject := "Perpanjangan Passpoint Berhasil"
+	statusURL := fmt.Sprintf("https://wifi.dev.ispsync.id/passpoint/status?query=%s", username)
+
+	// Try dispatching configured template
+	_, notifErr := s.notifSvc.DispatchTemplate(ctx, notification.DispatchTemplateRequest{
+		TemplateCode: "PASSPOINT_RENEWAL_WA",
+		Recipient:    phone,
+		Data: map[string]string{
+			"customer_name": custName,
+			"package_name":  ord.PackageName,
+			"duration_days": fmt.Sprintf("%d", ord.DurationDays),
+			"expiry_date":   newExpiresAt,
+			"username":      username,
+			"status_url":    statusURL,
+		},
+	})
+	if notifErr == nil {
+		s.logger.Info("passpoint renewal whatsapp template dispatched successfully", "phone", phone, "username", username)
+		return
+	}
+
 	body := fmt.Sprintf("PERPANJANGAN PASSPOINT BERHASIL\n\n"+
 		"Halo %s,\n"+
 		"Masa aktif paket Wi-Fi Passpoint Anda telah berhasil diperpanjang.\n\n"+
@@ -1123,9 +1168,10 @@ func (s *Service) sendRenewalWhatsApp(ctx context.Context, ord *PasspointOrder, 
 		"- Username EAP: %s\n\n"+
 		"Profil di smartphone Anda tetap aktif dan tersambung otomatis ke jaringan Wi-Fi tanpa perlu pengaturan ulang.\n\n"+
 		"Periksa Status Mandiri:\n"+
-		"https://wifi.dev.ispsync.id/passpoint/status?query=%s\n\n"+
+		"%s\n\n"+
 		"Terima kasih atas kepercayaannya menggunakan layanan kami.",
-		custName, ord.PackageName, ord.DurationDays, newExpiresAt, username, username,
+		custName, ord.PackageName, ord.DurationDays, newExpiresAt, username,
+		statusURL,
 	)
 
 	_, err := s.notifSvc.SendNotification(ctx, notification.SendNotificationRequest{
@@ -1162,6 +1208,28 @@ func (s *Service) sendCounterReceiptWhatsApp(ctx context.Context, receipt *Passp
 	}
 
 	subject := "Bukti Pembelian Passpoint Wi-Fi"
+	statusURL := fmt.Sprintf("https://%s/passpoint/status?query=%s", baseDomain, receipt.Username)
+
+	// Try dispatching configured template
+	_, notifErr := s.notifSvc.DispatchTemplate(ctx, notification.DispatchTemplateRequest{
+		TemplateCode: "PASSPOINT_RECEIPT_WA",
+		Recipient:    phone,
+		Data: map[string]string{
+			"customer_name":  custName,
+			"package_name":   receipt.PackageName,
+			"duration_days":  fmt.Sprintf("%d", receipt.DurationDays),
+			"price":          fmt.Sprintf("%d", receipt.TotalCustomerPays),
+			"receipt_number": receipt.ReceiptNumber,
+			"agent_name":     receipt.AgentName,
+			"cashier_code":   receipt.CashierCode,
+			"status_url":     statusURL,
+		},
+	})
+	if notifErr == nil {
+		s.logger.Info("passpoint receipt whatsapp template dispatched successfully", "phone", phone, "username", receipt.Username)
+		return
+	}
+
 	body := fmt.Sprintf("PEMBELIAN PASSPOINT LOKET AGEN BERHASIL\n\n"+
 		"Halo %s,\n"+
 		"Berikut adalah bukti pembelian akses Wi-Fi Passpoint (Hotspot 2.0) di Loket %s:\n\n"+
@@ -1181,13 +1249,13 @@ func (s *Service) sendCounterReceiptWhatsApp(ctx context.Context, receipt *Passp
 		"5. Identitas: %s\n"+
 		"6. Kata Sandi: %s\n\n"+
 		"Periksa Status & Masa Aktif Mandiri:\n"+
-		"https://%s/passpoint/status?query=%s\n\n"+
+		"%s\n\n"+
 		"Terima kasih atas kunjungan Anda.",
 		custName, receipt.AgentName, receipt.PackageName, receipt.DurationDays,
 		receipt.CashierCode, receipt.Username, receipt.Password, receipt.Realm,
 		baseDomain, receipt.AppleProfileURL,
 		receipt.DomainName, receipt.Username, receipt.Password,
-		baseDomain, receipt.Username,
+		statusURL,
 	)
 
 	_, err := s.notifSvc.SendNotification(ctx, notification.SendNotificationRequest{

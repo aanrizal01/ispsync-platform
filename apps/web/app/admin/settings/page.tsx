@@ -2759,6 +2759,26 @@ export default function AdminSettingsPage() {
             </p>
           </div>
 
+          {/* Quick Link Banner ke Editor Template Pesan */}
+          <div className="p-4 rounded-2xl bg-cyan-950/5 border border-cyan-800/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="space-y-0.5">
+              <h3 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-cyan-600" />
+                Template Pesan Otomatis (Isolir, Tagihan, & Passpoint)
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                Susunan kata, variabel pelanggan, dan redaksi pesan WhatsApp dapat disesuaikan pada Pusat Notifikasi.
+              </p>
+            </div>
+            <a
+              href="/admin/notifications?tab=templates"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-cyan-400 border border-slate-700 text-xs font-bold rounded-xl shadow-xs transition-all shrink-0 cursor-pointer"
+            >
+              <span>Buka Editor Template</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+
           <div className="space-y-4">
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
               <h3 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
