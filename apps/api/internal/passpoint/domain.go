@@ -263,4 +263,90 @@ type PasspointReceipt struct {
 	BalanceAfter      int64  `json:"balance_after"`
 }
 
+// ──────────────────────────────────────────
+// Live Sessions (Radacct)
+// ──────────────────────────────────────────
+
+type PasspointActiveSession struct {
+	RadAcctID        int64      `json:"radacctid"`
+	AcctSessionID    string     `json:"acctsessionid"`
+	Username         string     `json:"username"`
+	NasIPAddress     string     `json:"nasipaddress"`
+	FramedIPAddress  string     `json:"framedipaddress"`
+	CallingStationID string     `json:"callingstationid"` // MAC Address
+	AcctStartTime    time.Time  `json:"acctstarttime"`
+	AcctSessionTime  int64      `json:"acctsessiontime"` // seconds
+	AcctInputOctets  int64      `json:"acctinputoctets"` // bytes uploaded
+	AcctOutputOctets int64      `json:"acctoutputoctets"` // bytes downloaded
+	CredentialID     *uuid.UUID `json:"credential_id,omitempty"`
+	CustomerName     *string    `json:"customer_name,omitempty"`
+	CustomerPhone    *string    `json:"customer_phone,omitempty"`
+	ProfileName      *string    `json:"profile_name,omitempty"`
+}
+
+type DisconnectSessionRequest struct {
+	Username      string `json:"username" validate:"required"`
+	NasIPAddress  string `json:"nasipaddress" validate:"required"`
+	AcctSessionID string `json:"acctsessionid" validate:"required"`
+}
+
+// ──────────────────────────────────────────
+// Customer Self-Care Status
+// ──────────────────────────────────────────
+
+type PasspointCustomerStatus struct {
+	CredentialID        string     `json:"credential_id"`
+	Username            string     `json:"username"`
+	CustomerName        string     `json:"customer_name"`
+	CustomerPhone       string     `json:"customer_phone"`
+	ProfileName         string     `json:"profile_name"`
+	Realm               string     `json:"realm"`
+	Status              string     `json:"status"` // ACTIVE, EXPIRED, REVOKED
+	PackageName         string     `json:"package_name"`
+	ExpiresAt           *time.Time `json:"expires_at,omitempty"`
+	DaysRemaining       int        `json:"days_remaining"`
+	HoursRemaining      int        `json:"hours_remaining"`
+	LastAuthenticatedAt *time.Time `json:"last_authenticated_at,omitempty"`
+	AppleProfileURL     string     `json:"apple_profile_url"`
+	CanRenew            bool       `json:"can_renew"`
+	LastOrderID         string     `json:"last_order_id,omitempty"`
+}
+
+type CheckCustomerStatusRequest struct {
+	Query string `json:"query" validate:"required"`
+}
+
+// ──────────────────────────────────────────
+// Financial & Sales Analytics
+// ──────────────────────────────────────────
+
+type DailyRevenueItem struct {
+	Date        string `json:"date"`
+	Revenue     int64  `json:"revenue"`
+	TotalOrders int    `json:"total_orders"`
+}
+
+type ChannelAnalytics struct {
+	OnlineCount     int   `json:"online_count"`
+	OnlineRevenue   int64 `json:"online_revenue"`
+	AgentCount      int   `json:"agent_count"`
+	AgentRevenue    int64 `json:"agent_revenue"`
+	AgentCommission int64 `json:"agent_commission"`
+	AdminCount      int   `json:"admin_count"`
+}
+
+type PasspointAnalytics struct {
+	TotalRevenueToday    int64              `json:"total_revenue_today"`
+	TotalRevenueMonth    int64              `json:"total_revenue_month"`
+	TotalRevenueAllTime  int64              `json:"total_revenue_all_time"`
+	TotalOrdersToday     int                `json:"total_orders_today"`
+	TotalOrdersMonth     int                `json:"total_orders_month"`
+	TotalOrdersAllTime   int                `json:"total_orders_all_time"`
+	ActiveCredentials    int                `json:"active_credentials"`
+	ExpiredCredentials   int                `json:"expired_credentials"`
+	TotalAgentCommission int64              `json:"total_agent_commission"`
+	ChannelBreakdown     ChannelAnalytics   `json:"channel_breakdown"`
+	RecentDailyRevenue   []DailyRevenueItem `json:"recent_daily_revenue"`
+}
+
 

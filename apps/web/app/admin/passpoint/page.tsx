@@ -32,12 +32,19 @@ import {
   Pencil,
   Trash2,
   Terminal,
+  Activity,
+  BarChart3,
+  FileDown,
+  Power,
+  RefreshCw,
 } from "lucide-react";
 import {
   passpointApi,
   PasspointProfile,
   PasspointCredential,
   PasspointPackage,
+  PasspointActiveSession,
+  PasspointAnalytics,
   CreatePasspointProfileInput,
   CreatePasspointPackageInput,
   UpdatePasspointPackageInput,
@@ -45,13 +52,22 @@ import {
 import { customerApi, Customer } from "@/lib/api/customers";
 
 export default function AdminPasspointPage() {
-  const [activeTab, setActiveTab] = useState<"credentials" | "profiles" | "packages">("credentials");
+  const [activeTab, setActiveTab] = useState<"credentials" | "profiles" | "packages" | "sessions" | "analytics">("credentials");
   const [profiles, setProfiles] = useState<PasspointProfile[]>([]);
   const [credentials, setCredentials] = useState<PasspointCredential[]>([]);
   const [packages, setPackages] = useState<PasspointPackage[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Live Sessions
+  const [sessions, setSessions] = useState<PasspointActiveSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [disconnectingUser, setDisconnectingUser] = useState<string | null>(null);
+
+  // Financial Analytics
+  const [analytics, setAnalytics] = useState<PasspointAnalytics | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   // Modals
   const [showIssueModal, setShowIssueModal] = useState(false);
@@ -196,9 +212,79 @@ export default function AdminPasspointPage() {
     }
   };
 
+  const fetchSessions = async () => {
+    setSessionsLoading(true);
+    try {
+      const res = await passpointApi.listActiveSessions(100, 0);
+      setSessions(res.data || []);
+    } catch (err: any) {
+      console.error("Gagal memuat sesi aktif", err);
+    } finally {
+      setSessionsLoading(false);
+    }
+  };
+
+  const fetchAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const res = await passpointApi.getAnalytics();
+      setAnalytics(res);
+    } catch (err: any) {
+      console.error("Gagal memuat analitik finansial", err);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  const handleDisconnectSession = async (s: PasspointActiveSession) => {
+    if (!confirm(`Putuskan koneksi perangkat pengguna ${s.username} (${s.callingstationid}) via CoA disconnect?`)) {
+      return;
+    }
+    setDisconnectingUser(s.username);
+    try {
+      await passpointApi.disconnectSession({
+        username: s.username,
+        nasipaddress: s.nasipaddress,
+        acctsessionid: s.acctsessionid,
+      });
+      await fetchSessions();
+    } catch (err: any) {
+      alert(err.message || "Gagal memutuskan sesi");
+    } finally {
+      setDisconnectingUser(null);
+    }
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (!bytes || bytes === 0) return "0 B";
+    const k = 1024;
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+  };
+
+  const formatDuration = (seconds: number) => {
+    if (!seconds || seconds <= 0) return "0 dtk";
+    if (seconds < 60) return `${seconds} dtk`;
+    const m = Math.floor(seconds / 60);
+    const h = Math.floor(m / 60);
+    if (h > 0) {
+      return `${h}j ${m % 60}m`;
+    }
+    return `${m}m ${seconds % 60}d`;
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (activeTab === "sessions") {
+      fetchSessions();
+    } else if (activeTab === "analytics") {
+      fetchAnalytics();
+    }
+  }, [activeTab]);
 
   const copyToClipboard = (text: string, fieldId: string) => {
     navigator.clipboard.writeText(text);
@@ -501,6 +587,25 @@ add name="passpoint-v6" \\
               <Plus className="w-4 h-4" />
               Profil Jaringan
             </button>
+          ) : activeTab === "sessions" ? (
+            <button
+              onClick={fetchSessions}
+              disabled={sessionsLoading}
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${sessionsLoading ? "animate-spin" : ""}`} />
+              Segarkan Sesi
+            </button>
+          ) : activeTab === "analytics" ? (
+            <a
+              href={passpointApi.getExportOrdersUrl()}
+              target="_blank"
+              rel="noreferrer"
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1.5 shadow-xs"
+            >
+              <FileDown className="w-4 h-4" />
+              Export CSV
+            </a>
           ) : (
             <div className="flex items-center gap-2">
               <button
@@ -605,6 +710,26 @@ add name="passpoint-v6" \\
             }`}
           >
             Paket Layanan ({packages.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("sessions")}
+            className={`pb-3 text-sm font-semibold border-b-2 transition ${
+              activeTab === "sessions"
+                ? "border-slate-900 text-slate-900"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            Sesi Aktif ({sessions.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("analytics")}
+            className={`pb-3 text-sm font-semibold border-b-2 transition ${
+              activeTab === "analytics"
+                ? "border-slate-900 text-slate-900"
+                : "border-transparent text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            Laporan &amp; Omzet
           </button>
         </div>
 
@@ -1020,6 +1145,252 @@ add name="passpoint-v6" \\
                 )}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Tab 4: Active Sessions (Radacct) */}
+        {activeTab === "sessions" && (
+          <div>
+            <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Sesi Pengguna Aktif (Hotspot 2.0 Live Accounting)</h3>
+                <p className="text-xs text-slate-500">
+                  Data real-time koneksi perangkat pengguna yang tersambung ke AP WiFi Passpoint melalui RADIUS Accounting.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={fetchSessions}
+                disabled={sessionsLoading}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-2xs disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${sessionsLoading ? "animate-spin" : ""}`} />
+                <span>Segarkan</span>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-700">
+                <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase text-slate-500">
+                  <tr>
+                    <th className="px-6 py-3">Pengguna &amp; Pelanggan</th>
+                    <th className="px-6 py-3">Perangkat (MAC)</th>
+                    <th className="px-6 py-3">IP Pengguna / AP Router</th>
+                    <th className="px-6 py-3">Durasi Sesi</th>
+                    <th className="px-6 py-3">Konsumsi Data</th>
+                    <th className="px-6 py-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {sessionsLoading && sessions.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center text-xs text-slate-400">
+                        Memuat sesi aktif...
+                      </td>
+                    </tr>
+                  ) : sessions.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center text-xs text-slate-400">
+                        Tidak ada perangkat pengguna yang sedang terhubung aktif saat ini.
+                      </td>
+                    </tr>
+                  ) : (
+                    sessions.map((sess) => (
+                      <tr key={sess.radacctid} className="hover:bg-slate-50/50 transition">
+                        <td className="px-6 py-4">
+                          <div className="font-mono text-xs font-bold text-slate-900">{sess.username}</div>
+                          <div className="text-xs font-medium text-slate-600">{sess.customer_name || "-"}</div>
+                          {sess.customer_phone && (
+                            <div className="text-[11px] font-mono text-slate-400">{sess.customer_phone}</div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="font-mono text-xs text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                            {sess.callingstationid || "-"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 font-mono text-xs">
+                          <div className="text-slate-900 font-semibold">{sess.framedipaddress || "0.0.0.0"}</div>
+                          <div className="text-slate-400 text-[11px]">NAS: {sess.nasipaddress}</div>
+                        </td>
+                        <td className="px-6 py-4 text-xs font-medium text-slate-700">
+                          <div>{formatDuration(sess.acctsessiontime)}</div>
+                          <div className="text-[11px] text-slate-400">{formatDate(sess.acctstarttime)}</div>
+                        </td>
+                        <td className="px-6 py-4 text-xs font-mono">
+                          <div className="text-emerald-700">↓ {formatBytes(sess.acctoutputoctets)}</div>
+                          <div className="text-blue-700">↑ {formatBytes(sess.acctinputoctets)}</div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            type="button"
+                            disabled={disconnectingUser === sess.username}
+                            onClick={() => handleDisconnectSession(sess)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg border border-rose-200 transition shadow-2xs disabled:opacity-50"
+                          >
+                            <Power className="w-3.5 h-3.5" />
+                            <span>{disconnectingUser === sess.username ? "Memutus..." : "Putuskan"}</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 5: Financial Analytics */}
+        {activeTab === "analytics" && (
+          <div className="p-5 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Laporan Finansial &amp; Omzet Passpoint</h3>
+                <p className="text-xs text-slate-500">
+                  Ringkasan pendapatan dari kanal pembelian mandiri online dan loket kasir agen.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={fetchAnalytics}
+                  disabled={analyticsLoading}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-2xs disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${analyticsLoading ? "animate-spin" : ""}`} />
+                  <span>Segarkan</span>
+                </button>
+                <a
+                  href={passpointApi.getExportOrdersUrl()}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition shadow-xs"
+                >
+                  <FileDown className="w-3.5 h-3.5" />
+                  <span>Export CSV Transaksi</span>
+                </a>
+              </div>
+            </div>
+
+            {analyticsLoading && !analytics ? (
+              <div className="py-12 text-center text-xs text-slate-400">Memuat laporan finansial...</div>
+            ) : analytics ? (
+              <div className="space-y-6">
+                {/* Analytics Summary Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Omzet Hari Ini</p>
+                    <p className="text-xl font-bold text-slate-900 mt-1">
+                      Rp {analytics.total_revenue_today.toLocaleString("id-ID")}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{analytics.total_orders_today} Transaksi</p>
+                  </div>
+
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Omzet Bulan Ini</p>
+                    <p className="text-xl font-bold text-slate-900 mt-1">
+                      Rp {analytics.total_revenue_month.toLocaleString("id-ID")}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{analytics.total_orders_month} Transaksi</p>
+                  </div>
+
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Omzet Keseluruhan</p>
+                    <p className="text-xl font-bold text-slate-900 mt-1">
+                      Rp {analytics.total_revenue_all_time.toLocaleString("id-ID")}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">{analytics.total_orders_all_time} Transaksi</p>
+                  </div>
+
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Komisi Agen Dibayarkan</p>
+                    <p className="text-xl font-bold text-slate-900 mt-1">
+                      Rp {analytics.total_agent_commission.toLocaleString("id-ID")}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Ditarik dari transaksi kasir</p>
+                  </div>
+                </div>
+
+                {/* Channel Breakdown */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white p-5 rounded-xl border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                      <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Kanal Pembelian Mandiri Online</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">Self-Service</span>
+                    </div>
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex justify-between text-slate-600">
+                        <span>Total Transaksi Berhasil:</span>
+                        <span className="font-bold text-slate-900">{analytics.channel_breakdown.online_count} pesanan</span>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Total Pendapatan:</span>
+                        <span className="font-bold text-emerald-700">Rp {analytics.channel_breakdown.online_revenue.toLocaleString("id-ID")}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-xl border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                      <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Kanal Loket Kasir Agen</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-700">Agen Saldo</span>
+                    </div>
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex justify-between text-slate-600">
+                        <span>Total Transaksi Kasir:</span>
+                        <span className="font-bold text-slate-900">{analytics.channel_breakdown.agent_count} pesanan</span>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Total Pendapatan Kotor:</span>
+                        <span className="font-bold text-emerald-700">Rp {analytics.channel_breakdown.agent_revenue.toLocaleString("id-ID")}</span>
+                      </div>
+                      <div className="flex justify-between text-slate-600">
+                        <span>Komisi Dibagikan ke Agen:</span>
+                        <span className="font-bold text-indigo-700">Rp {analytics.channel_breakdown.agent_commission.toLocaleString("id-ID")}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 7-Day Trend Table */}
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                  <div className="p-4 bg-slate-50 border-b border-slate-200">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                      Tren Pendapatan 7 Hari Terakhir
+                    </h4>
+                  </div>
+                  <table className="w-full text-left text-sm text-slate-700">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase text-slate-500">
+                      <tr>
+                        <th className="px-6 py-2.5">Tanggal</th>
+                        <th className="px-6 py-2.5">Jumlah Transaksi</th>
+                        <th className="px-6 py-2.5 text-right">Pendapatan</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {analytics.recent_daily_revenue && analytics.recent_daily_revenue.length > 0 ? (
+                        analytics.recent_daily_revenue.map((d) => (
+                          <tr key={d.date} className="hover:bg-slate-50/50">
+                            <td className="px-6 py-3 font-mono text-xs">{d.date}</td>
+                            <td className="px-6 py-3 text-xs">{d.total_orders} transaksi</td>
+                            <td className="px-6 py-3 text-xs font-bold text-right text-slate-900">
+                              Rp {d.revenue.toLocaleString("id-ID")}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={3} className="px-6 py-8 text-center text-xs text-slate-400">
+                            Belum ada riwayat transaksi dalam 7 hari terakhir.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
       </div>

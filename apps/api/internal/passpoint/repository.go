@@ -1140,3 +1140,247 @@ func (r *Repository) MarkReminderSent(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+func (r *Repository) GetActiveSessions(ctx context.Context, limit, offset int) ([]PasspointActiveSession, int64, error) {
+	const countQ = `
+		SELECT COUNT(*)
+		FROM radacct ra
+		JOIN passpoint_credentials c ON c.username = ra.username
+		WHERE ra.acctstoptime IS NULL
+	`
+	var total int64
+	if err := r.db.QueryRow(ctx, countQ).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("count active sessions: %w", err)
+	}
+
+	const q = `
+		SELECT ra.radacctid, ra.acctsessionid, ra.username, COALESCE(ra.nasipaddress::text, ''),
+		       COALESCE(ra.framedipaddress::text, ''), COALESCE(ra.callingstationid, ''),
+		       ra.acctstarttime, COALESCE(ra.acctsessiontime, 0),
+		       COALESCE(ra.acctinputoctets, 0), COALESCE(ra.acctoutputoctets, 0),
+		       c.id as credential_id, cust.full_name as customer_name, cust.phone as customer_phone,
+		       p.name as profile_name
+		FROM radacct ra
+		JOIN passpoint_credentials c ON c.username = ra.username
+		JOIN customers cust ON cust.id = c.customer_id
+		JOIN passpoint_profiles p ON p.id = c.profile_id
+		WHERE ra.acctstoptime IS NULL
+		ORDER BY ra.acctstarttime DESC
+		LIMIT $1 OFFSET $2
+	`
+	rows, err := r.db.Query(ctx, q, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("query active sessions: %w", err)
+	}
+	defer rows.Close()
+
+	var sessions []PasspointActiveSession
+	for rows.Next() {
+		var s PasspointActiveSession
+		if err := rows.Scan(
+			&s.RadAcctID, &s.AcctSessionID, &s.Username, &s.NasIPAddress,
+			&s.FramedIPAddress, &s.CallingStationID,
+			&s.AcctStartTime, &s.AcctSessionTime,
+			&s.AcctInputOctets, &s.AcctOutputOctets,
+			&s.CredentialID, &s.CustomerName, &s.CustomerPhone,
+			&s.ProfileName,
+		); err != nil {
+			return nil, 0, fmt.Errorf("scan active session: %w", err)
+		}
+		sessions = append(sessions, s)
+	}
+	return sessions, total, nil
+}
+
+func (r *Repository) FindCustomerStatus(ctx context.Context, query string) (*PasspointCustomerStatus, error) {
+	cleaned := strings.TrimSpace(query)
+	if cleaned == "" {
+		return nil, fmt.Errorf("nomor HP atau username harus diisi")
+	}
+
+	const q = `
+		SELECT c.id, c.username, COALESCE(cust.full_name, 'Pelanggan'), COALESCE(cust.phone, ''),
+		       p.name, p.realm, c.status,
+		       COALESCE(po.package_name, 'Passpoint Standar'),
+		       COALESCE(po.expires_at, c.created_at + INTERVAL '30 days') as expires_at,
+		       c.last_authenticated_at,
+		       COALESCE(po.order_id, '')
+		FROM passpoint_credentials c
+		JOIN customers cust ON cust.id = c.customer_id
+		JOIN passpoint_profiles p ON p.id = c.profile_id
+		LEFT JOIN LATERAL (
+			SELECT po.expires_at, po.package_name, po.order_id
+			FROM passpoint_orders po
+			WHERE po.credential_id = c.id AND po.status = 'PAID'
+			ORDER BY po.created_at DESC
+			LIMIT 1
+		) po ON true
+		WHERE c.username = $1 OR cust.phone = $1 OR cust.customer_number = $1
+		ORDER BY c.created_at DESC
+		LIMIT 1
+	`
+	var (
+		credID                           uuid.UUID
+		username, custName, custPhone    string
+		profName, realm, status, pkgName string
+		expiresAt                        time.Time
+		lastAuth                         *time.Time
+		lastOrderID                      string
+	)
+
+	err := r.db.QueryRow(ctx, q, cleaned).Scan(
+		&credID, &username, &custName, &custPhone,
+		&profName, &realm, &status, &pkgName,
+		&expiresAt, &lastAuth, &lastOrderID,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("query customer status: %w", err)
+	}
+
+	now := time.Now()
+	daysRem := 0
+	hoursRem := 0
+	canRenew := true
+
+	if now.Before(expiresAt) {
+		rem := expiresAt.Sub(now)
+		daysRem = int(rem.Hours() / 24)
+		hoursRem = int(rem.Hours()) % 24
+	} else {
+		status = "EXPIRED"
+	}
+
+	return &PasspointCustomerStatus{
+		CredentialID:        credID.String(),
+		Username:            username,
+		CustomerName:        custName,
+		CustomerPhone:       custPhone,
+		ProfileName:         profName,
+		Realm:               realm,
+		Status:              status,
+		PackageName:         pkgName,
+		ExpiresAt:           &expiresAt,
+		DaysRemaining:       daysRem,
+		HoursRemaining:      hoursRem,
+		LastAuthenticatedAt: lastAuth,
+		AppleProfileURL:     fmt.Sprintf("/api/v1/passpoint/credentials/%s/apple-profile", credID.String()),
+		CanRenew:            canRenew,
+		LastOrderID:         lastOrderID,
+	}, nil
+}
+
+func (r *Repository) GetFinancialAnalytics(ctx context.Context) (*PasspointAnalytics, error) {
+	var a PasspointAnalytics
+
+	// 1. All-time, Month, Today Revenue & Orders
+	const revQ = `
+		SELECT 
+			COALESCE(SUM(CASE WHEN created_at::date = CURRENT_DATE THEN final_price ELSE 0 END), 0) AS rev_today,
+			COALESCE(SUM(CASE WHEN date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE) THEN final_price ELSE 0 END), 0) AS rev_month,
+			COALESCE(SUM(final_price), 0) AS rev_all,
+			COUNT(CASE WHEN created_at::date = CURRENT_DATE THEN 1 END) AS orders_today,
+			COUNT(CASE WHEN date_trunc('month', created_at) = date_trunc('month', CURRENT_DATE) THEN 1 END) AS orders_month,
+			COUNT(*) AS orders_all,
+			COALESCE(SUM(agent_commission), 0) AS total_comm
+		FROM passpoint_orders
+		WHERE status = 'PAID'
+	`
+	if err := r.db.QueryRow(ctx, revQ).Scan(
+		&a.TotalRevenueToday,
+		&a.TotalRevenueMonth,
+		&a.TotalRevenueAllTime,
+		&a.TotalOrdersToday,
+		&a.TotalOrdersMonth,
+		&a.TotalOrdersAllTime,
+		&a.TotalAgentCommission,
+	); err != nil {
+		return nil, fmt.Errorf("query financial revenue: %w", err)
+	}
+
+	// 2. Active & Expired credentials count
+	const credQ = `
+		SELECT 
+			COUNT(CASE WHEN status = 'ACTIVE' THEN 1 END),
+			COUNT(CASE WHEN status != 'ACTIVE' THEN 1 END)
+		FROM passpoint_credentials
+	`
+	_ = r.db.QueryRow(ctx, credQ).Scan(&a.ActiveCredentials, &a.ExpiredCredentials)
+
+	// 3. Channel breakdown
+	const chanQ = `
+		SELECT 
+			COUNT(CASE WHEN paid_by_agent_id IS NULL AND payment_method != 'MANUAL_COUNTER' THEN 1 END) AS online_count,
+			COALESCE(SUM(CASE WHEN paid_by_agent_id IS NULL AND payment_method != 'MANUAL_COUNTER' THEN final_price ELSE 0 END), 0) AS online_rev,
+			COUNT(CASE WHEN paid_by_agent_id IS NOT NULL OR payment_method = 'MANUAL_COUNTER' THEN 1 END) AS agent_count,
+			COALESCE(SUM(CASE WHEN paid_by_agent_id IS NOT NULL OR payment_method = 'MANUAL_COUNTER' THEN final_price ELSE 0 END), 0) AS agent_rev,
+			COALESCE(SUM(CASE WHEN paid_by_agent_id IS NOT NULL OR payment_method = 'MANUAL_COUNTER' THEN agent_commission ELSE 0 END), 0) AS agent_comm
+		FROM passpoint_orders
+		WHERE status = 'PAID'
+	`
+	_ = r.db.QueryRow(ctx, chanQ).Scan(
+		&a.ChannelBreakdown.OnlineCount,
+		&a.ChannelBreakdown.OnlineRevenue,
+		&a.ChannelBreakdown.AgentCount,
+		&a.ChannelBreakdown.AgentRevenue,
+		&a.ChannelBreakdown.AgentCommission,
+	)
+
+	// 4. Last 7 Days Daily Revenue
+	const dailyQ = `
+		SELECT to_char(d.day, 'YYYY-MM-DD') AS day_str,
+		       COALESCE(SUM(po.final_price), 0) AS daily_rev,
+		       COUNT(po.id) AS daily_orders
+		FROM generate_series(CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE, INTERVAL '1 day') AS d(day)
+		LEFT JOIN passpoint_orders po ON po.created_at::date = d.day::date AND po.status = 'PAID'
+		GROUP BY d.day
+		ORDER BY d.day ASC
+	`
+	rows, err := r.db.Query(ctx, dailyQ)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var d DailyRevenueItem
+			if err := rows.Scan(&d.Date, &d.Revenue, &d.TotalOrders); err == nil {
+				a.RecentDailyRevenue = append(a.RecentDailyRevenue, d)
+			}
+		}
+	}
+
+	return &a, nil
+}
+
+func (r *Repository) GetPaidOrdersForExport(ctx context.Context) ([]PasspointOrder, error) {
+	const q = `
+		SELECT id, order_id, cashier_code, order_type, package_id, package_name, duration_days,
+		       customer_name, customer_phone, customer_email, original_price, discount_amount,
+		       admin_fee, final_price, agent_id, promo_code, agent_commission, payment_method,
+		       status, credential_id, paid_by_agent_id, paid_at, expires_at, created_at, updated_at
+		FROM passpoint_orders
+		WHERE status = 'PAID'
+		ORDER BY created_at DESC
+		LIMIT 1000
+	`
+	rows, err := r.db.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orders []PasspointOrder
+	for rows.Next() {
+		var o PasspointOrder
+		if err := rows.Scan(
+			&o.ID, &o.OrderID, &o.CashierCode, &o.OrderType, &o.PackageID, &o.PackageName, &o.DurationDays,
+			&o.CustomerName, &o.CustomerPhone, &o.CustomerEmail, &o.OriginalPrice, &o.DiscountAmount,
+			&o.AdminFee, &o.FinalPrice, &o.AgentID, &o.PromoCode, &o.AgentCommission, &o.PaymentMethod,
+			&o.Status, &o.CredentialID, &o.PaidByAgentID, &o.PaidAt, &o.ExpiresAt, &o.CreatedAt, &o.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		orders = append(orders, o)
+	}
+	return orders, nil
+}
+

@@ -34,6 +34,8 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 	r.Post("/renew", h.Renew)
 	r.Post("/check-renew", h.CheckRenew)
 	r.Get("/public/credentials/{id}", h.GetPublicCredential)
+	r.Get("/my-status", h.CheckCustomerStatus)
+	r.Post("/my-status", h.CheckCustomerStatus)
 
 	// Authenticated routes
 	r.Group(func(r chi.Router) {
@@ -56,6 +58,12 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 		r.With(authMW.RequirePermission("subscriptions:write")).Post("/admin/packages", h.CreatePackage)
 		r.With(authMW.RequirePermission("subscriptions:write")).Put("/admin/packages/{id}", h.UpdatePackage)
 		r.With(authMW.RequirePermission("subscriptions:write")).Delete("/admin/packages/{id}", h.DeletePackage)
+
+		// Live Sessions & Analytics (Admin)
+		r.With(authMW.RequirePermission("subscriptions:read")).Get("/admin/sessions", h.ListActiveSessions)
+		r.With(authMW.RequirePermission("subscriptions:write")).Post("/admin/sessions/disconnect", h.DisconnectActiveSession)
+		r.With(authMW.RequirePermission("subscriptions:read")).Get("/admin/analytics", h.GetFinancialAnalytics)
+		r.With(authMW.RequirePermission("subscriptions:read")).Get("/admin/orders/export", h.ExportOrdersCSV)
 	})
 }
 
@@ -338,6 +346,73 @@ func (h *Handler) DeletePackage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	middleware.JSON(w, http.StatusOK, map[string]any{"message": "Paket berhasil dihapus"})
+}
+
+func (h *Handler) CheckCustomerStatus(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("query")
+	if query == "" && r.Method == http.MethodPost {
+		var body CheckCustomerStatusRequest
+		_ = middleware.DecodeJSON(r, &body)
+		query = body.Query
+	}
+	if query == "" {
+		middleware.JSONError(w, h.logger, apperrors.BadRequest("Nomor HP atau Username harus diisi"))
+		return
+	}
+
+	st, err := h.service.CheckCustomerStatus(r.Context(), query)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+	middleware.JSON(w, http.StatusOK, st)
+}
+
+func (h *Handler) ListActiveSessions(w http.ResponseWriter, r *http.Request) {
+	params := pagination.FromRequest(r)
+	sessions, total, err := h.service.GetActiveSessions(r.Context(), params.Limit, params.Offset)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+	meta := pagination.NewMeta(params, int(total))
+	middleware.JSONList(w, sessions, meta)
+}
+
+func (h *Handler) DisconnectActiveSession(w http.ResponseWriter, r *http.Request) {
+	var req DisconnectSessionRequest
+	if err := middleware.DecodeJSON(r, &req); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	if err := h.service.DisconnectSession(r.Context(), req); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+	middleware.JSON(w, http.StatusOK, map[string]any{"message": "Sesi berhasil diputus via CoA disconnect"})
+}
+
+func (h *Handler) GetFinancialAnalytics(w http.ResponseWriter, r *http.Request) {
+	a, err := h.service.GetAnalytics(r.Context())
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+	middleware.JSON(w, http.StatusOK, a)
+}
+
+func (h *Handler) ExportOrdersCSV(w http.ResponseWriter, r *http.Request) {
+	csvBytes, err := h.service.ExportOrdersCSV(r.Context())
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", "attachment; filename=passpoint_orders.csv")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(csvBytes)
 }
 
 

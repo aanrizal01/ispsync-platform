@@ -342,6 +342,98 @@ export const passpointApi = {
       (typeof window !== "undefined" ? `${window.location.origin}/api/v1` : "/api/v1");
     return `${apiBase}/passpoint/credentials/${credentialId}/apple-profile`;
   },
+
+  listActiveSessions: (limit = 20, offset = 0) =>
+    request<{ data: PasspointActiveSession[]; meta: { total: number; limit: number; offset: number } }>(
+      `/passpoint/admin/sessions?limit=${limit}&offset=${offset}`
+    ),
+
+  disconnectSession: (data: { username: string; nasipaddress: string; acctsessionid: string }) =>
+    request<{ message: string }>("/passpoint/admin/sessions/disconnect", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  checkCustomerStatus: (query: string) =>
+    request<PasspointCustomerStatus>(`/passpoint/my-status?query=${encodeURIComponent(query)}`),
+
+  getAnalytics: () =>
+    request<PasspointAnalytics>("/passpoint/admin/analytics"),
+
+  getExportOrdersUrl: () => {
+    const apiBase =
+      process.env.NEXT_PUBLIC_API_URL ||
+      (typeof window !== "undefined" ? `${window.location.origin}/api/v1` : "/api/v1");
+    return `${apiBase}/passpoint/admin/orders/export`;
+  },
 };
+
+// ──────────────────────────────────────────
+// New Domain Interfaces
+// ──────────────────────────────────────────
+
+export interface PasspointActiveSession {
+  radacctid: number;
+  acctsessionid: string;
+  username: string;
+  nasipaddress: string;
+  framedipaddress: string;
+  callingstationid: string;
+  acctstarttime: string;
+  acctsessiontime: number;
+  acctinputoctets: number;
+  acctoutputoctets: number;
+  credential_id?: string;
+  customer_name?: string;
+  customer_phone?: string;
+  profile_name?: string;
+}
+
+export interface PasspointCustomerStatus {
+  credential_id: string;
+  username: string;
+  customer_name: string;
+  customer_phone: string;
+  profile_name: string;
+  realm: string;
+  status: string;
+  package_name: string;
+  expires_at?: string;
+  days_remaining: number;
+  hours_remaining: number;
+  last_authenticated_at?: string;
+  apple_profile_url: string;
+  can_renew: boolean;
+  last_order_id?: string;
+}
+
+export interface DailyRevenueItem {
+  date: string;
+  revenue: number;
+  total_orders: number;
+}
+
+export interface ChannelAnalytics {
+  online_count: number;
+  online_revenue: number;
+  agent_count: number;
+  agent_revenue: number;
+  agent_commission: number;
+  admin_count: number;
+}
+
+export interface PasspointAnalytics {
+  total_revenue_today: number;
+  total_revenue_month: number;
+  total_revenue_all_time: number;
+  total_orders_today: number;
+  total_orders_month: number;
+  total_orders_all_time: number;
+  active_credentials: number;
+  expired_credentials: number;
+  total_agent_commission: number;
+  channel_breakdown: ChannelAnalytics;
+  recent_daily_revenue: DailyRevenueItem[];
+}
 
 

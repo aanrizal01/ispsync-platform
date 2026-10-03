@@ -1,7 +1,9 @@
 package passpoint
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -916,6 +918,78 @@ func (s *Service) RunPasspointReminderJob(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (s *Service) GetActiveSessions(ctx context.Context, limit, offset int) ([]PasspointActiveSession, int64, error) {
+	return s.repo.GetActiveSessions(ctx, limit, offset)
+}
+
+func (s *Service) DisconnectSession(ctx context.Context, req DisconnectSessionRequest) error {
+	s.logger.Info("disconnecting active passpoint session", "username", req.Username, "nas_ip", req.NasIPAddress, "session_id", req.AcctSessionID)
+	rReq := radius.DisconnectSessionRequest{
+		NasIPAddress:  req.NasIPAddress,
+		Username:      req.Username,
+		AcctSessionID: req.AcctSessionID,
+	}
+	return s.radiusSvc.DisconnectSession(ctx, rReq)
+}
+
+func (s *Service) CheckCustomerStatus(ctx context.Context, query string) (*PasspointCustomerStatus, error) {
+	st, err := s.repo.FindCustomerStatus(ctx, query)
+	if err != nil {
+		return nil, apperrors.BadRequest(err.Error())
+	}
+	if st == nil {
+		return nil, apperrors.NotFound("Kredensial atau nomor HP pelanggan tidak ditemukan dalam sistem Passpoint")
+	}
+	return st, nil
+}
+
+func (s *Service) GetAnalytics(ctx context.Context) (*PasspointAnalytics, error) {
+	return s.repo.GetFinancialAnalytics(ctx)
+}
+
+func (s *Service) ExportOrdersCSV(ctx context.Context) ([]byte, error) {
+	orders, err := s.repo.GetPaidOrdersForExport(ctx)
+	if err != nil {
+		return nil, apperrors.Internal(err)
+	}
+
+	var buf bytes.Buffer
+	w := csv.NewWriter(&buf)
+
+	// Header
+	_ = w.Write([]string{
+		"Waktu Transaksi", "Order ID", "Kode Kasir", "Jenis Pesanan", "Paket Layanan",
+		"Durasi (Hari)", "Nama Pelanggan", "No HP", "Harga Paket", "Biaya Admin",
+		"Total Bayar", "Metode Pembayaran", "Kanal", "Komisi Agen", "Status",
+	})
+
+	for _, o := range orders {
+		channel := "Online (Self-Service)"
+		if o.PaidByAgentID != nil || o.PaymentMethod == "MANUAL_COUNTER" {
+			channel = "Loket Agen"
+		}
+		_ = w.Write([]string{
+			o.CreatedAt.Format("2006-01-02 15:04:05"),
+			o.OrderID,
+			o.CashierCode,
+			o.OrderType,
+			o.PackageName,
+			fmt.Sprintf("%d", o.DurationDays),
+			o.CustomerName,
+			o.CustomerPhone,
+			fmt.Sprintf("%d", o.OriginalPrice),
+			fmt.Sprintf("%d", o.AdminFee),
+			fmt.Sprintf("%d", o.FinalPrice),
+			o.PaymentMethod,
+			channel,
+			fmt.Sprintf("%d", o.AgentCommission),
+			o.Status,
+		})
+	}
+	w.Flush()
+	return buf.Bytes(), nil
 }
 
 
