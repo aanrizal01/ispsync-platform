@@ -172,6 +172,8 @@ https:// {
             header_up X-Real-IP {remote_host}
             header_down Content-Type "application/x-apple-aspen-config"
         }
+    }
+
     # 0.74. Hotspot & Voucher Purchase (/hotspot/*, /buy*)
     @hotspot_path {
         path /hotspot* /buy*
