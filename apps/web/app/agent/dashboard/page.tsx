@@ -82,7 +82,7 @@ export default function AgentDashboardPage() {
   const [activeTab, setActiveTab] = useState<"vouchers" | "scratch_cards" | "bill_payment" | "passpoint" | "mutations" | "topups">("vouchers");
 
   // ── Passpoint Wi-Fi State ─────────────────────────────────────────
-  const [passpointSubTab, setPasspointSubTab] = useState<"counter" | "manual">("counter");
+  const [passpointSubTab, setPasspointSubTab] = useState<"manual" | "counter">("manual");
   const [passpointCodeSearch, setPasspointCodeSearch] = useState("");
   const [passpointInquiry, setPasspointInquiry] = useState<PasspointInquiryResult | null>(null);
   const [passpointInquiryLoading, setPasspointInquiryLoading] = useState(false);
@@ -3153,6 +3153,23 @@ export default function AgentDashboardPage() {
           <div className="flex border-b border-slate-200 gap-6">
             <button
               onClick={() => {
+                setPasspointSubTab("manual");
+                setPasspointInquiry(null);
+                setPasspointInquiryError(null);
+              }}
+              className={cn(
+                "pb-3 text-sm font-bold transition-all relative flex items-center gap-2 cursor-pointer",
+                passpointSubTab === "manual"
+                  ? "text-cyan-700 border-b-2 border-cyan-600"
+                  : "text-slate-500 hover:text-slate-800"
+              )}
+            >
+              <Sparkles className="w-4 h-4 text-cyan-600" />
+              <span>1. Terbitkan Akses Langsung di Konter (Margin 15%)</span>
+            </button>
+
+            <button
+              onClick={() => {
                 setPasspointSubTab("counter");
                 setPasspointInquiry(null);
                 setPasspointInquiryError(null);
@@ -3165,24 +3182,7 @@ export default function AgentDashboardPage() {
               )}
             >
               <Store className="w-4 h-4" />
-              <span>1. Konfirmasi Pesanan Kasir (Kode PP-XXXXX)</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setPasspointSubTab("manual");
-                setPasspointInquiry(null);
-                setPasspointInquiryError(null);
-              }}
-              className={cn(
-                "pb-3 text-sm font-bold transition-all relative flex items-center gap-2 cursor-pointer",
-                passpointSubTab === "manual"
-                  ? "text-cyan-700 border-b-2 border-cyan-600"
-                  : "text-slate-500 hover:text-slate-800"
-              )}
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>2. Terbitkan Akses Manual di Konter (15%)</span>
+              <span>2. Cek Kode Bayar / Konfirmasi Pesanan</span>
             </button>
           </div>
 
