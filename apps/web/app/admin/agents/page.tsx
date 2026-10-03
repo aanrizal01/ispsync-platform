@@ -73,6 +73,7 @@ export default function AdminAgentsPage() {
     address: string;
     phone: string;
     emailSupport: string;
+    logoUrl?: string;
   }>({
     companyName: "PT. Inovasi Sistem Pintar",
     brandName: "ISPSYNC",
@@ -80,6 +81,7 @@ export default function AdminAgentsPage() {
     address: "Sentra Telekomunikasi Internet Nusantara",
     phone: "+62 811-0000-0000",
     emailSupport: "admin@ispsync.id",
+    logoUrl: "/web/dev_logo.svg",
   });
 
   // Form states
@@ -195,6 +197,22 @@ export default function AdminAgentsPage() {
   }, [fetchAgents, fetchTopups]);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const parts = window.location.hostname.split(".");
+      let detectedSlug = "dev";
+      if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "hotspot")) {
+        detectedSlug = parts[1].toLowerCase();
+      } else if (parts.length >= 3 && parts[0] !== "www") {
+        detectedSlug = parts[0].toLowerCase();
+      }
+      if (detectedSlug && detectedSlug !== "localhost" && detectedSlug !== "127") {
+        setCompanyProfile((prev) => ({
+          ...prev,
+          logoUrl: `/web/${detectedSlug}_logo.svg`,
+        }));
+      }
+    }
+
     fetch("/api/tenant/profile")
       .then((res) => res.json())
       .then((data) => {
@@ -206,6 +224,7 @@ export default function AdminAgentsPage() {
             address: data.address || "Sentra Telekomunikasi Internet Nusantara",
             phone: data.phone || "+62 811-0000-0000",
             emailSupport: data.emailSupport || "admin@ispsync.id",
+            logoUrl: data.logoUrl || `/web/${data.slug || "dev"}_logo.svg`,
           });
         }
       })
@@ -1863,10 +1882,22 @@ export default function AdminAgentsPage() {
             {/* Document Body (Printable) */}
             <div className="p-8 sm:p-12 overflow-y-auto font-sans text-slate-900 text-xs sm:text-sm leading-relaxed print:p-0 print:overflow-visible print:m-0 print:text-black">
               {/* Kop Surat Resmi */}
-              <div className="text-center pb-3 border-b-4 border-double border-slate-900 mb-6">
-                <h1 className="text-xl sm:text-2xl font-black uppercase tracking-wider text-slate-950 font-serif">
-                  {companyProfile.companyName}
-                </h1>
+              <div className="text-center pb-4 border-b-4 border-double border-slate-900 mb-6">
+                {/* Logo Perusahaan */}
+                <div className="flex flex-col items-center justify-center mb-2">
+                  <img
+                    src={companyProfile.logoUrl || "/web/dev_logo.svg"}
+                    alt={companyProfile.brandName || "Logo"}
+                    className="h-12 sm:h-14 w-auto max-w-[280px] object-contain mb-1"
+                    onError={(e: any) => {
+                      e.currentTarget.src = "/logo.png";
+                    }}
+                  />
+                  <h1 className="text-lg sm:text-xl font-black uppercase tracking-wider text-slate-950 font-serif">
+                    {companyProfile.companyName}
+                  </h1>
+                </div>
+
                 <p className="text-xs font-bold uppercase tracking-widest text-slate-700 mt-0.5">
                   Penyelenggara Jasa Akses Internet (Internet Service Provider)
                 </p>
