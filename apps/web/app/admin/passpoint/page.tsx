@@ -456,7 +456,6 @@ export default function AdminPasspointPage() {
                     <th className="px-5 py-3">Pelanggan</th>
                     <th className="px-5 py-3">Penerbit / Saluran</th>
                     <th className="px-5 py-3">Username EAP (Identity)</th>
-                    <th className="px-5 py-3">Password WiFi (EAP)</th>
                     <th className="px-5 py-3">Profil &amp; Paket</th>
                     <th className="px-5 py-3">Status</th>
                     <th className="px-5 py-3">Masa Aktif &amp; Kadaluarsa</th>
@@ -466,13 +465,13 @@ export default function AdminPasspointPage() {
                 <tbody className="divide-y divide-slate-200">
                   {loading ? (
                     <tr>
-                      <td colSpan={8} className="px-6 py-8 text-center text-slate-400">
+                      <td colSpan={7} className="px-6 py-8 text-center text-slate-400">
                         Memuat daftar kredensial...
                       </td>
                     </tr>
                   ) : paginatedCredentials.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
+                      <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
                         <div className="max-w-xs mx-auto space-y-1">
                           <p className="font-semibold text-slate-600">Tidak ada kredensial yang cocok.</p>
                           <p className="text-xs">Coba sesuaikan kata kunci pencarian atau reset filter.</p>
@@ -529,36 +528,7 @@ export default function AdminPasspointPage() {
                           )}
                         </td>
 
-                        <td className="px-5 py-4 font-mono text-xs text-blue-700 font-semibold">{c.username}</td>
-                        <td className="px-5 py-4 font-mono text-xs">
-                          <div className="flex items-center gap-1.5">
-                            <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-slate-800 font-bold">
-                              {showPasswordMap[c.id] ? c.password : "••••••••••••"}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => togglePasswordVisibility(c.id)}
-                              className="p-1 text-slate-400 hover:text-slate-700"
-                              title={showPasswordMap[c.id] ? "Sembunyikan Password" : "Lihat Password"}
-                            >
-                              {showPasswordMap[c.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                            </button>
-                            {c.password && (
-                              <button
-                                type="button"
-                                onClick={() => copyToClipboard(c.password!, `pwd-${c.id}`)}
-                                className="p-1 text-slate-400 hover:text-blue-600"
-                                title="Salin Password"
-                              >
-                                {copiedField === `pwd-${c.id}` ? (
-                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                                ) : (
-                                  <Copy className="w-3.5 h-3.5" />
-                                )}
-                              </button>
-                            )}
-                          </div>
-                        </td>
+                        <td className="px-5 py-4 font-mono text-xs font-semibold text-slate-800">{c.username}</td>
                         <td className="px-5 py-4">
                           <div className="font-semibold text-xs text-slate-800">{c.package_name || "Passpoint Standar"}</div>
                           <div className="text-[11px] text-slate-400">{c.profile_name}</div>
@@ -597,35 +567,16 @@ export default function AdminPasspointPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-5 py-4 text-right space-x-1.5 whitespace-nowrap">
+                        <td className="px-5 py-4 text-right whitespace-nowrap">
                           <button
                             type="button"
                             onClick={() => setIssuedCredential(c)}
-                            title="Lihat Detail Kredensial & Panduan Setup"
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 rounded border border-slate-200 shadow-2xs"
+                            title="Lihat Detail Kredensial"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 rounded-lg border border-slate-200 transition shadow-2xs"
                           >
-                            <KeyRound className="w-3.5 h-3.5 text-blue-600" />
+                            <KeyRound className="w-3.5 h-3.5 text-slate-500" />
                             Detail
                           </button>
-                          <a
-                            href={passpointApi.getAppleProfileUrl(c.id)}
-                            download
-                            title="Unduh Apple .mobileconfig"
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded border border-blue-200"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            .mobileconfig
-                          </a>
-                          {c.status === "ACTIVE" && (
-                            <button
-                              onClick={() => handleRevokeCredential(c.id)}
-                              title="Cabut Akses"
-                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded border border-red-200"
-                            >
-                              <Ban className="w-3.5 h-3.5" />
-                              Cabut
-                            </button>
-                          )}
                         </td>
                       </tr>
                       );
@@ -987,11 +938,32 @@ export default function AdminPasspointPage() {
               <div>6. Domain: <b>wifi.ispsync.id</b></div>
             </div>
 
-            <div className="flex justify-end pt-2 border-t border-slate-200">
+            <div className="flex items-center justify-between pt-3 border-t border-slate-200">
+              {issuedCredential.status === "ACTIVE" ? (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!confirm("Apakah Anda yakin ingin mencabut kredensial Passpoint ini?")) return;
+                    try {
+                      await passpointApi.revokeCredential(issuedCredential.id);
+                      setIssuedCredential(null);
+                      fetchData();
+                    } catch (err: any) {
+                      alert(err.message || "Gagal mencabut kredensial");
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition"
+                >
+                  <Ban className="w-3.5 h-3.5" />
+                  Cabut Akses
+                </button>
+              ) : (
+                <div />
+              )}
               <button
                 type="button"
                 onClick={() => setIssuedCredential(null)}
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs"
+                className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs"
               >
                 Tutup
               </button>
