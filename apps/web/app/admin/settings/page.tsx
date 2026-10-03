@@ -562,19 +562,6 @@ export default function AdminSettingsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {saasProfile && (
-            <button
-              type="button"
-              onClick={() => handleSyncFromSaaS()}
-              disabled={syncingSaaS}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-cyan-400 border border-slate-700 text-xs font-bold rounded-2xl shadow-xs transition-all disabled:opacity-50 cursor-pointer"
-              title="Tarik data profil perusahaan dari pendaftaran SaaS Admin"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${syncingSaaS ? "animate-spin text-cyan-300" : ""}`} />
-              {syncingSaaS ? "Menyinkronkan..." : "Tarik Data SaaS"}
-            </button>
-          )}
-
           <button
             onClick={handleSave}
             disabled={saving}
