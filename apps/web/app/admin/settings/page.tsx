@@ -88,15 +88,15 @@ export default function AdminSettingsPage() {
   // Settings Form State
   const [settings, setSettings] = useState({
     // General
-    companyName: "PT Giga Nusantara Digital",
-    brandName: "GigaBill ISP",
-    npwp: "01.234.567.8-901.000",
-    address: "Jl. Telekomunikasi No. 88, Gedung Cyber Lt. 3, Jakarta Selatan",
-    phone: "021-5551234",
-    whatsappCS: "081234567890",
-    emailSupport: "cs@gigabill.net.id",
-    website: "https://gigabill.net.id",
-    invoiceFooterNote: "Terima kasih telah mempercayakan koneksi internet Anda bersama GigaBill ISP. Tagihan ini sah tanpa tanda tangan basah.",
+    companyName: "",
+    brandName: "",
+    npwp: "",
+    address: "",
+    phone: "",
+    whatsappCS: "",
+    emailSupport: "",
+    website: "",
+    invoiceFooterNote: "",
 
     // Billing Engine
     defaultTaxBps: 1100, // 11%
@@ -111,29 +111,29 @@ export default function AdminSettingsPage() {
     // Payment Gateway
     paymentProvider: "QRIS_DYNAMIC",
     environment: "SANDBOX",
-    merchantId: "M-GIGABILL-001",
-    apiKey: "sb_key_99f8d7e6c5b4a321",
-    secretKey: "sb_sec_8877665544332211",
+    merchantId: "",
+    apiKey: "",
+    secretKey: "",
     bankName: "BCA (Bank Central Asia)",
     bankAccountNumber: "8001234567",
-    bankAccountHolder: "PT Giga Nusantara Digital",
+    bankAccountHolder: "",
 
     // Notification
     waProvider: "FONNTE",
-    waApiToken: "fonnte_live_tok_a1b2c3d4e5f6g7h8",
+    waApiToken: "",
     notifyDueDateH3: true,
     notifyInvoiceIssued: true,
     notifyPaymentPaid: true,
     notifyAccountSuspended: true,
-    smtpHost: "smtp.mailgun.org",
+    smtpHost: "",
     smtpPort: "587",
-    smtpUser: "postmaster@mg.gigabill.net.id",
-    smtpPass: "••••••••••••••••",
+    smtpUser: "",
+    smtpPass: "",
 
     // Security & AAA
-    jwtExpiryHours: 8,
+    jwtExpiryHours: 24,
     requireStrongPassword: true,
-    walledGardenHost: "billing.gigabill.net.id",
+    walledGardenHost: "",
     allowedNOCSubnet: "10.0.0.0/8, 172.16.0.0/12",
 
     // ACS & FTTH TR-069
@@ -148,16 +148,139 @@ export default function AdminSettingsPage() {
     acsDefaultVendor: "ZTE",
   });
 
+  const [saasProfile, setSaasProfile] = useState<{
+    slug: string;
+    companyName: string;
+    brandName: string;
+    npwp: string;
+    phone: string;
+    whatsappCS: string;
+    emailSupport: string;
+    website: string;
+    address: string;
+    logoUrl: string;
+    invoiceFooterNote: string;
+    isFromSaaS: boolean;
+  } | null>(null);
+  const [syncingSaaS, setSyncingSaaS] = useState(false);
+  const [syncNotice, setSyncNotice] = useState<string | null>(null);
+
+  const handleSyncFromSaaS = (profileToUse?: any) => {
+    const prof = profileToUse || saasProfile;
+    if (!prof) return;
+    setSyncingSaaS(true);
+
+    setSettings((prev) => ({
+      ...prev,
+      companyName: prof.companyName || prev.companyName,
+      brandName: prof.brandName || prev.brandName,
+      npwp: prof.npwp || prev.npwp,
+      phone: prof.phone || prev.phone,
+      whatsappCS: prof.whatsappCS || prof.phone || prev.whatsappCS,
+      emailSupport: prof.emailSupport || prev.emailSupport,
+      website: prof.website || prev.website,
+      address: prof.address || prev.address,
+      invoiceFooterNote: prof.invoiceFooterNote || prev.invoiceFooterNote,
+      bankAccountHolder: prev.bankAccountHolder || prof.companyName,
+    }));
+
+    setInvoiceTemplate((prev) => ({
+      ...prev,
+      brand_name: prof.brandName || prev.brand_name,
+      company_name: prof.companyName || prev.company_name,
+      tax_id: prof.npwp || prev.tax_id,
+      phone: prof.phone || prev.phone,
+      email: prof.emailSupport || prev.email,
+      website: prof.website || prev.website,
+      address: prof.address || prev.address,
+      logo_url: prof.logoUrl || prev.logo_url,
+      footer_notes: prof.invoiceFooterNote || prev.footer_notes,
+      bank_account_holder: prev.bank_account_holder || prof.companyName,
+    }));
+
+    setSyncNotice(`Data profil resmi dari SaaS Admin (${prof.companyName}) berhasil disinkronkan ke formulir!`);
+    setTimeout(() => {
+      setSyncingSaaS(false);
+    }, 500);
+    setTimeout(() => {
+      setSyncNotice(null);
+    }, 6000);
+  };
+
   useEffect(() => {
-    // Load from localStorage if previously modified
-    try {
-      const saved = localStorage.getItem("gigabill_system_settings");
-      if (saved) {
-        setSettings(JSON.parse(saved));
-      }
-    } catch (e) {
-      // fallback to default
-    }
+    // 1. Fetch SaaS Tenant Profile based on current host/subdomain
+    fetch("/api/tenant/profile")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.success) {
+          setSaasProfile(data);
+
+          // Check if localStorage has non-obsolete saved settings
+          let hasValidSaved = false;
+          try {
+            const saved = localStorage.getItem("gigabill_system_settings");
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              if (
+                parsed.companyName &&
+                parsed.companyName !== "PT Giga Nusantara Digital" &&
+                parsed.companyName.trim() !== ""
+              ) {
+                setSettings(parsed);
+                hasValidSaved = true;
+              }
+            }
+          } catch (e) {
+            // ignore
+          }
+
+          // If no custom saved profile, auto-populate immediately from SaaS
+          if (!hasValidSaved) {
+            setSettings((prev) => ({
+              ...prev,
+              companyName: data.companyName,
+              brandName: data.brandName,
+              npwp: data.npwp,
+              phone: data.phone,
+              whatsappCS: data.whatsappCS,
+              emailSupport: data.emailSupport,
+              website: data.website,
+              address: data.address,
+              invoiceFooterNote: data.invoiceFooterNote,
+              bankAccountHolder: data.companyName,
+            }));
+          }
+
+          // Auto-populate invoice template if not yet customized
+          setInvoiceTemplate((prev) => {
+            const isDefault =
+              !prev.company_name ||
+              prev.company_name === "PT Inovasi Sistem Pintar" ||
+              prev.company_name === "PT Giga Nusantara Digital" ||
+              prev.company_name === "PT CITRA MEDIA NUSANTARA";
+
+            if (isDefault) {
+              return {
+                ...prev,
+                brand_name: data.brandName,
+                company_name: data.companyName,
+                tax_id: data.npwp,
+                phone: data.phone,
+                email: data.emailSupport,
+                website: data.website,
+                address: data.address,
+                logo_url: data.logoUrl || prev.logo_url,
+                footer_notes: data.invoiceFooterNote,
+                bank_account_holder: data.companyName,
+              };
+            }
+            return prev;
+          });
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load SaaS tenant profile:", err);
+      });
   }, []);
 
 
@@ -334,20 +457,35 @@ export default function AdminSettingsPage() {
           </p>
         </div>
 
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-2xl shadow-md shadow-blue-500/20 transition-all disabled:opacity-50"
-        >
-          {saving ? (
-            <RefreshCw className="w-4 h-4 animate-spin" />
-          ) : saveSuccess ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-300" />
-          ) : (
-            <Save className="w-4 h-4" />
+        <div className="flex flex-wrap items-center gap-2">
+          {saasProfile && (
+            <button
+              type="button"
+              onClick={() => handleSyncFromSaaS()}
+              disabled={syncingSaaS}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-cyan-400 border border-slate-700 text-xs font-bold rounded-2xl shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+              title="Tarik data profil perusahaan dari pendaftaran SaaS Admin"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${syncingSaaS ? "animate-spin text-cyan-300" : ""}`} />
+              {syncingSaaS ? "Menyinkronkan..." : "Tarik Data SaaS"}
+            </button>
           )}
-          {saving ? "Menyimpan..." : saveSuccess ? "Tersimpan!" : "Simpan Pengaturan"}
-        </button>
+
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-2xl shadow-md shadow-blue-500/20 transition-all disabled:opacity-50 cursor-pointer"
+          >
+            {saving ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : saveSuccess ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+            {saving ? "Menyimpan..." : saveSuccess ? "Tersimpan!" : "Simpan Pengaturan"}
+          </button>
+        </div>
       </div>
 
       {saveSuccess && (
@@ -389,6 +527,45 @@ export default function AdminSettingsPage() {
       {/* Tab 1: General Profile */}
       {activeTab === "general" && (
         <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-6">
+          {/* SaaS Profile Integration Banner */}
+          <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm relative overflow-hidden">
+            <div className="absolute -top-12 -left-12 w-40 h-40 bg-cyan-600/20 rounded-full blur-2xl pointer-events-none"></div>
+            <div className="flex items-center gap-3.5 relative z-10">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                <RefreshCw className={`w-5 h-5 ${syncingSaaS ? "animate-spin text-cyan-300" : ""}`} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-100">
+                    Sinkronisasi Profil SaaS Admin
+                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
+                    Otomatis Terhubung
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Tenant aktif: <strong className="text-cyan-300 font-semibold">{saasProfile?.companyName || "Memuat..."}</strong> ({saasProfile?.brandName || "..."}) • Data pendaftaran dari portal SaaS otomatis mengisi formulir di bawah.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleSyncFromSaaS()}
+              disabled={syncingSaaS || !saasProfile}
+              className="px-3.5 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white shadow-xs flex items-center justify-center gap-2 cursor-pointer transition shrink-0 disabled:opacity-50 relative z-10"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${syncingSaaS ? "animate-spin" : ""}`} />
+              Tarik Ulang Data SaaS
+            </button>
+          </div>
+
+          {syncNotice && (
+            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-medium flex items-center gap-2 animate-in fade-in duration-200">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{syncNotice}</span>
+            </div>
+          )}
+
           <div>
             <h2 className="text-base font-black text-slate-900">Identitas Resmi ISP</h2>
             <p className="text-xs text-slate-500">
