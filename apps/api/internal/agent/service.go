@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -87,6 +88,14 @@ func (s *Service) CreateAgent(ctx context.Context, req CreateAgentRequest, admin
 	if req.OnlineDiscountPct != nil {
 		onlineDiscount = *req.OnlineDiscountPct
 	}
+	isMaster := false
+	if req.IsMaster != nil {
+		isMaster = *req.IsMaster
+	}
+	overridePct := 3.00
+	if req.OverridePct != nil {
+		overridePct = *req.OverridePct
+	}
 
 	now := time.Now()
 	agentID := uuid.New()
@@ -132,6 +141,9 @@ func (s *Service) CreateAgent(ctx context.Context, req CreateAgentRequest, admin
 		IDCardNumber:       req.IDCardNumber,
 		KtpURL:             req.KtpURL,
 		BusinessPhotoURL:   req.BusinessPhotoURL,
+		IsMaster:           isMaster,
+		ParentAgentID:      req.ParentAgentID,
+		OverridePct:        overridePct,
 		Balance:            money.Amount(0),
 		OfflineCashbackPct: offlineCashback,
 		OnlineCashbackPct:  onlineCashback,
@@ -241,6 +253,19 @@ func (s *Service) UpdateAgent(ctx context.Context, id uuid.UUID, req UpdateAgent
 	if req.Notes != nil {
 		a.Notes = req.Notes
 	}
+	if req.IsMaster != nil {
+		a.IsMaster = *req.IsMaster
+	}
+	if req.ClearParentAgent {
+		a.ParentAgentID = nil
+	} else if req.ParentAgentID != nil {
+		if *req.ParentAgentID != a.ID {
+			a.ParentAgentID = req.ParentAgentID
+		}
+	}
+	if req.OverridePct != nil {
+		a.OverridePct = *req.OverridePct
+	}
 
 	if err := s.repo.UpdateAgent(ctx, a); err != nil {
 		return nil, apperrors.Internal(err)
@@ -296,6 +321,14 @@ func (s *Service) RegisterAgent(ctx context.Context, req RegisterAgentRequest) (
 	`
 	_, _ = s.repo.DB().Exec(ctx, assignRoleQ, uID)
 
+	var parentAgentID *uuid.UUID
+	if req.ReferralCode != nil && *req.ReferralCode != "" {
+		parent, _ := s.repo.GetAgentByCode(ctx, strings.TrimSpace(*req.ReferralCode))
+		if parent != nil && parent.IsMaster && parent.Status == AgentStatusActive {
+			parentAgentID = &parent.ID
+		}
+	}
+
 	agent := &Agent{
 		ID:                 agentID,
 		UserID:             &uID,
@@ -308,6 +341,9 @@ func (s *Service) RegisterAgent(ctx context.Context, req RegisterAgentRequest) (
 		IDCardNumber:       req.IDCardNumber,
 		KtpURL:             req.KtpURL,
 		BusinessPhotoURL:   req.BusinessPhotoURL,
+		IsMaster:           false,
+		ParentAgentID:      parentAgentID,
+		OverridePct:        3.00,
 		Balance:            money.Amount(0),
 		OfflineCashbackPct: 15.00,
 		OnlineCashbackPct:  10.00,
@@ -606,6 +642,28 @@ func (s *Service) GenerateOfflineBatchForAgent(ctx context.Context, agentID uuid
 		return nil, apperrors.Internal(fmt.Errorf("gagal generate voucher: %w", err))
 	}
 
+	// If agent has a parent master agent, award overriding commission
+	if agent.ParentAgentID != nil {
+		parentAgent, pErr := s.repo.GetAgentByID(ctx, *agent.ParentAgentID)
+		if pErr == nil && parentAgent != nil && parentAgent.Status == AgentStatusActive && parentAgent.IsMaster {
+			pct := parentAgent.OverridePct
+			if pct <= 0 {
+				pct = 3.0
+			}
+			overrideAmount := int64(float64(gross) * (pct / 100.0))
+			if overrideAmount > 0 {
+				ref := batchRef
+				desc := fmt.Sprintf("Overriding komisi %.1f%% dari omzet %d voucher sub-agen %s (%s)", pct, req.Quantity, agent.Name, agent.Code)
+				_, cErr := s.repo.CreditBalance(ctx, parentAgent.ID, overrideAmount, MutationVoucherOverrideComm, &ref, &desc)
+				if cErr != nil {
+					s.logger.Error("failed to credit override commission to master agent", "master_id", parentAgent.ID, "sub_agent_id", agent.ID, "error", cErr)
+				} else {
+					s.logger.Info("master agent override commission credited", "master_id", parentAgent.ID, "sub_agent_id", agent.ID, "amount", overrideAmount)
+				}
+			}
+		}
+	}
+
 	return &AgentBatchResult{
 		Batch:          batch,
 		Vouchers:       vouchers,
@@ -631,6 +689,29 @@ func (s *Service) CreditOnlineCommission(ctx context.Context, agentID uuid.UUID,
 		return err
 	}
 	s.logger.Info("online commission credited to agent", "agent_id", agentID, "order_id", orderID, "amount", commissionAmount)
+
+	// If agent has a Master Agent parent, credit overriding commission to the master agent
+	agent, aErr := s.repo.GetAgentByID(ctx, agentID)
+	if aErr == nil && agent != nil && agent.ParentAgentID != nil {
+		parentAgent, pErr := s.repo.GetAgentByID(ctx, *agent.ParentAgentID)
+		if pErr == nil && parentAgent != nil && parentAgent.Status == AgentStatusActive && parentAgent.IsMaster {
+			pct := parentAgent.OverridePct
+			if pct <= 0 {
+				pct = 3.0
+			}
+			var tplPrice int64
+			_ = s.repo.DB().QueryRow(ctx, "SELECT COALESCE(t.price, 0) FROM vouchers v JOIN voucher_templates t ON t.id = v.template_id WHERE v.order_id = $1 LIMIT 1", orderID).Scan(&tplPrice)
+			if tplPrice == 0 {
+				tplPrice = commissionAmount * 10
+			}
+			overrideAmount := int64(float64(tplPrice) * (pct / 100.0))
+			if overrideAmount > 0 {
+				mDesc := fmt.Sprintf("Overriding komisi %.1f%% penjualan online sub-agen %s (%s)", pct, agent.Name, agent.Code)
+				_, _ = s.repo.CreditBalance(ctx, parentAgent.ID, overrideAmount, MutationVoucherOverrideComm, &ref, &mDesc)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -667,7 +748,7 @@ func (s *Service) GetAgentDashboard(ctx context.Context, agentID uuid.UUID) (*Ag
 
 	mutations, _, _ := s.repo.ListMutations(ctx, &agentID, nil, pagination.Params{Limit: 5, Offset: 0})
 
-	return &AgentDashboardSummary{
+	summary := &AgentDashboardSummary{
 		Agent:             *agent,
 		TodayPromoCode:    promo.PromoCode,
 		ValidDate:         promo.ValidDate,
@@ -676,7 +757,24 @@ func (s *Service) GetAgentDashboard(ctx context.Context, agentID uuid.UUID) (*Ag
 		TotalOnlineCount:  onlineCount,
 		RecentMutations:   mutations,
 		PendingTopupCount: pendingTopups,
-	}, nil
+		IsMaster:          agent.IsMaster,
+		OverridePct:       agent.OverridePct,
+		SubAgentsCount:    agent.SubAgentsCount,
+	}
+
+	if agent.IsMaster {
+		totalOmzet, totalOverride, _ := s.repo.GetMasterAgentNetworkStats(ctx, agent.ID)
+		summary.TotalNetworkOmzet = totalOmzet
+		summary.TotalOverrideEarned = totalOverride
+
+		subAgents, err := s.repo.ListSubAgents(ctx, agent.ID)
+		if err == nil {
+			summary.SubAgents = subAgents
+			summary.SubAgentsCount = len(subAgents)
+		}
+	}
+
+	return summary, nil
 }
 
 func (s *Service) ListAgentVouchers(ctx context.Context, agentID uuid.UUID, params pagination.Params, channel string) ([]voucher.Voucher, pagination.Meta, error) {

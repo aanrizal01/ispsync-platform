@@ -40,13 +40,15 @@ func (r *Repository) CreateAgent(ctx context.Context, a *Agent) error {
 			balance, offline_cashback_pct, online_cashback_pct, online_discount_pct,
 			bank_name, bank_account_number, bank_account_holder,
 			status, notes, address, id_card_number, ktp_url, business_photo_url,
+			is_master, parent_agent_id, override_pct,
 			created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7,
 			$8, $9, $10, $11,
 			$12, $13, $14,
 			$15, $16, $17, $18, $19, $20,
-			$21, $22
+			$21, $22, $23,
+			$24, $25
 		)
 	`
 	_, err := r.db.Exec(ctx, q,
@@ -54,6 +56,7 @@ func (r *Repository) CreateAgent(ctx context.Context, a *Agent) error {
 		a.Balance, a.OfflineCashbackPct, a.OnlineCashbackPct, a.OnlineDiscountPct,
 		a.BankName, a.BankAccountNumber, a.BankAccountHolder,
 		a.Status, a.Notes, a.Address, a.IDCardNumber, a.KtpURL, a.BusinessPhotoURL,
+		a.IsMaster, a.ParentAgentID, a.OverridePct,
 		a.CreatedAt, a.UpdatedAt,
 	)
 	return err
@@ -67,11 +70,15 @@ func (r *Repository) GetAgentByID(ctx context.Context, id uuid.UUID) (*Agent, er
 			COALESCE(a.loket_admin_fee, 2500),
 			a.bank_name, a.bank_account_number, a.bank_account_holder,
 			a.status, a.notes, a.address, a.id_card_number, a.ktp_url, a.business_photo_url,
+			COALESCE(a.is_master, FALSE), a.parent_agent_id, pa.name as parent_agent_name, pa.code as parent_agent_code,
+			COALESCE(a.override_pct, 3.0),
+			(SELECT COUNT(*) FROM agents sa WHERE sa.parent_agent_id = a.id) as sub_agents_count,
 			a.created_at, a.updated_at,
 			(SELECT COUNT(*) FROM vouchers v WHERE v.agent_id = a.id) as total_sold,
 			(SELECT COALESCE(SUM(amount), 0) FROM agent_balance_mutations m WHERE m.agent_id = a.id AND m.mutation_type = 'VOUCHER_ONLINE_COMMISSION') as total_comm
 		FROM agents a
 		LEFT JOIN users u ON u.id = a.user_id
+		LEFT JOIN agents pa ON pa.id = a.parent_agent_id
 		WHERE a.id = $1
 	`
 	var a Agent
@@ -82,6 +89,9 @@ func (r *Repository) GetAgentByID(ctx context.Context, id uuid.UUID) (*Agent, er
 		&a.LoketAdminFee,
 		&a.BankName, &a.BankAccountNumber, &a.BankAccountHolder,
 		&a.Status, &a.Notes, &a.Address, &a.IDCardNumber, &a.KtpURL, &a.BusinessPhotoURL,
+		&a.IsMaster, &a.ParentAgentID, &a.ParentAgentName, &a.ParentAgentCode,
+		&a.OverridePct,
+		&a.SubAgentsCount,
 		&a.CreatedAt, &a.UpdatedAt,
 		&a.TotalVouchersSold, &totalComm,
 	)
@@ -104,11 +114,15 @@ func (r *Repository) GetAgentByUserID(ctx context.Context, userID uuid.UUID) (*A
 			COALESCE(a.loket_admin_fee, 2500),
 			a.bank_name, a.bank_account_number, a.bank_account_holder,
 			a.status, a.notes, a.address, a.id_card_number, a.ktp_url, a.business_photo_url,
+			COALESCE(a.is_master, FALSE), a.parent_agent_id, pa.name as parent_agent_name, pa.code as parent_agent_code,
+			COALESCE(a.override_pct, 3.0),
+			(SELECT COUNT(*) FROM agents sa WHERE sa.parent_agent_id = a.id) as sub_agents_count,
 			a.created_at, a.updated_at,
 			(SELECT COUNT(*) FROM vouchers v WHERE v.agent_id = a.id) as total_sold,
 			(SELECT COALESCE(SUM(amount), 0) FROM agent_balance_mutations m WHERE m.agent_id = a.id AND m.mutation_type = 'VOUCHER_ONLINE_COMMISSION') as total_comm
 		FROM agents a
 		LEFT JOIN users u ON u.id = a.user_id
+		LEFT JOIN agents pa ON pa.id = a.parent_agent_id
 		WHERE a.user_id = $1
 	`
 	var a Agent
@@ -119,6 +133,9 @@ func (r *Repository) GetAgentByUserID(ctx context.Context, userID uuid.UUID) (*A
 		&a.LoketAdminFee,
 		&a.BankName, &a.BankAccountNumber, &a.BankAccountHolder,
 		&a.Status, &a.Notes, &a.Address, &a.IDCardNumber, &a.KtpURL, &a.BusinessPhotoURL,
+		&a.IsMaster, &a.ParentAgentID, &a.ParentAgentName, &a.ParentAgentCode,
+		&a.OverridePct,
+		&a.SubAgentsCount,
 		&a.CreatedAt, &a.UpdatedAt,
 		&a.TotalVouchersSold, &totalComm,
 	)
@@ -180,11 +197,15 @@ func (r *Repository) ListAgents(ctx context.Context, params pagination.Params, s
 			COALESCE(a.loket_admin_fee, 2500),
 			a.bank_name, a.bank_account_number, a.bank_account_holder,
 			a.status, a.notes, a.address, a.id_card_number, a.ktp_url, a.business_photo_url,
+			COALESCE(a.is_master, FALSE), a.parent_agent_id, pa.name as parent_agent_name, pa.code as parent_agent_code,
+			COALESCE(a.override_pct, 3.0),
+			(SELECT COUNT(*) FROM agents sa WHERE sa.parent_agent_id = a.id) as sub_agents_count,
 			a.created_at, a.updated_at,
 			(SELECT COUNT(*) FROM vouchers v WHERE v.agent_id = a.id) as total_sold,
 			(SELECT COALESCE(SUM(amount), 0) FROM agent_balance_mutations m WHERE m.agent_id = a.id AND m.mutation_type = 'VOUCHER_ONLINE_COMMISSION') as total_comm
 		FROM agents a
 		LEFT JOIN users u ON u.id = a.user_id
+		LEFT JOIN agents pa ON pa.id = a.parent_agent_id
 		%s
 		ORDER BY a.created_at DESC
 		LIMIT $%d OFFSET $%d
@@ -207,6 +228,9 @@ func (r *Repository) ListAgents(ctx context.Context, params pagination.Params, s
 			&a.LoketAdminFee,
 			&a.BankName, &a.BankAccountNumber, &a.BankAccountHolder,
 			&a.Status, &a.Notes, &a.Address, &a.IDCardNumber, &a.KtpURL, &a.BusinessPhotoURL,
+			&a.IsMaster, &a.ParentAgentID, &a.ParentAgentName, &a.ParentAgentCode,
+			&a.OverridePct,
+			&a.SubAgentsCount,
 			&a.CreatedAt, &a.UpdatedAt,
 			&a.TotalVouchersSold, &totalComm,
 		)
@@ -229,17 +253,94 @@ func (r *Repository) UpdateAgent(ctx context.Context, a *Agent) error {
 			offline_cashback_pct = $5, online_cashback_pct = $6, online_discount_pct = $7,
 			bank_name = $8, bank_account_number = $9, bank_account_holder = $10,
 			status = $11, notes = $12, address = $13, id_card_number = $14,
-			ktp_url = $15, business_photo_url = $16, updated_at = NOW()
-		WHERE id = $17
+			ktp_url = $15, business_photo_url = $16,
+			is_master = $17, parent_agent_id = $18, override_pct = $19,
+			updated_at = NOW()
+		WHERE id = $20
 	`
 	_, err := r.db.Exec(ctx, q,
 		a.Name, a.CompanyName, a.Phone, a.Email,
 		a.OfflineCashbackPct, a.OnlineCashbackPct, a.OnlineDiscountPct,
 		a.BankName, a.BankAccountNumber, a.BankAccountHolder,
 		a.Status, a.Notes, a.Address, a.IDCardNumber,
-		a.KtpURL, a.BusinessPhotoURL, a.ID,
+		a.KtpURL, a.BusinessPhotoURL,
+		a.IsMaster, a.ParentAgentID, a.OverridePct,
+		a.ID,
 	)
 	return err
+}
+
+func (r *Repository) ListSubAgents(ctx context.Context, masterAgentID uuid.UUID) ([]Agent, error) {
+	const q = `
+		SELECT 
+			a.id, a.user_id, u.email as user_email, a.code, a.name, a.company_name, a.phone, a.email,
+			a.balance, a.offline_cashback_pct, a.online_cashback_pct, a.online_discount_pct,
+			COALESCE(a.loket_admin_fee, 2500),
+			a.bank_name, a.bank_account_number, a.bank_account_holder,
+			a.status, a.notes, a.address, a.id_card_number, a.ktp_url, a.business_photo_url,
+			COALESCE(a.is_master, FALSE), a.parent_agent_id, NULL, NULL,
+			COALESCE(a.override_pct, 3.0),
+			0 as sub_agents_count,
+			a.created_at, a.updated_at,
+			(SELECT COUNT(*) FROM vouchers v WHERE v.agent_id = a.id) as total_sold,
+			(SELECT COALESCE(SUM(amount), 0) FROM agent_balance_mutations m WHERE m.agent_id = a.id AND m.mutation_type = 'VOUCHER_ONLINE_COMMISSION') as total_comm
+		FROM agents a
+		LEFT JOIN users u ON u.id = a.user_id
+		WHERE a.parent_agent_id = $1
+		ORDER BY a.created_at DESC
+	`
+	rows, err := r.db.Query(ctx, q, masterAgentID)
+	if err != nil {
+		return nil, fmt.Errorf("list sub agents: %w", err)
+	}
+	defer rows.Close()
+
+	subAgents := make([]Agent, 0)
+	for rows.Next() {
+		var a Agent
+		var balance, totalComm int64
+		err := rows.Scan(
+			&a.ID, &a.UserID, &a.UserEmail, &a.Code, &a.Name, &a.CompanyName, &a.Phone, &a.Email,
+			&balance, &a.OfflineCashbackPct, &a.OnlineCashbackPct, &a.OnlineDiscountPct,
+			&a.LoketAdminFee,
+			&a.BankName, &a.BankAccountNumber, &a.BankAccountHolder,
+			&a.Status, &a.Notes, &a.Address, &a.IDCardNumber, &a.KtpURL, &a.BusinessPhotoURL,
+			&a.IsMaster, &a.ParentAgentID, &a.ParentAgentName, &a.ParentAgentCode,
+			&a.OverridePct,
+			&a.SubAgentsCount,
+			&a.CreatedAt, &a.UpdatedAt,
+			&a.TotalVouchersSold, &totalComm,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("scan sub agent: %w", err)
+		}
+		a.Balance = money.Amount(balance)
+		a.TotalCommission = money.Amount(totalComm)
+		subAgents = append(subAgents, a)
+	}
+	return subAgents, nil
+}
+
+func (r *Repository) GetMasterAgentNetworkStats(ctx context.Context, masterAgentID uuid.UUID) (totalOmzet int64, totalOverride int64, err error) {
+	// Total override earned by master agent
+	const qOverride = `
+		SELECT COALESCE(SUM(amount), 0)
+		FROM agent_balance_mutations
+		WHERE agent_id = $1 AND mutation_type = 'VOUCHER_OVERRIDE_COMMISSION'
+	`
+	_ = r.db.QueryRow(ctx, qOverride, masterAgentID).Scan(&totalOverride)
+
+	// Total network omzet: sum of gross voucher generation from all sub-agents
+	const qOmzet = `
+		SELECT COALESCE(SUM(vt.price), 0)
+		FROM vouchers v
+		JOIN voucher_templates vt ON vt.id = v.template_id
+		JOIN agents sa ON sa.id = v.agent_id
+		WHERE sa.parent_agent_id = $1
+	`
+	_ = r.db.QueryRow(ctx, qOmzet, masterAgentID).Scan(&totalOmzet)
+
+	return totalOmzet, totalOverride, nil
 }
 
 func (r *Repository) SetAgentStatus(ctx context.Context, id uuid.UUID, status AgentStatus, notes *string) error {

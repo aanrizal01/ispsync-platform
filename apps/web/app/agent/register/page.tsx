@@ -39,6 +39,7 @@ export default function AgentRegisterPage() {
   const [form, setForm] = useState({
     name: "",
     company_name: "",
+    referral_code: "",
     phone: "",
     email: "",
     password: "",
@@ -156,6 +157,7 @@ export default function AgentRegisterPage() {
       const res = await agentApi.register({
         name: form.name.trim(),
         company_name: form.company_name.trim() || undefined,
+        referral_code: form.referral_code.trim() ? form.referral_code.trim().toUpperCase() : undefined,
         phone: form.phone.trim(),
         email: form.email.trim(),
         password: form.password,
@@ -528,6 +530,22 @@ export default function AgentRegisterPage() {
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all bg-white font-mono"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Kode Referral Master Agen <span className="text-slate-400 font-normal">(Opsional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="contoh: AGN-123 (Kosongkan jika bukan binaan distributor)"
+                    value={form.referral_code}
+                    onChange={(e) => setForm({ ...form, referral_code: e.target.value.toUpperCase() })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all bg-white font-mono uppercase"
+                  />
+                  <p className="text-[10.5px] text-slate-500 mt-1">
+                    Jika Anda diajak oleh Master Agen / Koordinator Wilayah, masukkan kode mereka di sini.
+                  </p>
                 </div>
 
                 <div>

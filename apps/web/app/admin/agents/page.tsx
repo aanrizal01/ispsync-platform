@@ -41,6 +41,7 @@ import {
   Check,
   Image as ImageIcon,
   Award,
+  Crown,
 } from "lucide-react";
 import AgentCertificateModal from "@/components/agent/AgentCertificateModal";
 import AgentPksModal from "@/components/agent/AgentPksModal";
@@ -100,6 +101,8 @@ export default function AdminAgentsPage() {
     logoUrl: "/web/dev_logo.svg",
   });
 
+  const [hierarchyFilter, setHierarchyFilter] = useState<"ALL" | "MASTER" | "SUB">("ALL");
+
   // Form states
   const [createForm, setCreateForm] = useState<CreateAgentInput>({
     code: "",
@@ -115,6 +118,9 @@ export default function AdminAgentsPage() {
     bank_account_number: "",
     bank_account_holder: "",
     notes: "",
+    is_master: false,
+    parent_agent_id: undefined,
+    override_pct: 3,
     create_user_account: true,
     user_password: "",
   });
@@ -142,6 +148,10 @@ export default function AdminAgentsPage() {
     bank_name: "",
     bank_account_number: "",
     bank_account_holder: "",
+    is_master: false,
+    parent_agent_id: undefined,
+    clear_parent_agent: false,
+    override_pct: 3,
     status: "ACTIVE",
     notes: "",
   });
@@ -653,6 +663,16 @@ export default function AdminAgentsPage() {
                 <option value="TERMINATED">Nonaktif (Terminated)</option>
               </select>
 
+              <select
+                value={hierarchyFilter}
+                onChange={(e) => setHierarchyFilter(e.target.value as "ALL" | "MASTER" | "SUB")}
+                className="px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-700 font-medium"
+              >
+                <option value="ALL">Semua Tingkatan</option>
+                <option value="MASTER">👑 Hanya Master Agen</option>
+                <option value="SUB">🏪 Hanya Sub-Agen</option>
+              </select>
+
               <button
                 onClick={() => fetchAgents(1)}
                 className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors"
@@ -685,23 +705,50 @@ export default function AdminAgentsPage() {
                         Memuat data agen...
                       </td>
                     </tr>
-                  ) : agents.length === 0 ? (
+                  ) : agents.filter((a) => {
+                      if (hierarchyFilter === "MASTER") return a.is_master;
+                      if (hierarchyFilter === "SUB") return !a.is_master;
+                      return true;
+                    }).length === 0 ? (
                     <tr>
                       <td colSpan={6} className="py-12 text-center text-slate-400">
                         Tidak ada agen ditemukan.
                       </td>
                     </tr>
                   ) : (
-                    agents.map((agent) => (
+                    agents
+                      .filter((a) => {
+                        if (hierarchyFilter === "MASTER") return a.is_master;
+                        if (hierarchyFilter === "SUB") return !a.is_master;
+                        return true;
+                      })
+                      .map((agent) => (
                       <tr key={agent.id} className="hover:bg-slate-50/60 transition-colors">
                         <td className="py-3.5 px-4">
-                          <div className="font-semibold text-slate-900">{agent.name}</div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="font-semibold text-slate-900">{agent.name}</div>
+                            {agent.is_master ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-300">
+                                <Crown className="w-3 h-3 text-amber-500 fill-amber-400" />
+                                Master ({agent.override_pct || 3}% Override)
+                              </span>
+                            ) : agent.parent_agent_name ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                                Induk: {agent.parent_agent_name}
+                              </span>
+                            ) : null}
+                          </div>
                           <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
                             <span className="font-mono bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-bold">
                               {agent.code}
                             </span>
                             {agent.company_name && <span>• {agent.company_name}</span>}
                             <span>• {agent.phone}</span>
+                            {agent.is_master && (
+                              <span className="font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
+                                {agent.sub_agents_count || 0} Sub-Agen
+                              </span>
+                            )}
                           </div>
                           {agent.user_email && (
                             <div className="text-[11px] text-blue-600 mt-0.5">Login: {agent.user_email}</div>
@@ -858,6 +905,10 @@ export default function AdminAgentsPage() {
                                   bank_name: agent.bank_name || "",
                                   bank_account_number: agent.bank_account_number || "",
                                   bank_account_holder: agent.bank_account_holder || "",
+                                  is_master: agent.is_master || false,
+                                  parent_agent_id: agent.parent_agent_id || undefined,
+                                  clear_parent_agent: false,
+                                  override_pct: agent.override_pct || 3,
                                   status: agent.status,
                                   notes: agent.notes || "",
                                 });
@@ -1496,8 +1547,77 @@ export default function AdminAgentsPage() {
                       <span className="absolute right-3 top-2 text-slate-400 font-bold">%</span>
                     </div>
                     <span className="text-[10px] text-slate-500">Potongan harga untuk pembeli</span>
-                  </div>
+              {/* Master Agent Hierarchy */}
+              <div className="bg-purple-50/70 p-4 rounded-xl border border-purple-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Crown className="w-4 h-4 text-purple-600" />
+                    Tingkatan Keagenan (Master & Sub-Agen)
+                  </span>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-purple-900 select-none">
+                    <input
+                      type="checkbox"
+                      checked={createForm.is_master || false}
+                      onChange={(e) => {
+                        const isMaster = e.target.checked;
+                        setCreateForm({
+                          ...createForm,
+                          is_master: isMaster,
+                          parent_agent_id: isMaster ? undefined : createForm.parent_agent_id,
+                          override_pct: isMaster ? (createForm.override_pct || 3) : createForm.override_pct,
+                        });
+                      }}
+                      className="rounded text-purple-600 focus:ring-purple-500 w-4 h-4"
+                    />
+                    <span>Jadikan Master Agen</span>
+                  </label>
                 </div>
+
+                {createForm.is_master ? (
+                  <div className="bg-white p-3 rounded-lg border border-purple-200 space-y-2">
+                    <label className="block text-xs font-semibold text-purple-950 mb-1">
+                      Persentase Overriding Commission (%) *
+                    </label>
+                    <div className="relative max-w-xs">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={0.5}
+                        value={createForm.override_pct ?? 3}
+                        onChange={(e) => setCreateForm({ ...createForm, override_pct: Number(e.target.value) })}
+                        className="w-full px-3 py-2 border border-purple-300 rounded-lg pr-7 font-bold text-purple-900"
+                      />
+                      <span className="absolute right-3 top-2 text-purple-400 font-bold">%</span>
+                    </div>
+                    <p className="text-[11px] text-purple-700 leading-relaxed">
+                      Master Agen memperoleh komisi overriding ini (default 3%) dari omzet voucher yang dihasilkan oleh sub-agen di bawah jaringannya.
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Pilih Master Agen Induk (Opsional)
+                    </label>
+                    <select
+                      value={createForm.parent_agent_id || ""}
+                      onChange={(e) => setCreateForm({ ...createForm, parent_agent_id: e.target.value || undefined })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 text-xs font-medium"
+                    >
+                      <option value="">-- Tidak Ada (Agen Mandiri / Langsung ke ISP) --</option>
+                      {agents
+                        .filter((a) => a.is_master && a.status === "ACTIVE")
+                        .map((m) => (
+                          <option key={m.id} value={m.id}>
+                            👑 {m.name} ({m.code}) - {m.company_name || "Tanpa Nama Toko"}
+                          </option>
+                        ))}
+                    </select>
+                    <p className="text-[10.5px] text-slate-500 mt-1">
+                      Jika dipilih, Master Agen induk akan otomatis menerima komisi overriding 3% saat agen ini bertransaksi voucher.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Bank Info */}
@@ -1890,6 +2010,84 @@ export default function AdminAgentsPage() {
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg font-bold text-emerald-700"
                   />
                 </div>
+              </div>
+
+              {/* Tingkatan Keagenan (Master & Sub-Agen) */}
+              <div className="bg-purple-50/70 p-3.5 rounded-xl border border-purple-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Crown className="w-4 h-4 text-purple-600" />
+                    Tingkatan Keagenan
+                  </span>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-purple-900 select-none">
+                    <input
+                      type="checkbox"
+                      checked={editForm.is_master || false}
+                      onChange={(e) => {
+                        const isMaster = e.target.checked;
+                        setEditForm({
+                          ...editForm,
+                          is_master: isMaster,
+                          clear_parent_agent: isMaster ? true : editForm.clear_parent_agent,
+                          parent_agent_id: isMaster ? undefined : editForm.parent_agent_id,
+                          override_pct: isMaster ? (editForm.override_pct || 3) : editForm.override_pct,
+                        });
+                      }}
+                      className="rounded text-purple-600 focus:ring-purple-500 w-4 h-4"
+                    />
+                    <span>Master Agen</span>
+                  </label>
+                </div>
+
+                {editForm.is_master ? (
+                  <div className="bg-white p-3 rounded-lg border border-purple-200 space-y-1.5">
+                    <label className="block text-xs font-semibold text-purple-950">
+                      Persentase Overriding Commission (%)
+                    </label>
+                    <div className="relative max-w-xs">
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={0.5}
+                        value={editForm.override_pct ?? 3}
+                        onChange={(e) => setEditForm({ ...editForm, override_pct: Number(e.target.value) })}
+                        className="w-full px-3 py-2 border border-purple-300 rounded-lg pr-7 font-bold text-purple-900 text-xs"
+                      />
+                      <span className="absolute right-3 top-2 text-purple-400 font-bold text-xs">%</span>
+                    </div>
+                    <p className="text-[10.5px] text-purple-700">
+                      Komisi overriding dari seluruh omzet voucher sub-agen di bawah jaringannya.
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Master Agen Induk
+                    </label>
+                    <select
+                      value={editForm.parent_agent_id || ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setEditForm({
+                          ...editForm,
+                          parent_agent_id: val || undefined,
+                          clear_parent_agent: !val,
+                        });
+                      }}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-800 text-xs font-medium"
+                    >
+                      <option value="">-- Tidak Ada (Agen Mandiri / Langsung ke ISP) --</option>
+                      {agents
+                        .filter((a) => a.is_master && a.status === "ACTIVE" && a.id !== showEditModal.id)
+                        .map((m) => (
+                          <option key={m.id} value={m.id}>
+                            👑 {m.name} ({m.code}) - {m.company_name || "Tanpa Nama Toko"}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">

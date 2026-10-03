@@ -62,6 +62,8 @@ import {
   Wifi,
   Award,
   FileText,
+  Crown,
+  Users,
 } from "lucide-react";
 import { PrinterSettingsModal } from "./PrinterSettingsModal";
 import AgentCertificateModal, { type CompanyCertificateProfile } from "@/components/agent/AgentCertificateModal";
@@ -127,7 +129,8 @@ export default function AgentDashboardPage() {
   }, []);
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState<"vouchers" | "scratch_cards" | "bill_payment" | "passpoint" | "mutations" | "topups">("vouchers");
+  const [activeTab, setActiveTab] = useState<"vouchers" | "scratch_cards" | "bill_payment" | "passpoint" | "mutations" | "topups" | "network">("vouchers");
+  const [copiedReferral, setCopiedReferral] = useState(false);
 
   // ── Passpoint Wi-Fi State ─────────────────────────────────────────
   const [passpointSubTab, setPasspointSubTab] = useState<"manual" | "counter">("manual");
@@ -1202,12 +1205,23 @@ export default function AgentDashboardPage() {
         <div className="md:col-span-6 bg-linear-to-br from-slate-900 via-slate-800 to-blue-950 text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between relative overflow-hidden">
           <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-44 h-44 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
 
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <Wallet className="w-4 h-4 text-emerald-400" />
-                Saldo Dompet Agen
-              </span>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Wallet className="w-4 h-4 text-emerald-400" />
+                  Saldo Dompet Agen
+                </span>
+                {dashboard?.is_master ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-black bg-purple-500/30 text-purple-200 border border-purple-400/40">
+                    <Crown className="w-3 h-3 text-amber-300 fill-amber-300" />
+                    MASTER AGENT ({dashboard.override_pct || 3}%)
+                  </span>
+                ) : dashboard?.agent.parent_agent_name ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/10 text-slate-300 border border-white/15">
+                    Induk: {dashboard.agent.parent_agent_name}
+                  </span>
+                ) : null}
+              </div>
               <button
                 type="button"
                 onClick={() => {
@@ -1449,6 +1463,24 @@ export default function AgentDashboardPage() {
           <CreditCard className="w-4 h-4 shrink-0" />
           <span>Riwayat Top-Up</span>
         </button>
+
+        {dashboard?.is_master && (
+          <button
+            onClick={() => setActiveTab("network")}
+            className={cn(
+              "shrink-0 sm:flex-1 py-2.5 px-3.5 sm:px-3 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 whitespace-nowrap",
+              activeTab === "network"
+                ? "bg-purple-600 text-white shadow-xs"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+            )}
+          >
+            <Crown className="w-4 h-4 shrink-0 text-amber-300 fill-amber-300" />
+            <span>Jaringan Sub-Agen</span>
+            <span className="inline-block text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-purple-700/60 text-purple-100 font-bold">
+              {dashboard.sub_agents_count || (dashboard.sub_agents ? dashboard.sub_agents.length : 0)}
+            </span>
+          </button>
+        )}
       </div>
 
       {/* ── TAB: LOKET PEMBAYARAN TAGIHAN INTERNET ────────────────── */}
@@ -3928,6 +3960,172 @@ export default function AgentDashboardPage() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+        </div>
+      )}
+
+      {/* ── TAB: JARINGAN SUB-AGEN MASTER ───────────────────────────── */}
+      {activeTab === "network" && dashboard?.is_master && (
+        <div className="space-y-6">
+          {/* Header Card */}
+          <div className="bg-linear-to-r from-purple-950 via-slate-900 to-slate-950 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden border border-purple-800/40">
+            <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-64 h-64 bg-purple-500/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 bg-purple-500/20 text-purple-300 border border-purple-400/30 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
+                  <Crown className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                  <span>Program Kemitraan Master Distributor</span>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                  Jaringan Distribusi &amp; Overriding Komisi
+                </h3>
+                <p className="text-xs text-purple-100/90 leading-relaxed font-medium max-w-xl">
+                  Sebagai Master Agen, Anda memperoleh komisi overriding sebesar <b>{dashboard.override_pct || 3}%</b> dari total omzet penjualan voucher yang dicetak atau dijual secara online oleh seluruh sub-agen di bawah binaan Anda.
+                </p>
+              </div>
+
+              {/* Referral Code Box */}
+              <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 shrink-0 sm:min-w-[260px]">
+                <span className="text-[11px] text-purple-200 uppercase tracking-wider font-semibold block mb-1">
+                  Kode Referral Master Anda
+                </span>
+                <div className="flex items-center gap-2">
+                  <div className="bg-slate-950/80 px-3.5 py-1.5 rounded-xl border border-white/20 font-mono text-xl font-black text-amber-300 tracking-wider">
+                    {dashboard.agent.code}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (navigator.clipboard) {
+                        navigator.clipboard.writeText(dashboard.agent.code);
+                        setCopiedReferral(true);
+                        setTimeout(() => setCopiedReferral(false), 2500);
+                      }
+                    }}
+                    className="p-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-xs transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                    title="Salin Kode Referral"
+                  >
+                    {copiedReferral ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
+                    <span>{copiedReferral ? "Tersalin" : "Salin"}</span>
+                  </button>
+                </div>
+                <span className="text-[10px] text-purple-200/70 mt-1 block">
+                  Berikan kode ini saat mendaftarkan konter sub-agen baru.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Network KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                Total Sub-Agen Terdaftar
+              </span>
+              <div className="text-3xl font-black text-slate-900 mt-1.5 flex items-baseline gap-2">
+                <span>{dashboard.sub_agents_count || (dashboard.sub_agents ? dashboard.sub_agents.length : 0)}</span>
+                <span className="text-xs text-slate-400 font-normal">mitra aktif</span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1">Konter/toko binaan langsung</p>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                Total Omzet Jaringan
+              </span>
+              <div className="text-2xl font-black text-blue-600 mt-1.5 font-mono">
+                {formatRupiah(dashboard.total_network_omzet || 0)}
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1">Akumulasi voucher cetak sub-agen</p>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
+                Total Komisi Overriding ({dashboard.override_pct || 3}%)
+              </span>
+              <div className="text-2xl font-black text-emerald-600 mt-1.5 font-mono">
+                {formatRupiah(dashboard.total_override_earned || 0)}
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1">Otomatis masuk ke saldo dompet</p>
+            </div>
+          </div>
+
+          {/* Sub-Agents List Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
+            <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
+              <div>
+                <h4 className="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
+                  <Users className="w-4 h-4 text-purple-600" />
+                  Daftar Sub-Agen di Jaringan Anda
+                </h4>
+                <p className="text-xs text-slate-500">Seluruh mitra konter yang terhubung di bawah kode Master Anda</p>
+              </div>
+              <span className="text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 px-3 py-1 rounded-full self-start sm:self-auto">
+                {dashboard.sub_agents?.length || 0} Sub-Agen Aktif
+              </span>
+            </div>
+
+            {(!dashboard.sub_agents || dashboard.sub_agents.length === 0) ? (
+              <div className="p-12 text-center text-slate-400 space-y-3">
+                <Store className="w-10 h-10 mx-auto text-slate-300 stroke-[1.5]" />
+                <p className="text-sm font-medium text-slate-600">Belum ada sub-agen yang terdaftar di jaringan Anda.</p>
+                <p className="text-xs text-slate-400 max-w-md mx-auto">
+                  Ajak pemilik toko atau konter di sekitar Anda bergabung dan masukkan kode <b>{dashboard.agent.code}</b> saat pendaftaran agar otomatis masuk ke jaringan Anda.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase">
+                    <tr>
+                      <th className="py-3 px-4">Nama Agen &amp; Konter</th>
+                      <th className="py-3 px-4">No. WhatsApp</th>
+                      <th className="py-3 px-4">Saldo Dompet</th>
+                      <th className="py-3 px-4">Voucher Terjual</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4">Terdaftar</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {dashboard.sub_agents.map((sub) => (
+                      <tr key={sub.id} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div className="font-semibold text-slate-900">{sub.name}</div>
+                          <div className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                            <span className="font-mono font-bold bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                              {sub.code}
+                            </span>
+                            {sub.company_name && <span>• {sub.company_name}</span>}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-xs text-slate-700">
+                          {sub.phone}
+                        </td>
+                        <td className="py-3.5 px-4 font-bold text-emerald-600 font-mono">
+                          {formatRupiah(sub.balance)}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="font-bold text-slate-800">{sub.total_vouchers_sold || 0}</span>
+                          <span className="text-xs text-slate-400"> voucher</span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded-full text-xs font-semibold",
+                            sub.status === "ACTIVE"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : "bg-slate-100 text-slate-600 border border-slate-200"
+                          )}>
+                            {sub.status === "ACTIVE" ? "Aktif" : sub.status}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-xs text-slate-400">
+                          {formatDate(sub.created_at)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>

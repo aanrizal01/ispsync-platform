@@ -22,6 +22,12 @@ export interface Agent {
   bank_account_number?: string;
   bank_account_holder?: string;
   loket_admin_fee?: number;
+  is_master?: boolean;
+  parent_agent_id?: string;
+  parent_agent_name?: string;
+  parent_agent_code?: string;
+  override_pct?: number;
+  sub_agents_count?: number;
   status: "ACTIVE" | "PENDING" | "REJECTED" | "SUSPENDED" | "TERMINATED";
   notes?: string;
   total_vouchers_sold: number;
@@ -35,7 +41,7 @@ export interface AgentMutation {
   agent_id: string;
   agent_name?: string;
   agent_code?: string;
-  mutation_type: "TOPUP_MANUAL" | "TOPUP_BANK_TRANSFER" | "VOUCHER_OFFLINE_BUY" | "VOUCHER_ONLINE_COMMISSION" | "WITHDRAWAL" | "ADJUSTMENT" | string;
+  mutation_type: "TOPUP_MANUAL" | "TOPUP_BANK_TRANSFER" | "VOUCHER_OFFLINE_BUY" | "VOUCHER_ONLINE_COMMISSION" | "VOUCHER_OVERRIDE_COMMISSION" | "WITHDRAWAL" | "ADJUSTMENT" | string;
   amount: number;
   balance_before: number;
   balance_after: number;
@@ -75,6 +81,12 @@ export function getMutationBadgeInfo(mutation_type: string, isCredit: boolean) {
         label: "Komisi Voucher",
         badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
         typeDesc: "Komisi penjualan voucher online",
+      };
+    case "VOUCHER_OVERRIDE_COMMISSION":
+      return {
+        label: "Komisi Overriding",
+        badgeClass: "bg-cyan-50 text-cyan-700 border-cyan-200",
+        typeDesc: "Komisi overriding 3% dari omzet sub-agen",
       };
     case "INVOICE_PAYMENT_AGENT":
       return {
@@ -135,6 +147,12 @@ export interface AgentDashboardSummary {
   total_online_count: number;
   recent_mutations: AgentMutation[];
   pending_topup_count: number;
+  is_master?: boolean;
+  override_pct?: number;
+  sub_agents_count?: number;
+  total_network_omzet?: number;
+  total_override_earned?: number;
+  sub_agents?: Agent[];
 }
 
 export interface CreateAgentInput {
@@ -155,6 +173,9 @@ export interface CreateAgentInput {
   bank_account_number?: string;
   bank_account_holder?: string;
   notes?: string;
+  is_master?: boolean;
+  parent_agent_id?: string;
+  override_pct?: number;
   create_user_account?: boolean;
   user_password?: string;
 }
@@ -174,6 +195,10 @@ export interface UpdateAgentInput {
   bank_name?: string;
   bank_account_number?: string;
   bank_account_holder?: string;
+  is_master?: boolean;
+  parent_agent_id?: string;
+  clear_parent_agent?: boolean;
+  override_pct?: number;
   status?: string;
   notes?: string;
 }
@@ -184,6 +209,7 @@ export interface RegisterAgentInput {
   phone: string;
   email: string;
   password: string;
+  referral_code?: string;
   address?: string;
   id_card_number?: string;
   ktp_url?: string;

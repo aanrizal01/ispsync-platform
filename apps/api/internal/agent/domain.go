@@ -25,6 +25,7 @@ const (
 	MutationTopupBankTransfer    MutationType = "TOPUP_BANK_TRANSFER"
 	MutationVoucherOfflineBuy    MutationType = "VOUCHER_OFFLINE_BUY"
 	MutationVoucherOnlineComm    MutationType = "VOUCHER_ONLINE_COMMISSION"
+	MutationVoucherOverrideComm  MutationType = "VOUCHER_OVERRIDE_COMMISSION"
 	MutationPasspointCounterPay  MutationType = "PASSPOINT_COUNTER_PAY"
 	MutationPasspointOfflineBuy  MutationType = "PASSPOINT_OFFLINE_BUY"
 	MutationInvoicePaymentAgent  MutationType = "INVOICE_PAYMENT_AGENT"
@@ -53,6 +54,12 @@ type Agent struct {
 	IDCardNumber       *string      `json:"id_card_number,omitempty"`
 	KtpURL             *string      `json:"ktp_url,omitempty"`
 	BusinessPhotoURL   *string      `json:"business_photo_url,omitempty"`
+	IsMaster           bool         `json:"is_master"`
+	ParentAgentID      *uuid.UUID   `json:"parent_agent_id,omitempty"`
+	ParentAgentName    *string      `json:"parent_agent_name,omitempty"`
+	ParentAgentCode    *string      `json:"parent_agent_code,omitempty"`
+	OverridePct        float64      `json:"override_pct"`
+	SubAgentsCount     int          `json:"sub_agents_count"`
 	Balance            money.Amount `json:"balance"`
 	OfflineCashbackPct float64      `json:"offline_cashback_pct"`
 	OnlineCashbackPct  float64      `json:"online_cashback_pct"`
@@ -113,44 +120,51 @@ type DailyPromo struct {
 // Request / Response DTOs
 
 type CreateAgentRequest struct {
-	Code               string   `json:"code" validate:"required,min=2,max=32"`
-	Name               string   `json:"name" validate:"required,min=2"`
-	CompanyName        *string  `json:"company_name"`
-	Phone              string   `json:"phone" validate:"required"`
-	Email              *string  `json:"email"`
-	Address            *string  `json:"address"`
-	IDCardNumber       *string  `json:"id_card_number"`
-	KtpURL             *string  `json:"ktp_url"`
-	BusinessPhotoURL   *string  `json:"business_photo_url"`
-	InitialBalance     int64    `json:"initial_balance" validate:"min=0"`
-	OfflineCashbackPct *float64 `json:"offline_cashback_pct"`
-	OnlineCashbackPct  *float64 `json:"online_cashback_pct"`
-	OnlineDiscountPct  *float64 `json:"online_discount_pct"`
-	BankName           *string  `json:"bank_name"`
-	BankAccountNumber  *string  `json:"bank_account_number"`
-	BankAccountHolder  *string  `json:"bank_account_holder"`
-	Notes              *string  `json:"notes"`
-	CreateUserAccount  bool     `json:"create_user_account"`
-	UserPassword       *string  `json:"user_password"`
+	Code               string     `json:"code" validate:"required,min=2,max=32"`
+	Name               string     `json:"name" validate:"required,min=2"`
+	CompanyName        *string    `json:"company_name"`
+	Phone              string     `json:"phone" validate:"required"`
+	Email              *string    `json:"email"`
+	Address            *string    `json:"address"`
+	IDCardNumber       *string    `json:"id_card_number"`
+	KtpURL             *string    `json:"ktp_url"`
+	BusinessPhotoURL   *string    `json:"business_photo_url"`
+	IsMaster           *bool      `json:"is_master"`
+	ParentAgentID      *uuid.UUID `json:"parent_agent_id"`
+	OverridePct        *float64   `json:"override_pct"`
+	InitialBalance     int64      `json:"initial_balance" validate:"min=0"`
+	OfflineCashbackPct *float64   `json:"offline_cashback_pct"`
+	OnlineCashbackPct  *float64   `json:"online_cashback_pct"`
+	OnlineDiscountPct  *float64   `json:"online_discount_pct"`
+	BankName           *string    `json:"bank_name"`
+	BankAccountNumber  *string    `json:"bank_account_number"`
+	BankAccountHolder  *string    `json:"bank_account_holder"`
+	Notes              *string    `json:"notes"`
+	CreateUserAccount  bool       `json:"create_user_account"`
+	UserPassword       *string    `json:"user_password"`
 }
 
 type UpdateAgentRequest struct {
-	Name               string   `json:"name" validate:"required,min=2"`
-	CompanyName        *string  `json:"company_name"`
-	Phone              string   `json:"phone" validate:"required"`
-	Email              *string  `json:"email"`
-	Address            *string  `json:"address"`
-	IDCardNumber       *string  `json:"id_card_number"`
-	KtpURL             *string  `json:"ktp_url"`
-	BusinessPhotoURL   *string  `json:"business_photo_url"`
-	OfflineCashbackPct *float64 `json:"offline_cashback_pct"`
-	OnlineCashbackPct  *float64 `json:"online_cashback_pct"`
-	OnlineDiscountPct  *float64 `json:"online_discount_pct"`
-	BankName           *string  `json:"bank_name"`
-	BankAccountNumber  *string  `json:"bank_account_number"`
-	BankAccountHolder  *string  `json:"bank_account_holder"`
-	Status             *string  `json:"status"`
-	Notes              *string  `json:"notes"`
+	Name               string     `json:"name" validate:"required,min=2"`
+	CompanyName        *string    `json:"company_name"`
+	Phone              string     `json:"phone" validate:"required"`
+	Email              *string    `json:"email"`
+	Address            *string    `json:"address"`
+	IDCardNumber       *string    `json:"id_card_number"`
+	KtpURL             *string    `json:"ktp_url"`
+	BusinessPhotoURL   *string    `json:"business_photo_url"`
+	IsMaster           *bool      `json:"is_master"`
+	ParentAgentID      *uuid.UUID `json:"parent_agent_id"`
+	ClearParentAgent   bool       `json:"clear_parent_agent"`
+	OverridePct        *float64   `json:"override_pct"`
+	OfflineCashbackPct *float64   `json:"offline_cashback_pct"`
+	OnlineCashbackPct  *float64   `json:"online_cashback_pct"`
+	OnlineDiscountPct  *float64   `json:"online_discount_pct"`
+	BankName           *string    `json:"bank_name"`
+	BankAccountNumber  *string    `json:"bank_account_number"`
+	BankAccountHolder  *string    `json:"bank_account_holder"`
+	Status             *string    `json:"status"`
+	Notes              *string    `json:"notes"`
 }
 
 type RegisterAgentRequest struct {
@@ -163,6 +177,7 @@ type RegisterAgentRequest struct {
 	IDCardNumber      *string `json:"id_card_number"`
 	KtpURL            *string `json:"ktp_url"`
 	BusinessPhotoURL  *string `json:"business_photo_url"`
+	ReferralCode      *string `json:"referral_code"`
 	BankName          *string `json:"bank_name"`
 	BankAccountNumber *string `json:"bank_account_number"`
 	BankAccountHolder *string `json:"bank_account_holder"`
@@ -210,14 +225,20 @@ type AgentGenerateBatchRequest struct {
 }
 
 type AgentDashboardSummary struct {
-	Agent             Agent            `json:"agent"`
-	TodayPromoCode    string           `json:"today_promo_code"`
-	ValidDate         string           `json:"valid_date"`
-	TotalVouchersSold int              `json:"total_vouchers_sold"`
-	TotalOfflineCount int              `json:"total_offline_count"`
-	TotalOnlineCount  int              `json:"total_online_count"`
-	RecentMutations   []AgentMutation  `json:"recent_mutations"`
-	PendingTopupCount int              `json:"pending_topup_count"`
+	Agent               Agent           `json:"agent"`
+	TodayPromoCode      string          `json:"today_promo_code"`
+	ValidDate           string          `json:"valid_date"`
+	TotalVouchersSold   int             `json:"total_vouchers_sold"`
+	TotalOfflineCount   int             `json:"total_offline_count"`
+	TotalOnlineCount    int             `json:"total_online_count"`
+	RecentMutations     []AgentMutation `json:"recent_mutations"`
+	PendingTopupCount   int             `json:"pending_topup_count"`
+	IsMaster            bool            `json:"is_master"`
+	OverridePct         float64         `json:"override_pct"`
+	SubAgentsCount      int             `json:"sub_agents_count"`
+	TotalNetworkOmzet   int64           `json:"total_network_omzet"`
+	TotalOverrideEarned int64           `json:"total_override_earned"`
+	SubAgents           []Agent         `json:"sub_agents,omitempty"`
 }
 
 type ValidatePromoResponse struct {
