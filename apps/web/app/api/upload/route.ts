@@ -33,8 +33,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Clean filename
-    const originalExt = path.extname(file.name) || ".jpg";
-    const cleanExt = originalExt.toLowerCase().replace(/[^a-z0-9.]/g, "");
     const safeExt = [".jpg", ".jpeg", ".png", ".webp", ".pdf"].includes(cleanExt) ? cleanExt : ".jpg";
     const uniqueName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}${safeExt}`;
     const filePath = path.join(uploadDir, uniqueName);
