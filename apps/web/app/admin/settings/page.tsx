@@ -46,13 +46,15 @@ import {
   defaultSecuritySettings,
   PaymentGatewaySettings,
   defaultPaymentGatewaySettings,
+  DomainSettings,
+  defaultDomainSettings,
 } from "@/lib/api/settings";
 import { ipamApi, type IPAMSettings, type Subnet, type TestResult } from "@/lib/api/ipam";
 import { InvoicePrintDocument } from "@/components/invoice/InvoicePrintDocument";
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<
-    "general" | "invoice_template" | "billing" | "payment" | "notification" | "security"
+    "general" | "invoice_template" | "billing" | "payment" | "domain" | "notification" | "security"
   >("general");
 
   const [invoiceTemplate, setInvoiceTemplate] =
@@ -63,7 +65,10 @@ export default function AdminSettingsPage() {
     useState<SecuritySettings>(defaultSecuritySettings);
   const [pgSettings, setPgSettings] =
     useState<PaymentGatewaySettings>(defaultPaymentGatewaySettings);
+  const [domainSettings, setDomainSettings] =
+    useState<DomainSettings>(defaultDomainSettings);
   const [copiedWebhook, setCopiedWebhook] = useState<string | null>(null);
+  const [copiedScript, setCopiedScript] = useState<string | null>(null);
   const [clientIP, setClientIP] = useState<string>("");
   const [showSecurityHelp, setShowSecurityHelp] = useState<boolean>(true);
   const [loadingTemplate, setLoadingTemplate] = useState(false);
@@ -363,6 +368,18 @@ export default function AdminSettingsPage() {
         console.error("Failed to load payment gateway settings:", err);
       });
 
+    // Load domain & sub-brand settings
+    settingsApi
+      .getDomainSettings()
+      .then((data) => {
+        if (data && (data.wifi_domain || data.ledger_domain || data.wifi_brand_name)) {
+          setDomainSettings(data);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load domain settings:", err);
+      });
+
     // Detect current client IP
     settingsApi
       .getClientIP()
@@ -429,6 +446,9 @@ export default function AdminSettingsPage() {
 
       // Save payment gateway & routing settings to PostgreSQL database
       await settingsApi.updatePaymentGatewaySettings(pgSettings);
+
+      // Save domain & sub-brand settings to PostgreSQL database
+      await settingsApi.updateDomainSettings(domainSettings);
 
       // Save phpIPAM settings to database
       await ipamApi.saveSettings(ipamSettings);
@@ -506,6 +526,7 @@ export default function AdminSettingsPage() {
           { id: "invoice_template", label: "Template Faktur & Kop Surat", icon: FileText },
           { id: "billing", label: "Aturan Billing & Pajak", icon: DollarSign },
           { id: "payment", label: "Payment Gateway", icon: CreditCard },
+          { id: "domain", label: "Domain & Sub-Brand WiFi", icon: Globe },
           { id: "notification", label: "WhatsApp & Email", icon: MessageSquare },
           { id: "security", label: "Keamanan & Jaringan", icon: ShieldCheck },
         ].map((tab) => {
@@ -3133,8 +3154,348 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         </div>
-      )}
+      {/* Tab 5: Domain & Sub-Brand WiFi */}
+      {activeTab === "domain" && (
+        <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-6">
+          {/* Header & Sub-Brand Overview Banner */}
+          <div className="p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border border-slate-800 text-white relative overflow-hidden shadow-sm">
+            <div className="absolute -top-16 -left-16 w-52 h-52 bg-cyan-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div className="absolute top-1/2 -right-20 w-52 h-52 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                  <Globe className="w-5 h-5 text-cyan-400" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base font-black text-slate-100 tracking-tight">
+                      Domain &amp; Sub-Brand WiFi Publik
+                    </h2>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
+                      Multi-Tenant &amp; Carrier-Grade
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                    Pemisahan domain untuk mengamankan <strong>Backoffice Ledger ISP</strong> dari akses publik, serta mendukung sub-brand WiFi khusus publik (seperti <em>@gowifi</em> atau <em>@wifi.id</em>) di domain terpisah (misal: <code>hotspot.gowifi.id</code>).
+                  </p>
+                </div>
+              </div>
 
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  On-Demand TLS Ready
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 1: Konfigurasi Sub-Brand & Pemisahan Domain */}
+          <div className="space-y-4">
+            <div className="border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                <Wifi className="w-4 h-4 text-cyan-600" />
+                Identitas Sub-Brand &amp; Pemetaan Domain
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Konfigurasi nama sub-brand publik dan subdomain yang terisolasi sesuai peruntukan layanannya.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Sub-brand Name */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                <label className="block text-xs font-bold text-slate-800">
+                  Nama Sub-Brand WiFi Publik
+                </label>
+                <input
+                  type="text"
+                  value={domainSettings.wifi_brand_name}
+                  onChange={(e) =>
+                    setDomainSettings({ ...domainSettings, wifi_brand_name: e.target.value })
+                  }
+                  placeholder="Contoh: @gowifi atau @wifi.id"
+                  className="w-full px-3.5 py-2 text-xs font-bold border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                />
+                <p className="text-[11px] text-slate-500 leading-normal">
+                  Muncul di halaman captive portal hotspot, voucher belanja, struk thermal mitra loket, dan Passpoint.
+                </p>
+              </div>
+
+              {/* Public WiFi Domain */}
+              <div className="p-4 rounded-2xl bg-cyan-50/50 border border-cyan-200/60 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-cyan-950">
+                    Domain WiFi Hotspot &amp; Mitra Loket (Publik)
+                  </label>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-200/60 text-cyan-800">
+                    Akses Publik
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={domainSettings.wifi_domain}
+                  onChange={(e) =>
+                    setDomainSettings({ ...domainSettings, wifi_domain: e.target.value })
+                  }
+                  placeholder="Contoh: hotspot.gowifi.id atau wifi.dev.ispsync.id"
+                  className="w-full px-3.5 py-2 text-xs font-mono font-bold border border-cyan-300 rounded-xl bg-white focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                />
+                <p className="text-[11px] text-cyan-800/80 leading-normal">
+                  Rute: <code>/hotspot/buy</code>, <code>/hotspot/login</code>, <code>/passpoint</code>, serta pendaftaran &amp; loket agen <code>/agent/*</code>.
+                </p>
+              </div>
+
+              {/* Isolated Ledger Backoffice Domain */}
+              <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-200/60 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-blue-950">
+                    Domain Backoffice Ledger (Terisolasi)
+                  </label>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-200/60 text-blue-800">
+                    Khusus Internal ISP
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={domainSettings.ledger_domain}
+                  onChange={(e) =>
+                    setDomainSettings({ ...domainSettings, ledger_domain: e.target.value })
+                  }
+                  placeholder="Contoh: ledger.dev.ispsync.id atau billing.gogiga.net.id"
+                  className="w-full px-3.5 py-2 text-xs font-mono font-bold border border-blue-300 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+                <p className="text-[11px] text-blue-800/80 leading-normal">
+                  Khusus admin ISP, staf operasional, billing engine, dan NOC. <strong>Terisolasi penuh</strong> dari lalu lintas voucher publik.
+                </p>
+              </div>
+
+              {/* Portal Domain (Optional) */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-800">
+                    Domain Portal Pelanggan Rumahan (Opsional)
+                  </label>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-600">
+                    Pelanggan Tetap (FTTH)
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={domainSettings.portal_domain}
+                  onChange={(e) =>
+                    setDomainSettings({ ...domainSettings, portal_domain: e.target.value })
+                  }
+                  placeholder="Contoh: portal.dev.ispsync.id atau member.gogiga.net.id"
+                  className="w-full px-3.5 py-2 text-xs font-mono font-bold border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+                <p className="text-[11px] text-slate-500 leading-normal">
+                  Portal mandiri khusus pelanggan PPPoE bulanan untuk cek invoice dan konfirmasi bayar.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Panduan DNS & Auto-SSL VPS */}
+          <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 text-slate-200 space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Server className="w-4 h-4 text-cyan-400" />
+                <h3 className="text-xs font-bold text-slate-100 uppercase tracking-wider">
+                  Panduan DNS A-Record &amp; Let&apos;s Encrypt Auto-SSL
+                </h3>
+              </div>
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-md bg-slate-800 text-cyan-300 border border-slate-700">
+                IP Server VPS: {domainSettings.server_ip || "103.179.65.73"}
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Untuk mengaktifkan domain publik sub-brand (misal <code>{domainSettings.wifi_domain || "hotspot.gowifi.id"}</code>), cukup buat <strong>DNS A-Record</strong> di registrar domain Anda (Cloudflare, Niagahoster, Domainesia, dsb) mengarah ke server ISPSYNC:
+            </p>
+
+            <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/70 p-1">
+              <table className="w-full text-left text-xs font-mono">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400">
+                    <th className="py-2 px-3">Tipe</th>
+                    <th className="py-2 px-3">Nama Subdomain</th>
+                    <th className="py-2 px-3">Target IP (IPv4)</th>
+                    <th className="py-2 px-3">Proxy / SSL</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 text-slate-200">
+                  <tr>
+                    <td className="py-2 px-3 text-cyan-400 font-bold">A</td>
+                    <td className="py-2 px-3 font-semibold">{domainSettings.wifi_domain?.split(".")[0] || "hotspot"}</td>
+                    <td className="py-2 px-3 text-emerald-400 font-bold">{domainSettings.server_ip || "103.179.65.73"}</td>
+                    <td className="py-2 px-3 text-slate-400">DNS Only (Auto-SSL Caddy)</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 text-cyan-400 font-bold">A</td>
+                    <td className="py-2 px-3 font-semibold">{domainSettings.ledger_domain?.split(".")[0] || "ledger"}</td>
+                    <td className="py-2 px-3 text-emerald-400 font-bold">{domainSettings.server_ip || "103.179.65.73"}</td>
+                    <td className="py-2 px-3 text-slate-400">DNS Only (Auto-SSL Caddy)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/80 flex items-start gap-2.5 text-xs text-slate-300">
+              <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+              <span>
+                <strong>Zero Configuration SSL:</strong> Server Caddy ISPSYNC dilengkapi <em>On-Demand TLS</em>. Saat domain custom pertama kali diakses, sertifikat SSL HTTPS otomatis diterbitkan dalam 1-2 detik tanpa perlu restart server atau input token manual.
+              </span>
+            </div>
+          </div>
+
+          {/* Section 3: 1-Click Walled Garden Script MikroTik */}
+          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h3 className="text-xs font-black text-slate-900 flex items-center gap-2">
+                  <Radio className="w-4 h-4 text-blue-600" />
+                  Script Walled Garden MikroTik (Otomatis Sesuai Domain)
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Salin dan tempel perintah ini di Terminal MikroTik agar HP pelanggan yang belum login dapat membuka halaman beli voucher dan payment gateway QRIS.
+                </p>
+              </div>
+
+              {(() => {
+                const wifiHost = domainSettings.wifi_domain || "wifi.dev.ispsync.id";
+                const mikrotikScript = `/ip hotspot walled-garden
+add dst-host=*.${wifiHost} action=allow comment="ISPSYNC Hotspot & Agent Portal"
+add dst-host=${wifiHost} action=allow comment="ISPSYNC WiFi Domain"
+add dst-host=api.midtrans.com action=allow comment="Midtrans Payment API"
+add dst-host=app.midtrans.com action=allow comment="Midtrans Payment Web"
+add dst-host=passport.duitku.com action=allow comment="Duitku Payment Gateway"
+add dst-host=*.xendit.co action=allow comment="Xendit Payment Gateway"
+add dst-host=tripay.co.id action=allow comment="Tripay Payment Gateway"`;
+
+                return (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(mikrotikScript);
+                      setCopiedScript("mikrotik");
+                      setTimeout(() => setCopiedScript(null), 2500);
+                    }}
+                    className="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  >
+                    {copiedScript === "mikrotik" ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        Tersalin!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-slate-400" />
+                        Salin Script MikroTik
+                      </>
+                    )}
+                  </button>
+                );
+              })()}
+            </div>
+
+            <pre className="p-3.5 rounded-xl bg-slate-950 text-cyan-300 font-mono text-[11px] overflow-x-auto leading-relaxed border border-slate-800">
+{`/ip hotspot walled-garden
+add dst-host=*.${domainSettings.wifi_domain || "wifi.dev.ispsync.id"} action=allow comment="ISPSYNC Hotspot & Agent Portal"
+add dst-host=${domainSettings.wifi_domain || "wifi.dev.ispsync.id"} action=allow comment="ISPSYNC WiFi Domain"
+add dst-host=api.midtrans.com action=allow comment="Midtrans Payment API"
+add dst-host=app.midtrans.com action=allow comment="Midtrans Payment Web"
+add dst-host=passport.duitku.com action=allow comment="Duitku Payment Gateway"
+add dst-host=*.xendit.co action=allow comment="Xendit Payment Gateway"
+add dst-host=tripay.co.id action=allow comment="Tripay Payment Gateway"`}
+            </pre>
+          </div>
+
+          {/* Section 4: Live Quick Links */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-black text-slate-900 flex items-center gap-2">
+              <ExternalLink className="w-4 h-4 text-cyan-600" />
+              Tautan Langsung Rute Domain (Uji Coba Akses)
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[
+                {
+                  title: "Portal Beli Voucher Hotspot",
+                  badge: "Publik",
+                  badgeColor: "bg-cyan-100 text-cyan-800",
+                  url: `https://${domainSettings.wifi_domain || "wifi.dev.ispsync.id"}/hotspot/buy`,
+                  desc: "Katalog voucher internet & pembayaran QRIS mandiri",
+                },
+                {
+                  title: "Captive Portal Login Hotspot",
+                  badge: "Publik",
+                  badgeColor: "bg-cyan-100 text-cyan-800",
+                  url: `https://${domainSettings.wifi_domain || "wifi.dev.ispsync.id"}/hotspot/login`,
+                  desc: "Form input username & kata sandi voucher",
+                },
+                {
+                  title: "Passpoint Hotspot 2.0",
+                  badge: "Publik",
+                  badgeColor: "bg-emerald-100 text-emerald-800",
+                  url: `https://${domainSettings.wifi_domain || "wifi.dev.ispsync.id"}/passpoint`,
+                  desc: "Unduh profil otomatis koneksi WiFi EAP-SIM / TTLS",
+                },
+                {
+                  title: "Pendaftaran Mitra Agen",
+                  badge: "Publik",
+                  badgeColor: "bg-cyan-100 text-cyan-800",
+                  url: `https://${domainSettings.wifi_domain || "wifi.dev.ispsync.id"}/agent/register`,
+                  desc: "Form pendaftaran mitra loket & reseller voucher",
+                },
+                {
+                  title: "Login Loket Mitra Agen",
+                  badge: "Mitra",
+                  badgeColor: "bg-blue-100 text-blue-800",
+                  url: `https://${domainSettings.wifi_domain || "wifi.dev.ispsync.id"}/agent/login`,
+                  desc: "Akses dashboard penjualan mitra & topup saldo",
+                },
+                {
+                  title: "Backoffice Ledger ISP",
+                  badge: "Terisolasi",
+                  badgeColor: "bg-purple-100 text-purple-800",
+                  url: `https://${domainSettings.ledger_domain || "ledger.dev.ispsync.id"}/login`,
+                  desc: "Pusat kendali internal ISP, billing & manajemen router",
+                },
+              ].map((item, idx) => (
+                <div
+                  key={idx}
+                  className="p-3.5 rounded-2xl bg-white border border-slate-200/90 hover:border-cyan-400 hover:shadow-xs transition flex flex-col justify-between gap-2"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <h4 className="text-xs font-bold text-slate-800">{item.title}</h4>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${item.badgeColor}`}>
+                        {item.badge}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-normal">{item.desc}</p>
+                  </div>
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-mono text-slate-400 truncate">
+                      {item.url}
+                    </span>
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-1 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-blue-600 transition shrink-0"
+                      title="Buka rute"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

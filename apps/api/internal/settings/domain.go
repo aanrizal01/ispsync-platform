@@ -167,4 +167,25 @@ func DefaultPaymentGatewaySettings() PaymentGatewaySettings {
     }
 }
 
+type DomainSettings struct {
+    PrimaryDomain string    `json:"primary_domain"`
+    LedgerDomain  string    `json:"ledger_domain"`
+    WifiDomain    string    `json:"wifi_domain"`
+    WifiBrandName string    `json:"wifi_brand_name"`
+    PortalDomain  string    `json:"portal_domain"`
+    ServerIP      string    `json:"server_ip"`
+    UpdatedAt     time.Time `json:"updated_at,omitempty"`
+}
+
+func DefaultDomainSettings() DomainSettings {
+    return DomainSettings{
+        PrimaryDomain: "gogiga.net.id",
+        LedgerDomain:  "ledger.dev.ispsync.id",
+        WifiDomain:    "wifi.dev.ispsync.id",
+        WifiBrandName: "@gowifi",
+        PortalDomain:  "portal.dev.ispsync.id",
+        ServerIP:      "103.179.65.73",
+    }
+}
+
 

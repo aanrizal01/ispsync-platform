@@ -204,4 +204,41 @@ func (r *Repository) SavePaymentGatewaySettings(ctx context.Context, s *PaymentG
 	return err
 }
 
+func (r *Repository) GetDomainSettings(ctx context.Context) (*DomainSettings, error) {
+	const query = `SELECT value, updated_at FROM app_settings WHERE key = 'domain_settings'`
+	var valBytes []byte
+	var updatedAt time.Time
+	err := r.db.QueryRow(ctx, query).Scan(&valBytes, &updatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			def := DefaultDomainSettings()
+			return &def, nil
+		}
+		return nil, err
+	}
+
+	s := DefaultDomainSettings()
+	if err := json.Unmarshal(valBytes, &s); err != nil {
+		return nil, err
+	}
+	s.UpdatedAt = updatedAt
+	return &s, nil
+}
+
+func (r *Repository) SaveDomainSettings(ctx context.Context, s *DomainSettings) error {
+	valBytes, err := json.Marshal(s)
+	if err != nil {
+		return err
+	}
+
+	const query = `
+		INSERT INTO app_settings (key, value, updated_at)
+		VALUES ('domain_settings', $1, NOW())
+		ON CONFLICT (key) DO UPDATE
+		SET value = EXCLUDED.value, updated_at = NOW()
+	`
+	_, err = r.db.Exec(ctx, query, valBytes)
+	return err
+}
+
 

@@ -27,8 +27,9 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 	r.Get("/client-ip", h.GetClientIP)
 	r.Get("/walled-garden", h.GetWalledGarden)
 	r.Get("/payment-gateway", h.GetPaymentGatewaySettings)
+	r.Get("/domain", h.GetDomainSettings)
 
-	// Admin protected route: update invoice template, billing addons & security policy
+	// Admin protected route: update invoice template, billing addons, domain & security policy
 	r.Group(func(r chi.Router) {
 		r.Use(authMW.Authenticate)
 		r.Put("/invoice-template", h.UpdateInvoiceTemplate)
@@ -40,6 +41,8 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 		r.Post("/security", h.UpdateSecuritySettings)
 		r.Put("/payment-gateway", h.UpdatePaymentGatewaySettings)
 		r.Post("/payment-gateway", h.UpdatePaymentGatewaySettings)
+		r.Put("/domain", h.UpdateDomainSettings)
+		r.Post("/domain", h.UpdateDomainSettings)
 	})
 }
 
@@ -185,6 +188,35 @@ func (h *Handler) UpdatePaymentGatewaySettings(w http.ResponseWriter, r *http.Re
 	middleware.JSON(w, http.StatusOK, map[string]interface{}{
 		"success": true,
 		"message": "Pengaturan Payment Gateway & Routing berhasil disimpan",
+		"data":    updated,
+	})
+}
+
+func (h *Handler) GetDomainSettings(w http.ResponseWriter, r *http.Request) {
+	s, err := h.service.GetDomainSettings(r.Context())
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+	middleware.JSON(w, http.StatusOK, s)
+}
+
+func (h *Handler) UpdateDomainSettings(w http.ResponseWriter, r *http.Request) {
+	var req DomainSettings
+	if err := middleware.DecodeJSON(r, &req); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	updated, err := h.service.UpdateDomainSettings(r.Context(), req)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Pengaturan Domain & Sub-Brand WiFi berhasil disimpan",
 		"data":    updated,
 	})
 }

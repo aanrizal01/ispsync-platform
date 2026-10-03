@@ -111,6 +111,18 @@ export const settingsApi = {
         body: JSON.stringify(data),
       }
     ),
+
+  getDomainSettings: () =>
+    request<DomainSettings>("/settings/domain"),
+
+  updateDomainSettings: (data: DomainSettings) =>
+    request<{ success: boolean; message: string; data: DomainSettings }>(
+      "/settings/domain",
+      {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }
+    ),
 };
 
 export interface BillingAddonSettings {
@@ -196,4 +208,21 @@ export const defaultPaymentGatewaySettings: PaymentGatewaySettings = {
   nicepay_env: "sandbox",
 };
 
+export interface DomainSettings {
+  primary_domain: string;
+  ledger_domain: string;
+  wifi_domain: string;
+  wifi_brand_name: string;
+  portal_domain: string;
+  server_ip: string;
+  updated_at?: string;
+}
 
+export const defaultDomainSettings: DomainSettings = {
+  primary_domain: "gogiga.net.id",
+  ledger_domain: "ledger.dev.ispsync.id",
+  wifi_domain: "wifi.dev.ispsync.id",
+  wifi_brand_name: "@gowifi",
+  portal_domain: "portal.dev.ispsync.id",
+  server_ip: "103.179.65.73",
+};

@@ -100,4 +100,31 @@ func (s *Service) UpdatePaymentGatewaySettings(ctx context.Context, input Paymen
 	return s.repo.GetPaymentGatewaySettings(ctx)
 }
 
+func (s *Service) GetDomainSettings(ctx context.Context) (*DomainSettings, error) {
+	return s.repo.GetDomainSettings(ctx)
+}
+
+func (s *Service) UpdateDomainSettings(ctx context.Context, input DomainSettings) (*DomainSettings, error) {
+	if input.PrimaryDomain == "" {
+		input.PrimaryDomain = "gogiga.net.id"
+	}
+	if input.LedgerDomain == "" {
+		input.LedgerDomain = "ledger.dev.ispsync.id"
+	}
+	if input.WifiDomain == "" {
+		input.WifiDomain = "wifi.dev.ispsync.id"
+	}
+	if input.WifiBrandName == "" {
+		input.WifiBrandName = "@gowifi"
+	}
+	if input.ServerIP == "" {
+		input.ServerIP = "103.179.65.73"
+	}
+
+	if err := s.repo.SaveDomainSettings(ctx, &input); err != nil {
+		return nil, err
+	}
+	return s.repo.GetDomainSettings(ctx)
+}
+
 
