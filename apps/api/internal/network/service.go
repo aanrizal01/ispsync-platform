@@ -251,3 +251,24 @@ func (s *Service) ListLogs(ctx context.Context, deviceID uuid.UUID, limit int) (
 	}
 	return s.repo.ListLogs(ctx, deviceID, limit)
 }
+
+func (s *Service) ListODPs(ctx context.Context, cluster string) ([]ODPNode, error) {
+	return s.repo.ListODPNodes(ctx, cluster)
+}
+
+func (s *Service) CreateODP(ctx context.Context, req CreateODPRequest) (*ODPNode, error) {
+	return s.repo.CreateODPNode(ctx, req)
+}
+
+func (s *Service) DeleteODP(ctx context.Context, id string) error {
+	return s.repo.DeleteODPNode(ctx, id)
+}
+
+func (s *Service) ListFiberRoutes(ctx context.Context) ([]FiberRoute, error) {
+	return s.repo.ListFiberRoutes(ctx)
+}
+
+func (s *Service) GetFTTXStats(ctx context.Context) (*FTTXStats, error) {
+	return s.repo.GetFTTXStats(ctx)
+}
+

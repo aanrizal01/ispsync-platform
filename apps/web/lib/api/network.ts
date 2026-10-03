@@ -105,4 +105,83 @@ export const networkApi = {
       method: "POST",
       body: JSON.stringify(profile),
     }),
+
+  // ODP and FTTX GIS
+  listODPs: (params?: { cluster?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.cluster) query.set("cluster", params.cluster);
+    return request<{ data: ODPNode[] }>(`/network/odp?${query.toString()}`);
+  },
+
+  createODP: (data: CreateODPInput) =>
+    request<ODPNode>("/network/odp", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  deleteODP: (id: string) =>
+    request<{ message: string }>(`/network/odp/${id}`, {
+      method: "DELETE",
+    }),
+
+  listFiberRoutes: () =>
+    request<{ data: FiberRoute[] }>("/network/fiber-routes"),
+
+  getFTTXStats: () =>
+    request<FTTXStats>("/network/fttx-stats"),
 };
+
+export interface ODPNode {
+  id: string;
+  name: string;
+  code: string;
+  cluster: string;
+  latitude: number;
+  longitude: number;
+  total_ports: number;
+  used_ports: number;
+  available_ports: number;
+  status: "ACTIVE" | "FULL" | "MAINTENANCE" | string;
+  splitter_spec: string;
+  optical_power_dbm?: number;
+  address: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FiberRoute {
+  id: string;
+  name: string;
+  cable_type: "BACKBONE" | "FEEDER" | "DISTRIBUTION" | string;
+  core_count: number;
+  status: "ACTIVE" | "DEGRADED" | "CUT" | string;
+  length_meters: number;
+  coordinates: [number, number][];
+  color: string;
+}
+
+export interface FTTXStats {
+  total_odp: number;
+  total_ports: number;
+  used_ports: number;
+  available_ports: number;
+  active_odp: number;
+  maintenance_odp: number;
+  total_fiber_km: number;
+}
+
+export interface CreateODPInput {
+  name: string;
+  code: string;
+  cluster: string;
+  latitude: number;
+  longitude: number;
+  total_ports: number;
+  used_ports?: number;
+  status?: string;
+  splitter_spec: string;
+  optical_power_dbm?: number;
+  address: string;
+  notes?: string;
+}

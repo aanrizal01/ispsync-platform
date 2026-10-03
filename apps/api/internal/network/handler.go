@@ -36,6 +36,13 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 		r.With(authMW.RequirePermission("network:read")).Get("/devices/{id}/logs", h.ListLogs)
 		r.With(authMW.RequirePermission("network:write")).Post("/devices/{id}/sync-profile", h.SyncPPPoEProfile)
 		r.With(authMW.RequirePermission("network:write")).Post("/devices/{id}/simple-queue", h.SetSimpleQueue)
+
+		// ODP and FTTX GIS routes
+		r.With(authMW.RequirePermission("network:read")).Get("/odp", h.ListODPs)
+		r.With(authMW.RequirePermission("network:write")).Post("/odp", h.CreateODP)
+		r.With(authMW.RequirePermission("network:write")).Delete("/odp/{id}", h.DeleteODP)
+		r.With(authMW.RequirePermission("network:read")).Get("/fiber-routes", h.ListFiberRoutes)
+		r.With(authMW.RequirePermission("network:read")).Get("/fttx-stats", h.GetFTTXStats)
 	})
 }
 
@@ -203,4 +210,63 @@ func (h *Handler) SetSimpleQueue(w http.ResponseWriter, r *http.Request) {
 	}
 
 	middleware.JSON(w, http.StatusOK, map[string]string{"message": "Simple Queue berhasil dikonfigurasi pada router"})
+}
+
+func (h *Handler) ListODPs(w http.ResponseWriter, r *http.Request) {
+	cluster := r.URL.Query().Get("cluster")
+	nodes, err := h.service.ListODPs(r.Context(), cluster)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+	middleware.JSON(w, http.StatusOK, map[string]any{"data": nodes})
+}
+
+func (h *Handler) CreateODP(w http.ResponseWriter, r *http.Request) {
+	var req CreateODPRequest
+	if err := middleware.DecodeJSON(r, &req); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	node, err := h.service.CreateODP(r.Context(), req)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusCreated, node)
+}
+
+func (h *Handler) DeleteODP(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		middleware.JSONError(w, h.logger, apperrors.BadRequest("Invalid ODP ID"))
+		return
+	}
+
+	if err := h.service.DeleteODP(r.Context(), id); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusOK, map[string]string{"message": "Titik ODP berhasil dihapus"})
+}
+
+func (h *Handler) ListFiberRoutes(w http.ResponseWriter, r *http.Request) {
+	routes, err := h.service.ListFiberRoutes(r.Context())
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+	middleware.JSON(w, http.StatusOK, map[string]any{"data": routes})
+}
+
+func (h *Handler) GetFTTXStats(w http.ResponseWriter, r *http.Request) {
+	stats, err := h.service.GetFTTXStats(r.Context())
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+	middleware.JSON(w, http.StatusOK, stats)
 }
