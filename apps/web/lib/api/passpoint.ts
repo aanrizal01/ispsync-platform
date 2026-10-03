@@ -22,6 +22,7 @@ export interface PasspointCredential {
   customer_id: string;
   customer_name?: string;
   customer_number?: string;
+  customer_phone?: string;
   profile_id: string;
   profile_name?: string;
   username: string;

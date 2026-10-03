@@ -28,6 +28,7 @@ type Credential struct {
 	CustomerID          uuid.UUID  `json:"customer_id"`
 	CustomerName        *string    `json:"customer_name,omitempty"`
 	CustomerNumber      *string    `json:"customer_number,omitempty"`
+	CustomerPhone       *string    `json:"customer_phone,omitempty"`
 	ProfileID           uuid.UUID  `json:"profile_id"`
 	ProfileName         *string    `json:"profile_name,omitempty"`
 	Username            string     `json:"username"`

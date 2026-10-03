@@ -124,7 +124,7 @@ func (r *Repository) CreateCredential(ctx context.Context, c *Credential) error 
 
 func (r *Repository) GetCredentialByID(ctx context.Context, id uuid.UUID) (*Credential, error) {
 	const q = `
-		SELECT c.id, c.customer_id, cust.full_name, cust.customer_number,
+		SELECT c.id, c.customer_id, cust.full_name, cust.customer_number, cust.phone,
 		       c.profile_id, p.name, c.username, c.password, c.status,
 		       c.last_authenticated_at, c.created_at, c.updated_at,
 		       COALESCE(po.expires_at, c.created_at + INTERVAL '30 days') as expires_at,
@@ -157,7 +157,7 @@ func (r *Repository) GetCredentialByID(ctx context.Context, id uuid.UUID) (*Cred
 	`
 	var cred Credential
 	err := r.db.QueryRow(ctx, q, id).Scan(
-		&cred.ID, &cred.CustomerID, &cred.CustomerName, &cred.CustomerNumber,
+		&cred.ID, &cred.CustomerID, &cred.CustomerName, &cred.CustomerNumber, &cred.CustomerPhone,
 		&cred.ProfileID, &cred.ProfileName, &cred.Username, &cred.Password, &cred.Status,
 		&cred.LastAuthenticatedAt, &cred.CreatedAt, &cred.UpdatedAt,
 		&cred.ExpiresAt, &cred.PackageName,
@@ -174,7 +174,7 @@ func (r *Repository) GetCredentialByID(ctx context.Context, id uuid.UUID) (*Cred
 
 func (r *Repository) ListCredentialsByCustomer(ctx context.Context, customerID uuid.UUID) ([]Credential, error) {
 	const q = `
-		SELECT c.id, c.customer_id, cust.full_name, cust.customer_number,
+		SELECT c.id, c.customer_id, cust.full_name, cust.customer_number, cust.phone,
 		       c.profile_id, p.name, c.username, c.password, c.status,
 		       c.last_authenticated_at, c.created_at, c.updated_at,
 		       COALESCE(po.expires_at, c.created_at + INTERVAL '30 days') as expires_at,
@@ -216,7 +216,7 @@ func (r *Repository) ListCredentialsByCustomer(ctx context.Context, customerID u
 	for rows.Next() {
 		var cred Credential
 		if err := rows.Scan(
-			&cred.ID, &cred.CustomerID, &cred.CustomerName, &cred.CustomerNumber,
+			&cred.ID, &cred.CustomerID, &cred.CustomerName, &cred.CustomerNumber, &cred.CustomerPhone,
 			&cred.ProfileID, &cred.ProfileName, &cred.Username, &cred.Password, &cred.Status,
 			&cred.LastAuthenticatedAt, &cred.CreatedAt, &cred.UpdatedAt,
 			&cred.ExpiresAt, &cred.PackageName,
@@ -237,7 +237,7 @@ func (r *Repository) ListCredentials(ctx context.Context, limit, offset int) ([]
 	}
 
 	const q = `
-		SELECT c.id, c.customer_id, cust.full_name, cust.customer_number,
+		SELECT c.id, c.customer_id, cust.full_name, cust.customer_number, cust.phone,
 		       c.profile_id, p.name, c.username, c.password, c.status,
 		       c.last_authenticated_at, c.created_at, c.updated_at,
 		       COALESCE(po.expires_at, c.created_at + INTERVAL '30 days') as expires_at,
@@ -279,7 +279,7 @@ func (r *Repository) ListCredentials(ctx context.Context, limit, offset int) ([]
 	for rows.Next() {
 		var cred Credential
 		if err := rows.Scan(
-			&cred.ID, &cred.CustomerID, &cred.CustomerName, &cred.CustomerNumber,
+			&cred.ID, &cred.CustomerID, &cred.CustomerName, &cred.CustomerNumber, &cred.CustomerPhone,
 			&cred.ProfileID, &cred.ProfileName, &cred.Username, &cred.Password, &cred.Status,
 			&cred.LastAuthenticatedAt, &cred.CreatedAt, &cred.UpdatedAt,
 			&cred.ExpiresAt, &cred.PackageName,
@@ -1040,5 +1040,103 @@ func (r *Repository) DeletePackage(ctx context.Context, id string) error {
 		return fmt.Errorf("package not found")
 	}
 	return nil
+}
+
+func (r *Repository) GetExpiredActiveCredentials(ctx context.Context) ([]Credential, error) {
+	const q = `
+		SELECT c.id, c.customer_id, cust.full_name, cust.customer_number, cust.phone,
+		       c.profile_id, p.name, c.username, c.password, c.status,
+		       c.last_authenticated_at, c.created_at, c.updated_at,
+		       po.expires_at, po.package_name, '' as issuer_name, '' as issuer_type
+		FROM passpoint_credentials c
+		JOIN customers cust ON cust.id = c.customer_id
+		JOIN passpoint_profiles p ON p.id = c.profile_id
+		JOIN LATERAL (
+			SELECT po.expires_at, po.package_name
+			FROM passpoint_orders po
+			WHERE po.credential_id = c.id AND po.status = 'PAID'
+			ORDER BY po.created_at DESC
+			LIMIT 1
+		) po ON true
+		WHERE c.status = 'ACTIVE' AND po.expires_at <= NOW()
+	`
+	rows, err := r.db.Query(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("query expired credentials: %w", err)
+	}
+	defer rows.Close()
+
+	var creds []Credential
+	for rows.Next() {
+		var cred Credential
+		if err := rows.Scan(
+			&cred.ID, &cred.CustomerID, &cred.CustomerName, &cred.CustomerNumber, &cred.CustomerPhone,
+			&cred.ProfileID, &cred.ProfileName, &cred.Username, &cred.Password, &cred.Status,
+			&cred.LastAuthenticatedAt, &cred.CreatedAt, &cred.UpdatedAt,
+			&cred.ExpiresAt, &cred.PackageName,
+			&cred.IssuerName, &cred.IssuerType,
+		); err != nil {
+			return nil, fmt.Errorf("scan expired credential: %w", err)
+		}
+		creds = append(creds, cred)
+	}
+	return creds, nil
+}
+
+func (r *Repository) MarkCredentialExpired(ctx context.Context, id uuid.UUID) error {
+	const q = `UPDATE passpoint_credentials SET status = 'REVOKED', updated_at = NOW() WHERE id = $1`
+	_, err := r.db.Exec(ctx, q, id)
+	return err
+}
+
+func (r *Repository) GetExpiringCredentialsForReminder(ctx context.Context, windowHours int) ([]Credential, error) {
+	const q = `
+		SELECT c.id, c.customer_id, cust.full_name, cust.customer_number, cust.phone,
+		       c.profile_id, p.name, c.username, c.password, c.status,
+		       c.last_authenticated_at, c.created_at, c.updated_at,
+		       po.expires_at, po.package_name, '' as issuer_name, '' as issuer_type
+		FROM passpoint_credentials c
+		JOIN customers cust ON cust.id = c.customer_id
+		JOIN passpoint_profiles p ON p.id = c.profile_id
+		JOIN LATERAL (
+			SELECT po.expires_at, po.package_name
+			FROM passpoint_orders po
+			WHERE po.credential_id = c.id AND po.status = 'PAID'
+			ORDER BY po.created_at DESC
+			LIMIT 1
+		) po ON true
+		WHERE c.status = 'ACTIVE'
+		  AND po.expires_at > NOW()
+		  AND po.expires_at <= NOW() + ($1 || ' hours')::INTERVAL
+		  AND cust.phone IS NOT NULL AND cust.phone != ''
+		  AND (c.reminder_sent_at IS NULL OR c.reminder_sent_at < NOW() - INTERVAL '20 hours')
+	`
+	rows, err := r.db.Query(ctx, q, windowHours)
+	if err != nil {
+		return nil, fmt.Errorf("query expiring credentials: %w", err)
+	}
+	defer rows.Close()
+
+	var creds []Credential
+	for rows.Next() {
+		var cred Credential
+		if err := rows.Scan(
+			&cred.ID, &cred.CustomerID, &cred.CustomerName, &cred.CustomerNumber, &cred.CustomerPhone,
+			&cred.ProfileID, &cred.ProfileName, &cred.Username, &cred.Password, &cred.Status,
+			&cred.LastAuthenticatedAt, &cred.CreatedAt, &cred.UpdatedAt,
+			&cred.ExpiresAt, &cred.PackageName,
+			&cred.IssuerName, &cred.IssuerType,
+		); err != nil {
+			return nil, fmt.Errorf("scan expiring credential: %w", err)
+		}
+		creds = append(creds, cred)
+	}
+	return creds, nil
+}
+
+func (r *Repository) MarkReminderSent(ctx context.Context, id uuid.UUID) error {
+	const q = `UPDATE passpoint_credentials SET reminder_sent_at = NOW(), updated_at = NOW() WHERE id = $1`
+	_, err := r.db.Exec(ctx, q, id)
+	return err
 }
 

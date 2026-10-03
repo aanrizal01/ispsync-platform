@@ -101,6 +101,10 @@ func (s *Service) SyncCredentialWithIP(ctx context.Context, username, password, 
 	return s.repo.SyncUserCredentialWithIP(ctx, username, password, groupname, staticIP)
 }
 
+func (s *Service) SyncPasspointCredential(ctx context.Context, username, password, speedLimit string, simultaneousUse int) error {
+	return s.repo.SyncPasspointUser(ctx, username, password, speedLimit, simultaneousUse)
+}
+
 func (s *Service) DeleteCredential(ctx context.Context, username string) error {
 	return s.repo.DeleteUserCredential(ctx, username)
 }

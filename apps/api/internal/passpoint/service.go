@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/gigabill/isp/internal/customer"
+	"github.com/gigabill/isp/internal/notification"
 	"github.com/gigabill/isp/internal/radius"
 	apperrors "github.com/gigabill/isp/internal/shared/errors"
 	"github.com/gigabill/isp/pkg/crypto"
@@ -22,6 +23,7 @@ type Service struct {
 	repo           *Repository
 	customerRepo   *customer.Repository
 	radiusSvc      *radius.Service
+	notifSvc       *notification.Service
 	logger         *slog.Logger
 	paymentCreator PasspointPaymentCreator
 	paymentChecker PasspointPaymentChecker
@@ -39,6 +41,10 @@ func NewService(
 		radiusSvc:    radiusSvc,
 		logger:       logger,
 	}
+}
+
+func (s *Service) SetNotificationService(notifSvc *notification.Service) {
+	s.notifSvc = notifSvc
 }
 
 func (s *Service) SetPaymentCreator(creator PasspointPaymentCreator) {
@@ -151,8 +157,8 @@ func (s *Service) IssueCredential(ctx context.Context, customerID uuid.UUID, req
 		return nil, apperrors.Internal(err)
 	}
 
-	// Sync to FreeRADIUS
-	if err := s.radiusSvc.SyncCredential(ctx, cred.Username, cred.Password, "PASSPOINT_USER"); err != nil {
+	// Sync to FreeRADIUS with Simultaneous-Use := 1 and dynamic speed limit
+	if err := s.radiusSvc.SyncPasspointCredential(ctx, cred.Username, cred.Password, "15M/15M", 1); err != nil {
 		s.logger.Error("failed to sync passpoint credential to radius", "error", err)
 	}
 
@@ -183,7 +189,12 @@ func (s *Service) RevokeCredential(ctx context.Context, id uuid.UUID) error {
 		s.logger.Error("failed to remove passpoint credential from radius", "error", err)
 	}
 
-	s.logger.Info("passpoint credential revoked", "id", id, "username", cred.Username)
+	// Terminate active sessions via RFC 3576 CoA Disconnect
+	if err := s.radiusSvc.DisconnectUserSessions(ctx, cred.Username); err != nil {
+		s.logger.Warn("failed to send coa disconnect for revoked passpoint user", "username", cred.Username, "error", err)
+	}
+
+	s.logger.Info("passpoint credential revoked and disconnected", "id", id, "username", cred.Username)
 	return nil
 }
 
@@ -555,8 +566,18 @@ func (s *Service) CheckPurchase(ctx context.Context, req PasspointCheckRequest) 
 		}
 		_ = s.repo.CreateCredential(ctx, cred)
 
-		// Sync to FreeRADIUS
-		_ = s.radiusSvc.SyncCredential(ctx, username, password, "")
+		// Determine speed limit from order package
+		speedLimit := "15M/15M"
+		if req.OrderID != "" {
+			if ord, _ := s.repo.GetOrderByOrderID(ctx, req.OrderID); ord != nil && ord.PackageID != "" {
+				if pkg, _ := s.repo.GetPackageByID(ctx, ord.PackageID); pkg != nil && pkg.SpeedLimit != "" {
+					speedLimit = pkg.SpeedLimit
+				}
+			}
+		}
+
+		// Sync to FreeRADIUS with Simultaneous-Use := 1 and Mikrotik-Rate-Limit
+		_ = s.radiusSvc.SyncPasspointCredential(ctx, username, password, speedLimit, 1)
 
 		// Mark order as PAID in DB and credit agent if applicable
 		if req.OrderID != "" {
@@ -682,6 +703,12 @@ func (s *Service) Renew(ctx context.Context, req PasspointRenewRequest) (*Passpo
 func (s *Service) CheckRenew(ctx context.Context, req PasspointCheckRenewRequest) (*PasspointCheckRenewResponse, error) {
 	if req.OrderID != "" {
 		if ord, _ := s.repo.GetOrderByOrderID(ctx, req.OrderID); ord != nil && ord.Status == "PAID" {
+			if ord.CredentialID != nil {
+				_ = s.repo.UpdateCredentialStatus(ctx, *ord.CredentialID, "ACTIVE")
+				if cred, _ := s.repo.GetCredentialByID(ctx, *ord.CredentialID); cred != nil {
+					_ = s.radiusSvc.SyncPasspointCredential(ctx, cred.Username, cred.Password, "15M/15M", 1)
+				}
+			}
 			newExpiry := time.Now().AddDate(0, 0, ord.DurationDays).Format("02 Jan 2006, 15:04 WIB")
 			return &PasspointCheckRenewResponse{
 				Status:       "PAID",
@@ -732,9 +759,9 @@ func (s *Service) PayOrderWithAgentBalance(ctx context.Context, agentID uuid.UUI
 		return nil, apperrors.BadRequest(err.Error())
 	}
 
-	// Sync to FreeRADIUS
+	// Sync to FreeRADIUS with Simultaneous-Use := 1
 	if cred != nil {
-		_ = s.radiusSvc.SyncCredential(ctx, cred.Username, cred.Password, "")
+		_ = s.radiusSvc.SyncPasspointCredential(ctx, cred.Username, cred.Password, "15M/15M", 1)
 	}
 
 	s.logger.Info("passpoint counter order paid by agent",
@@ -778,9 +805,9 @@ func (s *Service) IssueManualPasspoint(ctx context.Context, agentID uuid.UUID, r
 		return nil, apperrors.BadRequest(err.Error())
 	}
 
-	// Sync to FreeRADIUS
+	// Sync to FreeRADIUS with Simultaneous-Use := 1 and package speed limit
 	if cred != nil {
-		_ = s.radiusSvc.SyncCredential(ctx, cred.Username, cred.Password, "")
+		_ = s.radiusSvc.SyncPasspointCredential(ctx, cred.Username, cred.Password, selectedPkg.SpeedLimit, 1)
 	}
 
 	s.logger.Info("passpoint manual issued by agent loket",
@@ -791,6 +818,104 @@ func (s *Service) IssueManualPasspoint(ctx context.Context, agentID uuid.UUID, r
 	)
 
 	return receipt, nil
+}
+
+// ──────────────────────────────────────────
+// Background Workers: Expiry & WA Reminder
+// ──────────────────────────────────────────
+
+func (s *Service) RunPasspointExpiryJob(ctx context.Context) error {
+	s.logger.Debug("running passpoint expiry check")
+	expired, err := s.repo.GetExpiredActiveCredentials(ctx)
+	if err != nil {
+		s.logger.Error("failed to get expired passpoint credentials", "error", err)
+		return err
+	}
+
+	for _, cred := range expired {
+		if err := s.repo.MarkCredentialExpired(ctx, cred.ID); err != nil {
+			s.logger.Error("failed to mark passpoint credential as expired", "id", cred.ID, "username", cred.Username, "error", err)
+			continue
+		}
+
+		if err := s.radiusSvc.DeleteCredential(ctx, cred.Username); err != nil {
+			s.logger.Warn("failed to delete expired credential from radius", "username", cred.Username, "error", err)
+		}
+
+		if err := s.radiusSvc.DisconnectUserSessions(ctx, cred.Username); err != nil {
+			s.logger.Warn("failed to send coa disconnect for expired passpoint user", "username", cred.Username, "error", err)
+		}
+
+		s.logger.Info("expired passpoint credential revoked and disconnected",
+			"id", cred.ID,
+			"username", cred.Username,
+			"expired_at", cred.ExpiresAt,
+		)
+	}
+
+	return nil
+}
+
+func (s *Service) RunPasspointReminderJob(ctx context.Context) error {
+	s.logger.Debug("running passpoint renewal reminder check")
+	expiring, err := s.repo.GetExpiringCredentialsForReminder(ctx, 24)
+	if err != nil {
+		s.logger.Error("failed to get expiring passpoint credentials", "error", err)
+		return err
+	}
+
+	for _, cred := range expiring {
+		if cred.CustomerPhone == nil || *cred.CustomerPhone == "" {
+			continue
+		}
+
+		phone := *cred.CustomerPhone
+		custName := "Pelanggan"
+		if cred.CustomerName != nil && *cred.CustomerName != "" {
+			custName = *cred.CustomerName
+		}
+		profName := "Passpoint"
+		if cred.ProfileName != nil && *cred.ProfileName != "" {
+			profName = *cred.ProfileName
+		}
+		expiryStr := "-"
+		if cred.ExpiresAt != nil {
+			expiryStr = cred.ExpiresAt.Format("02 Jan 2006, 15:04 WIB")
+		}
+
+		body := fmt.Sprintf("Halo %s,\n\nMasa aktif akses WiFi Passpoint (%s) Anda akan berakhir pada %s.\n\nAgar koneksi otomatis Anda tidak terputus, silakan lakukan perpanjangan paket melalui tautan berikut:\nhttps://ispsync.id/passpoint/renew\n\nTerima kasih atas kepercayaannya menggunakan layanan kami.",
+			custName, profName, expiryStr)
+
+		if s.notifSvc != nil {
+			_, notifErr := s.notifSvc.SendNotification(ctx, notification.SendNotificationRequest{
+				CustomerID: &cred.CustomerID,
+				Channel:    notification.ChannelWhatsApp,
+				Recipient:  phone,
+				Subject:    "Pengingat Masa Aktif WiFi Passpoint",
+				Body:       body,
+			})
+			if notifErr != nil {
+				s.logger.Warn("failed to dispatch passpoint whatsapp reminder",
+					"id", cred.ID,
+					"phone", phone,
+					"error", notifErr,
+				)
+				continue
+			}
+		}
+
+		if err := s.repo.MarkReminderSent(ctx, cred.ID); err != nil {
+			s.logger.Warn("failed to mark reminder sent", "id", cred.ID, "error", err)
+		} else {
+			s.logger.Info("passpoint renewal reminder dispatched via whatsapp",
+				"id", cred.ID,
+				"phone", phone,
+				"expires_at", expiryStr,
+			)
+		}
+	}
+
+	return nil
 }
 
 

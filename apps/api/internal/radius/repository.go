@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -389,6 +391,66 @@ func (r *Repository) EnsureIsolirGroup(ctx context.Context) error {
 	if count == 0 {
 		_, _ = tx.Exec(ctx, "INSERT INTO radgroupreply (groupname, attribute, op, value) VALUES ('ISOLIR', 'Mikrotik-Address-List', ':=', 'ISOLIR')")
 		_, _ = tx.Exec(ctx, "INSERT INTO radgroupreply (groupname, attribute, op, value) VALUES ('ISOLIR', 'Mikrotik-Rate-Limit', ':=', '128k/128k')")
+	}
+
+	return tx.Commit(ctx)
+}
+
+func parsePasspointRateLimit(speedLimit string) string {
+	cleaned := strings.ToLower(strings.TrimSpace(speedLimit))
+	if cleaned == "" {
+		return "15M/15M"
+	}
+	if strings.Contains(cleaned, "/") {
+		return speedLimit
+	}
+	re := regexp.MustCompile(`(\d+)`)
+	m := re.FindString(cleaned)
+	if m != "" {
+		return fmt.Sprintf("%sM/%sM", m, m)
+	}
+	return "15M/15M"
+}
+
+func (r *Repository) SyncPasspointUser(ctx context.Context, username, password, speedLimit string, simultaneousUse int) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	// 1. Password in radcheck
+	if password != "" {
+		_, _ = tx.Exec(ctx, "DELETE FROM radcheck WHERE username = $1 AND attribute = 'Cleartext-Password'", username)
+		const insertPass = `INSERT INTO radcheck (username, attribute, op, value) VALUES ($1, 'Cleartext-Password', ':=', $2)`
+		if _, err := tx.Exec(ctx, insertPass, username, password); err != nil {
+			return fmt.Errorf("insert radcheck password: %w", err)
+		}
+	}
+
+	// 2. Simultaneous-Use (default 1)
+	if simultaneousUse <= 0 {
+		simultaneousUse = 1
+	}
+	_, _ = tx.Exec(ctx, "DELETE FROM radcheck WHERE username = $1 AND attribute = 'Simultaneous-Use'", username)
+	const insertSimul = `INSERT INTO radcheck (username, attribute, op, value) VALUES ($1, 'Simultaneous-Use', ':=', $2)`
+	if _, err := tx.Exec(ctx, insertSimul, username, fmt.Sprintf("%d", simultaneousUse)); err != nil {
+		return fmt.Errorf("insert radcheck simultaneous-use: %w", err)
+	}
+
+	// 3. User Group
+	_, _ = tx.Exec(ctx, "DELETE FROM radusergroup WHERE username = $1", username)
+	const insertGroup = `INSERT INTO radusergroup (username, groupname, priority) VALUES ($1, 'PASSPOINT_USER', 1)`
+	if _, err := tx.Exec(ctx, insertGroup, username); err != nil {
+		return fmt.Errorf("insert radusergroup: %w", err)
+	}
+
+	// 4. Rate Limit
+	rateLimit := parsePasspointRateLimit(speedLimit)
+	_, _ = tx.Exec(ctx, "DELETE FROM radreply WHERE username = $1 AND attribute = 'Mikrotik-Rate-Limit'", username)
+	const insertRate = `INSERT INTO radreply (username, attribute, op, value) VALUES ($1, 'Mikrotik-Rate-Limit', ':=', $2)`
+	if _, err := tx.Exec(ctx, insertRate, username, rateLimit); err != nil {
+		return fmt.Errorf("insert radreply rate limit: %w", err)
 	}
 
 	return tx.Commit(ctx)

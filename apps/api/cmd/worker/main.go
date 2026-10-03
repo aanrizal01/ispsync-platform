@@ -18,6 +18,7 @@ import (
 	"github.com/gigabill/isp/internal/notification/providers/email"
 	"github.com/gigabill/isp/internal/notification/providers/telegram"
 	"github.com/gigabill/isp/internal/notification/providers/whatsapp"
+	"github.com/gigabill/isp/internal/passpoint"
 	"github.com/gigabill/isp/internal/plan"
 	"github.com/gigabill/isp/internal/radius"
 	"github.com/gigabill/isp/internal/shared/config"
@@ -80,6 +81,10 @@ func main() {
 	voucherRepo := voucher.NewRepository(db)
 	voucherSvc := voucher.NewService(voucherRepo, log)
 
+	passpointRepo := passpoint.NewRepository(db)
+	passpointSvc := passpoint.NewService(passpointRepo, custRepo, radiusSvc, log)
+	passpointSvc.SetNotificationService(notifSvc)
+
 	// ── Periodic Job Runner ──────────────────────────────────────
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -97,14 +102,23 @@ func main() {
 	voucherTicker := time.NewTicker(1 * time.Hour)
 	defer voucherTicker.Stop()
 
+	passpointTicker := time.NewTicker(2 * time.Minute)
+	defer passpointTicker.Stop()
+
 	go func() {
-		log.Info("background workers started (auto-invoice, overdue/isolir, wa-reminder, voucher-cleanup)")
+		log.Info("background workers started (auto-invoice, overdue/isolir, wa-reminder, voucher-cleanup, passpoint-expiry-reminder)")
 		// Immediate initial checks on startup
 		if err := billingSvc.RunInvoiceReminderJob(ctx); err != nil {
 			log.Error("error in initial whatsapp reminder job", "error", err)
 		}
 		if err := voucherSvc.RunVoucherCleanupJob(ctx); err != nil {
 			log.Error("error in initial voucher cleanup job", "error", err)
+		}
+		if err := passpointSvc.RunPasspointExpiryJob(ctx); err != nil {
+			log.Error("error in initial passpoint expiry job", "error", err)
+		}
+		if err := passpointSvc.RunPasspointReminderJob(ctx); err != nil {
+			log.Error("error in initial passpoint reminder job", "error", err)
 		}
 
 		for {
@@ -127,6 +141,13 @@ func main() {
 			case <-voucherTicker.C:
 				if err := voucherSvc.RunVoucherCleanupJob(ctx); err != nil {
 					log.Error("error in periodic voucher cleanup job", "error", err)
+				}
+			case <-passpointTicker.C:
+				if err := passpointSvc.RunPasspointExpiryJob(ctx); err != nil {
+					log.Error("error in passpoint expiry job", "error", err)
+				}
+				if err := passpointSvc.RunPasspointReminderJob(ctx); err != nil {
+					log.Error("error in passpoint reminder job", "error", err)
 				}
 			case <-ctx.Done():
 				return
