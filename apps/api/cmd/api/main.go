@@ -491,10 +491,8 @@ func main() {
 	if fttxURL == "" {
 		fttxURL = "http://127.0.0.1:8082"
 	}
+	// Must equal ADMIN_API_KEY on the FTTX Engine. No hardcoded fallback.
 	fttxKey := os.Getenv("FTTX_ADMIN_KEY")
-	if fttxKey == "" {
-		fttxKey = "ispsync-noc-admin-99a8f27c3d14"
-	}
 	genieClient := acs.NewGenieClient(fttxURL, fttxKey, log)
 	acsSvc := acs.NewService(acsRepo, genieClient, log)
 

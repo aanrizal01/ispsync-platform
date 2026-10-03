@@ -37,6 +37,11 @@
 
 ---
 
-## 4. Kredensial Default Staging
+## 4. Acuan Pengembangan API
+* **Blueprint API v1**: [`FIBERGRID_API_BLUEPRINT.md`](./FIBERGRID_API_BLUEPRINT.md) — benchmark SmartOLT & ZetSet.id, kontrak endpoint, gap analysis, dan roadmap.
+
+---
+
+## 5. Kredensial Default Staging
 * **URL**: `https://fttx.dev.ispsync.id`
 * **VLAN Staging**: `669`

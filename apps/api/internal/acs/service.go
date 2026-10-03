@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/google/uuid"
@@ -66,20 +67,19 @@ func (s *Service) UpdateWiFi(ctx context.Context, id uuid.UUID, ssid, password s
 		return apperrors.NotFound("ONT")
 	}
 
-	// 1. Update Database
+	// 1. Push TR-069 task via FTTX Engine / GenieACS (synchronous, errors propagated)
+	pushCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+	if err := s.genieClient.PushWiFiConfiguration(pushCtx, ont.SerialNumber, ont.Vendor, ssid, password); err != nil {
+		s.logger.Error("failed to push TR-069 wifi config", "sn", ont.SerialNumber, "err", err)
+		return apperrors.Wrap(err, "ACS_PUSH_FAILED", "Gagal mengirim konfigurasi WiFi ke perangkat: "+err.Error(), http.StatusBadGateway)
+	}
+	s.logger.Info("TR-069 WiFi update dispatched", "sn", ont.SerialNumber, "ssid", ssid)
+
+	// 2. Update Database only after the push was accepted
 	if err := s.repo.UpdateWiFi(ctx, id, ssid, password); err != nil {
 		return apperrors.Internal(err)
 	}
-
-	// 2. Push TR-069 task to GenieACS
-	go func() {
-		bgCtx := context.Background()
-		if err := s.genieClient.PushWiFiConfiguration(bgCtx, ont.SerialNumber, ont.Vendor, ssid, password); err != nil {
-			s.logger.Error("failed to push TR-069 wifi config to GenieACS", "sn", ont.SerialNumber, "err", err)
-		} else {
-			s.logger.Info("TR-069 WiFi update successfully dispatched", "sn", ont.SerialNumber, "ssid", ssid)
-		}
-	}()
 
 	return nil
 }
@@ -93,15 +93,14 @@ func (s *Service) RebootONT(ctx context.Context, id uuid.UUID) error {
 		return apperrors.NotFound("ONT")
 	}
 
-	// Push TR-069 RPC Reboot task to GenieACS
-	go func() {
-		bgCtx := context.Background()
-		if err := s.genieClient.RebootONT(bgCtx, ont.SerialNumber); err != nil {
-			s.logger.Error("failed to push TR-069 reboot to GenieACS", "sn", ont.SerialNumber, "err", err)
-		} else {
-			s.logger.Info("TR-069 reboot successfully dispatched", "sn", ont.SerialNumber)
-		}
-	}()
+	// Dispatch reboot via FTTX Engine (OLT CLI) / GenieACS (synchronous, errors propagated)
+	pushCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+	if err := s.genieClient.RebootONT(pushCtx, ont.SerialNumber); err != nil {
+		s.logger.Error("failed to dispatch ONT reboot", "sn", ont.SerialNumber, "err", err)
+		return apperrors.Wrap(err, "ACS_REBOOT_FAILED", "Gagal me-reboot perangkat: "+err.Error(), http.StatusBadGateway)
+	}
+	s.logger.Info("ONT reboot dispatched", "sn", ont.SerialNumber)
 
 	return nil
 }
