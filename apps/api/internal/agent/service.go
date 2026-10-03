@@ -547,8 +547,8 @@ func (s *Service) ProcessTopupRequest(ctx context.Context, reqID uuid.UUID, req 
 	return s.repo.GetTopupRequestByID(ctx, reqID)
 }
 
-func (s *Service) ListMutations(ctx context.Context, agentID *uuid.UUID, mutationType *string, params pagination.Params) ([]AgentMutation, pagination.Meta, error) {
-	return s.repo.ListMutations(ctx, agentID, mutationType, params)
+func (s *Service) ListMutations(ctx context.Context, agentID *uuid.UUID, mutationType *string, startDate *time.Time, endDate *time.Time, params pagination.Params) ([]AgentMutation, pagination.Meta, error) {
+	return s.repo.ListMutations(ctx, agentID, mutationType, startDate, endDate, params)
 }
 
 // ──────────────────────────────────────────
@@ -746,7 +746,7 @@ func (s *Service) GetAgentDashboard(ctx context.Context, agentID uuid.UUID) (*Ag
 	var pendingTopups int
 	_ = s.repo.DB().QueryRow(ctx, `SELECT COUNT(*) FROM agent_topup_requests WHERE agent_id = $1 AND status = 'PENDING'`, agentID).Scan(&pendingTopups)
 
-	mutations, _, _ := s.repo.ListMutations(ctx, &agentID, nil, pagination.Params{Limit: 5, Offset: 0})
+	mutations, _, _ := s.repo.ListMutations(ctx, &agentID, nil, nil, nil, pagination.Params{Limit: 5, Offset: 0})
 
 	summary := &AgentDashboardSummary{
 		Agent:             *agent,

@@ -3,6 +3,7 @@ package agent
 import (
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -272,7 +273,26 @@ func (h *Handler) ListAllMutations(w http.ResponseWriter, r *http.Request) {
 		mutationType = &mType
 	}
 
-	mutations, meta, err := h.service.ListMutations(r.Context(), agentID, mutationType, params)
+	var startDate *time.Time
+	if sDateStr := r.URL.Query().Get("start_date"); sDateStr != "" {
+		if t, err := time.Parse("2006-01-02", sDateStr); err == nil {
+			startDate = &t
+		} else if t, err := time.Parse(time.RFC3339, sDateStr); err == nil {
+			startDate = &t
+		}
+	}
+
+	var endDate *time.Time
+	if eDateStr := r.URL.Query().Get("end_date"); eDateStr != "" {
+		if t, err := time.Parse("2006-01-02", eDateStr); err == nil {
+			tEnd := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999999999, t.Location())
+			endDate = &tEnd
+		} else if t, err := time.Parse(time.RFC3339, eDateStr); err == nil {
+			endDate = &t
+		}
+	}
+
+	mutations, meta, err := h.service.ListMutations(r.Context(), agentID, mutationType, startDate, endDate, params)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -295,7 +315,26 @@ func (h *Handler) ListAgentMutations(w http.ResponseWriter, r *http.Request) {
 		mutationType = &mType
 	}
 
-	mutations, meta, err := h.service.ListMutations(r.Context(), &id, mutationType, params)
+	var startDate *time.Time
+	if sDateStr := r.URL.Query().Get("start_date"); sDateStr != "" {
+		if t, err := time.Parse("2006-01-02", sDateStr); err == nil {
+			startDate = &t
+		} else if t, err := time.Parse(time.RFC3339, sDateStr); err == nil {
+			startDate = &t
+		}
+	}
+
+	var endDate *time.Time
+	if eDateStr := r.URL.Query().Get("end_date"); eDateStr != "" {
+		if t, err := time.Parse("2006-01-02", eDateStr); err == nil {
+			tEnd := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999999999, t.Location())
+			endDate = &tEnd
+		} else if t, err := time.Parse(time.RFC3339, eDateStr); err == nil {
+			endDate = &t
+		}
+	}
+
+	mutations, meta, err := h.service.ListMutations(r.Context(), &id, mutationType, startDate, endDate, params)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -446,7 +485,26 @@ func (h *Handler) ListMyMutations(w http.ResponseWriter, r *http.Request) {
 		mutationType = &mType
 	}
 
-	mutations, meta, err := h.service.ListMutations(r.Context(), &agent.ID, mutationType, params)
+	var startDate *time.Time
+	if sDateStr := r.URL.Query().Get("start_date"); sDateStr != "" {
+		if t, err := time.Parse("2006-01-02", sDateStr); err == nil {
+			startDate = &t
+		} else if t, err := time.Parse(time.RFC3339, sDateStr); err == nil {
+			startDate = &t
+		}
+	}
+
+	var endDate *time.Time
+	if eDateStr := r.URL.Query().Get("end_date"); eDateStr != "" {
+		if t, err := time.Parse("2006-01-02", eDateStr); err == nil {
+			tEnd := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999999999, t.Location())
+			endDate = &tEnd
+		} else if t, err := time.Parse(time.RFC3339, eDateStr); err == nil {
+			endDate = &t
+		}
+	}
+
+	mutations, meta, err := h.service.ListMutations(r.Context(), &agent.ID, mutationType, startDate, endDate, params)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return

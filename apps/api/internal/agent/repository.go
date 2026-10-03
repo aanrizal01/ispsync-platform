@@ -457,7 +457,7 @@ func (r *Repository) DebitBalance(ctx context.Context, agentID uuid.UUID, amount
 	}, nil
 }
 
-func (r *Repository) ListMutations(ctx context.Context, agentID *uuid.UUID, mutationType *string, params pagination.Params) ([]AgentMutation, pagination.Meta, error) {
+func (r *Repository) ListMutations(ctx context.Context, agentID *uuid.UUID, mutationType *string, startDate *time.Time, endDate *time.Time, params pagination.Params) ([]AgentMutation, pagination.Meta, error) {
 	var conditions []string
 	var args []interface{}
 	argIdx := 1
@@ -471,6 +471,18 @@ func (r *Repository) ListMutations(ctx context.Context, agentID *uuid.UUID, muta
 	if mutationType != nil && *mutationType != "" {
 		conditions = append(conditions, fmt.Sprintf("m.mutation_type = $%d", argIdx))
 		args = append(args, *mutationType)
+		argIdx++
+	}
+
+	if startDate != nil {
+		conditions = append(conditions, fmt.Sprintf("m.created_at >= $%d", argIdx))
+		args = append(args, *startDate)
+		argIdx++
+	}
+
+	if endDate != nil {
+		conditions = append(conditions, fmt.Sprintf("m.created_at <= $%d", argIdx))
+		args = append(args, *endDate)
 		argIdx++
 	}
 

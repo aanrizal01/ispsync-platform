@@ -42,9 +42,14 @@ import {
   Image as ImageIcon,
   Award,
   Crown,
+  ChevronDown,
+  Calendar,
+  PlusCircle,
+  Edit,
 } from "lucide-react";
 import AgentCertificateModal from "@/components/agent/AgentCertificateModal";
 import AgentPksModal from "@/components/agent/AgentPksModal";
+import AgentLedgerPrintModal from "@/components/agent/AgentLedgerPrintModal";
 
 export default function AdminAgentsPage() {
   const [activeTab, setActiveTab] = useState<"agents" | "pending" | "topups" | "mutations">("agents");
@@ -72,8 +77,12 @@ export default function AdminAgentsPage() {
   const [selectedAgentForMutations, setSelectedAgentForMutations] = useState<Agent | null>(null);
   const [mutationAgentFilter, setMutationAgentFilter] = useState<string>("");
   const [mutationTypeFilter, setMutationTypeFilter] = useState<string>("");
-  const [mutationsMeta, setMutationsMeta] = useState({ page: 1, limit: 20, total: 0, total_pages: 1 });
+  const [mutationsMeta, setMutationsMeta] = useState({ page: 1, limit: 50, total: 0, total_pages: 1 });
   const [isLoadingMutations, setIsLoadingMutations] = useState(false);
+  const [mutationStartDate, setMutationStartDate] = useState<string>("");
+  const [mutationEndDate, setMutationEndDate] = useState<string>("");
+  const [showPrintLedgerModal, setShowPrintLedgerModal] = useState<boolean>(false);
+  const [actionMenuAgentId, setActionMenuAgentId] = useState<string | null>(null);
 
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -202,15 +211,32 @@ export default function AdminAgentsPage() {
     }
   }, [topupStatusFilter]);
 
+  // Close action dropdown on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest(".agent-action-menu-container")) {
+        setActionMenuAgentId(null);
+      }
+    };
+    if (actionMenuAgentId) {
+      document.addEventListener("mousedown", handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [actionMenuAgentId]);
+
   // ── Fetch Mutations ───────────────────────────────────────────────
   const fetchMutations = useCallback(async (page = 1) => {
     setIsLoadingMutations(true);
     try {
       const res = await agentApi.listAllMutations({
         page,
-        limit: 20,
+        limit: 50,
         agent_id: mutationAgentFilter || undefined,
         mutation_type: mutationTypeFilter || undefined,
+        start_date: mutationStartDate || undefined,
+        end_date: mutationEndDate || undefined,
       });
       setMutations(res.data || []);
       if (res.meta) setMutationsMeta(res.meta);
@@ -219,7 +245,7 @@ export default function AdminAgentsPage() {
     } finally {
       setIsLoadingMutations(false);
     }
-  }, [mutationAgentFilter, mutationTypeFilter]);
+  }, [mutationAgentFilter, mutationTypeFilter, mutationStartDate, mutationEndDate]);
 
   const fetchPendingCount = useCallback(async () => {
     try {
@@ -822,7 +848,7 @@ export default function AdminAgentsPage() {
                         </td>
 
                         <td className="py-3.5 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
+                          <div className="flex items-center justify-end gap-2 relative">
                             {agent.status === "PENDING" ? (
                               <button
                                 onClick={() => {
@@ -830,120 +856,158 @@ export default function AdminAgentsPage() {
                                   setShowRejectForm(false);
                                   setRejectReason("");
                                 }}
-                                className="px-3 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all active:scale-95 shadow-xs cursor-pointer"
                                 title="Verifikasi Pendaftaran & Berkas KTP"
                               >
                                 <ShieldCheck className="w-3.5 h-3.5" />
-                                Verifikasi Berkas
+                                <span>Verifikasi</span>
                               </button>
                             ) : (
-                              <>
-                                {(agent.ktp_url || agent.business_photo_url) && (
-                                  <button
-                                    onClick={() => {
-                                      setShowVerificationModal(agent);
-                                      setShowRejectForm(false);
-                                      setRejectReason("");
-                                    }}
-                                    className="px-2.5 py-1.5 text-xs font-semibold bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
-                                    title="Lihat Foto KTP & Usaha"
-                                  >
-                                    <Eye className="w-3.5 h-3.5 text-slate-500" />
-                                    Berkas
-                                  </button>
-                                )}
-
-                                <button
-                                  onClick={() => {
-                                    setShowTopupModal(agent);
-                                    setManualTopupForm({ amount: 100000, notes: "Top-up saldo langsung oleh admin" });
-                                  }}
-                                  className="px-2.5 py-1.5 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
-                                  title="Isi Saldo Agen"
-                                >
-                                  <Wallet className="w-3.5 h-3.5" />
-                                  Top Up
-                                </button>
-
-                                <button
-                                  onClick={() => {
-                                    setShowWithdrawModal(agent);
-                                    setWithdrawForm({
-                                      amount: Math.min(100000, Number(agent.balance) || 0),
-                                      mutation_type: "WITHDRAWAL",
-                                      reference_id: "",
-                                      notes: "Pencairan saldo komisi agen",
-                                    });
-                                  }}
-                                  className="px-2.5 py-1.5 text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
-                                  title="Tarik / Potong Saldo Agen"
-                                >
-                                  <ArrowDownLeft className="w-3.5 h-3.5" />
-                                  Tarik
-                                </button>
-
-                                <button
-                                  onClick={() => {
-                                    setSelectedAgentForMutations(agent);
-                                    setMutationAgentFilter(agent.id);
-                                    setActiveTab("mutations");
-                                  }}
-                                  className="px-2.5 py-1.5 text-xs font-semibold bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
-                                  title="Riwayat Mutasi Saldo"
-                                >
-                                  <TrendingUp className="w-3.5 h-3.5" />
-                                  Mutasi
-                                </button>
-                              </>
+                              <button
+                                onClick={() => {
+                                  setShowTopupModal(agent);
+                                  setManualTopupForm({ amount: 100000, notes: "Top-up saldo langsung oleh admin" });
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all active:scale-95 shadow-2xs cursor-pointer"
+                                title="Isi Saldo Agen"
+                              >
+                                <PlusCircle className="w-3.5 h-3.5" />
+                                <span>Top-Up</span>
+                              </button>
                             )}
 
-                            <button
-                              onClick={() => {
-                                setShowEditModal(agent);
-                                setEditForm({
-                                  name: agent.name,
-                                  company_name: agent.company_name || "",
-                                  phone: agent.phone,
-                                  email: agent.email || "",
-                                  offline_cashback_pct: agent.offline_cashback_pct,
-                                  online_cashback_pct: agent.online_cashback_pct,
-                                  online_discount_pct: agent.online_discount_pct,
-                                  bank_name: agent.bank_name || "",
-                                  bank_account_number: agent.bank_account_number || "",
-                                  bank_account_holder: agent.bank_account_holder || "",
-                                  is_master: agent.is_master || false,
-                                  parent_agent_id: agent.parent_agent_id || undefined,
-                                  clear_parent_agent: false,
-                                  override_pct: agent.override_pct || 3,
-                                  status: agent.status,
-                                  notes: agent.notes || "",
-                                });
-                              }}
-                              className="px-2.5 py-1.5 text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors"
-                            >
-                              Edit
-                            </button>
+                            {/* Dropdown Menu Aksi Lengkap */}
+                            <div className="relative inline-block text-left agent-action-menu-container">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActionMenuAgentId(actionMenuAgentId === agent.id ? null : agent.id);
+                                }}
+                                className={cn(
+                                  "inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer active:scale-95",
+                                  actionMenuAgentId === agent.id
+                                    ? "bg-slate-900 text-white border-slate-900 shadow-sm"
+                                    : "bg-white hover:bg-slate-100 text-slate-700 border-slate-300 shadow-2xs"
+                                )}
+                              >
+                                <span>Aksi</span>
+                                <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", actionMenuAgentId === agent.id && "rotate-180")} />
+                              </button>
 
-                            <button
-                              onClick={() => {
-                                setSelectedAgentForPks(agent);
-                                setShowPksModal(true);
-                              }}
-                              className="px-2.5 py-1.5 text-xs font-semibold bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
-                              title="Cetak Dokumen PKS Kemitraan Resmi"
-                            >
-                              <FileText className="w-3.5 h-3.5" />
-                              PKS
-                            </button>
+                              {actionMenuAgentId === agent.id && (
+                                <div className="absolute right-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-40 divide-y divide-slate-100 text-xs text-left animate-in fade-in zoom-in-95">
+                                  <div className="py-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActionMenuAgentId(null);
+                                        setShowEditModal(agent);
+                                        setEditForm({
+                                          name: agent.name,
+                                          company_name: agent.company_name || "",
+                                          phone: agent.phone,
+                                          email: agent.email || "",
+                                          offline_cashback_pct: agent.offline_cashback_pct,
+                                          online_cashback_pct: agent.online_cashback_pct,
+                                          online_discount_pct: agent.online_discount_pct,
+                                          bank_name: agent.bank_name || "",
+                                          bank_account_number: agent.bank_account_number || "",
+                                          bank_account_holder: agent.bank_account_holder || "",
+                                          is_master: agent.is_master || false,
+                                          parent_agent_id: agent.parent_agent_id || undefined,
+                                          clear_parent_agent: false,
+                                          override_pct: agent.override_pct || 3,
+                                          status: agent.status,
+                                          notes: agent.notes || "",
+                                        });
+                                      }}
+                                      className="w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-blue-600 flex items-center gap-2 font-medium"
+                                    >
+                                      <Edit className="w-3.5 h-3.5 text-blue-600" />
+                                      <span>Edit Data &amp; Komisi</span>
+                                    </button>
 
-                            <button
-                              onClick={() => setSelectedAgentForCertificate(agent)}
-                              className="px-2.5 py-1.5 text-xs font-semibold bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
-                              title="Cetak Sertifikat Kemitraan Resmi (A4 Landscape)"
-                            >
-                              <Award className="w-3.5 h-3.5 text-amber-600" />
-                              Sertifikat
-                            </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActionMenuAgentId(null);
+                                        setSelectedAgentForPks(agent);
+                                        setShowPksModal(true);
+                                      }}
+                                      className="w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-purple-600 flex items-center gap-2 font-medium"
+                                    >
+                                      <FileText className="w-3.5 h-3.5 text-purple-600" />
+                                      <span>Cetak Dokumen PKS</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActionMenuAgentId(null);
+                                        setSelectedAgentForCertificate(agent);
+                                      }}
+                                      className="w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-amber-600 flex items-center gap-2 font-medium"
+                                    >
+                                      <Award className="w-3.5 h-3.5 text-amber-600" />
+                                      <span>Cetak Sertifikat Kemitraan</span>
+                                    </button>
+                                  </div>
+
+                                  <div className="py-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActionMenuAgentId(null);
+                                        setSelectedAgentForMutations(agent);
+                                        setMutationAgentFilter(agent.id);
+                                        setActiveTab("mutations");
+                                      }}
+                                      className="w-full text-left px-3 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900 flex items-center gap-2 font-medium"
+                                    >
+                                      <TrendingUp className="w-3.5 h-3.5 text-slate-600" />
+                                      <span>Buku Besar Mutasi Saldo</span>
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActionMenuAgentId(null);
+                                        setShowWithdrawModal(agent);
+                                        setWithdrawForm({
+                                          amount: Math.min(100000, Number(agent.balance) || 0),
+                                          mutation_type: "WITHDRAWAL",
+                                          reference_id: "",
+                                          notes: "Pencairan saldo komisi agen",
+                                        });
+                                      }}
+                                      className="w-full text-left px-3 py-2 text-rose-700 hover:bg-rose-50 flex items-center gap-2 font-medium"
+                                    >
+                                      <ArrowDownLeft className="w-3.5 h-3.5 text-rose-600" />
+                                      <span>Tarik / Potong Saldo</span>
+                                    </button>
+                                  </div>
+
+                                  {(agent.ktp_url || agent.business_photo_url) && (
+                                    <div className="py-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActionMenuAgentId(null);
+                                          setShowVerificationModal(agent);
+                                          setShowRejectForm(false);
+                                          setRejectReason("");
+                                        }}
+                                        className="w-full text-left px-3 py-2 text-slate-600 hover:bg-slate-50 flex items-center gap-2 font-medium"
+                                      >
+                                        <Eye className="w-3.5 h-3.5 text-slate-500" />
+                                        <span>Lihat Berkas KTP &amp; Usaha</span>
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </td>
                       </tr>
@@ -1177,6 +1241,16 @@ export default function AdminAgentsPage() {
               </div>
 
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPrintLedgerModal(true)}
+                  className="px-3.5 py-1.5 text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white rounded-lg shadow-sm transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                  title="Cetak Laporan Pembukuan Kas & Mutasi Saldo Agen"
+                >
+                  <Printer className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Cetak Buku Besar</span>
+                </button>
+
                 {selectedAgentForMutations && (
                   <>
                     <button
@@ -1206,59 +1280,165 @@ export default function AdminAgentsPage() {
             </div>
 
             {/* Filter Controls */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-3 border-t border-slate-100">
-              {/* Agent Filter Selector */}
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
-                  Filter Agen:
-                </label>
-                <select
-                  value={mutationAgentFilter}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setMutationAgentFilter(val);
-                    const found = agents.find((a) => a.id === val);
-                    setSelectedAgentForMutations(found || null);
-                  }}
-                  className="w-full text-xs bg-white border border-slate-200 rounded-md px-3 py-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-400"
-                >
-                  <option value="">Semua Agen (Global Log)</option>
-                  {agents.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.code} - {a.name} ({formatRupiah(a.balance)})
-                    </option>
-                  ))}
-                </select>
+            <div className="space-y-3 pt-3 border-t border-slate-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {/* Agent Filter Selector */}
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                    Filter Agen:
+                  </label>
+                  <select
+                    value={mutationAgentFilter}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setMutationAgentFilter(val);
+                      const found = agents.find((a) => a.id === val);
+                      setSelectedAgentForMutations(found || null);
+                    }}
+                    className="w-full text-xs bg-white border border-slate-200 rounded-md px-3 py-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-slate-400"
+                  >
+                    <option value="">Semua Agen (Global Log)</option>
+                    {agents.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.code} - {a.name} ({formatRupiah(a.balance)})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Mutation Type Selector */}
+                <div className="sm:col-span-1 lg:col-span-2">
+                  <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                    Filter Jenis Transaksi:
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { val: "", label: "Semua" },
+                      { val: "WITHDRAWAL", label: "Tarik Saldo" },
+                      { val: "TOPUP_MANUAL", label: "Top-Up Manual" },
+                      { val: "TOPUP_BANK_TRANSFER", label: "Transfer Bank" },
+                      { val: "VOUCHER_OFFLINE_BUY", label: "Modal Voucher" },
+                      { val: "VOUCHER_ONLINE_COMMISSION", label: "Komisi Voucher" },
+                      { val: "INVOICE_PAYMENT_AGENT", label: "Bayar Tagihan" },
+                    ].map((t) => (
+                      <button
+                        key={t.val}
+                        onClick={() => setMutationTypeFilter(t.val)}
+                        className={cn(
+                          "px-2.5 py-1 text-xs font-medium rounded-md transition-colors",
+                          mutationTypeFilter === t.val
+                            ? "bg-slate-900 text-white"
+                            : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                        )}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              {/* Mutation Type Selector */}
-              <div className="sm:col-span-1 lg:col-span-2">
-                <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
-                  Filter Jenis Transaksi:
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { val: "", label: "Semua" },
-                    { val: "WITHDRAWAL", label: "Tarik Saldo" },
-                    { val: "TOPUP_MANUAL", label: "Top-Up Manual" },
-                    { val: "TOPUP_BANK_TRANSFER", label: "Transfer Bank" },
-                    { val: "VOUCHER_OFFLINE_BUY", label: "Modal Voucher" },
-                    { val: "VOUCHER_ONLINE_COMMISSION", label: "Komisi Voucher" },
-                    { val: "INVOICE_PAYMENT_AGENT", label: "Bayar Tagihan" },
-                  ].map((t) => (
+              {/* Rentang Tanggal Filter & Quick Presets */}
+              <div className="pt-2.5 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                    Rentang Tanggal:
+                  </span>
+                  <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs">
+                    <span className="text-[11px] text-slate-500 font-medium">Dari</span>
+                    <input
+                      type="date"
+                      value={mutationStartDate}
+                      onChange={(e) => setMutationStartDate(e.target.value)}
+                      className="bg-transparent text-xs text-slate-800 font-medium focus:outline-none cursor-pointer"
+                    />
+                    <span className="text-slate-300">s/d</span>
+                    <input
+                      type="date"
+                      value={mutationEndDate}
+                      onChange={(e) => setMutationEndDate(e.target.value)}
+                      className="bg-transparent text-xs text-slate-800 font-medium focus:outline-none cursor-pointer"
+                    />
+                    {(mutationStartDate || mutationEndDate) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMutationStartDate("");
+                          setMutationEndDate("");
+                        }}
+                        className="text-slate-400 hover:text-rose-600 text-xs font-bold ml-1 cursor-pointer"
+                        title="Hapus Filter Tanggal"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Preset Buttons */}
+                  <div className="flex items-center gap-1 flex-wrap">
                     <button
-                      key={t.val}
-                      onClick={() => setMutationTypeFilter(t.val)}
+                      type="button"
+                      onClick={() => {
+                        const today = new Date().toISOString().split("T")[0];
+                        setMutationStartDate(today);
+                        setMutationEndDate(today);
+                      }}
                       className={cn(
-                        "px-2.5 py-1 text-xs font-medium rounded-md transition-colors",
-                        mutationTypeFilter === t.val
-                          ? "bg-slate-900 text-white"
-                          : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                        "px-2.5 py-1 text-[11px] font-semibold rounded-md transition-colors cursor-pointer",
+                        mutationStartDate === new Date().toISOString().split("T")[0] && mutationEndDate === new Date().toISOString().split("T")[0]
+                          ? "bg-blue-600 text-white shadow-2xs"
+                          : "bg-slate-100 hover:bg-slate-200 text-slate-600"
                       )}
                     >
-                      {t.label}
+                      Hari Ini
                     </button>
-                  ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const now = new Date();
+                        const d7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+                        const today = now.toISOString().split("T")[0];
+                        setMutationStartDate(d7);
+                        setMutationEndDate(today);
+                      }}
+                      className="px-2.5 py-1 text-[11px] font-semibold rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer"
+                    >
+                      7 Hari Terakhir
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const now = new Date();
+                        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+                        const today = now.toISOString().split("T")[0];
+                        setMutationStartDate(firstDay);
+                        setMutationEndDate(today);
+                      }}
+                      className="px-2.5 py-1 text-[11px] font-semibold rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer"
+                    >
+                      Bulan Ini
+                    </button>
+                    {(mutationStartDate || mutationEndDate || mutationTypeFilter || mutationAgentFilter) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMutationStartDate("");
+                          setMutationEndDate("");
+                          setMutationTypeFilter("");
+                          setMutationAgentFilter("");
+                          setSelectedAgentForMutations(null);
+                        }}
+                        className="px-2.5 py-1 text-[11px] font-semibold rounded-md text-rose-600 hover:bg-rose-50 border border-rose-200 transition-colors cursor-pointer"
+                      >
+                        Reset Filter
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="text-[11px] text-slate-500 font-medium">
+                  Total <b className="text-slate-800">{mutationsMeta.total}</b> transaksi mutasi tercatat
                 </div>
               </div>
             </div>
@@ -2436,6 +2616,19 @@ export default function AdminAgentsPage() {
         onClose={() => setSelectedAgentForCertificate(null)}
         agent={selectedAgentForCertificate}
         companyProfile={companyProfile}
+      />
+
+      {/* ── MODAL: CETAK BUKU BESAR & MUTASI SALDO AGEN ──────────────── */}
+      <AgentLedgerPrintModal
+        isOpen={showPrintLedgerModal}
+        onClose={() => setShowPrintLedgerModal(false)}
+        companyProfile={companyProfile}
+        selectedAgent={selectedAgentForMutations}
+        mutations={mutations}
+        startDate={mutationStartDate}
+        endDate={mutationEndDate}
+        mutationType={mutationTypeFilter}
+        totalMutations={mutationsMeta.total}
       />
     </div>
   );

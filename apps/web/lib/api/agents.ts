@@ -303,20 +303,24 @@ export const agentApi = {
       body: JSON.stringify(data),
     }),
 
-  listMutations: (id: string, params?: { page?: number; limit?: number; mutation_type?: string }) => {
+  listMutations: (id: string, params?: { page?: number; limit?: number; mutation_type?: string; start_date?: string; end_date?: string }) => {
     const q = new URLSearchParams();
     if (params?.page) q.set("page", params.page.toString());
     if (params?.limit) q.set("limit", params.limit.toString());
     if (params?.mutation_type) q.set("mutation_type", params.mutation_type);
+    if (params?.start_date) q.set("start_date", params.start_date);
+    if (params?.end_date) q.set("end_date", params.end_date);
     return requestPaginated<AgentMutation>(`/agents/${id}/mutations?${q.toString()}`);
   },
 
-  listAllMutations: (params?: { page?: number; limit?: number; agent_id?: string; mutation_type?: string }) => {
+  listAllMutations: (params?: { page?: number; limit?: number; agent_id?: string; mutation_type?: string; start_date?: string; end_date?: string }) => {
     const q = new URLSearchParams();
     if (params?.page) q.set("page", params.page.toString());
     if (params?.limit) q.set("limit", params.limit.toString());
     if (params?.agent_id) q.set("agent_id", params.agent_id);
     if (params?.mutation_type) q.set("mutation_type", params.mutation_type);
+    if (params?.start_date) q.set("start_date", params.start_date);
+    if (params?.end_date) q.set("end_date", params.end_date);
     return requestPaginated<AgentMutation>(`/agents/mutations?${q.toString()}`);
   },
 
