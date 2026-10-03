@@ -83,9 +83,9 @@ export default function PasspointOnboardingPage() {
       const parts = h.split(".");
       let detectedSlug = "";
 
-      if (parts.length >= 4 && (parts[0] === "passpoint" || parts[0] === "ledger" || parts[0] === "hotspot")) {
+      if (parts.length >= 4 && (parts[0] === "passpoint" || parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "wifi")) {
         detectedSlug = parts[1].toLowerCase();
-      } else if (parts.length === 3 && (parts[0] === "passpoint" || parts[0] === "ledger" || parts[0] === "hotspot")) {
+      } else if (parts.length === 3 && (parts[0] === "passpoint" || parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "wifi")) {
         detectedSlug = parts[1].toLowerCase();
       } else if (parts.length >= 3 && parts[0] !== "www") {
         detectedSlug = parts[0].toLowerCase();

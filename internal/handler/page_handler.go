@@ -254,7 +254,7 @@ func (h *PageHandler) ServeHotspot(w http.ResponseWriter, r *http.Request) {
 		dst = r.URL.Query().Get("link-orig")
 	}
 
-	redirectURL := fmt.Sprintf("https://ledger.%s.ispsync.id/hotspot/login?ip=%s&mac=%s&link-login=%s&link-orig=%s",
+	redirectURL := fmt.Sprintf("https://wifi.%s.ispsync.id/hotspot/login?ip=%s&mac=%s&link-login=%s&link-orig=%s",
 		tCtx.Tenant.Slug,
 		url.QueryEscape(ip),
 		url.QueryEscape(mac),

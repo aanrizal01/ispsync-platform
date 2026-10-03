@@ -13,9 +13,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = (headersList.get("host") || "").toLowerCase();
   const parts = host.split(".");
   let slug = "";
-  if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "agent")) {
+  if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "wifi" || parts[0] === "agent")) {
     slug = parts[1].toLowerCase();
-  } else if (parts.length === 3 && (parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "agent")) {
+  } else if (parts.length === 3 && (parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "wifi" || parts[0] === "agent")) {
     slug = parts[1].toLowerCase();
   } else if (parts.length >= 3 && parts[0] !== "www") {
     slug = parts[0].toLowerCase();
@@ -36,9 +36,9 @@ export default async function AgentLoginPage() {
   const host = (headersList.get("host") || "").toLowerCase();
   const parts = host.split(".");
   let slug = "";
-  if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "agent")) {
+  if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "wifi" || parts[0] === "agent")) {
     slug = parts[1].toLowerCase();
-  } else if (parts.length === 3 && (parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "agent")) {
+  } else if (parts.length === 3 && (parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "wifi" || parts[0] === "agent")) {
     slug = parts[1].toLowerCase();
   } else if (parts.length >= 3 && parts[0] !== "www") {
     slug = parts[0].toLowerCase();

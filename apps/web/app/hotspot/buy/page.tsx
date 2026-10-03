@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -53,10 +53,19 @@ function HotspotBuyForm() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const parts = window.location.host.split('.');
-      if (parts.length >= 3) {
-        const tenantSlug = parts[1].toLowerCase();
-        const tenantUpper = parts[1].toUpperCase();
+      const parts = window.location.hostname.toLowerCase().split('.');
+      let detectedSlug = "";
+      if (parts.length >= 4 && (parts[0] === "wifi" || parts[0] === "hotspot" || parts[0] === "ledger" || parts[0] === "passpoint" || parts[0] === "agent")) {
+        detectedSlug = parts[1].toLowerCase();
+      } else if (parts.length === 3 && (parts[0] === "wifi" || parts[0] === "hotspot" || parts[0] === "ledger" || parts[0] === "passpoint" || parts[0] === "agent")) {
+        detectedSlug = parts[1].toLowerCase();
+      } else if (parts.length >= 3 && parts[0] !== "www") {
+        detectedSlug = parts[0].toLowerCase();
+      }
+
+      if (detectedSlug && detectedSlug !== "ispsync") {
+        const tenantSlug = detectedSlug;
+        const tenantUpper = detectedSlug.toUpperCase();
         setTenantName(tenantUpper);
         
         // Use SAME-ORIGIN paths so browser doesn't block cross-origin favicons/logos

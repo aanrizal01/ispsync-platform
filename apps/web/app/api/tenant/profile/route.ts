@@ -62,9 +62,9 @@ export async function GET(req: NextRequest) {
   let slug = (explicitSlug || "").toLowerCase();
 
   if (!slug) {
-    if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "member")) {
+    if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "wifi" || parts[0] === "agent" || parts[0] === "member")) {
       slug = parts[1].toLowerCase();
-    } else if (parts.length === 3 && (parts[0] === "ledger" || parts[0] === "hotspot")) {
+    } else if (parts.length === 3 && (parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "wifi" || parts[0] === "agent")) {
       slug = parts[1].toLowerCase();
     } else if (parts.length >= 3 && parts[0] !== "www") {
       slug = parts[0].toLowerCase();

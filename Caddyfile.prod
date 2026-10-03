@@ -172,11 +172,21 @@ https:// {
             header_up X-Real-IP {remote_host}
             header_down Content-Type "application/x-apple-aspen-config"
         }
+    # 0.74. Hotspot & Voucher Purchase (/hotspot/*, /buy*)
+    @hotspot_path {
+        path /hotspot* /buy*
+    }
+    handle @hotspot_path {
+        reverse_proxy web:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_down Cache-Control "no-cache, no-store, must-revalidate"
+        }
     }
 
     # 1. CMS & Billing Backoffice App (Next.js & API)
     @billing_api {
-        header_regexp Host (^(ledger|billing|passpoint)\.|\.(ledger|billing|passpoint)\.)
+        header_regexp Host (^(ledger|billing|passpoint|wifi|hotspot)\.|\.(ledger|billing|passpoint|wifi|hotspot)\.)
         path /api/v1/* /health /ready
     }
     handle @billing_api {
@@ -185,6 +195,13 @@ https:// {
             header_up X-Real-IP {remote_host}
         }
     }
+
+    # Redirect root to /hotspot/buy on WiFi & Hotspot public portal
+    @wifi_root {
+        header_regexp Host (^(wifi|hotspot)\.|\.(wifi|hotspot)\.)
+        path /
+    }
+    redir @wifi_root /hotspot/buy temporary
 
     # Redirect root to /login on CMS & Billing backoffice
     @billing_root {
@@ -201,7 +218,7 @@ https:// {
     redir @passpoint_root /passpoint temporary
 
     @billing {
-        header_regexp Host (^(ledger|billing|passpoint)\.|\.(ledger|billing|passpoint)\.)
+        header_regexp Host (^(ledger|billing|passpoint|wifi|hotspot)\.|\.(ledger|billing|passpoint|wifi|hotspot)\.)
     }
     handle @billing {
         reverse_proxy web:3000 {
