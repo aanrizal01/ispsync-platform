@@ -208,7 +208,6 @@ export function InvoicePrintDocument({
                     height={30}
                     width={1.1}
                     fontSize={8.5}
-                    caption="Scan Bayar Loket"
                   />
                 </div>
               )}
@@ -371,17 +370,6 @@ export function InvoicePrintDocument({
                     <p className="font-extrabold text-slate-900 uppercase tracking-tight">VERIFIKASI RESMI</p>
                     <p className="text-[8px] text-slate-500 mt-0.5 leading-snug">Pindai QR untuk validasi keabsahan dokumen faktur ini.</p>
                   </div>
-                </div>
-              )}
-              {invoice.invoice_number && (
-                <div className="border border-slate-300 rounded-lg p-1.5 bg-white shrink-0">
-                  <Barcode128
-                    value={invoice.invoice_number}
-                    height={30}
-                    width={1.1}
-                    fontSize={8.5}
-                    caption="Kode Bayar Loket"
-                  />
                 </div>
               )}
             </div>
@@ -607,17 +595,6 @@ export function InvoicePrintDocument({
                     </span>
                     <p className="text-[8px] text-slate-400 mt-0.5">{template.company_name}</p>
                   </div>
-                </div>
-              )}
-              {invoice.invoice_number && (
-                <div className="p-2 rounded-xl border border-slate-200 bg-white shadow-2xs">
-                  <Barcode128
-                    value={invoice.invoice_number}
-                    height={30}
-                    width={1.1}
-                    fontSize={8.5}
-                    caption="Scan Kasir / Agen"
-                  />
                 </div>
               )}
             </div>
@@ -848,11 +825,11 @@ export function InvoicePrintDocument({
   return (
     <div
       id={elementId}
-      className={`bg-white text-slate-900 w-full ${
+      className={`bg-white text-slate-900 w-full h-full flex flex-col justify-between ${
         isCompactPreview
-          ? "p-6 sm:p-7 text-[10px] sm:text-[11px] rounded-none border border-slate-300 shadow-2xl"
-          : "max-w-[210mm] min-h-[297mm] p-6 sm:p-10 shadow-2xl rounded-none border border-slate-300 print:shadow-none print:border-none print:p-0"
-      } flex flex-col justify-between`}
+          ? "p-6 sm:p-7 text-[10px] sm:text-[11px] rounded-none border-0 min-h-[720px]"
+          : "max-w-[210mm] min-h-[297mm] p-6 sm:p-10 shadow-2xl rounded-none border border-slate-300 print:shadow-none print:border-none print:p-0 print:m-0 print:w-full print:h-full print:min-h-0"
+      }`}
     >
       <div>
         {/* Kop Surat / Company Header */}
@@ -946,7 +923,6 @@ export function InvoicePrintDocument({
                     height={28}
                     width={1.05}
                     fontSize={8.5}
-                    caption="Kode Bayar Loket / Agen"
                   />
                 </div>
               </div>
@@ -1082,7 +1058,7 @@ export function InvoicePrintDocument({
       </div>
 
       {/* Legal & Stamp Footer */}
-      <div className="border-t border-slate-200 pt-4 mt-6">
+      <div className="border-t border-slate-200 pt-4 mt-auto">
         <div className="flex flex-col sm:flex-row justify-between items-end gap-3 text-xs text-slate-500">
           <div className="max-w-md">
             <p className="font-bold text-slate-700 mb-0.5">Ketentuan &amp; Informasi Penting:</p>
@@ -1093,7 +1069,7 @@ export function InvoicePrintDocument({
             </ul>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
             {isQrEnabled && (
               <div className="flex items-center gap-2 p-2 rounded-xl border border-slate-200 bg-slate-50/80">
                 <div className="w-12 h-12 bg-white p-0.5 border border-slate-200 rounded shrink-0 flex items-center justify-center">
@@ -1114,20 +1090,9 @@ export function InvoicePrintDocument({
                 </div>
               </div>
             )}
-            {invoice.invoice_number && (
-              <div className="p-2 rounded-xl border border-slate-200 bg-slate-50/80">
-                <Barcode128
-                  value={invoice.invoice_number}
-                  height={30}
-                  width={1.1}
-                  fontSize={8.5}
-                  caption="Scan di Konter"
-                />
-              </div>
-            )}
 
             {/* Official Company Seal & Signature */}
-            <div className="text-center w-36 sm:w-40 relative shrink-0">
+            <div className="text-center w-36 sm:w-44 relative shrink-0">
               <p className="text-[8.5px] text-slate-500 mb-0.5">Diterbitkan sah oleh:</p>
               <p className="text-[9.5px] font-bold text-slate-800 truncate">{template.company_name || "PT Inovasi Sistem Pintar"}</p>
               <div className="h-12 relative flex items-center justify-center">

@@ -1292,14 +1292,32 @@ export default function AdminSettingsPage() {
                             <style>
                               @page {
                                 size: ${invoiceTemplate.layout === "compact" ? "80mm auto" : "A4 portrait"};
-                                margin: ${invoiceTemplate.layout === "compact" ? "0mm" : "10mm"};
+                                margin: ${invoiceTemplate.layout === "compact" ? "0mm" : "8mm"};
                               }
-                              body {
-                                margin: 0;
-                                padding: 0;
-                                background: #ffffff;
+                              * {
+                                box-sizing: border-box !important;
+                              }
+                              html, body {
+                                margin: 0 !important;
+                                padding: 0 !important;
+                                width: 100% !important;
+                                height: 100% !important;
+                                background: #ffffff !important;
                                 -webkit-print-color-adjust: exact !important;
                                 print-color-adjust: exact !important;
+                              }
+                              #preview-invoice-sheet {
+                                border: none !important;
+                                box-shadow: none !important;
+                                margin: 0 !important;
+                                padding: ${invoiceTemplate.layout === "compact" ? "4mm" : "0mm 4mm 2mm 4mm"} !important;
+                                width: 100% !important;
+                                max-width: 100% !important;
+                                min-height: ${invoiceTemplate.layout === "compact" ? "auto" : "calc(297mm - 16mm)"} !important;
+                                height: ${invoiceTemplate.layout === "compact" ? "auto" : "calc(297mm - 16mm)"} !important;
+                                display: flex !important;
+                                flex-direction: column !important;
+                                justify-content: space-between !important;
                               }
                             </style>
                             <script src="https://cdn.tailwindcss.com"></script>
@@ -1385,7 +1403,7 @@ export default function AdminSettingsPage() {
                     </div>
                   ) : (
                     /* ── STANDARD PHYSICAL A4 PAPER SHEET ───────── */
-                    <div className="relative w-full max-w-[560px] bg-white text-slate-900 rounded-none shadow-[0_1px_3px_rgba(0,0,0,0.15),0_14px_32px_-4px_rgba(0,0,0,0.45),0_28px_64px_-12px_rgba(0,0,0,0.55),0_0_0_1px_rgba(0,0,0,0.08)] border border-slate-300/80 select-none overflow-hidden my-2">
+                    <div className="relative w-full max-w-[560px] min-h-[792px] aspect-[210/297] bg-white text-slate-900 rounded-none shadow-[0_1px_3px_rgba(0,0,0,0.15),0_14px_32px_-4px_rgba(0,0,0,0.45),0_28px_64px_-12px_rgba(0,0,0,0.55),0_0_0_1px_rgba(0,0,0,0.08)] border border-slate-300/80 select-none overflow-hidden my-2 flex flex-col justify-between">
                       {/* Paper Top Spec Header Line */}
                       <div className="bg-slate-100/90 px-4 py-1 border-b border-slate-200 flex items-center justify-between text-[9px] font-mono text-slate-500">
                         <span className="font-bold text-slate-700 flex items-center gap-1.5">
