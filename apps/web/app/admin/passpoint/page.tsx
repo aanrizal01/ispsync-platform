@@ -292,6 +292,8 @@ export default function AdminPasspointPage() {
     } catch (err: any) {
       alert(err.message || "Gagal mencabut kredensial");
     }
+  };
+
   const openCreatePackageModal = () => {
     setEditingPackage(null);
     setPackageForm({
