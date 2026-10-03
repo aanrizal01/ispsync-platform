@@ -3963,6 +3963,7 @@ export default function AgentDashboardPage() {
                 ))}
               </div>
             )}
+          </div>
         </div>
       )}
 
