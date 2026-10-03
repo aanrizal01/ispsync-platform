@@ -208,6 +208,7 @@ export default function AgentDashboardPage() {
   // Modals
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [showTopupModal, setShowTopupModal] = useState(false);
+  const [showPasspointModal, setShowPasspointModal] = useState(false);
   const [batchResult, setBatchResult] = useState<AgentBatchResult | null>(null);
 
   // Generate form
@@ -534,6 +535,7 @@ export default function AgentDashboardPage() {
       setPasspointReceipt(receipt);
       setPasspointManualPhone("");
       setPasspointManualName("");
+      setShowPasspointModal(false);
       fetchDashboard();
     } catch (err: any) {
       setPasspointManualError(err.message || "Gagal menerbitkan Passpoint di konter");
@@ -546,6 +548,7 @@ export default function AgentDashboardPage() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         if (showSettingsModal) setShowSettingsModal(false);
+        if (showPasspointModal) setShowPasspointModal(false);
         if (showBillModal) {
           setShowBillModal(false);
           setBillInquiry(null);
@@ -563,7 +566,7 @@ export default function AgentDashboardPage() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showSettingsModal, showBillModal, showReceiptModal, showTopupModal, showGenerateModal, showPrinterModal, batchResult]);
+  }, [showSettingsModal, showPasspointModal, showBillModal, showReceiptModal, showTopupModal, showGenerateModal, showPrinterModal, batchResult]);
 
   // ── Global Barcode Scanner Gun Auto-Listener ──────────────────────
   useEffect(() => {
@@ -1111,26 +1114,7 @@ export default function AgentDashboardPage() {
       )}
 
       {/* ── ANDROID APP & BLUETOOTH THERMAL GUIDANCE BANNER ──────── */}
-      {isNativeApp ? (
-        <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 p-4 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="font-bold text-slate-900 text-sm block">Aplikasi Android GOGIGA Agent Aktif</span>
-              <p className="text-xs text-emerald-700">Printer Thermal Bluetooth terhubung secara langsung via ESC/POS.</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowPrinterModal(true)}
-            className="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-xs transition-all active:scale-95 text-center"
-          >
-            Pilih Printer Bluetooth
-          </button>
-        </div>
-      ) : !hideAppBanner ? (
+      {!isNativeApp && !hideAppBanner ? (
         <div className="bg-linear-to-r from-blue-900 via-indigo-950 to-slate-900 text-white p-5 sm:p-6 rounded-3xl shadow-xl relative overflow-hidden border border-blue-800/40">
           <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-52 h-52 bg-blue-500/15 rounded-full blur-3xl pointer-events-none" />
 
@@ -1260,7 +1244,7 @@ export default function AgentDashboardPage() {
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="mt-6 pt-4 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <button
               type="button"
               onClick={() => {
@@ -1271,29 +1255,51 @@ export default function AgentDashboardPage() {
                 setBillAdminFee(dashboard?.agent.loket_admin_fee ?? 2500);
                 setShowBillModal(true);
               }}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold shadow-md transition-all active:scale-95 cursor-pointer"
             >
-              <Landmark className="w-4 h-4" />
-              Bayar Tagihan
+              <Landmark className="w-4 h-4 shrink-0" />
+              <span>Bayar Tagihan</span>
             </button>
 
             <button
+              type="button"
               onClick={() => {
                 fetchTemplates();
                 setShowGenerateModal(true);
               }}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md transition-all active:scale-95"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-bold shadow-md transition-all active:scale-95 cursor-pointer"
             >
-              <PlusCircle className="w-4 h-4" />
-              Voucher Fisik
+              <PlusCircle className="w-4 h-4 shrink-0" />
+              <span>Voucher Fisik</span>
             </button>
 
             <button
-              onClick={() => setShowTopupModal(true)}
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/15 hover:bg-white/20 text-white text-xs font-bold backdrop-blur-xs transition-all active:scale-95 border border-white/10"
+              type="button"
+              onClick={() => {
+                if (passpointPackages.length === 0) {
+                  passpointApi.getPackages().then((pkgs) => {
+                    setPasspointPackages(pkgs);
+                    if (pkgs.length > 0) {
+                      const pop = pkgs.find((p) => p.is_popular) || pkgs[0];
+                      setPasspointManualPackageId(pop.id);
+                    }
+                  }).catch(() => {});
+                }
+                setShowPasspointModal(true);
+              }}
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-3 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs sm:text-sm font-bold shadow-md transition-all active:scale-95 cursor-pointer"
             >
-              <CreditCard className="w-4 h-4" />
-              Isi Saldo
+              <Wifi className="w-4 h-4 shrink-0" />
+              <span>Beli Passpoint</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowTopupModal(true)}
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-3 rounded-2xl bg-white/15 hover:bg-white/20 text-white text-xs sm:text-sm font-bold backdrop-blur-xs transition-all active:scale-95 border border-white/10 cursor-pointer"
+            >
+              <CreditCard className="w-4 h-4 shrink-0" />
+              <span>Isi Saldo</span>
             </button>
           </div>
         </div>
@@ -1432,14 +1438,14 @@ export default function AgentDashboardPage() {
         <button
           onClick={() => setActiveTab("passpoint")}
           className={cn(
-            "shrink-0 sm:flex-1 py-2.5 px-3.5 sm:px-3 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 whitespace-nowrap",
+            "shrink-0 sm:flex-1 py-2.5 px-3.5 sm:px-3 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer",
             activeTab === "passpoint"
               ? "bg-cyan-600 text-white shadow-xs"
               : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
           )}
         >
           <Wifi className="w-4 h-4 shrink-0" />
-          <span>Passpoint Wi-Fi</span>
+          <span>Beli Passpoint</span>
           <span className="inline-block text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-cyan-700/60 text-cyan-100 font-bold">
             15%
           </span>
@@ -3211,10 +3217,10 @@ export default function AgentDashboardPage() {
                   HOTSPOT 2.0 CARRIER-GRADE
                 </div>
                 <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                  Loket Passpoint Wi-Fi 2.0
+                  Loket Beli &amp; Terbitkan Passpoint Wi-Fi 2.0
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
-                  Layani pembayaran kode pesanan pelanggan online (+ Biaya Kasir Rp {dashboard?.agent.loket_admin_fee?.toLocaleString() || "2.500"} Tunai) atau terbitkan akses Passpoint manual langsung di konter kasir dengan margin {dashboard?.agent.offline_cashback_pct || 15}%.
+                  Beli &amp; terbitkan akses Passpoint manual langsung di konter kasir dengan margin {dashboard?.agent.offline_cashback_pct || 15}%, atau layani pelunasan kode pesanan online pelanggan (+ Biaya Kasir Rp {dashboard?.agent.loket_admin_fee?.toLocaleString() || "2.500"} Tunai).
                 </p>
               </div>
 
@@ -3252,7 +3258,7 @@ export default function AgentDashboardPage() {
               )}
             >
               <Sparkles className="w-4 h-4 text-cyan-600" />
-              <span>1. Terbitkan Akses Langsung di Konter (Margin 15%)</span>
+              <span>1. Beli &amp; Terbitkan Langsung di Konter (Margin {dashboard?.agent.offline_cashback_pct || 15}%)</span>
             </button>
 
             <button
@@ -4178,14 +4184,14 @@ export default function AgentDashboardPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Jumlah Voucher yang Ingin Dibuat *</label>
-                <div className="flex gap-2">
-                  {[5, 10, 20, 50, 100].map((q) => (
+                <div className="flex gap-1.5 sm:gap-2">
+                  {[1, 5, 10, 20, 50, 100].map((q) => (
                     <button
                       key={q}
                       type="button"
                       onClick={() => setGenerateForm({ ...generateForm, quantity: q })}
                       className={cn(
-                        "flex-1 py-2 text-xs font-bold rounded-xl border transition-colors",
+                        "flex-1 py-2 text-xs font-bold rounded-xl border transition-colors cursor-pointer",
                         generateForm.quantity === q
                           ? "bg-blue-600 text-white border-blue-600 shadow-xs"
                           : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
@@ -4463,6 +4469,227 @@ export default function AgentDashboardPage() {
                   className="w-full sm:w-auto px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md disabled:opacity-50 transition-all active:scale-95 text-center"
                 >
                   {isSubmitting ? "Mengirim Pengajuan..." : "Kirim Konfirmasi Top-Up"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: BELI / TERBITKAN AKSES PASSPOINT WI-FI 2.0 ────── */}
+      {showPasspointModal && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowPasspointModal(false);
+              setPasspointManualError(null);
+            }
+          }}
+        >
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[92vh] flex flex-col p-6 shadow-2xl space-y-5 overflow-y-auto my-auto animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Wifi className="w-5 h-5 text-cyan-600" />
+                  Beli Passpoint Wi-Fi 2.0
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Terbitkan akses Hotspot 2.0 instan (Margin kasir {dashboard?.agent.offline_cashback_pct || 15}%)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPasspointModal(false);
+                  setPasspointManualError(null);
+                }}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-sm font-bold transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {passpointManualError && (
+              <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                <span>{passpointManualError}</span>
+              </div>
+            )}
+
+            <form
+              onSubmit={handleIssueManualPasspoint}
+              className="space-y-4 text-sm"
+            >
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Pilih Paket Passpoint *
+                </label>
+                {passpointPackages.length === 0 ? (
+                  <div className="p-4 bg-slate-50 rounded-xl text-center text-xs text-slate-500 font-medium">
+                    Memuat paket Passpoint...
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-56 overflow-y-auto pr-1">
+                    {passpointPackages.map((pkg) => {
+                      const isSelected = passpointManualPackageId === pkg.id;
+                      const cashback = Math.round(pkg.price * ((dashboard?.agent.offline_cashback_pct || 15) / 100));
+                      const debit = pkg.price - cashback;
+                      return (
+                        <div
+                          key={pkg.id}
+                          onClick={() => setPasspointManualPackageId(pkg.id)}
+                          className={cn(
+                            "p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between",
+                            isSelected
+                              ? "border-cyan-600 bg-cyan-50/60 shadow-xs ring-1 ring-cyan-500/20"
+                              : "border-slate-200 hover:border-slate-300 bg-white"
+                          )}
+                        >
+                          <div className="flex justify-between items-start gap-1">
+                            <div>
+                              <h4 className="text-xs font-bold text-slate-900">{pkg.name}</h4>
+                              <p className="text-sm font-black text-cyan-700 font-mono mt-0.5">
+                                {formatRupiah(pkg.price)}
+                              </p>
+                            </div>
+                            {pkg.is_popular && (
+                              <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+                                Laris
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                            <span className="text-slate-500 font-mono">Modal: <b>{formatRupiah(debit)}</b></span>
+                            <span className="text-emerald-600 font-bold font-mono">Untung: +{formatRupiah(cashback)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Nomor WhatsApp Pelanggan *
+                </label>
+                <input
+                  type="tel"
+                  required
+                  placeholder="Contoh: 081234567890"
+                  value={passpointManualPhone}
+                  onChange={(e) => setPasspointManualPhone(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 font-mono text-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition"
+                />
+                <p className="text-[10.5px] text-slate-400 mt-1">
+                  Kredensial dan link profil Wi-Fi akan dikirimkan ke nomor ini via WhatsApp.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Nama Pelanggan (Opsional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Contoh: Pak Budi"
+                  value={passpointManualName}
+                  onChange={(e) => setPasspointManualName(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition"
+                />
+              </div>
+
+              {/* Rincian Biaya & Cashback */}
+              {(() => {
+                const sel = passpointPackages.find((p) => p.id === passpointManualPackageId);
+                if (!sel) return null;
+                const cashbackPct = dashboard?.agent.offline_cashback_pct || 15;
+                const comm = Math.round(sel.price * (cashbackPct / 100));
+                const debit = sel.price - comm;
+                const currentBal = dashboard?.agent.balance ?? 0;
+                const canAfford = currentBal >= debit;
+
+                return (
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2 text-xs">
+                    <div className="flex justify-between text-slate-600">
+                      <span>Harga Paket ({sel.name}):</span>
+                      <span className="font-semibold text-slate-800">{formatRupiah(sel.price)}</span>
+                    </div>
+                    <div className="flex justify-between text-emerald-600">
+                      <span>Keuntungan Langsung Kasir ({cashbackPct}%):</span>
+                      <span className="font-bold">+ {formatRupiah(comm)}</span>
+                    </div>
+                    <div className="pt-2 border-t border-slate-200 flex justify-between text-sm font-bold text-slate-900">
+                      <span>Total Potong Saldo Agen:</span>
+                      <span className="text-cyan-700 font-mono font-black">{formatRupiah(debit)}</span>
+                    </div>
+                    <div className="flex justify-between text-slate-500 pt-1">
+                      <span>Sisa Saldo Anda Nanti:</span>
+                      <span className={cn("font-bold font-mono", canAfford ? "text-slate-800" : "text-rose-600")}>
+                        {formatRupiah(currentBal - debit)}
+                      </span>
+                    </div>
+
+                    {!canAfford && (
+                      <div className="mt-2 p-2.5 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+                          <span>Saldo tidak cukup ({formatRupiah(currentBal)})</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowPasspointModal(false);
+                            setShowTopupModal(true);
+                          }}
+                          className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[10px] font-bold transition cursor-pointer"
+                        >
+                          Isi Saldo
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPasspointModal(false);
+                    setPasspointManualError(null);
+                  }}
+                  className="w-full sm:w-auto px-4 py-2.5 border border-slate-300 rounded-xl text-slate-600 text-xs font-semibold text-center cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={
+                    passpointManualLoading ||
+                    !passpointManualPackageId ||
+                    !passpointManualPhone.trim() ||
+                    (() => {
+                      const sel = passpointPackages.find((p) => p.id === passpointManualPackageId);
+                      if (!sel) return true;
+                      const comm = Math.round(sel.price * ((dashboard?.agent.offline_cashback_pct || 15) / 100));
+                      return (dashboard?.agent.balance ?? 0) < sel.price - comm;
+                    })()
+                  }
+                  className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl font-bold text-xs shadow-md disabled:opacity-50 transition-all active:scale-95 text-center flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {passpointManualLoading ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Memproses...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Wifi className="w-3.5 h-3.5" />
+                      <span>Beli &amp; Terbitkan Sekarang</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
