@@ -43,6 +43,7 @@ import {
   Award,
 } from "lucide-react";
 import AgentCertificateModal from "@/components/agent/AgentCertificateModal";
+import AgentPksModal from "@/components/agent/AgentPksModal";
 
 export default function AdminAgentsPage() {
   const [activeTab, setActiveTab] = useState<"agents" | "pending" | "topups" | "mutations">("agents");
@@ -1982,178 +1983,12 @@ export default function AdminAgentsPage() {
       )}
 
       {/* ── PKS Agreement Printable Modal ────────────────────────────── */}
-      {showPksModal && selectedAgentForPks && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-4xl w-full my-6 max-h-[92vh] flex flex-col">
-            {/* Modal Action Header (Hidden in Print) */}
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 rounded-t-2xl print:hidden">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 text-sm">
-                    Surat Perjanjian Kerja Sama (PKS) Kemitraan Agen
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    Mitra: <span className="font-semibold text-slate-800">{selectedAgentForPks.name}</span> ({selectedAgentForPks.code})
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
-                >
-                  <Printer className="w-4 h-4" />
-                  Cetak / Simpan PDF
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowPksModal(false)}
-                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Document Body (Printable) */}
-            <div className="p-8 sm:p-12 overflow-y-auto font-sans text-slate-900 text-xs sm:text-sm leading-relaxed print:p-0 print:overflow-visible print:m-0 print:text-black">
-              {/* Kop Surat Resmi */}
-              <div className="text-center pb-4 border-b-4 border-double border-slate-900 mb-6">
-                {/* Logo Perusahaan */}
-                <div className="flex flex-col items-center justify-center mb-2">
-                  <img
-                    src={companyProfile.logoUrl || "/web/dev_logo.svg"}
-                    alt={companyProfile.brandName || "Logo"}
-                    className="h-12 sm:h-14 w-auto max-w-[280px] object-contain mb-1"
-                    onError={(e: any) => {
-                      e.currentTarget.src = "/logo.png";
-                    }}
-                  />
-                  <h1 className="text-lg sm:text-xl font-black uppercase tracking-wider text-slate-950 font-serif">
-                    {companyProfile.companyName}
-                  </h1>
-                </div>
-
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-700 mt-0.5">
-                  Penyelenggara Jasa Akses Internet (Internet Service Provider)
-                </p>
-                <p className="text-[11px] text-slate-600 font-mono mt-0.5">
-                  NPWP: {companyProfile.npwp}
-                </p>
-                <p className="text-[11px] text-slate-600 mt-0.5">
-                  Kantor: {companyProfile.address} &bull; Telp/WA: {companyProfile.phone} &bull; Email: {companyProfile.emailSupport}
-                </p>
-              </div>
-
-              {/* Judul & Nomor Surat */}
-              <div className="text-center mb-6">
-                <h2 className="text-base sm:text-lg font-black uppercase tracking-wide underline underline-offset-4 text-slate-950 font-serif">
-                  SURAT PERJANJIAN KERJA SAMA (PKS) KEMITRAAN AGEN RESMI
-                </h2>
-                <p className="text-xs font-mono font-bold text-slate-700 mt-1">
-                  Nomor Registrasi: PKS/ISP/AGN/{new Date().getFullYear()}/{selectedAgentForPks.code}
-                </p>
-              </div>
-
-              {/* Pembukaan & Para Pihak */}
-              <div className="space-y-3 mb-5 text-justify leading-relaxed">
-                <p>
-                  Pada hari ini, tanggal <strong>{new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</strong>, telah dibuat dan ditandatangani Perjanjian Kerja Sama Kemitraan Distribusi Layanan Internet, Voucher Hotspot, WiFi Roaming Passpoint, dan Loket Pembayaran Tagihan (selanjutnya disebut <strong>&quot;Perjanjian&quot;</strong>), oleh dan antara:
-                </p>
-
-                <div className="pl-4 border-l-2 border-slate-300 space-y-1">
-                  <p>
-                    <strong>1. {companyProfile.companyName}</strong>, sebuah perseroan terbatas berizin resmi penyelenggara jasa internet ISP, beralamat kantor di {companyProfile.address}, dalam hal ini bertindak untuk dan atas nama perseroan (selanjutnya disebut sebagai <strong>&quot;PIHAK PERTAMA&quot;</strong>).
-                  </p>
-                  <p>
-                    <strong>2. {selectedAgentForPks.name}</strong>, pemilik / penanggung jawab operasional gerai <strong>{selectedAgentForPks.company_name || selectedAgentForPks.name}</strong>, beralamat kontak {selectedAgentForPks.phone}, nomor rekening penampungan <strong>{selectedAgentForPks.bank_name || "BCA"} {selectedAgentForPks.bank_account_number || "-"}</strong> a/n {selectedAgentForPks.bank_account_holder || selectedAgentForPks.name} (selanjutnya disebut sebagai <strong>&quot;PIHAK KEDUA&quot;</strong>).
-                  </p>
-                </div>
-
-                <p>
-                  PARA PIHAK sepakat untuk saling mengikatkan diri dalam Perjanjian Kemitraan Keagenan ini dengan syarat dan ketentuan sebagai berikut:
-                </p>
-              </div>
-
-              {/* Pasal-Pasal */}
-              <div className="space-y-4 text-justify">
-                <div>
-                  <h4 className="font-bold text-slate-950 font-serif">PASAL 1 — DASAR KEMITRAAN &amp; LEGALITAS</h4>
-                  <p className="text-xs text-slate-700 mt-0.5">
-                    1. PIHAK PERTAMA adalah Badan Hukum Penyelenggara Jasa Internet (ISP) berizin resmi dari Kementerian Komunikasi dan Informatika RI.<br />
-                    2. PIHAK KEDUA bertindak semata-mata sebagai <strong>Mitra Saluran Distribusi Resmi (Channel Partner)</strong> bagi produk PIHAK PERTAMA, dan hubungan ini merupakan kemitraan bisnis keagenan, bukan ketenagakerjaan/karyawan, serta bukan pengalihan izin telekomunikasi.
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="font-bold text-slate-950 font-serif">PASAL 2 — RUANG LINGKUP LAYANAN</h4>
-                  <p className="text-xs text-slate-700 mt-0.5">
-                    PIHAK KEDUA ditunjuk sah untuk melayani: (a) Penjualan kode voucher Hotspot WiFi digital/fisik; (b) Penyaluran dan aktivasi paket WiFi Roaming Passpoint (Hotspot 2.0); (c) Penerimaan setoran loket pembayaran tagihan bulanan pelanggan resmi PIHAK PERTAMA.
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="font-bold text-slate-950 font-serif">PASAL 3 — HAK &amp; KEWAJIBAN PARA PIHAK</h4>
-                  <p className="text-xs text-slate-700 mt-0.5">
-                    1. PIHAK PERTAMA berkewajiban menyediakan aplikasi loket agen yang stabil, pasokan voucher, dan menyetorkan PPN resmi ke kas negara.<br />
-                    2. PIHAK KEDUA berhak atas bagi hasil/komisi resmi, dan berkewajiban menjual produk sesuai tarif HET resmi serta menerbitkan struk/bukti bayar sah kepada pelanggan akhir.
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="font-bold text-slate-950 font-serif">PASAL 4 — LARANGAN KERAS &amp; INTEGRITAS (ANTI RT/RW NET ILEGAL)</h4>
-                  <p className="text-xs text-slate-700 mt-0.5">
-                    PIHAK KEDUA <strong>dilarang keras</strong>: (a) Menjual kembali bandwidth mentah secara ilegal, menarik kabel LAN/FO ke tetangga di luar izin resmi, atau menyelenggarakan RT/RW Net ilegal; (b) Memodifikasi konfigurasi perangkat Access Point/ONT; (c) Mengenakan pungutan biaya liar di luar tarif resmi. Pelanggaran mengakibatkan pemutusan kerja sama seketika dan penerusan ke ranah hukum UU Telekomunikasi No. 36/1999.
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="font-bold text-slate-950 font-serif">PASAL 5 — SKEMA KOMISI &amp; KETENTUAN PERPAJAKAN</h4>
-                  <p className="text-xs text-slate-700 mt-0.5">
-                    1. <strong>Komisi Voucher Offline / Grosir:</strong> Cashback sebesar <strong>{selectedAgentForPks.offline_cashback_pct}%</strong>.<br />
-                    2. <strong>Komisi Transaksi Online / Kode Promo:</strong> Komisi sebesar <strong>{selectedAgentForPks.online_cashback_pct}%</strong> (Diskon pelanggan: {selectedAgentForPks.online_discount_pct}%).<br />
-                    3. <strong>Pajak (PMK No. 6/PMK.03/2021):</strong> Nilai jual paket sudah mencakup PPN 11% yang disetorkan langsung oleh PIHAK PERTAMA ke kas negara, di mana Dasar Pengenaan Pajak (DPP) dihitung dari harga bersih setelah diskon resmi (<em>final price / 1.11</em>).
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="font-bold text-slate-950 font-serif">PASAL 6 — MASA BERLAKU &amp; PENYELESAIAN PERSELISIHAN</h4>
-                  <p className="text-xs text-slate-700 mt-0.5">
-                    Perjanjian ini berlaku selama 1 (satu) tahun sejak ditandatangani. Segala perselisihan diselesaikan secara musyawarah mufakat, dan apabila tidak tercapai mufakat, PARA PIHAK sepakat memilih domisili hukum di Pengadilan Negeri setempat.
-                  </p>
-                </div>
-              </div>
-
-              {/* Tanda Tangan */}
-              <div className="grid grid-cols-2 gap-8 pt-8 mt-6 border-t border-slate-200">
-                <div className="text-center">
-                  <p className="font-bold text-slate-900">PIHAK PERTAMA</p>
-                  <p className="text-xs text-slate-600">{companyProfile.companyName}</p>
-                  <div className="h-20 flex items-center justify-center my-1 text-slate-400 text-[11px] italic border border-dashed border-slate-300 rounded-lg max-w-[200px] mx-auto bg-slate-50">
-                    [ Meterai Rp 10.000 &amp; Cap ]
-                  </div>
-                  <p className="font-bold text-slate-900 underline mt-2">Pimpinan Perusahaan</p>
-                  <p className="text-[11px] text-slate-500">Direktur / Authorized Representative</p>
-                </div>
-
-                <div className="text-center">
-                  <p className="font-bold text-slate-900">PIHAK KEDUA</p>
-                  <p className="text-xs text-slate-600">Mitra Agen / Pengelola Gerai</p>
-                  <div className="h-20 flex items-center justify-center my-1 text-slate-400 text-[11px] italic border border-dashed border-slate-300 rounded-lg max-w-[200px] mx-auto bg-slate-50">
-                    [ Tanda Tangan Mitra ]
-                  </div>
-                  <p className="font-bold text-slate-900 underline mt-2">{selectedAgentForPks.name}</p>
-                  <p className="text-[11px] text-slate-500">Pemilik / Penanggung Jawab Gerai</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <AgentPksModal
+        isOpen={showPksModal}
+        onClose={() => setShowPksModal(false)}
+        agent={selectedAgentForPks}
+        companyProfile={companyProfile}
+      />
 
       {/* ── MODAL: VERIFIKASI PENDAFTARAN & BERKAS AGEN ───────────────── */}
       {showVerificationModal && (

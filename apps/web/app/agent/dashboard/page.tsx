@@ -61,9 +61,11 @@ import {
   X,
   Wifi,
   Award,
+  FileText,
 } from "lucide-react";
 import { PrinterSettingsModal } from "./PrinterSettingsModal";
 import AgentCertificateModal, { type CompanyCertificateProfile } from "@/components/agent/AgentCertificateModal";
+import AgentPksModal from "@/components/agent/AgentPksModal";
 import { ThermalPrinterService, type VoucherTicketData } from "@/lib/thermal-printer";
 import { passpointApi, type PasspointInquiryResult, type PasspointReceipt, type PasspointPackage } from "@/lib/api/passpoint";
 
@@ -74,6 +76,7 @@ export default function AgentDashboardPage() {
   const [copiedPromo, setCopiedPromo] = useState(false);
   const [showPrinterModal, setShowPrinterModal] = useState(false);
   const [showCertificateModal, setShowCertificateModal] = useState(false);
+  const [showPksModal, setShowPksModal] = useState(false);
   const [companyProfile, setCompanyProfile] = useState<CompanyCertificateProfile>({
     companyName: "PT. Inovasi Sistem Pintar",
     brandName: "ISPSYNC",
@@ -4976,25 +4979,37 @@ export default function AgentDashboardPage() {
               </button>
             </div>
 
-            {/* Sertifikat Kemitraan Resmi Card */}
-            <div className="bg-gradient-to-r from-amber-50 to-yellow-50/70 border border-amber-200/80 p-3.5 rounded-2xl flex items-center justify-between gap-3 shadow-xs">
+            {/* Dokumen Legalitas Kemitraan (PKS & Sertifikat) */}
+            <div className="bg-gradient-to-r from-amber-50 via-yellow-50/70 to-purple-50/60 border border-amber-200/80 p-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-600 to-yellow-500 text-white flex items-center justify-center shrink-0 shadow-xs">
                   <Award className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="font-bold text-xs text-slate-900 block">Sertifikat Kemitraan Resmi</span>
-                  <p className="text-[11px] text-slate-500">Legalitas kemitraan resmi {companyProfile.brandName} untuk dipajang di gerai/konter.</p>
+                  <span className="font-bold text-xs text-slate-900 block">Legalitas &amp; Dokumen Kemitraan Resmi</span>
+                  <p className="text-[11px] text-slate-500">Cetak Surat Perjanjian Kerja Sama (PKS) dan Sertifikat Kemitraan resmi {companyProfile.brandName}.</p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowCertificateModal(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-900 bg-white hover:bg-amber-100/60 border border-amber-300 shadow-2xs transition-colors shrink-0 cursor-pointer"
-              >
-                <Award className="w-3.5 h-3.5 text-amber-600" />
-                <span>Lihat &amp; Cetak</span>
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowPksModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-purple-800 bg-white hover:bg-purple-50 border border-purple-300 shadow-2xs transition-colors shrink-0 cursor-pointer"
+                  title="Cetak Surat Perjanjian Kerja Sama (PKS)"
+                >
+                  <FileText className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Dokumen PKS</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCertificateModal(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-900 bg-white hover:bg-amber-100/60 border border-amber-300 shadow-2xs transition-colors shrink-0 cursor-pointer"
+                  title="Cetak Sertifikat Kemitraan Resmi"
+                >
+                  <Award className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Sertifikat</span>
+                </button>
+              </div>
             </div>
 
             {/* Form 1: Profile & Loket Fee */}
@@ -5310,7 +5325,15 @@ export default function AgentDashboardPage() {
         companyProfile={companyProfile}
       />
 
-      {!showCertificateModal && (
+      {/* ── MODAL: PERJANJIAN KERJA SAMA (PKS) RESMI ──────────────────── */}
+      <AgentPksModal
+        isOpen={showPksModal}
+        onClose={() => setShowPksModal(false)}
+        agent={dashboard?.agent || null}
+        companyProfile={companyProfile}
+      />
+
+      {!showCertificateModal && !showPksModal && (
         <style jsx global>{`
           @media print {
             body * {
