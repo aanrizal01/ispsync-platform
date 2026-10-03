@@ -36,6 +36,8 @@ type Credential struct {
 	LastAuthenticatedAt *time.Time `json:"last_authenticated_at,omitempty"`
 	ExpiresAt           *time.Time `json:"expires_at,omitempty"`
 	PackageName         *string    `json:"package_name,omitempty"`
+	IssuerName          *string    `json:"issuer_name,omitempty"`
+	IssuerType          *string    `json:"issuer_type,omitempty"`
 	CreatedAt           time.Time  `json:"created_at"`
 	UpdatedAt           time.Time  `json:"updated_at"`
 }

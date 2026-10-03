@@ -30,6 +30,8 @@ export interface PasspointCredential {
   last_authenticated_at?: string;
   expires_at?: string;
   package_name?: string;
+  issuer_name?: string;
+  issuer_type?: "AGENT" | "ONLINE" | "ADMIN";
   created_at: string;
   updated_at: string;
 }

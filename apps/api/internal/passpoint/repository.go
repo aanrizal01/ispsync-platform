@@ -128,17 +128,31 @@ func (r *Repository) GetCredentialByID(ctx context.Context, id uuid.UUID) (*Cred
 		       c.profile_id, p.name, c.username, c.password, c.status,
 		       c.last_authenticated_at, c.created_at, c.updated_at,
 		       COALESCE(po.expires_at, c.created_at + INTERVAL '30 days') as expires_at,
-		       COALESCE(po.package_name, 'Passpoint Standar') as package_name
+		       COALESCE(po.package_name, 'Passpoint Standar') as package_name,
+		       COALESCE(
+		           CASE 
+		               WHEN a.name IS NOT NULL THEN 'Agen ' || a.name || ' (' || a.code || ')'
+		               WHEN po.paid_by_agent_id IS NOT NULL OR po.payment_method = 'MANUAL_COUNTER' THEN 'Loket Agen'
+		               WHEN po.order_id IS NOT NULL THEN 'Online (Self-Service)'
+		               ELSE 'Admin Sistem'
+		           END, 'Admin Sistem'
+		       ) AS issuer_name,
+		       CASE 
+		           WHEN a.name IS NOT NULL OR po.paid_by_agent_id IS NOT NULL OR po.payment_method = 'MANUAL_COUNTER' THEN 'AGENT'
+		           WHEN po.order_id IS NOT NULL THEN 'ONLINE'
+		           ELSE 'ADMIN'
+		       END AS issuer_type
 		FROM passpoint_credentials c
 		JOIN customers cust ON cust.id = c.customer_id
 		JOIN passpoint_profiles p ON p.id = c.profile_id
 		LEFT JOIN LATERAL (
-			SELECT expires_at, package_name
-			FROM passpoint_orders
-			WHERE credential_id = c.id AND status = 'PAID'
-			ORDER BY created_at DESC
+			SELECT po.expires_at, po.package_name, po.paid_by_agent_id, po.agent_id, po.payment_method, po.order_id
+			FROM passpoint_orders po
+			WHERE po.credential_id = c.id AND po.status = 'PAID'
+			ORDER BY po.created_at DESC
 			LIMIT 1
 		) po ON true
+		LEFT JOIN agents a ON a.id = COALESCE(po.paid_by_agent_id, po.agent_id)
 		WHERE c.id = $1
 	`
 	var cred Credential
@@ -147,6 +161,7 @@ func (r *Repository) GetCredentialByID(ctx context.Context, id uuid.UUID) (*Cred
 		&cred.ProfileID, &cred.ProfileName, &cred.Username, &cred.Password, &cred.Status,
 		&cred.LastAuthenticatedAt, &cred.CreatedAt, &cred.UpdatedAt,
 		&cred.ExpiresAt, &cred.PackageName,
+		&cred.IssuerName, &cred.IssuerType,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -163,17 +178,31 @@ func (r *Repository) ListCredentialsByCustomer(ctx context.Context, customerID u
 		       c.profile_id, p.name, c.username, c.password, c.status,
 		       c.last_authenticated_at, c.created_at, c.updated_at,
 		       COALESCE(po.expires_at, c.created_at + INTERVAL '30 days') as expires_at,
-		       COALESCE(po.package_name, 'Passpoint Standar') as package_name
+		       COALESCE(po.package_name, 'Passpoint Standar') as package_name,
+		       COALESCE(
+		           CASE 
+		               WHEN a.name IS NOT NULL THEN 'Agen ' || a.name || ' (' || a.code || ')'
+		               WHEN po.paid_by_agent_id IS NOT NULL OR po.payment_method = 'MANUAL_COUNTER' THEN 'Loket Agen'
+		               WHEN po.order_id IS NOT NULL THEN 'Online (Self-Service)'
+		               ELSE 'Admin Sistem'
+		           END, 'Admin Sistem'
+		       ) AS issuer_name,
+		       CASE 
+		           WHEN a.name IS NOT NULL OR po.paid_by_agent_id IS NOT NULL OR po.payment_method = 'MANUAL_COUNTER' THEN 'AGENT'
+		           WHEN po.order_id IS NOT NULL THEN 'ONLINE'
+		           ELSE 'ADMIN'
+		       END AS issuer_type
 		FROM passpoint_credentials c
 		JOIN customers cust ON cust.id = c.customer_id
 		JOIN passpoint_profiles p ON p.id = c.profile_id
 		LEFT JOIN LATERAL (
-			SELECT expires_at, package_name
-			FROM passpoint_orders
-			WHERE credential_id = c.id AND status = 'PAID'
-			ORDER BY created_at DESC
+			SELECT po.expires_at, po.package_name, po.paid_by_agent_id, po.agent_id, po.payment_method, po.order_id
+			FROM passpoint_orders po
+			WHERE po.credential_id = c.id AND po.status = 'PAID'
+			ORDER BY po.created_at DESC
 			LIMIT 1
 		) po ON true
+		LEFT JOIN agents a ON a.id = COALESCE(po.paid_by_agent_id, po.agent_id)
 		WHERE c.customer_id = $1
 		ORDER BY c.created_at DESC
 	`
@@ -191,6 +220,7 @@ func (r *Repository) ListCredentialsByCustomer(ctx context.Context, customerID u
 			&cred.ProfileID, &cred.ProfileName, &cred.Username, &cred.Password, &cred.Status,
 			&cred.LastAuthenticatedAt, &cred.CreatedAt, &cred.UpdatedAt,
 			&cred.ExpiresAt, &cred.PackageName,
+			&cred.IssuerName, &cred.IssuerType,
 		); err != nil {
 			return nil, fmt.Errorf("scan credential: %w", err)
 		}
@@ -211,17 +241,31 @@ func (r *Repository) ListCredentials(ctx context.Context, limit, offset int) ([]
 		       c.profile_id, p.name, c.username, c.password, c.status,
 		       c.last_authenticated_at, c.created_at, c.updated_at,
 		       COALESCE(po.expires_at, c.created_at + INTERVAL '30 days') as expires_at,
-		       COALESCE(po.package_name, 'Passpoint Standar') as package_name
+		       COALESCE(po.package_name, 'Passpoint Standar') as package_name,
+		       COALESCE(
+		           CASE 
+		               WHEN a.name IS NOT NULL THEN 'Agen ' || a.name || ' (' || a.code || ')'
+		               WHEN po.paid_by_agent_id IS NOT NULL OR po.payment_method = 'MANUAL_COUNTER' THEN 'Loket Agen'
+		               WHEN po.order_id IS NOT NULL THEN 'Online (Self-Service)'
+		               ELSE 'Admin Sistem'
+		           END, 'Admin Sistem'
+		       ) AS issuer_name,
+		       CASE 
+		           WHEN a.name IS NOT NULL OR po.paid_by_agent_id IS NOT NULL OR po.payment_method = 'MANUAL_COUNTER' THEN 'AGENT'
+		           WHEN po.order_id IS NOT NULL THEN 'ONLINE'
+		           ELSE 'ADMIN'
+		       END AS issuer_type
 		FROM passpoint_credentials c
 		JOIN customers cust ON cust.id = c.customer_id
 		JOIN passpoint_profiles p ON p.id = c.profile_id
 		LEFT JOIN LATERAL (
-			SELECT expires_at, package_name
-			FROM passpoint_orders
-			WHERE credential_id = c.id AND status = 'PAID'
-			ORDER BY created_at DESC
+			SELECT po.expires_at, po.package_name, po.paid_by_agent_id, po.agent_id, po.payment_method, po.order_id
+			FROM passpoint_orders po
+			WHERE po.credential_id = c.id AND po.status = 'PAID'
+			ORDER BY po.created_at DESC
 			LIMIT 1
 		) po ON true
+		LEFT JOIN agents a ON a.id = COALESCE(po.paid_by_agent_id, po.agent_id)
 		ORDER BY c.created_at DESC
 		LIMIT $1 OFFSET $2
 	`
@@ -239,6 +283,7 @@ func (r *Repository) ListCredentials(ctx context.Context, limit, offset int) ([]
 			&cred.ProfileID, &cred.ProfileName, &cred.Username, &cred.Password, &cred.Status,
 			&cred.LastAuthenticatedAt, &cred.CreatedAt, &cred.UpdatedAt,
 			&cred.ExpiresAt, &cred.PackageName,
+			&cred.IssuerName, &cred.IssuerType,
 		); err != nil {
 			return nil, 0, fmt.Errorf("scan credential: %w", err)
 		}

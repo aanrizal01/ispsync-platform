@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Wifi,
   Plus,
@@ -20,6 +20,14 @@ import {
   KeyRound,
   QrCode,
   Info,
+  Search,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  Store,
+  Shield,
+  RotateCcw,
+  X,
 } from "lucide-react";
 import {
   passpointApi,
@@ -67,13 +75,71 @@ export default function AdminPasspointPage() {
   });
   const [profileLoading, setProfileLoading] = useState(false);
 
+  // Filters & Pagination
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [issuerFilter, setIssuerFilter] = useState<string>("ALL");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+
+  // Reset page when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, issuerFilter, pageSize]);
+
+  // Filtered credentials list
+  const filteredCredentials = useMemo(() => {
+    return credentials.filter((c) => {
+      // 1. Status Filter
+      if (statusFilter !== "ALL" && c.status !== statusFilter) {
+        return false;
+      }
+      // 2. Issuer Filter
+      if (issuerFilter !== "ALL") {
+        if (issuerFilter === "AGENT" && c.issuer_type !== "AGENT") return false;
+        if (issuerFilter === "ONLINE" && c.issuer_type !== "ONLINE") return false;
+        if (issuerFilter === "ADMIN" && c.issuer_type !== "ADMIN") return false;
+      }
+      // 3. Search Query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const custName = (c.customer_name || "").toLowerCase();
+        const custNum = (c.customer_number || "").toLowerCase();
+        const username = (c.username || "").toLowerCase();
+        const pkgName = (c.package_name || "").toLowerCase();
+        const issuerName = (c.issuer_name || "").toLowerCase();
+        const profName = (c.profile_name || "").toLowerCase();
+        if (
+          !custName.includes(q) &&
+          !custNum.includes(q) &&
+          !username.includes(q) &&
+          !pkgName.includes(q) &&
+          !issuerName.includes(q) &&
+          !profName.includes(q)
+        ) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [credentials, statusFilter, issuerFilter, searchQuery]);
+
+  // Pagination calculation
+  const totalItems = filteredCredentials.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const validPage = Math.min(Math.max(currentPage, 1), totalPages);
+  const paginatedCredentials = useMemo(() => {
+    const startIndex = (validPage - 1) * pageSize;
+    return filteredCredentials.slice(startIndex, startIndex + pageSize);
+  }, [filteredCredentials, validPage, pageSize]);
+
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
       const [profRes, credRes] = await Promise.all([
         passpointApi.getProfiles(),
-        passpointApi.getCredentials(1, 50),
+        passpointApi.getCredentials(1, 250),
       ]);
       const profList = Array.isArray(profRes) ? profRes : (profRes as any)?.data || [];
       const credList = Array.isArray(credRes) ? credRes : (credRes as any)?.data || [];
@@ -275,7 +341,7 @@ export default function AdminPasspointPage() {
                 : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            Kredensial Pengguna ({credentials.length})
+            Kredensial Pengguna ({filteredCredentials.length}{filteredCredentials.length !== credentials.length ? ` / ${credentials.length}` : ""})
           </button>
           <button
             onClick={() => setActiveTab("profiles")}
@@ -291,154 +357,327 @@ export default function AdminPasspointPage() {
 
         {/* Tab 1: Credentials */}
         {activeTab === "credentials" && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-700">
-              <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase text-slate-500">
-                <tr>
-                  <th className="px-6 py-3">Pelanggan</th>
-                  <th className="px-6 py-3">Username EAP (Identity)</th>
-                  <th className="px-6 py-3">Password WiFi (EAP)</th>
-                  <th className="px-6 py-3">Profil &amp; Paket</th>
-                  <th className="px-6 py-3">Status</th>
-                  <th className="px-6 py-3">Masa Aktif &amp; Kadaluarsa</th>
-                  <th className="px-6 py-3 text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {loading ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-slate-400">
-                      Memuat daftar kredensial...
-                    </td>
-                  </tr>
-                ) : credentials.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-slate-400">
-                      Belum ada kredensial Passpoint yang diterbitkan.
-                    </td>
-                  </tr>
-                ) : (
-                  credentials.map((c) => {
-                    const expDate = c.expires_at ? new Date(c.expires_at) : null;
-                    const createdDate = new Date(c.created_at);
-                    const now = new Date();
-                    const isExpired = expDate ? expDate.getTime() < now.getTime() : false;
-                    const daysRemaining = expDate ? Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+          <div>
+            {/* Filter and Search Bar */}
+            <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50/70 space-y-3">
+              <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+                {/* Search Box */}
+                <div className="relative flex-1 max-w-md">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Cari pelanggan, username, paket, atau nama agen..."
+                    className="w-full pl-9 pr-8 py-2 text-xs border border-slate-300 rounded-xl bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent placeholder:text-slate-400 font-medium"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
 
-                    return (
-                    <tr key={c.id} className="hover:bg-slate-50/50 transition">
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-slate-900">{c.customer_name || "-"}</div>
-                        <div className="text-xs text-slate-400">{c.customer_number}</div>
-                      </td>
-                      <td className="px-6 py-4 font-mono text-xs text-blue-700 font-semibold">{c.username}</td>
-                      <td className="px-6 py-4 font-mono text-xs">
-                        <div className="flex items-center gap-1.5">
-                          <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-slate-800 font-bold">
-                            {showPasswordMap[c.id] ? c.password : "••••••••••••"}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => togglePasswordVisibility(c.id)}
-                            className="p-1 text-slate-400 hover:text-slate-700"
-                            title={showPasswordMap[c.id] ? "Sembunyikan Password" : "Lihat Password"}
-                          >
-                            {showPasswordMap[c.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                          </button>
-                          {c.password && (
-                            <button
-                              type="button"
-                              onClick={() => copyToClipboard(c.password!, `pwd-${c.id}`)}
-                              className="p-1 text-slate-400 hover:text-blue-600"
-                              title="Salin Password"
-                            >
-                              {copiedField === `pwd-${c.id}` ? (
-                                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                              ) : (
-                                <Copy className="w-3.5 h-3.5" />
-                              )}
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-xs text-slate-800">{c.package_name || "Passpoint Standar"}</div>
-                        <div className="text-[11px] text-slate-400">{c.profile_name}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                            c.status === "ACTIVE"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : c.status === "REVOKED"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-slate-100 text-slate-800"
-                          }`}
-                        >
-                          {c.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1.5">
-                            {isExpired ? (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                                Kadaluarsa
-                              </span>
-                            ) : daysRemaining !== null ? (
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                daysRemaining <= 3 
-                                  ? "bg-amber-50 text-amber-700 border border-amber-200" 
-                                  : "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              }`}>
-                                {daysRemaining} Hari Lagi
-                              </span>
-                            ) : null}
-                          </div>
-                          <div className="text-[11.5px] font-semibold text-slate-700">
-                            <span className="text-slate-400 font-normal">Exp:</span> {expDate ? expDate.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "-"}
-                          </div>
-                          <div className="text-[10px] text-slate-400">
-                            Dibuat: {createdDate.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right space-x-1.5 whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => setIssuedCredential(c)}
-                          title="Lihat Detail Kredensial & Panduan Setup"
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 rounded border border-slate-200 shadow-2xs"
-                        >
-                          <KeyRound className="w-3.5 h-3.5 text-blue-600" />
-                          Detail
-                        </button>
-                        <a
-                          href={passpointApi.getAppleProfileUrl(c.id)}
-                          download
-                          title="Unduh Apple .mobileconfig"
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded border border-blue-200"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          .mobileconfig
-                        </a>
-                        {c.status === "ACTIVE" && (
-                          <button
-                            onClick={() => handleRevokeCredential(c.id)}
-                            title="Cabut Akses"
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded border border-red-200"
-                          >
-                            <Ban className="w-3.5 h-3.5" />
-                            Cabut
-                          </button>
-                        )}
+                {/* Filter Dropdowns */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Saluran Penerbit */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold text-slate-500 shrink-0">Penerbit:</span>
+                    <select
+                      value={issuerFilter}
+                      onChange={(e) => setIssuerFilter(e.target.value)}
+                      className="px-2.5 py-1.5 text-xs font-semibold border border-slate-300 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    >
+                      <option value="ALL">Semua Saluran</option>
+                      <option value="AGENT">Loket Agen Resmi</option>
+                      <option value="ONLINE">Online (Self-Service)</option>
+                      <option value="ADMIN">Admin Sistem / NOC</option>
+                    </select>
+                  </div>
+
+                  {/* Status Kredensial */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold text-slate-500 shrink-0">Status:</span>
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="px-2.5 py-1.5 text-xs font-semibold border border-slate-300 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    >
+                      <option value="ALL">Semua Status</option>
+                      <option value="ACTIVE">Aktif (ACTIVE)</option>
+                      <option value="REVOKED">Dicabut (REVOKED)</option>
+                    </select>
+                  </div>
+
+                  {/* Baris per halaman */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-bold text-slate-500 shrink-0">Baris:</span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => setPageSize(Number(e.target.value))}
+                      className="px-2.5 py-1.5 text-xs font-semibold border border-slate-300 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    >
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
+
+                  {/* Reset Filter Button */}
+                  {(searchQuery || statusFilter !== "ALL" || issuerFilter !== "ALL") && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setStatusFilter("ALL");
+                        setIssuerFilter("ALL");
+                      }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl transition"
+                      title="Reset Semua Filter"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Reset</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-700">
+                <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase text-slate-500">
+                  <tr>
+                    <th className="px-5 py-3">Pelanggan</th>
+                    <th className="px-5 py-3">Penerbit / Saluran</th>
+                    <th className="px-5 py-3">Username EAP (Identity)</th>
+                    <th className="px-5 py-3">Password WiFi (EAP)</th>
+                    <th className="px-5 py-3">Profil &amp; Paket</th>
+                    <th className="px-5 py-3">Status</th>
+                    <th className="px-5 py-3">Masa Aktif &amp; Kadaluarsa</th>
+                    <th className="px-5 py-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-8 text-center text-slate-400">
+                        Memuat daftar kredensial...
                       </td>
                     </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                  ) : paginatedCredentials.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
+                        <div className="max-w-xs mx-auto space-y-1">
+                          <p className="font-semibold text-slate-600">Tidak ada kredensial yang cocok.</p>
+                          <p className="text-xs">Coba sesuaikan kata kunci pencarian atau reset filter.</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedCredentials.map((c) => {
+                      const expDate = c.expires_at ? new Date(c.expires_at) : null;
+                      const createdDate = new Date(c.created_at);
+                      const now = new Date();
+                      const isExpired = expDate ? expDate.getTime() < now.getTime() : false;
+                      const daysRemaining = expDate ? Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+
+                      return (
+                      <tr key={c.id} className="hover:bg-slate-50/50 transition">
+                        <td className="px-5 py-4">
+                          <div className="font-semibold text-slate-900">{c.customer_name || "-"}</div>
+                          <div className="text-xs text-slate-400">{c.customer_number}</div>
+                        </td>
+
+                        {/* Penerbit / Saluran */}
+                        <td className="px-5 py-4">
+                          {c.issuer_type === "AGENT" ? (
+                            <div className="space-y-0.5">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                <Store className="w-3 h-3 text-blue-600" />
+                                Loket Agen
+                              </span>
+                              <div className="text-[11px] font-bold text-slate-800 leading-tight">
+                                {c.issuer_name || "Agen Resmi"}
+                              </div>
+                            </div>
+                          ) : c.issuer_type === "ONLINE" ? (
+                            <div className="space-y-0.5">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                <Globe className="w-3 h-3 text-purple-600" />
+                                Online QRIS
+                              </span>
+                              <div className="text-[11px] text-slate-500 leading-tight">
+                                Portal Publik
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-0.5">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                <Shield className="w-3 h-3 text-slate-500" />
+                                Admin Sistem
+                              </span>
+                              <div className="text-[11px] text-slate-500 leading-tight">
+                                Pusat / NOC
+                              </div>
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="px-5 py-4 font-mono text-xs text-blue-700 font-semibold">{c.username}</td>
+                        <td className="px-5 py-4 font-mono text-xs">
+                          <div className="flex items-center gap-1.5">
+                            <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-slate-800 font-bold">
+                              {showPasswordMap[c.id] ? c.password : "••••••••••••"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => togglePasswordVisibility(c.id)}
+                              className="p-1 text-slate-400 hover:text-slate-700"
+                              title={showPasswordMap[c.id] ? "Sembunyikan Password" : "Lihat Password"}
+                            >
+                              {showPasswordMap[c.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                            {c.password && (
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(c.password!, `pwd-${c.id}`)}
+                                className="p-1 text-slate-400 hover:text-blue-600"
+                                title="Salin Password"
+                              >
+                                {copiedField === `pwd-${c.id}` ? (
+                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="font-semibold text-xs text-slate-800">{c.package_name || "Passpoint Standar"}</div>
+                          <div className="text-[11px] text-slate-400">{c.profile_name}</div>
+                        </td>
+                        <td className="px-5 py-4">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                              c.status === "ACTIVE"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : c.status === "REVOKED"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-slate-100 text-slate-800"
+                            }`}
+                          >
+                            {c.status}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1.5">
+                              {isExpired ? (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                  Kadaluarsa
+                                </span>
+                              ) : daysRemaining !== null ? (
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  daysRemaining <= 3 
+                                    ? "bg-amber-50 text-amber-700 border border-amber-200" 
+                                    : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                }`}>
+                                  {daysRemaining} Hari Lagi
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="text-[11.5px] font-semibold text-slate-700">
+                              <span className="text-slate-400 font-normal">Exp:</span> {expDate ? expDate.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "-"}
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              Dibuat: {createdDate.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 text-right space-x-1.5 whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => setIssuedCredential(c)}
+                            title="Lihat Detail Kredensial & Panduan Setup"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 rounded border border-slate-200 shadow-2xs"
+                          >
+                            <KeyRound className="w-3.5 h-3.5 text-blue-600" />
+                            Detail
+                          </button>
+                          <a
+                            href={passpointApi.getAppleProfileUrl(c.id)}
+                            download
+                            title="Unduh Apple .mobileconfig"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 rounded border border-blue-200"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            .mobileconfig
+                          </a>
+                          {c.status === "ACTIVE" && (
+                            <button
+                              onClick={() => handleRevokeCredential(c.id)}
+                              title="Cabut Akses"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50 rounded border border-red-200"
+                            >
+                              <Ban className="w-3.5 h-3.5" />
+                              Cabut
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Controls */}
+            {totalItems > 0 && (
+              <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+                <div>
+                  Menampilkan <span className="font-bold text-slate-800">{(validPage - 1) * pageSize + 1}</span> -{" "}
+                  <span className="font-bold text-slate-800">{Math.min(validPage * pageSize, totalItems)}</span> dari{" "}
+                  <span className="font-bold text-slate-900">{totalItems}</span> kredensial
+                  {filteredCredentials.length !== credentials.length && (
+                    <span className="text-slate-400"> (difilter dari total {credentials.length})</span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={validPage <= 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-300 bg-white font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-2xs"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span>Sebelumnya</span>
+                  </button>
+
+                  <div className="px-3 py-1.5 text-slate-800 font-bold bg-white border border-slate-200 rounded-xl shadow-2xs">
+                    {validPage} / {totalPages}
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={validPage >= totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-300 bg-white font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-2xs"
+                  >
+                    <span>Berikutnya</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -706,6 +945,11 @@ export default function AdminPasspointPage() {
                     {issuedCredential.expires_at ? new Date(issuedCredential.expires_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "30 Hari"}
                   </span>
                 </div>
+              </div>
+
+              <div className="text-xs pt-1">
+                <span className="text-slate-500">Saluran Penerbit:</span>{" "}
+                <span className="font-bold text-slate-900">{issuedCredential.issuer_name || "Admin Sistem"}</span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-blue-200/60">
