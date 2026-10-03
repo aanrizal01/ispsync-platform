@@ -468,6 +468,7 @@ func main() {
 	networkSvc := network.NewService(networkRepo, radiusSvc, log)
 	notifSvc := notification.NewService(notifRepo, tgProvider, waProvider, emailProvider, log)
 	billingSvc.SetNotificationService(notifSvc)
+	passpointSvc.SetNotificationService(notifSvc)
 	reportSvc := report.NewService(reportRepo)
 	reportSvc.SetISPIntegration(cfg.ISPBaseURL, cfg.ISPJartaplokKey)
 	partnerSvc := partner.NewService(partnerRepo, log)

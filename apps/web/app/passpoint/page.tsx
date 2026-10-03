@@ -22,6 +22,8 @@ import {
   Check,
   Copy,
   QrCode,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   passpointApi,
@@ -77,6 +79,32 @@ export default function PasspointOnboardingPage() {
   const [appliedPromo, setAppliedPromo] = useState<ValidatePromoResponse | null>(null);
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoError, setPromoError] = useState<string | null>(null);
+
+  // Android interactive guide state
+  const [androidBrand, setAndroidBrand] = useState<"samsung" | "xiaomi" | "oppo" | "generic">("samsung");
+  const [showAndroidPassword, setShowAndroidPassword] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const copyText = (text: string, fieldKey: string) => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedField(fieldKey);
+      setTimeout(() => setCopiedField(null), 2000);
+    }
+  };
+
+  const copyAllAndroidConfig = (c: PasspointCredential) => {
+    const text = "KONFIGURASI WI-FI PASSPOINT ANDROID\n" +
+      "Operator: " + tenantName + "\n" +
+      "Metode EAP: TTLS\n" +
+      "Otentikasi Tahap 2: MSCHAPv2\n" +
+      "Sertifikat CA: Gunakan sertifikat sistem / Jangan validasi\n" +
+      "Domain: " + tenantSlug + ".ispsync.id\n" +
+      "Identitas (Username): " + c.username + "\n" +
+      "Kata Sandi: " + (c.password || "") + "\n" +
+      "Identitas Anonim: anonymous@" + tenantSlug + ".ispsync.id";
+    copyText(text, "ALL_CONFIG");
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -1202,36 +1230,219 @@ export default function PasspointOnboardingPage() {
 
               {/* Tab Android */}
               {activeTab === "android" && (
-                <div className="space-y-5">
-                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 leading-relaxed">
-                    <strong>Petunjuk Android:</strong> Masuk ke <strong>Pengaturan Wi-Fi</strong> &gt; Pilih jaringan <strong>{tenantName} Passpoint</strong> (Hotspot 2.0) &gt; Masukkan konfigurasi EAP di bawah ini.
+                <div className="space-y-6">
+                  {/* Brand Selector Buttons */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-semibold text-slate-300">
+                      Pilih Merek Perangkat Android Anda:
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setAndroidBrand("samsung")}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold border transition ${
+                          androidBrand === "samsung"
+                            ? "bg-slate-800 border-cyan-500 text-cyan-400 shadow-xs"
+                            : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        Samsung Galaxy
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAndroidBrand("xiaomi")}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold border transition ${
+                          androidBrand === "xiaomi"
+                            ? "bg-slate-800 border-cyan-500 text-cyan-400 shadow-xs"
+                            : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        Xiaomi / POCO
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAndroidBrand("oppo")}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold border transition ${
+                          androidBrand === "oppo"
+                            ? "bg-slate-800 border-cyan-500 text-cyan-400 shadow-xs"
+                            : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        Oppo / Vivo / Realme
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAndroidBrand("generic")}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold border transition ${
+                          androidBrand === "generic"
+                            ? "bg-slate-800 border-cyan-500 text-cyan-400 shadow-xs"
+                            : "bg-slate-950 border-slate-800 text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        Android Lainnya
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
-                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block text-xs">Metode EAP:</span>
-                      <span className="font-bold text-white font-mono">TTLS</span>
+                  {/* Step-by-Step Instructions per Brand */}
+                  <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
+                    <h4 className="font-bold text-slate-200">
+                      {androidBrand === "samsung" && "Langkah Koneksi Samsung Galaxy (One UI):"}
+                      {androidBrand === "xiaomi" && "Langkah Koneksi Xiaomi / POCO / Redmi (HyperOS / MIUI):"}
+                      {androidBrand === "oppo" && "Langkah Koneksi Oppo / Realme / Vivo (ColorOS / Funtouch):"}
+                      {androidBrand === "generic" && "Langkah Koneksi Android Standar (AOSP / Pixel):"}
+                    </h4>
+                    <ol className="list-decimal list-inside space-y-1.5 text-slate-400 leading-relaxed">
+                      <li>Buka <strong>Pengaturan &gt; Wi-Fi</strong> pada ponsel Anda.</li>
+                      <li>
+                        {androidBrand === "samsung" && (
+                          <span>Pilih jaringan <strong>Passpoint / {tenantName}</strong> (biasanya memiliki label Wi-Fi Hotspot 2.0).</span>
+                        )}
+                        {androidBrand === "xiaomi" && (
+                          <span>Pilih sinyal Wi-Fi <strong>{tenantName} Passpoint</strong>. Jika muncul dialog opsi lanjutan, buka untuk mengatur parameter EAP.</span>
+                        )}
+                        {androidBrand === "oppo" && (
+                          <span>Pilih Wi-Fi <strong>{tenantName} Passpoint</strong>. Ketuk Opsi Lanjutan jika pengaturan EAP belum muncul.</span>
+                        )}
+                        {androidBrand === "generic" && (
+                          <span>Pilih jaringan Wi-Fi <strong>{tenantName} Passpoint</strong> atau tambah jaringan secara manual.</span>
+                        )}
+                      </li>
+                      <li>
+                        Atur <strong>Metode EAP</strong> menjadi <strong className="text-cyan-400 font-mono">TTLS</strong> dan <strong>Otentikasi Tahap 2</strong> menjadi <strong className="text-cyan-400 font-mono">MSCHAPV2</strong>.
+                      </li>
+                      <li>
+                        {androidBrand === "samsung" && (
+                          <span>Pada <strong>Sertifikat CA</strong>, pilih <em>Gunakan sertifikat sistem</em> dan isi kolom <strong>Domain</strong> dengan <code className="text-white font-mono">{tenantSlug}.ispsync.id</code>.</span>
+                        )}
+                        {androidBrand === "xiaomi" && (
+                          <span>Pada <strong>Sertifikat CA</strong>, pilih <em>Jangan validasi</em> (atau pilih sertifikat sistem jika diminta mengisi domain).</span>
+                        )}
+                        {androidBrand === "oppo" && (
+                          <span>Pada <strong>Sertifikat CA</strong>, pilih <em>Jangan validasi</em> atau <em>Gunakan sertifikat sistem</em>.</span>
+                        )}
+                        {androidBrand === "generic" && (
+                          <span>Pada <strong>Sertifikat CA</strong>, pilih <em>Jangan validasi</em> atau isi Domain dengan <code className="text-white font-mono">{tenantSlug}.ispsync.id</code>.</span>
+                        )}
+                      </li>
+                      <li>Salin dan tempel <strong>Identitas (Username)</strong> dan <strong>Kata Sandi</strong> dari kotak di bawah, lalu klik <strong>Sambungkan</strong>.</li>
+                    </ol>
+                  </div>
+
+                  {/* Interactive Parameter Cards with Quick-Copy */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    {/* Method EAP */}
+                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <span className="text-slate-400 block text-[11px]">1. Metode EAP:</span>
+                        <span className="font-bold text-white font-mono text-sm">TTLS</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyText("TTLS", "EAP_METHOD")}
+                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-mono text-[11px] transition inline-flex items-center gap-1"
+                      >
+                        {copiedField === "EAP_METHOD" ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
+                        <span>{copiedField === "EAP_METHOD" ? "Tersalin" : "Salin"}</span>
+                      </button>
                     </div>
-                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block text-xs">Otentikasi Tahap 2:</span>
-                      <span className="font-bold text-white font-mono">MSCHAPV2</span>
+
+                    {/* Phase 2 Auth */}
+                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <span className="text-slate-400 block text-[11px]">2. Otentikasi Tahap 2:</span>
+                        <span className="font-bold text-white font-mono text-sm">MSCHAPV2</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyText("MSCHAPV2", "PHASE2")}
+                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-mono text-[11px] transition inline-flex items-center gap-1"
+                      >
+                        {copiedField === "PHASE2" ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
+                        <span>{copiedField === "PHASE2" ? "Tersalin" : "Salin"}</span>
+                      </button>
                     </div>
-                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block text-xs">Identitas (Username):</span>
-                      <span className="font-mono font-bold text-cyan-400">{credential.username}</span>
+
+                    {/* CA Certificate */}
+                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <span className="text-slate-400 block text-[11px]">3. Sertifikat CA:</span>
+                        <span className="font-bold text-slate-200 text-xs">Gunakan sertifikat sistem / Jangan validasi</span>
+                      </div>
                     </div>
-                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block text-xs">Kata Sandi (Password):</span>
-                      <span className="font-mono font-bold text-white">{credential.password || "••••••••"}</span>
+
+                    {/* Domain */}
+                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <span className="text-slate-400 block text-[11px]">4. Domain / Realm:</span>
+                        <span className="font-bold text-white font-mono text-xs">{tenantSlug}.ispsync.id</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyText(`${tenantSlug}.ispsync.id`, "DOMAIN")}
+                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-mono text-[11px] transition inline-flex items-center gap-1"
+                      >
+                        {copiedField === "DOMAIN" ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
+                        <span>{copiedField === "DOMAIN" ? "Tersalin" : "Salin"}</span>
+                      </button>
                     </div>
-                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block text-xs">Domain / Realm:</span>
-                      <span className="font-bold text-white font-mono">{tenantSlug}.ispsync.id</span>
+
+                    {/* Identity (Username) */}
+                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <span className="text-slate-400 block text-[11px]">5. Identitas (Username):</span>
+                        <span className="font-bold text-cyan-400 font-mono text-sm">{credential.username}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyText(credential.username, "USERNAME")}
+                        className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-mono text-[11px] transition inline-flex items-center gap-1"
+                      >
+                        {copiedField === "USERNAME" ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
+                        <span>{copiedField === "USERNAME" ? "Tersalin" : "Salin"}</span>
+                      </button>
                     </div>
-                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                      <span className="text-slate-400 block text-xs">Sertifikat CA:</span>
-                      <span className="font-bold text-white">Gunakan sertifikat sistem</span>
+
+                    {/* Password */}
+                    <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <span className="text-slate-400 block text-[11px]">6. Kata Sandi (Password):</span>
+                        <span className="font-bold text-white font-mono text-sm">
+                          {showAndroidPassword ? credential.password : "••••••••"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setShowAndroidPassword(!showAndroidPassword)}
+                          className="p-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition"
+                          title={showAndroidPassword ? "Sembunyikan" : "Tampilkan"}
+                        >
+                          {showAndroidPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => copyText(credential.password || "", "PASSWORD")}
+                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-mono text-[11px] transition inline-flex items-center gap-1"
+                        >
+                          {copiedField === "PASSWORD" ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-slate-400" />}
+                          <span>{copiedField === "PASSWORD" ? "Tersalin" : "Salin"}</span>
+                        </button>
+                      </div>
                     </div>
+                  </div>
+
+                  {/* Copy All Button */}
+                  <div className="pt-1 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => copyAllAndroidConfig(credential)}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 border border-slate-700 text-xs font-semibold transition cursor-pointer"
+                    >
+                      {copiedField === "ALL_CONFIG" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedField === "ALL_CONFIG" ? "Seluruh Konfigurasi Tersalin!" : "Salin Semua Konfigurasi ke Catatan"}</span>
+                    </button>
+                    <span className="text-[11px] text-slate-500 font-mono">Standar WPA2/WPA3-Enterprise</span>
                   </div>
                 </div>
               )}

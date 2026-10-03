@@ -27,6 +27,7 @@ export default function PasspointStatusPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusData, setStatusData] = useState<PasspointCustomerStatus | null>(null);
+  const [showAndroidInfo, setShowAndroidInfo] = useState(false);
   const [tenantName, setTenantName] = useState("ISPSYNC");
   const [tenantLegalName, setTenantLegalName] = useState("PT. ISP Kita Nusantara");
 
@@ -242,6 +243,49 @@ export default function PasspointStatusPage() {
                 <Download className="w-4 h-4" />
                 <span>Unduh Ulang Profil Apple (.mobileconfig)</span>
               </a>
+
+              {/* Android EAP Details Accordion */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAndroidInfo(!showAndroidInfo)}
+                  className="w-full flex items-center justify-between text-xs font-semibold text-slate-300 hover:text-white transition p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80"
+                >
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="w-4 h-4 text-cyan-400" />
+                    <span>Pengguna Android? Lihat Parameter Wi-Fi EAP</span>
+                  </div>
+                  <span className="text-[11px] font-mono text-cyan-400 font-bold">
+                    {showAndroidInfo ? "Tutup" : "Buka Panduan"}
+                  </span>
+                </button>
+
+                {showAndroidInfo && (
+                  <div className="mt-2 p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5 text-xs animate-in fade-in">
+                    <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                      <div className="p-2 bg-slate-900/90 rounded-lg border border-slate-800">
+                        <span className="text-slate-400 block text-[10px]">1. Metode EAP</span>
+                        <span className="font-bold text-white">TTLS</span>
+                      </div>
+                      <div className="p-2 bg-slate-900/90 rounded-lg border border-slate-800">
+                        <span className="text-slate-400 block text-[10px]">2. Tahap 2</span>
+                        <span className="font-bold text-white">MSCHAPv2</span>
+                      </div>
+                      <div className="p-2 bg-slate-900/90 rounded-lg border border-slate-800">
+                        <span className="text-slate-400 block text-[10px]">3. Sertifikat CA</span>
+                        <span className="font-bold text-white">Sertifikat Sistem</span>
+                      </div>
+                      <div className="p-2 bg-slate-900/90 rounded-lg border border-slate-800">
+                        <span className="text-slate-400 block text-[10px]">4. Domain / Realm</span>
+                        <span className="font-bold text-white truncate block">{statusData.realm}</span>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-normal">
+                      Pilih sinyal Wi-Fi Passpoint, atur parameter di atas, masukkan username <code className="text-cyan-400 font-mono font-bold">{statusData.username}</code> dan kata sandi yang Anda terima melalui notifikasi WhatsApp pendaftaran.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

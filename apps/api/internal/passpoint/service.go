@@ -570,10 +570,14 @@ func (s *Service) CheckPurchase(ctx context.Context, req PasspointCheckRequest) 
 
 		// Determine speed limit from order package
 		speedLimit := "15M/15M"
+		var currentOrder *PasspointOrder
 		if req.OrderID != "" {
-			if ord, _ := s.repo.GetOrderByOrderID(ctx, req.OrderID); ord != nil && ord.PackageID != "" {
-				if pkg, _ := s.repo.GetPackageByID(ctx, ord.PackageID); pkg != nil && pkg.SpeedLimit != "" {
-					speedLimit = pkg.SpeedLimit
+			if ord, _ := s.repo.GetOrderByOrderID(ctx, req.OrderID); ord != nil {
+				currentOrder = ord
+				if ord.PackageID != "" {
+					if pkg, _ := s.repo.GetPackageByID(ctx, ord.PackageID); pkg != nil && pkg.SpeedLimit != "" {
+						speedLimit = pkg.SpeedLimit
+					}
 				}
 			}
 		}
@@ -584,6 +588,11 @@ func (s *Service) CheckPurchase(ctx context.Context, req PasspointCheckRequest) 
 		// Mark order as PAID in DB and credit agent if applicable
 		if req.OrderID != "" {
 			_ = s.repo.MarkOrderPaid(ctx, req.OrderID, credID)
+		}
+
+		// Kirim notifikasi WhatsApp otomatis ke pembeli
+		if currentOrder != nil {
+			go s.sendPurchaseWhatsApp(context.Background(), currentOrder, username, password, realm, domain, credID)
 		}
 	}
 
@@ -705,13 +714,16 @@ func (s *Service) Renew(ctx context.Context, req PasspointRenewRequest) (*Passpo
 func (s *Service) CheckRenew(ctx context.Context, req PasspointCheckRenewRequest) (*PasspointCheckRenewResponse, error) {
 	if req.OrderID != "" {
 		if ord, _ := s.repo.GetOrderByOrderID(ctx, req.OrderID); ord != nil && ord.Status == "PAID" {
+			var cred *Credential
 			if ord.CredentialID != nil {
 				_ = s.repo.UpdateCredentialStatus(ctx, *ord.CredentialID, "ACTIVE")
-				if cred, _ := s.repo.GetCredentialByID(ctx, *ord.CredentialID); cred != nil {
+				if c, _ := s.repo.GetCredentialByID(ctx, *ord.CredentialID); c != nil {
+					cred = c
 					_ = s.radiusSvc.SyncPasspointCredential(ctx, cred.Username, cred.Password, "15M/15M", 1)
 				}
 			}
 			newExpiry := time.Now().AddDate(0, 0, ord.DurationDays).Format("02 Jan 2006, 15:04 WIB")
+			go s.sendRenewalWhatsApp(context.Background(), ord, cred, newExpiry)
 			return &PasspointCheckRenewResponse{
 				Status:       "PAID",
 				CredentialID: req.OrderID,
@@ -764,6 +776,7 @@ func (s *Service) PayOrderWithAgentBalance(ctx context.Context, agentID uuid.UUI
 	// Sync to FreeRADIUS with Simultaneous-Use := 1
 	if cred != nil {
 		_ = s.radiusSvc.SyncPasspointCredential(ctx, cred.Username, cred.Password, "15M/15M", 1)
+		go s.sendCounterReceiptWhatsApp(context.Background(), receipt)
 	}
 
 	s.logger.Info("passpoint counter order paid by agent",
@@ -810,6 +823,7 @@ func (s *Service) IssueManualPasspoint(ctx context.Context, agentID uuid.UUID, r
 	// Sync to FreeRADIUS with Simultaneous-Use := 1 and package speed limit
 	if cred != nil {
 		_ = s.radiusSvc.SyncPasspointCredential(ctx, cred.Username, cred.Password, selectedPkg.SpeedLimit, 1)
+		go s.sendCounterReceiptWhatsApp(context.Background(), receipt)
 	}
 
 	s.logger.Info("passpoint manual issued by agent loket",
@@ -990,6 +1004,222 @@ func (s *Service) ExportOrdersCSV(ctx context.Context) ([]byte, error) {
 	}
 	w.Flush()
 	return buf.Bytes(), nil
+}
+
+// ──────────────────────────────────────────
+// WhatsApp Notifications (Purchase, Renewal & Counter)
+// ──────────────────────────────────────────
+
+func (s *Service) sendPurchaseWhatsApp(ctx context.Context, ord *PasspointOrder, username, password, realm, domain string, credID uuid.UUID) {
+	if s.notifSvc == nil || ord == nil || ord.CustomerPhone == "" {
+		return
+	}
+
+	phone := cleanPhoneNumber(ord.CustomerPhone)
+	if phone == "" {
+		return
+	}
+
+	custName := ord.CustomerName
+	if custName == "" {
+		custName = "Pelanggan"
+	}
+
+	pkgName := ord.PackageName
+	if pkgName == "" {
+		pkgName = "Passpoint Wi-Fi"
+	}
+
+	durationDays := ord.DurationDays
+	if durationDays <= 0 {
+		durationDays = 30
+	}
+	expiryDate := time.Now().AddDate(0, 0, durationDays).Format("02 Jan 2006, 15:04 WIB")
+
+	baseDomain := domain
+	if baseDomain == "" {
+		baseDomain = "wifi.dev.ispsync.id"
+	}
+
+	subject := "Kredensial Akses Wi-Fi Passpoint"
+	body := fmt.Sprintf("PEMBELIAN PASSPOINT WI-FI BERHASIL\n\n"+
+		"Halo %s,\n"+
+		"Terima kasih telah berlangganan akses Wi-Fi Passpoint (Hotspot 2.0).\n\n"+
+		"Detail Akun:\n"+
+		"- Paket: %s\n"+
+		"- Masa Aktif: %d Hari (hingga %s)\n"+
+		"- Username EAP: %s\n"+
+		"- Password: %s\n"+
+		"- Domain / Realm: %s\n\n"+
+		"Pemasangan Otomatis di Apple (iPhone / iPad / Mac):\n"+
+		"https://%s/api/v1/passpoint/credentials/%s/apple-profile\n\n"+
+		"Pengaturan di Android (Samsung, Xiaomi, Oppo, Vivo):\n"+
+		"1. Pilih Wi-Fi: Passpoint\n"+
+		"2. Metode EAP: TTLS\n"+
+		"3. Otentikasi Tahap 2: MSCHAPv2\n"+
+		"4. Sertifikat CA: Gunakan sertifikat sistem / Jangan validasi\n"+
+		"5. Domain: %s\n"+
+		"6. Identitas: %s\n"+
+		"7. Kata Sandi: %s\n\n"+
+		"Periksa Sisa Masa Aktif Mandiri:\n"+
+		"https://%s/passpoint/status?query=%s\n\n"+
+		"Simpan pesan ini sebagai bukti pendaftaran resmi.",
+		custName, pkgName, durationDays, expiryDate, username, password, realm,
+		baseDomain, credID.String(), domain, username, password,
+		baseDomain, username,
+	)
+
+	_, err := s.notifSvc.SendNotification(ctx, notification.SendNotificationRequest{
+		Channel:   notification.ChannelWhatsApp,
+		Recipient: phone,
+		Subject:   subject,
+		Body:      body,
+	})
+	if err != nil {
+		s.logger.Warn("failed to send passpoint purchase whatsapp", "phone", phone, "error", err)
+	} else {
+		s.logger.Info("passpoint purchase whatsapp sent successfully", "phone", phone, "username", username)
+	}
+}
+
+func (s *Service) sendRenewalWhatsApp(ctx context.Context, ord *PasspointOrder, cred *Credential, newExpiresAt string) {
+	if s.notifSvc == nil || ord == nil {
+		return
+	}
+
+	phone := cleanPhoneNumber(ord.CustomerPhone)
+	custName := ord.CustomerName
+	if cred != nil && cred.CustomerID != uuid.Nil && s.customerRepo != nil {
+		if c, err := s.customerRepo.GetByID(ctx, cred.CustomerID); err == nil && c != nil {
+			if phone == "" {
+				phone = cleanPhoneNumber(c.Phone)
+			}
+			if custName == "" || custName == "Perpanjangan Profil" {
+				custName = c.FullName
+			}
+		}
+	}
+
+	if phone == "" {
+		return
+	}
+	if custName == "" {
+		custName = "Pelanggan"
+	}
+
+	username := "-"
+	if cred != nil {
+		username = cred.Username
+	}
+
+	subject := "Perpanjangan Passpoint Berhasil"
+	body := fmt.Sprintf("PERPANJANGAN PASSPOINT BERHASIL\n\n"+
+		"Halo %s,\n"+
+		"Masa aktif paket Wi-Fi Passpoint Anda telah berhasil diperpanjang.\n\n"+
+		"Detail Perpanjangan:\n"+
+		"- Paket: %s\n"+
+		"- Tambahan Durasi: %d Hari\n"+
+		"- Berlaku Hingga: %s\n"+
+		"- Username EAP: %s\n\n"+
+		"Profil di smartphone Anda tetap aktif dan tersambung otomatis ke jaringan Wi-Fi tanpa perlu pengaturan ulang.\n\n"+
+		"Periksa Status Mandiri:\n"+
+		"https://wifi.dev.ispsync.id/passpoint/status?query=%s\n\n"+
+		"Terima kasih atas kepercayaannya menggunakan layanan kami.",
+		custName, ord.PackageName, ord.DurationDays, newExpiresAt, username, username,
+	)
+
+	_, err := s.notifSvc.SendNotification(ctx, notification.SendNotificationRequest{
+		Channel:   notification.ChannelWhatsApp,
+		Recipient: phone,
+		Subject:   subject,
+		Body:      body,
+	})
+	if err != nil {
+		s.logger.Warn("failed to send passpoint renewal whatsapp", "phone", phone, "error", err)
+	} else {
+		s.logger.Info("passpoint renewal whatsapp sent successfully", "phone", phone, "username", username)
+	}
+}
+
+func (s *Service) sendCounterReceiptWhatsApp(ctx context.Context, receipt *PasspointReceipt) {
+	if s.notifSvc == nil || receipt == nil || receipt.CustomerPhone == "" {
+		return
+	}
+
+	phone := cleanPhoneNumber(receipt.CustomerPhone)
+	if phone == "" {
+		return
+	}
+
+	custName := receipt.CustomerName
+	if custName == "" {
+		custName = "Pelanggan"
+	}
+
+	baseDomain := receipt.DomainName
+	if baseDomain == "" {
+		baseDomain = "wifi.dev.ispsync.id"
+	}
+
+	subject := "Bukti Pembelian Passpoint Wi-Fi"
+	body := fmt.Sprintf("PEMBELIAN PASSPOINT LOKET AGEN BERHASIL\n\n"+
+		"Halo %s,\n"+
+		"Berikut adalah bukti pembelian akses Wi-Fi Passpoint (Hotspot 2.0) di Loket %s:\n\n"+
+		"Detail Akun:\n"+
+		"- Paket: %s (%d Hari)\n"+
+		"- Kode Kasir: %s\n"+
+		"- Username EAP: %s\n"+
+		"- Password: %s\n"+
+		"- Domain / Realm: %s\n\n"+
+		"Pemasangan Otomatis di Apple (iPhone / iPad / Mac):\n"+
+		"https://%s%s\n\n"+
+		"Pengaturan di Android (Samsung, Xiaomi, Oppo, Vivo):\n"+
+		"1. Metode EAP: TTLS\n"+
+		"2. Otentikasi Tahap 2: MSCHAPv2\n"+
+		"3. Sertifikat CA: Gunakan sertifikat sistem\n"+
+		"4. Domain: %s\n"+
+		"5. Identitas: %s\n"+
+		"6. Kata Sandi: %s\n\n"+
+		"Periksa Status & Masa Aktif Mandiri:\n"+
+		"https://%s/passpoint/status?query=%s\n\n"+
+		"Terima kasih atas kunjungan Anda.",
+		custName, receipt.AgentName, receipt.PackageName, receipt.DurationDays,
+		receipt.CashierCode, receipt.Username, receipt.Password, receipt.Realm,
+		baseDomain, receipt.AppleProfileURL,
+		receipt.DomainName, receipt.Username, receipt.Password,
+		baseDomain, receipt.Username,
+	)
+
+	_, err := s.notifSvc.SendNotification(ctx, notification.SendNotificationRequest{
+		Channel:   notification.ChannelWhatsApp,
+		Recipient: phone,
+		Subject:   subject,
+		Body:      body,
+	})
+	if err != nil {
+		s.logger.Warn("failed to send passpoint receipt whatsapp", "phone", phone, "error", err)
+	} else {
+		s.logger.Info("passpoint receipt whatsapp sent successfully", "phone", phone, "username", receipt.Username)
+	}
+}
+
+func cleanPhoneNumber(phone string) string {
+	cleaned := strings.Map(func(r rune) rune {
+		if r >= '0' && r <= '9' {
+			return r
+		}
+		return -1
+	}, phone)
+
+	if strings.HasPrefix(cleaned, "0") {
+		cleaned = "62" + cleaned[1:]
+	} else if strings.HasPrefix(cleaned, "8") {
+		cleaned = "628" + cleaned[1:]
+	}
+	if len(cleaned) < 10 {
+		return ""
+	}
+	return cleaned
 }
 
 
