@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Printer, X, FileText } from "lucide-react";
+import { Printer, X, FileText, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface AgentPksData {
   id: string;
@@ -46,6 +47,7 @@ export default function AgentPksModal({
   companyProfile,
 }: AgentPksModalProps) {
   const [mounted, setMounted] = useState(false);
+  const [paperFormat, setPaperFormat] = useState<"legal" | "f4" | "a4-compact" | "a4">("legal");
 
   useEffect(() => {
     setMounted(true);
@@ -81,8 +83,22 @@ export default function AgentPksModal({
       <style jsx global>{`
         @media print {
           @page {
-            size: A4 portrait;
-            margin: 12mm 18mm;
+            size: ${
+              paperFormat === "legal"
+                ? "legal portrait"
+                : paperFormat === "f4"
+                ? "215mm 330mm portrait"
+                : "A4 portrait"
+            };
+            margin: ${
+              paperFormat === "legal"
+                ? "8mm 14mm 8mm 14mm"
+                : paperFormat === "f4"
+                ? "8mm 13mm 8mm 13mm"
+                : paperFormat === "a4-compact"
+                ? "6mm 10mm 6mm 10mm"
+                : "12mm 16mm 12mm 16mm"
+            };
           }
           html, body {
             background: #ffffff !important;
@@ -133,15 +149,69 @@ export default function AgentPksModal({
             padding: 0 !important;
             overflow: visible !important;
           }
+
+          /* Single Page Optimizations (Legal, F4, A4-Compact) */
+          .pks-legal-mode {
+            font-size: 11.2px !important;
+            line-height: 1.48 !important;
+          }
+          .pks-legal-mode .pks-header {
+            margin-bottom: 0.75rem !important;
+          }
+          .pks-legal-mode .pks-parties {
+            margin-bottom: 0.75rem !important;
+          }
+          .pks-legal-mode .pks-pasal-block {
+            margin-bottom: 0.45rem !important;
+          }
+          .pks-legal-mode .pks-signatures {
+            margin-top: 1rem !important;
+            padding-top: 0.6rem !important;
+          }
+
+          .pks-f4-mode {
+            font-size: 10.4px !important;
+            line-height: 1.4 !important;
+          }
+          .pks-f4-mode .pks-header {
+            margin-bottom: 0.65rem !important;
+          }
+          .pks-f4-mode .pks-parties {
+            margin-bottom: 0.65rem !important;
+          }
+          .pks-f4-mode .pks-pasal-block {
+            margin-bottom: 0.4rem !important;
+          }
+          .pks-f4-mode .pks-signatures {
+            margin-top: 0.85rem !important;
+            padding-top: 0.5rem !important;
+          }
+
+          .pks-compact-mode {
+            font-size: 9.8px !important;
+            line-height: 1.34 !important;
+          }
+          .pks-compact-mode .pks-header {
+            margin-bottom: 0.5rem !important;
+          }
+          .pks-compact-mode .pks-parties {
+            margin-bottom: 0.5rem !important;
+          }
+          .pks-compact-mode .pks-pasal-block {
+            margin-bottom: 0.35rem !important;
+          }
+          .pks-compact-mode .pks-signatures {
+            margin-top: 0.75rem !important;
+            padding-top: 0.45rem !important;
+          }
+
           .pks-header {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
-            margin-bottom: 1.25rem !important;
           }
           .pks-parties {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
-            margin-bottom: 1.25rem !important;
           }
           .pks-pasal-block {
             page-break-inside: avoid !important;
@@ -150,7 +220,6 @@ export default function AgentPksModal({
           .pks-signatures {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
-            margin-top: 2rem !important;
           }
           nav, aside, header, footer {
             display: none !important;
@@ -163,7 +232,7 @@ export default function AgentPksModal({
         className="bg-white rounded-3xl shadow-2xl border border-slate-200 max-w-4xl w-full my-6 max-h-[92vh] flex flex-col overflow-hidden print:max-h-none print:shadow-none print:rounded-none print:border-none print:w-full print:m-0 print:overflow-visible"
       >
         {/* Modal Action Header (Hidden in Print) */}
-        <div className="p-4 sm:px-6 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0 print:hidden">
+        <div className="p-4 sm:px-6 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-slate-50 shrink-0 print:hidden">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
               <FileText className="w-5 h-5" />
@@ -173,18 +242,75 @@ export default function AgentPksModal({
                 Surat Perjanjian Kerja Sama (PKS) Kemitraan Agen Resmi
               </h3>
               <p className="text-xs text-slate-500">
-                Mitra: <span className="font-semibold text-slate-800">{agent.name}</span> ({agent.code}) &bull; Siap Cetak A4 Portrait
+                Mitra: <span className="font-semibold text-slate-800">{agent.name}</span> ({agent.code}) &bull; Siap Cetak
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Paper Size Format Selector */}
+            <div className="flex items-center bg-slate-200/80 p-0.5 rounded-xl text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setPaperFormat("legal")}
+                className={cn(
+                  "px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1",
+                  paperFormat === "legal"
+                    ? "bg-purple-600 text-white font-bold shadow-xs"
+                    : "text-slate-700 hover:text-slate-900"
+                )}
+                title="Kertas Legal (8.5 x 14 in / 216 x 356 mm) — Pas 1 Lembar Penuh"
+              >
+                <span>Legal (1 Lembar)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaperFormat("f4")}
+                className={cn(
+                  "px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1",
+                  paperFormat === "f4"
+                    ? "bg-purple-600 text-white font-bold shadow-xs"
+                    : "text-slate-700 hover:text-slate-900"
+                )}
+                title="Kertas Folio / F4 HVS (215 x 330 mm) — Pas 1 Lembar"
+              >
+                <span>F4 / Folio</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaperFormat("a4-compact")}
+                className={cn(
+                  "px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1",
+                  paperFormat === "a4-compact"
+                    ? "bg-purple-600 text-white font-bold shadow-xs"
+                    : "text-slate-700 hover:text-slate-900"
+                )}
+                title="Kertas A4 Ringkas (210 x 297 mm) — Pas 1 Lembar"
+              >
+                <span>A4 (1 Lembar)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPaperFormat("a4")}
+                className={cn(
+                  "px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1",
+                  paperFormat === "a4"
+                    ? "bg-purple-600 text-white font-bold shadow-xs"
+                    : "text-slate-700 hover:text-slate-900"
+                )}
+                title="Kertas A4 Standar (2 Lembar Bersusun)"
+              >
+                <span>A4 (2 Lembar)</span>
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={() => window.print()}
               className="px-4 py-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              <span>Cetak / Simpan PDF</span>
+              <span>Cetak Sekarang</span>
             </button>
             <button
               type="button"
@@ -196,10 +322,16 @@ export default function AgentPksModal({
           </div>
         </div>
 
-        {/* Document Body (Printable Multi-Page) */}
+        {/* Document Body (Printable) */}
         <div
           id="agent-pks-printable"
-          className="p-8 sm:p-12 overflow-y-auto font-sans text-slate-900 text-xs sm:text-sm leading-relaxed print:p-0 print:overflow-visible print:m-0 print:text-black"
+          className={cn(
+            "p-8 sm:p-12 overflow-y-auto font-sans text-slate-900 leading-relaxed print:p-0 print:overflow-visible print:m-0 print:text-black",
+            paperFormat === "legal" && "pks-legal-mode text-xs",
+            paperFormat === "f4" && "pks-f4-mode text-xs",
+            paperFormat === "a4-compact" && "pks-compact-mode text-[11px]",
+            paperFormat === "a4" && "text-xs sm:text-sm"
+          )}
         >
           {/* Header Block (Kop + Judul) - Kept together so it never splits across pages */}
           <div className="pks-header">
