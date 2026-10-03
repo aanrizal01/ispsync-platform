@@ -520,7 +520,9 @@ export default function AdminFibergridPage() {
           <div>
             <div className="text-xs font-medium text-slate-500">Rata-rata Utilisasi Port</div>
             <div className="text-xl font-bold text-slate-900">
-              {fttxStats?.occupancy_rate_pct ? fttxStats.occupancy_rate_pct.toFixed(1) : 0}%
+              {fttxStats && fttxStats.total_ports > 0
+                ? ((fttxStats.used_ports / fttxStats.total_ports) * 100).toFixed(1)
+                : "0"}%
             </div>
             <div className="text-[11px] text-blue-600 font-medium">Kapasitas Splitter 1:8 / 1:16</div>
           </div>
@@ -533,7 +535,7 @@ export default function AdminFibergridPage() {
           <div>
             <div className="text-xs font-medium text-slate-500">Total Jalur Fiber Optik</div>
             <div className="text-xl font-bold text-slate-900">
-              {fttxStats?.total_cable_length_meters ? (fttxStats.total_cable_length_meters / 1000).toFixed(1) : "0"} km
+              {fttxStats?.total_fiber_km ? fttxStats.total_fiber_km.toFixed(1) : "0"} km
             </div>
             <div className="text-[11px] text-amber-700 font-medium">{fiberRoutes.length} Rute Terpasang</div>
           </div>
