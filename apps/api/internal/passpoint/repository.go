@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -223,4 +224,21 @@ func (r *Repository) UpdateCredentialStatus(ctx context.Context, id uuid.UUID, s
 	`
 	_, err := r.db.Exec(ctx, q, status, id)
 	return err
+}
+
+func (r *Repository) ValidateAgentReferral(ctx context.Context, code string) (uuid.UUID, string, float64, float64, error) {
+	cleaned := strings.ToUpper(strings.TrimSpace(code))
+	const promoQ = `
+		SELECT a.id, a.name, a.online_discount_pct, a.online_cashback_pct
+		FROM agents a
+		LEFT JOIN agent_daily_promos p ON p.agent_id = a.id AND p.valid_date = CURRENT_DATE
+		WHERE (UPPER(a.code) = $1 OR UPPER(p.promo_code) = $1) AND a.status = 'ACTIVE'
+		ORDER BY (CASE WHEN UPPER(p.promo_code) = $1 THEN 1 ELSE 2 END)
+		LIMIT 1
+	`
+	var aID uuid.UUID
+	var aName string
+	var discPct, cashPct float64
+	err := r.db.QueryRow(ctx, promoQ, cleaned).Scan(&aID, &aName, &discPct, &cashPct)
+	return aID, aName, discPct, cashPct, err
 }

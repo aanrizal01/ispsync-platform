@@ -71,19 +71,24 @@ type PasspointPurchaseRequest struct {
 	Phone         string `json:"phone"`
 	Email         string `json:"email,omitempty"`
 	PaymentMethod string `json:"payment_method"`
+	PromoCode     string `json:"promo_code,omitempty"`
 }
 
 type PasspointPurchaseResponse struct {
-	OrderID       string    `json:"order_id"`
-	PackageName   string    `json:"package_name"`
-	Amount        int64     `json:"amount"`
-	PaymentMethod string    `json:"payment_method"`
-	PaymentURL    string    `json:"payment_url,omitempty"`
-	SnapToken     string    `json:"snap_token,omitempty"`
-	QrString      string    `json:"qr_string"`
-	QrImageURL    string    `json:"qr_image_url"`
-	ExpiresAt     time.Time `json:"expires_at"`
-	Status        string    `json:"status"`
+	OrderID        string    `json:"order_id"`
+	PackageName    string    `json:"package_name"`
+	Amount         int64     `json:"amount"`
+	OriginalPrice  int64     `json:"original_price,omitempty"`
+	DiscountAmount int64     `json:"discount_amount,omitempty"`
+	PromoCode      string    `json:"promo_code,omitempty"`
+	AgentName      string    `json:"agent_name,omitempty"`
+	PaymentMethod  string    `json:"payment_method"`
+	PaymentURL     string    `json:"payment_url,omitempty"`
+	SnapToken      string    `json:"snap_token,omitempty"`
+	QrString       string    `json:"qr_string"`
+	QrImageURL     string    `json:"qr_image_url"`
+	ExpiresAt      time.Time `json:"expires_at"`
+	Status         string    `json:"status"`
 }
 
 type PasspointCheckRequest struct {
@@ -106,19 +111,24 @@ type PasspointRenewRequest struct {
 	CredentialID  string `json:"credential_id"`
 	PackageID     string `json:"package_id"`
 	PaymentMethod string `json:"payment_method"`
+	PromoCode     string `json:"promo_code,omitempty"`
 }
 
 type PasspointRenewResponse struct {
-	OrderID       string    `json:"order_id"`
-	CredentialID  string    `json:"credential_id"`
-	PackageName   string    `json:"package_name"`
-	DurationDays  int       `json:"duration_days"`
-	Amount        int64     `json:"amount"`
-	PaymentMethod string    `json:"payment_method"`
-	QrString      string    `json:"qr_string"`
-	QrImageURL    string    `json:"qr_image_url"`
-	ExpiresAt     time.Time `json:"expires_at"`
-	Status        string    `json:"status"`
+	OrderID        string    `json:"order_id"`
+	CredentialID   string    `json:"credential_id"`
+	PackageName    string    `json:"package_name"`
+	DurationDays   int       `json:"duration_days"`
+	Amount         int64     `json:"amount"`
+	OriginalPrice  int64     `json:"original_price,omitempty"`
+	DiscountAmount int64     `json:"discount_amount,omitempty"`
+	PromoCode      string    `json:"promo_code,omitempty"`
+	AgentName      string    `json:"agent_name,omitempty"`
+	PaymentMethod  string    `json:"payment_method"`
+	QrString       string    `json:"qr_string"`
+	QrImageURL     string    `json:"qr_image_url"`
+	ExpiresAt      time.Time `json:"expires_at"`
+	Status         string    `json:"status"`
 }
 
 type PasspointCheckRenewRequest struct {

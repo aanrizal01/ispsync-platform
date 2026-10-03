@@ -57,19 +57,35 @@ export interface PasspointPackage {
   is_popular: boolean;
 }
 
+export interface ValidatePromoResponse {
+  valid: boolean;
+  agent_id: string;
+  agent_name: string;
+  promo_code: string;
+  online_discount_pct: number;
+  message: string;
+}
+
 export interface PasspointPurchaseInput {
   package_id: string;
   customer_name: string;
   phone: string;
   email?: string;
   payment_method: string;
+  promo_code?: string;
 }
 
 export interface PasspointPurchaseResponse {
   order_id: string;
   package_name: string;
   amount: number;
+  original_price?: number;
+  discount_amount?: number;
+  promo_code?: string;
+  agent_name?: string;
   payment_method: string;
+  payment_url?: string;
+  snap_token?: string;
   qr_string: string;
   qr_image_url: string;
   expires_at: string;
@@ -96,6 +112,7 @@ export interface PasspointRenewInput {
   credential_id: string;
   package_id: string;
   payment_method: string;
+  promo_code?: string;
 }
 
 export interface PasspointRenewResponse {
@@ -104,6 +121,10 @@ export interface PasspointRenewResponse {
   package_name: string;
   duration_days: number;
   amount: number;
+  original_price?: number;
+  discount_amount?: number;
+  promo_code?: string;
+  agent_name?: string;
   payment_method: string;
   qr_string: string;
   qr_image_url: string;
@@ -184,6 +205,9 @@ export const passpointApi = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+
+  validateReferral: (code: string) =>
+    request<ValidatePromoResponse>(`/hotspot/validate-promo?code=${encodeURIComponent(code)}`),
 
   getAppleProfileUrl: (credentialId: string) => {
     const apiBase =

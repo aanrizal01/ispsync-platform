@@ -277,6 +277,24 @@ func (s *Service) Purchase(ctx context.Context, req PasspointPurchaseRequest) (*
 		selectedPkg = &pkgs[1] // default 30d
 	}
 
+	finalPrice := selectedPkg.Price
+	var originalPrice, discountAmount int64
+	var agentName string
+
+	if req.PromoCode != "" {
+		if _, aName, discPct, _, err := s.repo.ValidateAgentReferral(ctx, req.PromoCode); err == nil {
+			agentName = aName
+			if discPct > 0 {
+				originalPrice = selectedPkg.Price
+				discountAmount = int64(float64(selectedPkg.Price) * (discPct / 100.0))
+				finalPrice = selectedPkg.Price - discountAmount
+				if finalPrice < 0 {
+					finalPrice = 0
+				}
+			}
+		}
+	}
+
 	randSecret, _ := crypto.GenerateSecret(3)
 	orderID := "ORD-PP-" + time.Now().Format("20060102150405") + "-" + randSecret
 
@@ -285,7 +303,7 @@ func (s *Service) Purchase(ctx context.Context, req PasspointPurchaseRequest) (*
 	var paymentURL, snapToken string
 
 	if s.paymentCreator != nil {
-		if pURL, qURL, sTok, err := s.paymentCreator(ctx, orderID, selectedPkg.Name, req.CustomerName, req.Phone, req.Email, selectedPkg.Price); err == nil {
+		if pURL, qURL, sTok, err := s.paymentCreator(ctx, orderID, selectedPkg.Name, req.CustomerName, req.Phone, req.Email, finalPrice); err == nil {
 			if pURL != "" {
 				paymentURL = pURL
 			}
@@ -299,16 +317,20 @@ func (s *Service) Purchase(ctx context.Context, req PasspointPurchaseRequest) (*
 	}
 
 	return &PasspointPurchaseResponse{
-		OrderID:       orderID,
-		PackageName:   selectedPkg.Name,
-		Amount:        selectedPkg.Price,
-		PaymentMethod: req.PaymentMethod,
-		PaymentURL:    paymentURL,
-		SnapToken:     snapToken,
-		QrString:      qrString,
-		QrImageURL:    qrImageURL,
-		ExpiresAt:     time.Now().Add(15 * time.Minute),
-		Status:        "PENDING",
+		OrderID:        orderID,
+		PackageName:    selectedPkg.Name,
+		Amount:         finalPrice,
+		OriginalPrice:  originalPrice,
+		DiscountAmount: discountAmount,
+		PromoCode:      req.PromoCode,
+		AgentName:      agentName,
+		PaymentMethod:  req.PaymentMethod,
+		PaymentURL:     paymentURL,
+		SnapToken:      snapToken,
+		QrString:       qrString,
+		QrImageURL:     qrImageURL,
+		ExpiresAt:      time.Now().Add(15 * time.Minute),
+		Status:         "PENDING",
 	}, nil
 }
 
@@ -389,6 +411,24 @@ func (s *Service) Renew(ctx context.Context, req PasspointRenewRequest) (*Passpo
 		selectedPkg = &pkgs[1] // default 30d
 	}
 
+	finalPrice := selectedPkg.Price
+	var originalPrice, discountAmount int64
+	var agentName string
+
+	if req.PromoCode != "" {
+		if _, aName, discPct, _, err := s.repo.ValidateAgentReferral(ctx, req.PromoCode); err == nil {
+			agentName = aName
+			if discPct > 0 {
+				originalPrice = selectedPkg.Price
+				discountAmount = int64(float64(selectedPkg.Price) * (discPct / 100.0))
+				finalPrice = selectedPkg.Price - discountAmount
+				if finalPrice < 0 {
+					finalPrice = 0
+				}
+			}
+		}
+	}
+
 	randSecret, _ := crypto.GenerateSecret(3)
 	orderID := "ORD-RNW-" + time.Now().Format("20060102150405") + "-" + randSecret
 
@@ -396,16 +436,20 @@ func (s *Service) Renew(ctx context.Context, req PasspointRenewRequest) (*Passpo
 	qrImageURL := "https://api.qrserver.com/v1/create-qr-code/?size=280x280&margin=10&data=" + qrString
 
 	return &PasspointRenewResponse{
-		OrderID:       orderID,
-		CredentialID:  req.CredentialID,
-		PackageName:   selectedPkg.Name,
-		DurationDays:  selectedPkg.DurationDays,
-		Amount:        selectedPkg.Price,
-		PaymentMethod: req.PaymentMethod,
-		QrString:      qrString,
-		QrImageURL:    qrImageURL,
-		ExpiresAt:     time.Now().Add(15 * time.Minute),
-		Status:        "PENDING",
+		OrderID:        orderID,
+		CredentialID:   req.CredentialID,
+		PackageName:    selectedPkg.Name,
+		DurationDays:   selectedPkg.DurationDays,
+		Amount:         finalPrice,
+		OriginalPrice:  originalPrice,
+		DiscountAmount: discountAmount,
+		PromoCode:      req.PromoCode,
+		AgentName:      agentName,
+		PaymentMethod:  req.PaymentMethod,
+		QrString:       qrString,
+		QrImageURL:     qrImageURL,
+		ExpiresAt:      time.Now().Add(15 * time.Minute),
+		Status:         "PENDING",
 	}, nil
 }
 

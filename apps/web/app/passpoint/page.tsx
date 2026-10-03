@@ -16,6 +16,9 @@ import {
   X,
   Clock,
   Zap,
+  Store,
+  Tag,
+  Check,
 } from "lucide-react";
 import {
   passpointApi,
@@ -24,6 +27,7 @@ import {
   PasspointPurchaseResponse,
   PasspointRenewResponse,
   PasspointCheckRenewResponse,
+  ValidatePromoResponse,
 } from "@/lib/api/passpoint";
 import { formatRupiah } from "@/lib/utils";
 
@@ -64,6 +68,12 @@ export default function PasspointOnboardingPage() {
   const [renewSuccess, setRenewSuccess] = useState<PasspointCheckRenewResponse | null>(null);
   const [renewLoading, setRenewLoading] = useState(false);
 
+  // Referral / Promo Code state
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<ValidatePromoResponse | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const h = window.location.hostname.toLowerCase();
@@ -92,6 +102,22 @@ export default function PasspointOnboardingPage() {
       const iconEl = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
       if (iconEl && detectedSlug) {
         iconEl.href = `/web/${detectedSlug}_favicon.svg`;
+      }
+
+      // Detect referral code from URL: ?ref=... or ?promo=... or ?agent=...
+      const urlParams = new URLSearchParams(window.location.search);
+      const refParam = urlParams.get("ref") || urlParams.get("promo") || urlParams.get("agent");
+      if (refParam) {
+        const cleaned = refParam.toUpperCase().trim();
+        setPromoCode(cleaned);
+        passpointApi
+          .validateReferral(cleaned)
+          .then((res) => {
+            if (res && res.valid) {
+              setAppliedPromo(res);
+            }
+          })
+          .catch(() => {});
       }
     }
   }, []);
@@ -141,6 +167,108 @@ export default function PasspointOnboardingPage() {
     loadPackages();
   }, []);
 
+  const handleApplyPromo = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!promoCode.trim()) return;
+
+    setPromoLoading(true);
+    setPromoError(null);
+    try {
+      const res = await passpointApi.validateReferral(promoCode.trim());
+      if (res && res.valid) {
+        setAppliedPromo(res);
+        setPromoError(null);
+      } else {
+        setPromoError(res?.message || "Kode referral agen tidak valid atau sudah kedaluwarsa.");
+        setAppliedPromo(null);
+      }
+    } catch (err: any) {
+      setPromoError(err?.message || "Gagal memverifikasi kode referral agen.");
+      setAppliedPromo(null);
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setAppliedPromo(null);
+    setPromoCode("");
+    setPromoError(null);
+  };
+
+  const getDiscountedPrice = (price: number) => {
+    if (!appliedPromo || appliedPromo.online_discount_pct <= 0) return price;
+    const discount = Math.round((price * appliedPromo.online_discount_pct) / 100);
+    return Math.max(0, price - discount);
+  };
+
+  const renderPromoBox = () => (
+    <div className="pt-2">
+      <label className="block text-xs font-mono font-bold uppercase tracking-wider text-slate-300 mb-1.5 flex items-center justify-between">
+        <span className="flex items-center gap-1.5">
+          <Store className="w-3.5 h-3.5 text-cyan-400" />
+          Kode Referral Agen / Promo (Opsional)
+        </span>
+        {appliedPromo && (
+          <span className="text-emerald-400 text-[11px] font-bold">
+            Hemat {appliedPromo.online_discount_pct}%
+          </span>
+        )}
+      </label>
+
+      {appliedPromo ? (
+        <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between gap-3 animate-in fade-in">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+              <Check className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-bold text-xs text-emerald-300 block">
+                Referral Agen: {appliedPromo.agent_name}
+              </span>
+              <span className="text-[11px] text-slate-400 font-mono">
+                Kode {appliedPromo.promo_code} • Potongan {appliedPromo.online_discount_pct}% Terpasang
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleRemovePromo}
+            className="text-xs text-rose-400 hover:text-rose-300 hover:underline shrink-0 font-medium cursor-pointer"
+          >
+            Hapus
+          </button>
+        </div>
+      ) : (
+        <div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+              placeholder="Punya kode referral? Contoh: AG-BUDI"
+              className="flex-1 bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-2.5 text-xs font-mono uppercase tracking-wider outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition"
+            />
+            <button
+              type="button"
+              disabled={promoLoading || !promoCode.trim()}
+              onClick={() => handleApplyPromo()}
+              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-cyan-400 font-mono font-bold text-xs uppercase tracking-wider rounded-xl border border-slate-700 transition cursor-pointer"
+            >
+              {promoLoading ? "Cek..." : "Gunakan"}
+            </button>
+          </div>
+          {promoError && (
+            <p className="text-rose-400 text-[11px] mt-1.5 flex items-center gap-1">
+              <Info className="w-3.5 h-3.5 shrink-0" />
+              {promoError}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!credentialId.trim()) return;
@@ -167,8 +295,9 @@ export default function PasspointOnboardingPage() {
       const res = await passpointApi.purchase({
         package_id: selectedPkg.id,
         customer_name: customerName.trim(),
-        phone: phone.trim(),
+        phone: phone.trim().replace(/\D/g, "").replace(/^0/, "62"),
         payment_method: "QRIS",
+        promo_code: appliedPromo ? appliedPromo.promo_code : promoCode.trim() || undefined,
       });
       setOrder(res);
       setBuyStep("PAY");
@@ -219,6 +348,7 @@ export default function PasspointOnboardingPage() {
         credential_id: credential.id,
         package_id: renewPkg.id,
         payment_method: "QRIS",
+        promo_code: appliedPromo ? appliedPromo.promo_code : promoCode.trim() || undefined,
       });
       setRenewOrder(res);
     } catch (err: any) {
@@ -409,8 +539,15 @@ export default function PasspointOnboardingPage() {
                         )}
                         <div>
                           <h3 className="font-extrabold text-base text-white mb-1">{pkg.name}</h3>
-                          <div className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-mono mb-2">
-                            {formatRupiah(pkg.price)}
+                          <div className="flex items-baseline gap-2 mb-2">
+                            <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-mono">
+                              {formatRupiah(getDiscountedPrice(pkg.price))}
+                            </span>
+                            {appliedPromo && appliedPromo.online_discount_pct > 0 && (
+                              <span className="text-xs text-slate-500 line-through font-mono">
+                                {formatRupiah(pkg.price)}
+                              </span>
+                            )}
                           </div>
                           <p className="text-xs text-slate-400 mb-3">{pkg.description}</p>
                         </div>
@@ -454,12 +591,15 @@ export default function PasspointOnboardingPage() {
                     </div>
                   </div>
 
+                  {/* Referral Code Box */}
+                  {renderPromoBox()}
+
                   <button
                     type="submit"
                     disabled={loading || !selectedPkg}
                     className="w-full mt-4 py-3.5 px-4 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-mono font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md shadow-cyan-600/20 active:scale-[0.99] cursor-pointer disabled:opacity-50"
                   >
-                    <span>Lanjut ke Pembayaran QRIS ({selectedPkg ? formatRupiah(selectedPkg.price) : ""})</span>
+                    <span>Lanjut ke Pembayaran QRIS ({selectedPkg ? formatRupiah(getDiscountedPrice(selectedPkg.price)) : ""})</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </form>
@@ -481,6 +621,11 @@ export default function PasspointOnboardingPage() {
                   <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-mono">
                     {formatRupiah(order.amount)}
                   </p>
+                  {order.discount_amount && order.discount_amount > 0 ? (
+                    <div className="text-[11px] text-emerald-400 font-mono mt-1">
+                      Hemat {formatRupiah(order.discount_amount)} via Agen {order.agent_name || appliedPromo?.agent_name}
+                    </div>
+                  ) : null}
                   <p className="text-xs font-semibold text-slate-300 mt-1">{order.package_name}</p>
                 </div>
 
@@ -653,6 +798,11 @@ export default function PasspointOnboardingPage() {
                       <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-mono mb-1">
                         {formatRupiah(renewOrder.amount)}
                       </p>
+                      {renewOrder.discount_amount && renewOrder.discount_amount > 0 ? (
+                        <div className="text-[11px] text-emerald-400 font-mono mb-1">
+                          Hemat {formatRupiah(renewOrder.discount_amount)} via Agen {renewOrder.agent_name || appliedPromo?.agent_name}
+                        </div>
+                      ) : null}
                       <p className="text-xs font-semibold text-slate-300">
                         {renewOrder.package_name} (+{renewOrder.duration_days} Hari)
                       </p>
@@ -721,8 +871,15 @@ export default function PasspointOnboardingPage() {
                             )}
                             <div>
                               <h3 className="font-extrabold text-base text-white mb-1">{pkg.name}</h3>
-                              <div className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-mono mb-2">
-                                {formatRupiah(pkg.price)}
+                              <div className="flex items-baseline gap-2 mb-2">
+                                <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 font-mono">
+                                  {formatRupiah(getDiscountedPrice(pkg.price))}
+                                </span>
+                                {appliedPromo && appliedPromo.online_discount_pct > 0 && (
+                                  <span className="text-xs text-slate-500 line-through font-mono">
+                                    {formatRupiah(pkg.price)}
+                                  </span>
+                                )}
                               </div>
                               <p className="text-xs text-slate-400 mb-3">{pkg.description}</p>
                             </div>
@@ -735,13 +892,18 @@ export default function PasspointOnboardingPage() {
                       })}
                     </div>
 
+                    {/* Referral / Promo Code Box */}
+                    <div className="mb-4">
+                      {renderPromoBox()}
+                    </div>
+
                     <button
                       type="button"
                       disabled={renewLoading || !renewPkg}
                       onClick={handleRenewSubmit}
                       className="w-full py-3.5 px-4 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-mono font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md shadow-cyan-600/20 active:scale-[0.99] cursor-pointer disabled:opacity-50"
                     >
-                      <span>Lanjut Pembayaran QRIS ({renewPkg ? formatRupiah(renewPkg.price) : ""})</span>
+                      <span>Lanjut Pembayaran QRIS ({renewPkg ? formatRupiah(getDiscountedPrice(renewPkg.price)) : ""})</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>

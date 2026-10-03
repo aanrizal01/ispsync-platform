@@ -596,9 +596,11 @@ func (r *Repository) ValidatePromoCode(ctx context.Context, promoCode string) (*
 	const q = `
 		SELECT 
 			a.id, a.code, a.name, a.online_discount_pct, a.online_cashback_pct, a.status
-		FROM agent_daily_promos p
-		JOIN agents a ON a.id = p.agent_id
-		WHERE UPPER(p.promo_code) = $1 AND p.valid_date = CURRENT_DATE
+		FROM agents a
+		LEFT JOIN agent_daily_promos p ON p.agent_id = a.id AND p.valid_date = CURRENT_DATE
+		WHERE UPPER(a.code) = $1 OR UPPER(p.promo_code) = $1
+		ORDER BY (CASE WHEN UPPER(p.promo_code) = $1 THEN 1 ELSE 2 END)
+		LIMIT 1
 	`
 	var (
 		agentID                                     uuid.UUID
