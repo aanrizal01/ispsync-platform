@@ -58,16 +58,19 @@ function formatRupiah(val?: number) {
   }).format(val);
 }
 
-function formatDate(dateStr?: string) {
+function formatDate(dateStr?: string, includeTime = false) {
   if (!dateStr) return "-";
   try {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const dateFormatted = `${day}/${month}/${year}`;
+    if (!includeTime) return dateFormatted;
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    return `${dateFormatted} ${hours}:${minutes}`;
   } catch {
     return dateStr;
   }
@@ -649,16 +652,29 @@ export function InvoicePrintDocument({
           {/* Header Struk POS */}
           <div className="text-center pb-2 border-b-2 border-dashed border-slate-800">
             {(template.header_image_url || template.logo_url) && (
-              <div className="w-8 h-8 mx-auto mb-1 flex items-center justify-center">
-                <img
-                  src={template.header_image_url || template.logo_url}
-                  alt={template.brand_name}
-                  className="w-full h-full object-contain filter grayscale"
-                  onError={(e: any) => {
-                    e.target.style.display = "none";
-                  }}
-                />
-              </div>
+              hasHorizontalSvgLogo ? (
+                <div className="flex justify-center mb-1.5">
+                  <img
+                    src={logoUrl}
+                    alt={template.brand_name}
+                    className="h-7 sm:h-8 w-auto max-w-[140px] object-contain filter grayscale"
+                    onError={(e: any) => {
+                      e.target.style.display = "none";
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="w-8 h-8 mx-auto mb-1 flex items-center justify-center">
+                  <img
+                    src={logoUrl}
+                    alt={template.brand_name}
+                    className="w-full h-full object-contain filter grayscale"
+                    onError={(e: any) => {
+                      e.target.style.display = "none";
+                    }}
+                  />
+                </div>
+              )
             )}
             <h1 className="text-sm sm:text-base font-black tracking-wider uppercase text-slate-950">
               {template.brand_name}
@@ -682,7 +698,7 @@ export function InvoicePrintDocument({
             </div>
             <div className="flex justify-between">
               <span className="text-slate-600">TGL/JAM:</span>
-              <span>{formatDate(invoice.issue_date || invoice.created_at)}</span>
+              <span>{formatDate(invoice.issue_date || invoice.created_at, true)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-600">JATUH TEMPO:</span>

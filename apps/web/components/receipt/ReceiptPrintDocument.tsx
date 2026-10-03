@@ -52,18 +52,14 @@ function formatDate(dateStr?: string, includeTime = false) {
   try {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
-    const dateFormatted = d.toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    const dateFormatted = `${day}/${month}/${year}`;
     if (!includeTime) return dateFormatted;
-    const timeFormatted = d.toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-    return `${dateFormatted} ${timeFormatted} WIB`;
+    const hours = String(d.getHours()).padStart(2, "0");
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    return `${dateFormatted} ${hours}:${minutes} WIB`;
   } catch {
     return dateStr;
   }
