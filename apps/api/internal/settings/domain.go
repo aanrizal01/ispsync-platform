@@ -188,4 +188,41 @@ func DefaultDomainSettings() DomainSettings {
     }
 }
 
+type NotificationSettings struct {
+    WAProvider             string    `json:"wa_provider"`              // "FONNTE", "WABLAS", "INTERNAL"
+    WAApiToken             string    `json:"wa_api_token"`             // Token API Fonnte / Wablas
+    WAServerURL            string    `json:"wa_server_url"`            // Wablas Server Domain (e.g. https://api.wablas.com, https://phone.wablas.com)
+    NotifyDueDateH3        bool      `json:"notify_due_date_h3"`
+    NotifyInvoiceIssued    bool      `json:"notify_invoice_issued"`
+    NotifyPaymentPaid      bool      `json:"notify_payment_paid"`
+    NotifyAccountSuspended bool      `json:"notify_account_suspended"`
+    SMTPHost               string    `json:"smtp_host"`
+    SMTPPort               int       `json:"smtp_port"`
+    SMTPUser               string    `json:"smtp_user"`
+    SMTPPassword           string    `json:"smtp_password"`
+    SMTPFrom               string    `json:"smtp_from"`
+    UpdatedAt              time.Time `json:"updated_at,omitempty"`
+}
+
+func DefaultNotificationSettings() NotificationSettings {
+    return NotificationSettings{
+        WAProvider:             "FONNTE",
+        WAApiToken:             os.Getenv("FONNTE_TOKEN"),
+        WAServerURL:            "https://api.wablas.com",
+        NotifyDueDateH3:        true,
+        NotifyInvoiceIssued:    true,
+        NotifyPaymentPaid:      true,
+        NotifyAccountSuspended: true,
+        SMTPPort:               587,
+    }
+}
+
+type TestWhatsAppRequest struct {
+    Provider  string `json:"provider"`              // "FONNTE" | "WABLAS"
+    APIToken  string `json:"api_token"`             // Optional: override token being tested
+    ServerURL string `json:"server_url"`            // Optional: Wablas server url
+    Recipient string `json:"recipient"`             // Destination phone number e.g. 081234567890
+    Message   string `json:"message,omitempty"`     // Optional custom message body
+}
+
 

@@ -40,9 +40,12 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 		r.Put("/security", h.UpdateSecuritySettings)
 		r.Post("/security", h.UpdateSecuritySettings)
 		r.Put("/payment-gateway", h.UpdatePaymentGatewaySettings)
-		r.Post("/payment-gateway", h.UpdatePaymentGatewaySettings)
 		r.Put("/domain", h.UpdateDomainSettings)
 		r.Post("/domain", h.UpdateDomainSettings)
+		r.Get("/notification", h.GetNotificationSettings)
+		r.Put("/notification", h.UpdateNotificationSettings)
+		r.Post("/notification", h.UpdateNotificationSettings)
+		r.Post("/test-whatsapp", h.TestWhatsApp)
 	})
 }
 
@@ -220,5 +223,53 @@ func (h *Handler) UpdateDomainSettings(w http.ResponseWriter, r *http.Request) {
 		"data":    updated,
 	})
 }
+
+func (h *Handler) GetNotificationSettings(w http.ResponseWriter, r *http.Request) {
+	s, err := h.service.GetNotificationSettings(r.Context())
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+	middleware.JSON(w, http.StatusOK, s)
+}
+
+func (h *Handler) UpdateNotificationSettings(w http.ResponseWriter, r *http.Request) {
+	var req NotificationSettings
+	if err := middleware.DecodeJSON(r, &req); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	updated, err := h.service.UpdateNotificationSettings(r.Context(), req)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Pengaturan Notifikasi & WhatsApp Gateway berhasil disimpan",
+		"data":    updated,
+	})
+}
+
+func (h *Handler) TestWhatsApp(w http.ResponseWriter, r *http.Request) {
+	var req TestWhatsAppRequest
+	if err := middleware.DecodeJSON(r, &req); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	if err := h.service.TestWhatsApp(r.Context(), req); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Pesan uji coba WhatsApp berhasil dikirim ke nomor tujuan",
+	})
+}
+
 
 

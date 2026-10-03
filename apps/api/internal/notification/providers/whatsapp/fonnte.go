@@ -38,8 +38,13 @@ func (p *Provider) Send(ctx context.Context, recipient string, subject string, b
 		messageText = fmt.Sprintf("*%s*\n\n%s", subject, body)
 	}
 
+	targetPhone := NormalizePhone(recipient)
+	if targetPhone == "" {
+		return fmt.Errorf("nomor tujuan WhatsApp tidak valid")
+	}
+
 	payload := map[string]any{
-		"target":  recipient,
+		"target":  targetPhone,
 		"message": messageText,
 	}
 
@@ -61,9 +66,23 @@ func (p *Provider) Send(ctx context.Context, recipient string, subject string, b
 	}
 	defer resp.Body.Close()
 
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("read fonnte response: %w", err)
+	}
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		respBody, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("whatsapp API error (%d): %s", resp.StatusCode, string(respBody))
+	}
+
+	var resObj struct {
+		Status bool   `json:"status"`
+		Reason string `json:"reason"`
+	}
+	if err := json.Unmarshal(respBody, &resObj); err == nil {
+		if !resObj.Status && resObj.Reason != "" {
+			return fmt.Errorf("fonnte API error: %s", resObj.Reason)
+		}
 	}
 
 	return nil

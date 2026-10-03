@@ -2,7 +2,13 @@ package settings
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"strings"
+	"time"
+
+	"github.com/gigabill/isp/internal/notification/providers/whatsapp"
+	apperrors "github.com/gigabill/isp/internal/shared/errors"
 )
 
 type Service struct {
@@ -126,5 +132,90 @@ func (s *Service) UpdateDomainSettings(ctx context.Context, input DomainSettings
 	}
 	return s.repo.GetDomainSettings(ctx)
 }
+
+func (s *Service) GetNotificationSettings(ctx context.Context) (*NotificationSettings, error) {
+	return s.repo.GetNotificationSettings(ctx)
+}
+
+func (s *Service) UpdateNotificationSettings(ctx context.Context, input NotificationSettings) (*NotificationSettings, error) {
+	if input.WAProvider == "" {
+		input.WAProvider = "FONNTE"
+	}
+	if input.WAServerURL == "" {
+		input.WAServerURL = "https://api.wablas.com"
+	}
+	if input.SMTPPort <= 0 {
+		input.SMTPPort = 587
+	}
+
+	if err := s.repo.SaveNotificationSettings(ctx, &input); err != nil {
+		return nil, err
+	}
+	return s.repo.GetNotificationSettings(ctx)
+}
+
+func (s *Service) TestWhatsApp(ctx context.Context, input TestWhatsAppRequest) error {
+	recipient := strings.TrimSpace(input.Recipient)
+	if recipient == "" {
+		return apperrors.BadRequest("Nomor WhatsApp tujuan uji coba wajib diisi")
+	}
+
+	saved, err := s.repo.GetNotificationSettings(ctx)
+	if err != nil && saved == nil {
+		def := DefaultNotificationSettings()
+		saved = &def
+	}
+
+	provider := strings.ToUpper(strings.TrimSpace(input.Provider))
+	if provider == "" {
+		provider = saved.WAProvider
+	}
+	if provider == "" {
+		provider = "WABLAS"
+	}
+
+	apiToken := strings.TrimSpace(input.APIToken)
+	if apiToken == "" {
+		apiToken = saved.WAApiToken
+	}
+	if apiToken == "" {
+		return apperrors.BadRequest("Token API WhatsApp wajib diisi atau disimpan terlebih dahulu")
+	}
+
+	serverURL := strings.TrimSpace(input.ServerURL)
+	if serverURL == "" {
+		serverURL = saved.WAServerURL
+	}
+	if serverURL == "" {
+		serverURL = "https://api.wablas.com"
+	}
+
+	messageText := input.Message
+	if strings.TrimSpace(messageText) == "" {
+		nowStr := time.Now().Format("02-01-2006 15:04:05")
+		messageText = fmt.Sprintf("[ISPSYNC Gateway Test]\n\nKonfigurasi WhatsApp Gateway berhasil terhubung ke server ISPSYNC.\n\nProvider: %s\nTarget: %s\nWaktu Uji: %s WIB\nStatus: Terverifikasi Aktif", provider, recipient, nowStr)
+	}
+
+	switch provider {
+	case "WABLAS":
+		wbProvider := whatsapp.NewWablasProvider(apiToken, serverURL)
+		if err := wbProvider.Send(ctx, recipient, "", messageText); err != nil {
+			s.logger.Error("wablas test failed", "recipient", recipient, "error", err)
+			return apperrors.BadRequest(fmt.Sprintf("Wablas API error: %v", err))
+		}
+	case "FONNTE":
+		fnProvider := whatsapp.NewProvider(apiToken)
+		if err := fnProvider.Send(ctx, recipient, "", messageText); err != nil {
+			s.logger.Error("fonnte test failed", "recipient", recipient, "error", err)
+			return apperrors.BadRequest(fmt.Sprintf("Fonnte API error: %v", err))
+		}
+	default:
+		return apperrors.BadRequest(fmt.Sprintf("Provider WhatsApp '%s' tidak didukung untuk uji coba", provider))
+	}
+
+	s.logger.Info("whatsapp test message sent successfully", "provider", provider, "recipient", recipient)
+	return nil
+}
+
 
 

@@ -123,6 +123,30 @@ export const settingsApi = {
         body: JSON.stringify(data),
       }
     ),
+
+  getNotificationSettings: () =>
+    request<NotificationSettings>("/settings/notification"),
+
+  updateNotificationSettings: (data: NotificationSettings) =>
+    request<{ success: boolean; message: string; data: NotificationSettings }>(
+      "/settings/notification",
+      {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }
+    ),
+
+  testWhatsApp: (data: {
+    provider: string;
+    api_token?: string;
+    server_url?: string;
+    recipient: string;
+    message?: string;
+  }) =>
+    request<{ success: boolean; message: string }>("/settings/test-whatsapp", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };
 
 export interface BillingAddonSettings {
@@ -225,4 +249,34 @@ export const defaultDomainSettings: DomainSettings = {
   wifi_brand_name: "@isphotspot",
   portal_domain: "portal.dev.ispsync.id",
   server_ip: "103.179.65.73",
+};
+
+export interface NotificationSettings {
+  wa_provider: "FONNTE" | "WABLAS" | "INTERNAL";
+  wa_api_token: string;
+  wa_server_url: string;
+  notify_due_date_h3: boolean;
+  notify_invoice_issued: boolean;
+  notify_payment_paid: boolean;
+  notify_account_suspended: boolean;
+  smtp_host: string;
+  smtp_port: number;
+  smtp_user: string;
+  smtp_password?: string;
+  smtp_from: string;
+  updated_at?: string;
+}
+
+export const defaultNotificationSettings: NotificationSettings = {
+  wa_provider: "FONNTE",
+  wa_api_token: "",
+  wa_server_url: "https://api.wablas.com",
+  notify_due_date_h3: true,
+  notify_invoice_issued: true,
+  notify_payment_paid: true,
+  notify_account_suspended: true,
+  smtp_host: "",
+  smtp_port: 587,
+  smtp_user: "",
+  smtp_from: "",
 };

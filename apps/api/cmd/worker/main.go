@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -21,6 +22,7 @@ import (
 	"github.com/gigabill/isp/internal/passpoint"
 	"github.com/gigabill/isp/internal/plan"
 	"github.com/gigabill/isp/internal/radius"
+	"github.com/gigabill/isp/internal/settings"
 	"github.com/gigabill/isp/internal/shared/config"
 	"github.com/gigabill/isp/internal/shared/logger"
 	"github.com/gigabill/isp/internal/subscription"
@@ -66,11 +68,22 @@ func main() {
 	subSvc := subscription.NewService(subRepo, planRepo, custRepo, radiusSvc, log)
 
 	// ── Wire Notification Engine for Worker ─────────────────────
+	settingsRepo := settings.NewRepository(db)
 	notifRepo := notification.NewRepository(db)
 	tgProvider := telegram.NewProvider(os.Getenv("TELEGRAM_BOT_TOKEN"))
 	waProvider := whatsapp.NewProvider(os.Getenv("FONNTE_TOKEN"))
 	emailProvider := email.NewProvider(os.Getenv("SMTP_HOST"), 587, os.Getenv("SMTP_USER"), os.Getenv("SMTP_PASS"), "ISPSYNC", os.Getenv("SMTP_FROM"))
 	notifSvc := notification.NewService(notifRepo, tgProvider, waProvider, emailProvider, log)
+	notifSvc.SetWhatsAppResolver(func(ctx context.Context) (notification.Sender, error) {
+		s, err := settingsRepo.GetNotificationSettings(ctx)
+		if err != nil || s == nil || s.WAApiToken == "" {
+			return nil, nil
+		}
+		if strings.EqualFold(s.WAProvider, "WABLAS") {
+			return whatsapp.NewWablasProvider(s.WAApiToken, s.WAServerURL), nil
+		}
+		return whatsapp.NewProvider(s.WAApiToken), nil
+	})
 
 	billingRepo := billing.NewRepository(db)
 	billingEngine := billing.NewEngine()

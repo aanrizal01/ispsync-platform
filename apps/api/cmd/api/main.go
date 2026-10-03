@@ -467,6 +467,16 @@ func main() {
 
 	networkSvc := network.NewService(networkRepo, radiusSvc, log)
 	notifSvc := notification.NewService(notifRepo, tgProvider, waProvider, emailProvider, log)
+	notifSvc.SetWhatsAppResolver(func(ctx context.Context) (notification.Sender, error) {
+		s, err := settingsRepo.GetNotificationSettings(ctx)
+		if err != nil || s == nil || s.WAApiToken == "" {
+			return nil, nil
+		}
+		if strings.EqualFold(s.WAProvider, "WABLAS") {
+			return whatsapp.NewWablasProvider(s.WAApiToken, s.WAServerURL), nil
+		}
+		return whatsapp.NewProvider(s.WAApiToken), nil
+	})
 	billingSvc.SetNotificationService(notifSvc)
 	passpointSvc.SetNotificationService(notifSvc)
 	reportSvc := report.NewService(reportRepo)

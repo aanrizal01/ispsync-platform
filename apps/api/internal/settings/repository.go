@@ -241,4 +241,42 @@ func (r *Repository) SaveDomainSettings(ctx context.Context, s *DomainSettings) 
 	return err
 }
 
+func (r *Repository) GetNotificationSettings(ctx context.Context) (*NotificationSettings, error) {
+	const query = `SELECT value, updated_at FROM app_settings WHERE key = 'notification_settings'`
+	var valBytes []byte
+	var updatedAt time.Time
+	err := r.db.QueryRow(ctx, query).Scan(&valBytes, &updatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			def := DefaultNotificationSettings()
+			return &def, nil
+		}
+		return nil, err
+	}
+
+	s := DefaultNotificationSettings()
+	if err := json.Unmarshal(valBytes, &s); err != nil {
+		return nil, err
+	}
+	s.UpdatedAt = updatedAt
+	return &s, nil
+}
+
+func (r *Repository) SaveNotificationSettings(ctx context.Context, s *NotificationSettings) error {
+	valBytes, err := json.Marshal(s)
+	if err != nil {
+		return err
+	}
+
+	const query = `
+		INSERT INTO app_settings (key, value, updated_at)
+		VALUES ('notification_settings', $1, NOW())
+		ON CONFLICT (key) DO UPDATE
+		SET value = EXCLUDED.value, updated_at = NOW()
+	`
+	_, err = r.db.Exec(ctx, query, valBytes)
+	return err
+}
+
+
 

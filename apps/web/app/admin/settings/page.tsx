@@ -35,6 +35,7 @@ import {
   Trash2,
   Smartphone,
   Receipt,
+  Send,
 } from "lucide-react";
 import {
   settingsApi,
@@ -87,6 +88,10 @@ export default function AdminSettingsPage() {
   const [ipamSubnets, setIpamSubnets] = useState<Subnet[]>([]);
   const [ipamLoadingSubnets, setIpamLoadingSubnets] = useState(false);
 
+  const [waTestPhone, setWaTestPhone] = useState("");
+  const [waTesting, setWaTesting] = useState(false);
+  const [waTestResult, setWaTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -128,6 +133,7 @@ export default function AdminSettingsPage() {
     // Notification
     waProvider: "FONNTE",
     waApiToken: "",
+    waServerUrl: "https://api.wablas.com",
     notifyDueDateH3: true,
     notifyInvoiceIssued: true,
     notifyPaymentPaid: true,
@@ -380,6 +386,31 @@ export default function AdminSettingsPage() {
         console.error("Failed to load domain settings:", err);
       });
 
+    // Load notification & WhatsApp settings
+    settingsApi
+      .getNotificationSettings()
+      .then((data) => {
+        if (data && data.wa_provider) {
+          setSettings((prev) => ({
+            ...prev,
+            waProvider: data.wa_provider,
+            waApiToken: data.wa_api_token || prev.waApiToken,
+            waServerUrl: data.wa_server_url || prev.waServerUrl || "https://api.wablas.com",
+            notifyDueDateH3: data.notify_due_date_h3 !== undefined ? data.notify_due_date_h3 : prev.notifyDueDateH3,
+            notifyInvoiceIssued: data.notify_invoice_issued !== undefined ? data.notify_invoice_issued : prev.notifyInvoiceIssued,
+            notifyPaymentPaid: data.notify_payment_paid !== undefined ? data.notify_payment_paid : prev.notifyPaymentPaid,
+            notifyAccountSuspended: data.notify_account_suspended !== undefined ? data.notify_account_suspended : prev.notifyAccountSuspended,
+            smtpHost: data.smtp_host || prev.smtpHost,
+            smtpPort: String(data.smtp_port || prev.smtpPort || "587"),
+            smtpUser: data.smtp_user || prev.smtpUser,
+            smtpFrom: data.smtp_from || prev.smtpFrom,
+          }));
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load notification settings:", err);
+      });
+
     // Detect current client IP
     settingsApi
       .getClientIP()
@@ -388,6 +419,38 @@ export default function AdminSettingsPage() {
       })
       .catch(() => {});
   }, []);
+
+  const handleTestWhatsApp = async () => {
+    if (!waTestPhone.trim()) {
+      alert("Harap masukkan nomor WhatsApp tujuan uji coba.");
+      return;
+    }
+    if (!settings.waApiToken) {
+      alert("Harap isi Token API WhatsApp terlebih dahulu.");
+      return;
+    }
+    setWaTesting(true);
+    setWaTestResult(null);
+    try {
+      const res = await settingsApi.testWhatsApp({
+        provider: settings.waProvider,
+        api_token: settings.waApiToken,
+        server_url: settings.waServerUrl,
+        recipient: waTestPhone.trim(),
+      });
+      setWaTestResult({
+        success: true,
+        message: res.message || "Pesan uji coba berhasil dikirim. Silakan cek aplikasi WhatsApp tujuan.",
+      });
+    } catch (err: any) {
+      setWaTestResult({
+        success: false,
+        message: err.message || "Gagal mengirim pesan uji coba WhatsApp.",
+      });
+    } finally {
+      setWaTesting(false);
+    }
+  };
 
   const handleTestIPAM = async () => {
     setIpamTesting(true);
@@ -452,6 +515,22 @@ export default function AdminSettingsPage() {
 
       // Save phpIPAM settings to database
       await ipamApi.saveSettings(ipamSettings);
+
+      // Save notification & WhatsApp settings to database
+      await settingsApi.updateNotificationSettings({
+        wa_provider: (settings.waProvider as any) || "FONNTE",
+        wa_api_token: settings.waApiToken || "",
+        wa_server_url: settings.waServerUrl || "https://api.wablas.com",
+        notify_due_date_h3: !!settings.notifyDueDateH3,
+        notify_invoice_issued: !!settings.notifyInvoiceIssued,
+        notify_payment_paid: !!settings.notifyPaymentPaid,
+        notify_account_suspended: !!settings.notifyAccountSuspended,
+        smtp_host: settings.smtpHost || "",
+        smtp_port: parseInt(settings.smtpPort, 10) || 587,
+        smtp_user: settings.smtpUser || "",
+        smtp_password: settings.smtpPass || "",
+        smtp_from: settings.smtpFrom || "",
+      });
 
       // Local storage fallback / cache
       try {
@@ -2711,6 +2790,24 @@ export default function AdminSettingsPage() {
                 </div>
               </div>
 
+              {settings.waProvider === "WABLAS" && (
+                <div className="pt-1">
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    URL Server / Domain Wablas (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.waServerUrl || ""}
+                    onChange={(e) => setSettings({ ...settings, waServerUrl: e.target.value })}
+                    placeholder="https://api.wablas.com (atau https://phone.wablas.com / https://solo.wablas.com)"
+                    className="w-full px-3 py-1.5 text-xs font-mono border border-slate-300 rounded-lg bg-white"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Gunakan domain server sesuai akun Wablas Anda (misal: https://phone.wablas.com atau https://api.wablas.com). Kosongkan jika menggunakan domain default.
+                  </p>
+                </div>
+              )}
+
               <div className="pt-2 space-y-2">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -2746,6 +2843,81 @@ export default function AdminSettingsPage() {
                   </span>
                 </label>
               </div>
+            </div>
+
+            {/* Uji Coba WhatsApp Gateway (Test Message) */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                  <Send className="w-4 h-4 text-emerald-600" />
+                  Uji Coba WhatsApp Gateway (Test Message)
+                </h3>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
+                  {settings.waProvider || "FONNTE"}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-600">
+                Kirim pesan uji coba instan untuk memverifikasi apakah Token API dan Device WhatsApp ({settings.waProvider}) sudah aktif dan terkoneksi ke server gateway.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                <div className="relative flex-1">
+                  <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    value={waTestPhone}
+                    onChange={(e) => setWaTestPhone(e.target.value)}
+                    placeholder="Nomor HP Tujuan (contoh: 081234567890)"
+                    className="w-full pl-8 pr-3 py-1.5 text-xs font-mono border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleTestWhatsApp}
+                  disabled={waTesting || !settings.waApiToken}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 disabled:from-slate-400 disabled:to-slate-500 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed shrink-0"
+                >
+                  {waTesting ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Mengirim Pesan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Kirim Pesan Uji Coba</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {!settings.waApiToken && (
+                <p className="text-[10px] text-amber-700 font-medium">
+                  Harap masukkan Token API WhatsApp di atas terlebih dahulu untuk menjalankan uji coba pengiriman pesan.
+                </p>
+              )}
+
+              {waTestResult && (
+                <div
+                  className={`p-3 rounded-xl text-xs flex items-start gap-2.5 border ${
+                    waTestResult.success
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                      : "bg-rose-50 border-rose-200 text-rose-900"
+                  }`}
+                >
+                  {waTestResult.success ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  )}
+                  <div className="space-y-0.5">
+                    <p className="font-bold">
+                      {waTestResult.success ? "Pengujian Berhasil" : "Pengujian Gagal"}
+                    </p>
+                    <p className="text-[11px] leading-relaxed opacity-90">{waTestResult.message}</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* SMTP Mailer */}

@@ -25,6 +25,7 @@ type Service struct {
 	email      *email.Provider
 	httpClient *http.Client
 	logger     *slog.Logger
+	waResolver func(ctx context.Context) (Sender, error)
 }
 
 func NewService(
@@ -42,6 +43,10 @@ func NewService(
 		httpClient: &http.Client{Timeout: 10 * time.Second},
 		logger:     logger,
 	}
+}
+
+func (s *Service) SetWhatsAppResolver(fn func(ctx context.Context) (Sender, error)) {
+	s.waResolver = fn
 }
 
 func (s *Service) SendNotification(ctx context.Context, req SendNotificationRequest) (*Notification, error) {
@@ -68,6 +73,12 @@ func (s *Service) SendNotification(ctx context.Context, req SendNotificationRequ
 	case ChannelTelegram:
 		sendErr = s.telegram.Send(ctx, req.Recipient, req.Subject, req.Body)
 	case ChannelWhatsApp:
+		if s.waResolver != nil {
+			if sender, err := s.waResolver(ctx); err == nil && sender != nil {
+				sendErr = sender.Send(ctx, req.Recipient, req.Subject, req.Body)
+				break
+			}
+		}
 		sendErr = s.whatsapp.Send(ctx, req.Recipient, req.Subject, req.Body)
 	case ChannelEmail:
 		sendErr = s.email.Send(ctx, req.Recipient, req.Subject, req.Body)
