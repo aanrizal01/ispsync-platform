@@ -837,12 +837,13 @@ export function InvoicePrintDocument({
           className="flex flex-col sm:flex-row justify-between items-start pb-5 border-b-2 gap-4"
           style={{ borderColor: accentColor }}
         >
-          <div className="flex items-start gap-3.5">
-            <div className="w-14 h-14 rounded-xl bg-white p-1 border border-slate-200 shadow-xs flex items-center justify-center shrink-0">
+          <div className="flex flex-col items-start max-w-md">
+            {/* Logo Tanpa Kotak di Bagian Atas */}
+            <div className="mb-2.5">
               <img
                 src={template.header_image_url || template.logo_url || "/logo.png"}
                 alt={template.brand_name || "Logo"}
-                className="w-full h-full object-contain"
+                className="h-10 sm:h-12 w-auto max-w-[220px] object-contain object-left"
                 onError={(e: any) => {
                   e.target.src = "/logo.png";
                 }}
