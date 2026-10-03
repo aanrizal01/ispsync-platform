@@ -356,6 +356,7 @@ export default function AgentRegisterPage() {
                     setForm({
                       name: "",
                       company_name: "",
+                      referral_code: "",
                       phone: "",
                       email: "",
                       password: "",
