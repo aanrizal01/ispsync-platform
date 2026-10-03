@@ -224,7 +224,7 @@ export function ReceiptPrintDocument({
         <div className="pt-2 text-center text-[9px] text-slate-600 space-y-1">
           <p className="font-medium">Terima kasih atas pembayaran Anda.</p>
           <p className="text-[8.5px] text-slate-500">
-            Bukti pembayaran ini sah dan diproses otomatis oleh sistem {template.brand_name || "GOGIGANET"}.
+            Bukti pembayaran ini sah dan diproses otomatis oleh sistem {template.brand_name || "ISPSYNC"}.
           </p>
 
           {/* Barcode Code 128 Nyata */}

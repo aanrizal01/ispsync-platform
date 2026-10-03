@@ -17,7 +17,7 @@ export interface ThermalPrinterSettings {
 export const DEFAULT_PRINTER_SETTINGS: ThermalPrinterSettings = {
   paperSize: "58mm",
   printMode: "rawbt",
-  headerTitle: "GOGIGA HOTSPOT",
+  headerTitle: "HOTSPOT VOUCHER",
   footerText: "Terima kasih atas kunjungan Anda!",
   autoCut: false,
   feedLines: 3,
@@ -147,7 +147,7 @@ export function buildVoucherEscPos(
   builder.alignCenter();
   builder.bold(true);
   builder.textSize(1, 2);
-  builder.line(settings.headerTitle || "GOGIGA HOTSPOT");
+  builder.line(settings.headerTitle || "HOTSPOT VOUCHER");
   builder.textSize(1, 1);
   builder.bold(false);
   builder.line("Internet Cepat, Murah & Stabil");
@@ -193,8 +193,8 @@ export function buildVoucherEscPos(
   builder.line("CARA LOGIN:");
   builder.bold(false);
   const instructions = ticket.instructions || [
-    "1. Hubungkan WiFi: @GOGIGANET",
-    "2. Buka browser: portal.ispsync.id",
+    "1. Hubungkan WiFi Hotspot",
+    "2. Buka browser / login otomatis",
     "3. Masukkan Kode Login di atas",
   ];
   instructions.forEach((ins) => builder.line(ins));

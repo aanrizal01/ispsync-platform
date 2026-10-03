@@ -3258,7 +3258,7 @@ export default function AdminSettingsPage() {
                   onChange={(e) =>
                     setDomainSettings({ ...domainSettings, ledger_domain: e.target.value })
                   }
-                  placeholder="Contoh: ledger.dev.ispsync.id atau billing.gogiga.net.id"
+                  placeholder="Contoh: ledger.dev.ispsync.id atau billing.mitra.net.id"
                   className="w-full px-3.5 py-2 text-xs font-mono font-bold border border-blue-300 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
                 <p className="text-[11px] text-blue-800/80 leading-normal">
@@ -3282,7 +3282,7 @@ export default function AdminSettingsPage() {
                   onChange={(e) =>
                     setDomainSettings({ ...domainSettings, portal_domain: e.target.value })
                   }
-                  placeholder="Contoh: portal.dev.ispsync.id atau member.gogiga.net.id"
+                  placeholder="Contoh: portal.dev.ispsync.id atau member.mitra.net.id"
                   className="w-full px-3.5 py-2 text-xs font-mono font-bold border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
                 <p className="text-[11px] text-slate-500 leading-normal">

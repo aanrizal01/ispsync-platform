@@ -219,10 +219,10 @@ export interface DomainSettings {
 }
 
 export const defaultDomainSettings: DomainSettings = {
-  primary_domain: "gogiga.net.id",
+  primary_domain: "ispsync.id",
   ledger_domain: "ledger.dev.ispsync.id",
   wifi_domain: "wifi.dev.ispsync.id",
-  wifi_brand_name: "@gowifi",
+  wifi_brand_name: "@isphotspot",
   portal_domain: "portal.dev.ispsync.id",
   server_ip: "103.179.65.73",
 };

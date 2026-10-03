@@ -1872,7 +1872,7 @@ export default function AdminAgentsPage() {
                         required={createForm.create_user_account}
                         value={createForm.email || ""}
                         onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                        placeholder="agen@gogiganet.com"
+                        placeholder="agen@ispsync.id"
                         className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
                       />
                     </div>

@@ -22,9 +22,10 @@ import { cn } from "@/lib/utils";
 interface PrinterSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  brandName?: string;
 }
 
-export function PrinterSettingsModal({ isOpen, onClose }: PrinterSettingsModalProps) {
+export function PrinterSettingsModal({ isOpen, onClose, brandName }: PrinterSettingsModalProps) {
   const [settings, setSettings] = useState<ThermalPrinterSettings>(DEFAULT_PRINTER_SETTINGS);
   const [isNativeApp, setIsNativeApp] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
@@ -113,8 +114,8 @@ export function PrinterSettingsModal({ isOpen, onClose }: PrinterSettingsModalPr
           <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-xs text-emerald-800">
             <Smartphone className="w-5 h-5 text-emerald-600 shrink-0" />
             <div>
-              <span className="font-bold block">Aplikasi Android GOGIGA Aktif!</span>
-              <span>Printer terhubung langsung via Bluetooth Native SPP (ESC/POS).</span>
+              <span className="font-bold block">Aplikasi Mobile {brandName || "Mitra"} Aktif!</span>
+              <span>Printer terhubung langsung via Bluetooth Native SPP/BLE (ESC/POS).</span>
             </div>
           </div>
         ) : (
@@ -123,17 +124,17 @@ export function PrinterSettingsModal({ isOpen, onClose }: PrinterSettingsModalPr
             <div className="space-y-1.5">
               <span className="font-bold block">Menggunakan Browser Smartphone:</span>
               <p className="text-[11.5px] leading-relaxed text-blue-800">
-                Browser web di Android tidak dapat terhubung langsung ke printer Bluetooth biasa. Agar bisa cetak thermal langsung tanpa dialog printer yang terpotong, Anda dapat menggunakan:
+                Browser web di smartphone sering tidak dapat terhubung langsung ke printer Bluetooth biasa. Agar bisa cetak thermal langsung tanpa dialog printer yang terpotong, Anda dapat menggunakan:
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
                 <a
-                  href="/downloads/gogiga-agent.apk"
+                  href="/downloads/agent-app.apk"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-2xs"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Download APK GOGIGA Agent</span>
+                  <span>Download APK {brandName || "Mitra"} Agent</span>
                 </a>
                 <a
                   href="https://play.google.com/store/apps/details?id=ru.a402d.rawbt"
@@ -243,7 +244,7 @@ export function PrinterSettingsModal({ isOpen, onClose }: PrinterSettingsModalPr
               type="text"
               value={settings.headerTitle}
               onChange={(e) => setSettings({ ...settings, headerTitle: e.target.value })}
-              placeholder="Contoh: GOGIGA HOTSPOT / NAMA TOKO"
+              placeholder={`Contoh: ${brandName || "ISPSYNC"} HOTSPOT / NAMA TOKO`}
               className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-slate-900 font-semibold"
             />
           </div>

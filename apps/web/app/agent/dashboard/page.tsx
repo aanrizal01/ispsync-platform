@@ -1125,10 +1125,10 @@ export default function AgentDashboardPage() {
                 <span>Solusi Cetak Struk Bluetooth Anti Gagal</span>
               </div>
               <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
-                Pakai Aplikasi Android GOGIGA Agent
+                Pakai Aplikasi Mobile {companyProfile.brandName || "Mitra"} Agent
               </h3>
               <p className="text-xs text-blue-100 leading-relaxed font-medium">
-                Cetak voucher langsung dari browser smartphone sering gagal tersambung ke printer Bluetooth portabel. Gunakan aplikasi Android resmi agar voucher bisa langsung keluar di printer thermal 58mm/80mm sekali klik!
+                Cetak voucher langsung dari browser smartphone sering gagal tersambung ke printer Bluetooth portabel. Gunakan aplikasi mobile resmi {companyProfile.brandName || "ISPSYNC"} (Android & iOS) agar voucher bisa langsung keluar di printer thermal 58mm/80mm sekali klik!
               </p>
 
               {/* 3 Langkah Cepat */}
@@ -1136,9 +1136,9 @@ export default function AgentDashboardPage() {
                 <div className="bg-white/10 backdrop-blur-xs p-2.5 rounded-2xl border border-white/10">
                   <div className="font-bold text-amber-300 flex items-center gap-1.5">
                     <span className="w-4 h-4 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center text-[10px] font-black">1</span>
-                    <span>Unduh APK</span>
+                    <span>Unduh APK / App</span>
                   </div>
-                  <p className="text-[11px] text-slate-300 mt-1 leading-snug">Download & pasang aplikasi GOGIGA Agent di HP.</p>
+                  <p className="text-[11px] text-slate-300 mt-1 leading-snug">Download & pasang aplikasi {companyProfile.brandName || "Mitra"} Agent di HP.</p>
                 </div>
                 <div className="bg-white/10 backdrop-blur-xs p-2.5 rounded-2xl border border-white/10">
                   <div className="font-bold text-amber-300 flex items-center gap-1.5">
@@ -1159,7 +1159,7 @@ export default function AgentDashboardPage() {
 
             <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0 self-stretch sm:self-auto justify-center">
               <a
-                href="/downloads/gogiga-agent.apk"
+                href="/downloads/agent-app.apk"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-lg transition-all active:scale-95 text-center"
@@ -5676,7 +5676,7 @@ export default function AgentDashboardPage() {
         {thermalPrintVouchers.map((v, idx) => (
           <div key={v.id || idx} className="thermal-receipt">
             <div className="text-center mb-2">
-              <div className="font-bold text-base tracking-wider">GOGIGA HOTSPOT</div>
+              <div className="font-bold text-base tracking-wider">{companyProfile.brandName ? `${companyProfile.brandName} HOTSPOT` : "ISPSYNC HOTSPOT"}</div>
               <div className="text-[10px] text-gray-500">Internet Cepat &amp; Murah</div>
               <div className="border-b border-dashed border-black my-1.5"></div>
             </div>
@@ -5754,6 +5754,7 @@ export default function AgentDashboardPage() {
       <PrinterSettingsModal
         isOpen={showPrinterModal}
         onClose={() => setShowPrinterModal(false)}
+        brandName={companyProfile.brandName}
       />
 
       {/* ── MODAL: SERTIFIKAT KEMITRAAN AGEN RESMI ───────────────────── */}
