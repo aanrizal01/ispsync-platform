@@ -18,8 +18,12 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 
+import { settingsApi } from "@/lib/api/settings";
+
 export default function AdminFibergridPage() {
   const [tenantSlug, setTenantSlug] = useState("dev");
+  const [fibergridUrl, setFibergridUrl] = useState("https://fibergrid.dev.ispsync.id");
+  const [nexusUrl, setNexusUrl] = useState("https://nexus.dev.ispsync.id");
   const [iframeError, setIframeError] = useState(false);
   const [loadingFrame, setLoadingFrame] = useState(true);
 
@@ -27,18 +31,48 @@ export default function AdminFibergridPage() {
     if (typeof window !== "undefined") {
       const host = window.location.hostname;
       const parts = host.split(".");
+      let slug = "dev";
       if (parts.length >= 4) {
-        setTenantSlug(parts[1]);
+        slug = parts[1];
       } else if (parts.length === 3 && parts[1] === "ispsync") {
-        setTenantSlug(parts[0]);
-      } else {
-        setTenantSlug("dev");
+        slug = parts[0];
       }
+      setTenantSlug(slug);
+
+      // 1. Dynamic fallback based on current host domain
+      let baseDomain = host.replace(/^(ledger|billing|nexus|portal|fibergrid|fttx|wifi|hotspot)\./, "");
+      if (baseDomain.includes("localhost") || /^[0-9.]+$/.test(baseDomain)) {
+        baseDomain = "dev.ispsync.id";
+      }
+      let fgUrl = `https://fibergrid.${baseDomain}`;
+      let nxUrl = `https://nexus.${baseDomain}`;
+      setFibergridUrl(fgUrl);
+      setNexusUrl(nxUrl);
+
+      // 2. Fetch configured domain settings from database (if custom domain is saved)
+      settingsApi.getDomainSettings()
+        .then((res: any) => {
+          const data = res?.data || res;
+          if (data?.fibergrid_domain) {
+            const customFg = data.fibergrid_domain.startsWith("http")
+              ? data.fibergrid_domain
+              : `https://${data.fibergrid_domain}`;
+            setFibergridUrl(customFg);
+          }
+          if (data?.portal_domain) {
+            const customNx = data.portal_domain.startsWith("http")
+              ? data.portal_domain
+              : `https://${data.portal_domain}`;
+            setNexusUrl(customNx);
+          }
+        })
+        .catch(() => {
+          // Gracefully fallback to host-derived URLs
+        });
     }
   }, []);
 
-  const fibergridUrl = `https://fibergrid.${tenantSlug}.ispsync.id`;
-  const nexusUrl = `https://nexus.${tenantSlug}.ispsync.id`;
+  const displayHost = fibergridUrl.replace(/^https?:\/\//, "");
 
   return (
     <div className="space-y-6">
@@ -50,7 +84,7 @@ export default function AdminFibergridPage() {
               ENGINE 3 FIBERGRID
             </span>
             <span className="text-xs text-slate-500 font-mono">
-              fibergrid.{tenantSlug}.ispsync.id
+              {displayHost}
             </span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">

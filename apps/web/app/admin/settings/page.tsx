@@ -3482,6 +3482,30 @@ export default function AdminSettingsPage() {
                   Portal mandiri khusus pelanggan PPPoE bulanan untuk cek invoice dan konfirmasi bayar.
                 </p>
               </div>
+
+              {/* EngineFibergrid NOC Domain */}
+              <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200/60 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-emerald-950">
+                    Domain NOC &amp; Peta GIS FiberGrid (Engine 3)
+                  </label>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-200/60 text-emerald-800">
+                    NOC &amp; FTTX Core
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={domainSettings.fibergrid_domain || ""}
+                  onChange={(e) =>
+                    setDomainSettings({ ...domainSettings, fibergrid_domain: e.target.value })
+                  }
+                  placeholder="Contoh: fibergrid.dev.ispsync.id atau fibergrid.mitra.net.id"
+                  className="w-full px-3.5 py-2 text-xs font-mono font-bold border border-emerald-300 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+                <p className="text-[11px] text-emerald-800/80 leading-normal">
+                  Pusat komando topologi OLT, ODC, ODP, feeder optik, dan auto-provisioning TR-069.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -3523,6 +3547,12 @@ export default function AdminSettingsPage() {
                   <tr>
                     <td className="py-2 px-3 text-cyan-400 font-bold">A</td>
                     <td className="py-2 px-3 font-semibold">{domainSettings.ledger_domain?.split(".")[0] || "ledger"}</td>
+                    <td className="py-2 px-3 text-emerald-400 font-bold">{domainSettings.server_ip || "103.179.65.73"}</td>
+                    <td className="py-2 px-3 text-slate-400">DNS Only (Auto-SSL Caddy)</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 text-cyan-400 font-bold">A</td>
+                    <td className="py-2 px-3 font-semibold">{domainSettings.fibergrid_domain?.split(".")[0] || "fibergrid"}</td>
                     <td className="py-2 px-3 text-emerald-400 font-bold">{domainSettings.server_ip || "103.179.65.73"}</td>
                     <td className="py-2 px-3 text-slate-400">DNS Only (Auto-SSL Caddy)</td>
                   </tr>
