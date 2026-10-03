@@ -403,6 +403,7 @@ export default function AdminSettingsPage() {
                 type="text"
                 value={settings.companyName}
                 onChange={(e) => setSettings({ ...settings, companyName: e.target.value })}
+                placeholder="Contoh: PT Mitra Usaha Data"
                 className="w-full px-3.5 py-2 text-xs font-medium border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
               />
             </div>
@@ -412,6 +413,7 @@ export default function AdminSettingsPage() {
                 type="text"
                 value={settings.brandName}
                 onChange={(e) => setSettings({ ...settings, brandName: e.target.value })}
+                placeholder="Contoh: ISPMU FIBER"
                 className="w-full px-3.5 py-2 text-xs font-bold border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
               />
             </div>
@@ -421,6 +423,7 @@ export default function AdminSettingsPage() {
                 type="text"
                 value={settings.npwp}
                 onChange={(e) => setSettings({ ...settings, npwp: e.target.value })}
+                placeholder="01.234.567.8-901.000"
                 className="w-full px-3.5 py-2 text-xs font-mono border border-slate-300 rounded-xl"
               />
             </div>
@@ -432,6 +435,7 @@ export default function AdminSettingsPage() {
                   type="text"
                   value={settings.whatsappCS}
                   onChange={(e) => setSettings({ ...settings, whatsappCS: e.target.value })}
+                  placeholder="+62 812-3456-7890"
                   className="w-full pl-9 pr-3.5 py-2 text-xs border border-slate-300 rounded-xl"
                 />
               </div>
@@ -444,6 +448,7 @@ export default function AdminSettingsPage() {
                   type="email"
                   value={settings.emailSupport}
                   onChange={(e) => setSettings({ ...settings, emailSupport: e.target.value })}
+                  placeholder="support@domainisp.net.id"
                   className="w-full pl-9 pr-3.5 py-2 text-xs border border-slate-300 rounded-xl"
                 />
               </div>
@@ -456,6 +461,7 @@ export default function AdminSettingsPage() {
                   type="url"
                   value={settings.website}
                   onChange={(e) => setSettings({ ...settings, website: e.target.value })}
+                  placeholder="https://domainisp.net.id"
                   className="w-full pl-9 pr-3.5 py-2 text-xs border border-slate-300 rounded-xl"
                 />
               </div>
@@ -466,6 +472,7 @@ export default function AdminSettingsPage() {
                 rows={2}
                 value={settings.address}
                 onChange={(e) => setSettings({ ...settings, address: e.target.value })}
+                placeholder="Contoh: Jl. Sudirman No. 12, RT 02/04, Padang, Sumatera Barat"
                 className="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-xl"
               />
             </div>
@@ -475,6 +482,7 @@ export default function AdminSettingsPage() {
                 rows={2}
                 value={settings.invoiceFooterNote}
                 onChange={(e) => setSettings({ ...settings, invoiceFooterNote: e.target.value })}
+                placeholder="Contoh: Pembayaran tepat waktu menjaga kelancaran koneksi internet Anda. Hubungi WA CS kami bila membutuhkan bantuan."
                 className="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-xl"
               />
             </div>
@@ -618,7 +626,7 @@ export default function AdminSettingsPage() {
                       type="text"
                       value={invoiceTemplate.brand_name}
                       onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, brand_name: e.target.value })}
-                      placeholder="Contoh: ISPSYNC"
+                      placeholder="Contoh: NUSANET / CEPATNET"
                       className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
                     />
                   </div>
@@ -628,7 +636,7 @@ export default function AdminSettingsPage() {
                       type="text"
                       value={invoiceTemplate.company_name}
                       onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, company_name: e.target.value })}
-                      placeholder="Contoh: PT ISPSYNC TEKNOLOGI NUSANTARA"
+                      placeholder="Contoh: PT Citra Media Nusantara"
                       className="w-full px-3 py-2 text-xs font-medium border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
                     />
                   </div>
@@ -648,7 +656,7 @@ export default function AdminSettingsPage() {
                       type="text"
                       value={invoiceTemplate.tax_id}
                       onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, tax_id: e.target.value })}
-                      placeholder="03.882.194.5-014.000"
+                      placeholder="01.234.567.8-901.000"
                       className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-xl"
                     />
                   </div>
@@ -664,7 +672,7 @@ export default function AdminSettingsPage() {
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-bold text-slate-700 mb-1">
-                      URL Gambar Header / Banner (Opsional)
+                       URL Gambar Header / Banner (Opsional)
                     </label>
                     <input
                       type="text"
@@ -685,7 +693,7 @@ export default function AdminSettingsPage() {
                       rows={3}
                       value={invoiceTemplate.letterhead_html || ""}
                       onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, letterhead_html: e.target.value })}
-                      placeholder="Contoh: <div style='text-align:center;'><h2>PT ISPSYNC TEKNOLOGI NUSANTARA</h2><p>Alamat & Kontak</p></div>"
+                      placeholder="Contoh: <div style='text-align:center;'><h2>PT NAMA PERUSAHAAN INTERNET</h2><p>Alamat & Kontak</p></div>"
                       className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
                     />
                     <p className="text-[10px] text-slate-500 mt-0.5">
@@ -751,7 +759,7 @@ export default function AdminSettingsPage() {
                         type="text"
                         value={invoiceTemplate.phone}
                         onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, phone: e.target.value })}
-                        placeholder="+62 811-660-1234"
+                        placeholder="+62 812-3456-7890"
                         className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl"
                       />
                     </div>
@@ -761,7 +769,7 @@ export default function AdminSettingsPage() {
                         type="email"
                         value={invoiceTemplate.email}
                         onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, email: e.target.value })}
-                        placeholder="billing@ispsync.id"
+                        placeholder="billing@perusahaan.net.id"
                         className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl"
                       />
                     </div>
@@ -772,7 +780,7 @@ export default function AdminSettingsPage() {
                       type="url"
                       value={invoiceTemplate.website}
                       onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, website: e.target.value })}
-                      placeholder="https://billing.ispsync.id"
+                      placeholder="https://billing.perusahaan.net.id"
                       className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl"
                     />
                   </div>
@@ -952,7 +960,7 @@ export default function AdminSettingsPage() {
                                 bank_account_holder: current[0].bank_account_holder,
                               });
                             }}
-                            placeholder="PT ISPSYNC TEKNOLOGI NUSANTARA"
+                            placeholder="PT CITRA MEDIA NUSANTARA"
                             className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-indigo-500"
                           />
                         </div>
@@ -976,7 +984,7 @@ export default function AdminSettingsPage() {
                                 bank_accounts: current,
                               });
                             }}
-                            placeholder="Contoh: KCU Harau / Kode 014"
+                            placeholder="Contoh: KCU Sudirman / Cabang Utama"
                             className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-indigo-500"
                           />
                         </div>
@@ -1051,6 +1059,7 @@ export default function AdminSettingsPage() {
                       type="text"
                       value={invoiceTemplate.accent_color}
                       onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, accent_color: e.target.value })}
+                      placeholder="#0284c7"
                       className="w-24 px-2 py-1 text-xs font-mono font-bold border border-slate-300 rounded-lg text-center"
                     />
                     <div
@@ -1281,6 +1290,7 @@ export default function AdminSettingsPage() {
                       defaultTaxBps: (parseInt(e.target.value) || 0) * 100,
                     })
                   }
+                  placeholder="11"
                   className="w-24 px-3 py-1.5 text-xs font-bold border border-slate-300 rounded-lg bg-white"
                 />
                 <span className="text-xs font-bold text-slate-600">% (1100 bps = 11%)</span>
@@ -1304,6 +1314,7 @@ export default function AdminSettingsPage() {
                       gracePeriodDays: parseInt(e.target.value) || 0,
                     })
                   }
+                  placeholder="3"
                   className="w-24 px-3 py-1.5 text-xs font-bold border border-slate-300 rounded-lg bg-white"
                 />
                 <span className="text-xs font-bold text-slate-600">Hari setelah Due Date</span>
@@ -1321,6 +1332,7 @@ export default function AdminSettingsPage() {
                 type="text"
                 value={settings.invoicePrefix}
                 onChange={(e) => setSettings({ ...settings, invoicePrefix: e.target.value })}
+                placeholder="INV/{YYYY}/{MM}/{SEQ}"
                 className="w-full px-3.5 py-2 text-xs font-mono border border-slate-300 rounded-xl"
               />
               <span className="text-[10px] text-slate-400 mt-1 block">
@@ -1341,6 +1353,7 @@ export default function AdminSettingsPage() {
                     defaultPartnerShareBps: (parseInt(e.target.value) || 0) * 100,
                   })
                 }
+                placeholder="50"
                 className="w-full px-3.5 py-2 text-xs font-bold border border-slate-300 rounded-xl"
               />
               <span className="text-[10px] text-slate-400 mt-1 block">
@@ -1398,6 +1411,7 @@ export default function AdminSettingsPage() {
                             public_ip_monthly_price: parseInt(e.target.value) || 0,
                           })
                         }
+                        placeholder="50000"
                         className="w-full pl-10 pr-3.5 py-2 text-xs font-bold border border-slate-300 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
                       />
                     </div>
@@ -1419,6 +1433,7 @@ export default function AdminSettingsPage() {
                           public_ip_description: e.target.value,
                         })
                       }
+                      placeholder="Contoh: Sewa Add-on IP Publik Statik"
                       className="w-full px-3.5 py-2 text-xs font-medium border border-slate-300 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
                     />
                     <span className="text-[10px] text-slate-500 mt-1 block">
@@ -2379,7 +2394,7 @@ export default function AdminSettingsPage() {
                             });
                           }
                         }}
-                        placeholder="PT ISPSYNC TEKNOLOGI NUSANTARA"
+                        placeholder="PT CITRA MEDIA NUSANTARA"
                         className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
@@ -2403,7 +2418,7 @@ export default function AdminSettingsPage() {
                             bank_accounts: current,
                           });
                         }}
-                        placeholder="KCU Harau / Kode 014"
+                        placeholder="Contoh: KCU Sudirman / Cabang Utama"
                         className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
@@ -2450,6 +2465,7 @@ export default function AdminSettingsPage() {
                     type="password"
                     value={settings.waApiToken}
                     onChange={(e) => setSettings({ ...settings, waApiToken: e.target.value })}
+                    placeholder="Contoh: token_api_fonnte_atau_wablas"
                     className="w-full px-3 py-1.5 text-xs font-mono border border-slate-300 rounded-lg bg-white"
                   />
                 </div>
@@ -2505,6 +2521,7 @@ export default function AdminSettingsPage() {
                     type="text"
                     value={settings.smtpHost}
                     onChange={(e) => setSettings({ ...settings, smtpHost: e.target.value })}
+                    placeholder="Contoh: mail.perusahaan.net.id atau smtp.gmail.com"
                     className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
                   />
                 </div>
@@ -2514,6 +2531,7 @@ export default function AdminSettingsPage() {
                     type="text"
                     value={settings.smtpPort}
                     onChange={(e) => setSettings({ ...settings, smtpPort: e.target.value })}
+                    placeholder="587 / 465"
                     className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
                   />
                 </div>
@@ -2523,6 +2541,7 @@ export default function AdminSettingsPage() {
                     type="text"
                     value={settings.smtpUser}
                     onChange={(e) => setSettings({ ...settings, smtpUser: e.target.value })}
+                    placeholder="billing@perusahaan.net.id"
                     className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
                   />
                 </div>
@@ -2745,7 +2764,9 @@ export default function AdminSettingsPage() {
                     setSecuritySettings({
                       ...securitySettings,
                       walled_garden_hosts:
-                        "billing.ispsync.id, portal.ispsync.id, api.midtrans.com, app.midtrans.com",
+                        typeof window !== "undefined"
+                          ? `${window.location.host}, api.midtrans.com, app.midtrans.com`
+                          : "billing.domainisp.net, portal.domainisp.net, api.midtrans.com, app.midtrans.com",
                     })
                   }
                   className="text-[10px] font-bold text-purple-600 hover:text-purple-800 hover:underline"
@@ -2762,7 +2783,7 @@ export default function AdminSettingsPage() {
                     walled_garden_hosts: e.target.value,
                   })
                 }
-                placeholder="billing.ispsync.id, portal.ispsync.id, api.midtrans.com, app.midtrans.com"
+                placeholder="billing.domainisp.net, portal.domainisp.net, api.midtrans.com, app.midtrans.com"
                 className="w-full px-3 py-2 text-xs font-mono border border-slate-300 rounded-xl bg-white focus:ring-2 focus:ring-purple-500 focus:outline-none"
               />
               <span className="text-[10px] text-slate-500 mt-1 block">
@@ -2791,6 +2812,7 @@ export default function AdminSettingsPage() {
                         jwt_expiry_hours: parseInt(e.target.value) || 1,
                       })
                     }
+                    placeholder="24"
                     className="w-full px-3 py-2 text-xs font-bold border border-slate-300 rounded-xl bg-white pr-12 focus:ring-2 focus:ring-blue-500"
                   />
                   <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold">
