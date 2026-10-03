@@ -475,25 +475,8 @@ export default function PasspointOnboardingPage() {
         <div className="absolute top-1/2 -right-32 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-32 left-1/4 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="max-w-4xl mx-auto relative z-10">
-          {/* Top Bar with Self-Care Portal Link */}
-          <div className="flex items-center justify-between pb-6 mb-4 border-b border-slate-800/60">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
-                PORTAL RESMI PASSPOINT
-              </span>
-            </div>
-            <Link
-              href="/passpoint/status"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-cyan-400 hover:text-cyan-300 border border-slate-700 text-xs font-semibold transition shadow-xs"
-            >
-              <Clock className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Cek Status Pelanggan</span>
-            </Link>
-          </div>
-
-          <div className="text-center space-y-4">
-            {/* Top Brand & Badge */}
+        <div className="max-w-4xl mx-auto relative z-10 text-center space-y-4">
+          {/* Top Brand & Badge */}
           <div className="flex items-center justify-center gap-3">
             {tenantLogo ? (
               <img
@@ -531,7 +514,6 @@ export default function PasspointOnboardingPage() {
             Sekali pasang profil, iPhone, iPad, Mac, dan Android Anda langsung tersambung otomatis saat berada di jangkauan hotspot {tenantName}.
           </p>
         </div>
-        </div>
       </header>
 
       {/* ========================================================
@@ -539,7 +521,7 @@ export default function PasspointOnboardingPage() {
          ======================================================== */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 -mt-8 relative z-20 space-y-6">
         {/* Mode Selector Tabs */}
-        <div className="bg-slate-900/90 backdrop-blur-md rounded-2xl p-1.5 shadow-xl border border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="bg-slate-900/90 backdrop-blur-md rounded-2xl p-1.5 shadow-xl border border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2">
           <button
             type="button"
             onClick={() => handleSelectMode("BUY")}
@@ -550,7 +532,7 @@ export default function PasspointOnboardingPage() {
             }`}
           >
             <ShoppingBag className="w-4 h-4 shrink-0" />
-            <span>Beli Akses Baru</span>
+            <span>Beli Akses</span>
           </button>
 
           <button
@@ -563,7 +545,7 @@ export default function PasspointOnboardingPage() {
             }`}
           >
             <Zap className="w-4 h-4 shrink-0 text-amber-400" />
-            <span>Perpanjang Paket</span>
+            <span>Perpanjang</span>
           </button>
 
           <button
@@ -576,27 +558,15 @@ export default function PasspointOnboardingPage() {
             }`}
           >
             <Download className="w-4 h-4 shrink-0" />
-            <span>Pasang Ulang Profil</span>
+            <span>Pasang Ulang</span>
           </button>
-        </div>
 
-        {/* Quick Self-Care Link Banner */}
-        <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs">
-          <div className="flex items-center gap-2.5 text-slate-300">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
-              <Clock className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="font-semibold text-slate-200">Sudah memiliki akun Wi-Fi Passpoint?</p>
-              <p className="text-[11px] text-slate-400">Periksa sisa masa aktif, unduh ulang profil, atau perpanjang paket secara mandiri.</p>
-            </div>
-          </div>
           <Link
             href="/passpoint/status"
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 text-xs font-semibold border border-slate-700 transition shrink-0"
+            className="py-3 px-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer text-slate-400 hover:text-cyan-400 hover:bg-slate-800/60"
           >
-            <span>Cek Status Pelanggan</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <Clock className="w-4 h-4 shrink-0 text-cyan-400" />
+            <span>Cek Status</span>
           </Link>
         </div>
 
