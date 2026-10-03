@@ -9,7 +9,6 @@ import {
   Filter,
   Navigation,
   Eye,
-  Plus,
   RefreshCw,
   ExternalLink,
   Network,
@@ -26,7 +25,6 @@ import {
   ODPNode,
   FiberRoute,
   FTTXStats,
-  CreateODPInput,
 } from "@/lib/api/network";
 import { settingsApi } from "@/lib/api/settings";
 
@@ -47,24 +45,6 @@ export default function AdminFibergridPage() {
   const [clusterFilter, setClusterFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [searchOdp, setSearchOdp] = useState<string>("");
-
-  // Add ODP Modal
-  const [showAddODPModal, setShowAddODPModal] = useState(false);
-  const [submittingODP, setSubmittingODP] = useState(false);
-  const [odpForm, setOdpForm] = useState<CreateODPInput>({
-    name: "",
-    code: "",
-    cluster: "Harau",
-    latitude: -0.2185,
-    longitude: 100.655,
-    total_ports: 8,
-    used_ports: 0,
-    status: "ACTIVE",
-    splitter_spec: "1:8 PLC",
-    optical_power_dbm: -19.5,
-    address: "",
-    notes: "",
-  });
 
   // Leaflet map refs
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -311,14 +291,6 @@ export default function AdminFibergridPage() {
       if (markerGroup.length > 0) {
         map.fitBounds(markerGroup, { padding: [50, 50], maxZoom: 15 });
       }
-
-      map.on("click", (e: any) => {
-        setOdpForm((prev) => ({
-          ...prev,
-          latitude: Number(e.latlng.lat.toFixed(6)),
-          longitude: Number(e.latlng.lng.toFixed(6)),
-        }));
-      });
     };
 
     if ((window as any).L) {
@@ -366,34 +338,6 @@ export default function AdminFibergridPage() {
     }
   };
 
-  const handleCreateODP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmittingODP(true);
-    try {
-      await networkApi.createODP(odpForm);
-      setShowAddODPModal(false);
-      setOdpForm({
-        name: "",
-        code: "",
-        cluster: "Harau",
-        latitude: -0.2185,
-        longitude: 100.655,
-        total_ports: 8,
-        used_ports: 0,
-        status: "ACTIVE",
-        splitter_spec: "1:8 PLC",
-        optical_power_dbm: -19.5,
-        address: "",
-        notes: "",
-      });
-      fetchFTTXData();
-    } catch (err: any) {
-      alert(err.message || "Gagal menambahkan titik ODP");
-    } finally {
-      setSubmittingODP(false);
-    }
-  };
-
   const clusters = Array.from(new Set(odpNodes.map((o) => o.cluster).filter(Boolean)));
 
   const filteredODPs = odpNodes.filter((odp) => {
@@ -438,14 +382,6 @@ export default function AdminFibergridPage() {
             title="Segarkan data ODP"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
-
-          <button
-            onClick={() => setShowAddODPModal(true)}
-            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition flex items-center gap-1.5 shadow-sm"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Tambah ODP</span>
           </button>
 
           <a
@@ -661,14 +597,10 @@ export default function AdminFibergridPage() {
               {filteredODPs.length} titik ODP aktif tercatat dalam sistem spasial EngineNexus &amp; FiberGrid
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowAddODPModal(true)}
-            className="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Tambah ODP
-          </button>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            Single Source of Truth: EngineNexus
+          </span>
         </div>
 
         <div className="overflow-x-auto">
@@ -790,221 +722,6 @@ export default function AdminFibergridPage() {
           </table>
         </div>
       </div>
-
-      {/* Modal: Tambah Titik ODP */}
-      {showAddODPModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
-            <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-blue-600" />
-              Tambah Titik Distribusi ODP Baru
-            </h3>
-            <p className="text-xs text-slate-500 mb-4">
-              Daftarkan titik splitter ODP ke database spasial PostGIS &amp; EngineNexus.
-            </p>
-
-            <form onSubmit={handleCreateODP} className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Kode ODP <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: ODP-HR-04"
-                    value={odpForm.code}
-                    onChange={(e) => setOdpForm({ ...odpForm, code: e.target.value })}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg font-mono"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Cluster Wilayah <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Contoh: Harau / Payakumbuh"
-                    value={odpForm.cluster}
-                    onChange={(e) => setOdpForm({ ...odpForm, cluster: e.target.value })}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Nama Titik ODP <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="Contoh: ODP Harau Lembah Blok C3"
-                  value={odpForm.name}
-                  onChange={(e) => setOdpForm({ ...odpForm, name: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Spesifikasi Splitter
-                  </label>
-                  <select
-                    value={odpForm.splitter_spec}
-                    onChange={(e) => {
-                      const spec = e.target.value;
-                      let ports = 8;
-                      if (spec.includes("1:4")) ports = 4;
-                      else if (spec.includes("1:8")) ports = 8;
-                      else if (spec.includes("1:16")) ports = 16;
-                      else if (spec.includes("1:32")) ports = 32;
-                      setOdpForm({ ...odpForm, splitter_spec: spec, total_ports: ports });
-                    }}
-                    className="w-full px-2.5 py-2 text-xs border border-slate-300 rounded-lg bg-white"
-                  >
-                    <option value="1:4 PLC">1:4 PLC</option>
-                    <option value="1:8 PLC">1:8 PLC</option>
-                    <option value="1:16 PLC">1:16 PLC</option>
-                    <option value="1:32 PLC">1:32 PLC</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Total Port
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="64"
-                    value={odpForm.total_ports}
-                    onChange={(e) => setOdpForm({ ...odpForm, total_ports: parseInt(e.target.value) || 8 })}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg font-mono"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Port Terpakai
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max={odpForm.total_ports}
-                    value={odpForm.used_ports ?? 0}
-                    onChange={(e) => setOdpForm({ ...odpForm, used_ports: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Redaman Optik Estimasi (dBm)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="-19.5"
-                    value={odpForm.optical_power_dbm ?? -19.5}
-                    onChange={(e) => setOdpForm({ ...odpForm, optical_power_dbm: parseFloat(e.target.value) || -19.5 })}
-                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Status Titik ODP
-                  </label>
-                  <select
-                    value={odpForm.status ?? "ACTIVE"}
-                    onChange={(e) => setOdpForm({ ...odpForm, status: e.target.value })}
-                    className="w-full px-2.5 py-2 text-xs border border-slate-300 rounded-lg bg-white"
-                  >
-                    <option value="ACTIVE">ACTIVE (Normal)</option>
-                    <option value="FULL">FULL (Penuh)</option>
-                    <option value="MAINTENANCE">MAINTENANCE</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Coordinates */}
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <Navigation className="w-3.5 h-3.5 text-blue-600" />
-                    Koordinat Geospasial (WGS84)
-                  </span>
-                  <span className="text-[10px] text-slate-500">
-                    Bisa klik di peta untuk mengisi
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-medium text-slate-600 mb-0.5">Latitude</label>
-                    <input
-                      type="number"
-                      step="any"
-                      placeholder="-0.218500"
-                      value={odpForm.latitude}
-                      onChange={(e) => setOdpForm({ ...odpForm, latitude: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-2.5 py-1.5 text-xs font-mono border border-slate-300 rounded-lg bg-white"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-slate-600 mb-0.5">Longitude</label>
-                    <input
-                      type="number"
-                      step="any"
-                      placeholder="100.655000"
-                      value={odpForm.longitude}
-                      onChange={(e) => setOdpForm({ ...odpForm, longitude: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-2.5 py-1.5 text-xs font-mono border border-slate-300 rounded-lg bg-white"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Alamat Fisik / Lokasi Tiang
-                </label>
-                <input
-                  type="text"
-                  placeholder="Contoh: Tiang FO No. 12 Depan Gerbang Komplek Harau Indah"
-                  value={odpForm.address}
-                  onChange={(e) => setOdpForm({ ...odpForm, address: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddODPModal(false)}
-                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingODP}
-                  className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg disabled:opacity-50"
-                >
-                  {submittingODP ? "Menyimpan..." : "Simpan Titik ODP"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
