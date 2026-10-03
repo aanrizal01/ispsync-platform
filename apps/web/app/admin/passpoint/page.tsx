@@ -274,6 +274,20 @@ export default function AdminPasspointPage() {
     return `${m}m ${seconds % 60}d`;
   };
 
+  const formatDate = (dateStr?: string | null) => {
+    if (!dateStr) return "-";
+    const d = new Date(dateStr);
+    return isNaN(d.getTime())
+      ? dateStr
+      : d.toLocaleDateString("id-ID", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
