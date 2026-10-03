@@ -138,15 +138,23 @@ const navSections: NavSection[] = [
     title: "JARINGAN & INFRASTRUKTUR",
     items: [
       {
-        label: "Peta & Jaringan FTTX",
+        label: "Perangkat & Router Core",
         href: "/admin/network",
+        icon: Server,
+        permission: "network:read",
+      },
+      {
+        label: "Peta FTTX GIS (Fibergrid)",
+        href: "/admin/fibergrid",
         icon: Network,
         permission: "network:read",
+        badge: "Engine 3",
+        badgeColor: "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30",
       },
       {
         label: "Server RADIUS",
         href: "/admin/radius",
-        icon: Server,
+        icon: Radio,
         permission: "radius:read",
       },
       {

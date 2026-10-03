@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import {
   Server,
   Plus,
@@ -25,6 +26,8 @@ import {
   Navigation,
   Eye,
   Info,
+  ExternalLink,
+  Network,
 } from "lucide-react";
 import {
   networkApi,
@@ -39,7 +42,7 @@ import {
 import { acsApi, CustomerONT } from "@/lib/api/acs";
 
 export default function AdminNetworkPage() {
-  const [networkTab, setNetworkTab] = useState<"fttx_map" | "routers" | "onts">("fttx_map");
+  const [networkTab, setNetworkTab] = useState<"routers" | "onts" | "fttx_map">("routers");
   const [devices, setDevices] = useState<NetworkDevice[]>([]);
   const [onts, setOnts] = useState<CustomerONT[]>([]);
   const [odpNodes, setOdpNodes] = useState<ODPNode[]>([]);
@@ -567,11 +570,11 @@ export default function AdminNetworkPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <MapPin className="w-6 h-6 text-blue-600" />
-            Peta & Jaringan FTTX
+            <Server className="w-6 h-6 text-blue-600" />
+            Perangkat Jaringan &amp; Router Core
           </h1>
           <p className="text-sm text-slate-500">
-            Sistem Informasi Geospasial (GIS) kabel fiber optic, titik ODP distribusi, router core MikroTik/Juniper, dan provisioning ONT TR-069.
+            Adapter vendor-neutral untuk MikroTik RouterOS v7 REST API, Juniper MX BNG, Simple Queues, dan modem ONT TR-069.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -617,6 +620,33 @@ export default function AdminNetworkPage() {
             </button>
           )}
         </div>
+      </div>
+
+      {/* Hub Banner: EngineFibergrid NOC & GIS */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-blue-950 p-4 rounded-xl border border-slate-800 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+            <Network className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-white">NOC Command Center &amp; Peta Fibergrid (Engine 3)</h3>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                FTTX ENGINE
+              </span>
+            </div>
+            <p className="text-xs text-slate-400">
+              Topologi kabel FO end-to-end, OLT multi-vendor, ODC, rute tiang, dan ekspor KML dikelola terpusat di EngineFibergrid.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/admin/fibergrid"
+          className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-bold rounded-lg transition shrink-0 flex items-center gap-2 text-center justify-center"
+        >
+          <span>Buka Peta FTTX GIS</span>
+          <ExternalLink className="w-3.5 h-3.5" />
+        </Link>
       </div>
 
       {/* Metrics Cards based on Active Tab */}
@@ -759,24 +789,8 @@ export default function AdminNetworkPage() {
         </div>
       )}
 
-      {/* Tab Switcher: GIS FTTX vs Router Gateway vs Modem ONT Pelanggan */}
+      {/* Tab Switcher: Router Gateway vs Modem ONT vs Ringkasan ODP */}
       <div className="flex border-b border-slate-200 gap-2 overflow-x-auto">
-        <button
-          type="button"
-          onClick={() => setNetworkTab("fttx_map")}
-          className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 transition whitespace-nowrap ${
-            networkTab === "fttx_map"
-              ? "border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl"
-              : "border-transparent text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          <MapPin className="w-4 h-4" />
-          <span>Peta Spasial FTTX &amp; ODP</span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-bold">
-            {odpNodes.length}
-          </span>
-        </button>
-
         <button
           type="button"
           onClick={() => setNetworkTab("routers")}
@@ -806,6 +820,22 @@ export default function AdminNetworkPage() {
           <span>Modem ONT Pelanggan (GenieACS TR-069)</span>
           <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-bold">
             {onts.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setNetworkTab("fttx_map")}
+          className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 transition whitespace-nowrap ${
+            networkTab === "fttx_map"
+              ? "border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl"
+              : "border-transparent text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <MapPin className="w-4 h-4" />
+          <span>Ringkasan Titik ODP</span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-bold">
+            {odpNodes.length}
           </span>
         </button>
       </div>
