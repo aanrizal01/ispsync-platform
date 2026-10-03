@@ -10,15 +10,9 @@ import {
   Navigation,
   Eye,
   RefreshCw,
-  ExternalLink,
   Network,
   Activity,
-  Compass,
-  FileSpreadsheet,
   CheckCircle2,
-  AlertTriangle,
-  Radio,
-  Zap,
 } from "lucide-react";
 import {
   networkApi,
@@ -26,13 +20,10 @@ import {
   FiberRoute,
   FTTXStats,
 } from "@/lib/api/network";
-import { settingsApi } from "@/lib/api/settings";
 
 export default function AdminFibergridPage() {
   const [tenantSlug, setTenantSlug] = useState("dev");
   const [baseDomain, setBaseDomain] = useState("dev.ispsync.id");
-  const [fibergridUrl, setFibergridUrl] = useState("https://fibergrid.dev.ispsync.id");
-  const [nexusUrl, setNexusUrl] = useState("https://nexus.dev.ispsync.id");
 
   // FTTX & GIS Data
   const [odpNodes, setOdpNodes] = useState<ODPNode[]>([]);
@@ -46,10 +37,12 @@ export default function AdminFibergridPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [searchOdp, setSearchOdp] = useState<string>("");
 
-  // Leaflet map refs
+  // Google Maps refs
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
-  const markersRef = useRef<{ [key: string]: any }>({});
+  const markersRef = useRef<{ [key: string]: { marker: any; infoWindow: any } }>({});
+  const polylinesRef = useRef<any[]>([]);
+  const activeInfoWindowRef = useRef<any>(null);
 
   // 1. Dynamic Host & Domain Resolution
   useEffect(() => {
@@ -69,26 +62,6 @@ export default function AdminFibergridPage() {
         d = "dev.ispsync.id";
       }
       setBaseDomain(d);
-      setFibergridUrl(`https://fibergrid.${d}`);
-      setNexusUrl(`https://nexus.${d}`);
-
-      settingsApi.getDomainSettings()
-        .then((res: any) => {
-          const data = res?.data || res;
-          if (data?.fibergrid_domain) {
-            const customFg = data.fibergrid_domain.startsWith("http")
-              ? data.fibergrid_domain
-              : `https://${data.fibergrid_domain}`;
-            setFibergridUrl(customFg);
-          }
-          if (data?.portal_domain) {
-            const customNx = data.portal_domain.startsWith("http")
-              ? data.portal_domain
-              : `https://${data.portal_domain}`;
-            setNexusUrl(customNx);
-          }
-        })
-        .catch(() => {});
     }
   }, []);
 
@@ -117,72 +90,107 @@ export default function AdminFibergridPage() {
     fetchFTTXData();
   }, []);
 
-  // 3. Initialize Interactive Leaflet GIS Map
+  // 3. Initialize Interactive Google Maps GIS Map
   useEffect(() => {
     let isMounted = true;
 
-    const initLeafletMap = () => {
-      const L = (window as any).L;
-      if (!L || !mapContainerRef.current) return;
+    const initGoogleMap = () => {
+      const google = (window as any).google;
+      if (!google || !google.maps || !mapContainerRef.current) return;
 
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
+      // Clean up previous markers and polylines
+      Object.values(markersRef.current).forEach(({ marker }) => {
+        if (marker && marker.setMap) marker.setMap(null);
+      });
+      markersRef.current = {};
+
+      polylinesRef.current.forEach((poly) => {
+        if (poly && poly.setMap) poly.setMap(null);
+      });
+      polylinesRef.current = [];
+
+      if (activeInfoWindowRef.current) {
+        activeInfoWindowRef.current.close();
+        activeInfoWindowRef.current = null;
       }
 
-      const map = L.map(mapContainerRef.current).setView([-0.2185, 100.655], 13);
-      mapInstanceRef.current = map;
+      // Initialize map instance if not already created
+      let map = mapInstanceRef.current;
+      if (!map) {
+        map = new google.maps.Map(mapContainerRef.current, {
+          center: { lat: -0.2185, lng: 100.655 },
+          zoom: 14,
+          mapTypeId: google.maps.MapTypeId.ROADMAP,
+          mapTypeControl: true,
+          mapTypeControlOptions: {
+            style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+            position: google.maps.ControlPosition.TOP_RIGHT,
+          },
+          streetViewControl: false,
+          fullscreenControl: true,
+          zoomControl: true,
+        });
+        mapInstanceRef.current = map;
+      }
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19,
-      }).addTo(map);
-
-      // Render Fiber Cable Routes
+      // Render Fiber Cable Routes (Polylines)
       fiberRoutes.forEach((route) => {
         if (!route.coordinates || route.coordinates.length < 2) return;
 
         let strokeColor = route.color || "#0284c7";
-        let weight = 3.5;
-        let dashArray = undefined;
+        let strokeWeight = 3.5;
 
         if (route.cable_type === "BACKBONE") {
           strokeColor = "#d97706";
-          weight = 5;
+          strokeWeight = 5;
         } else if (route.cable_type === "FEEDER") {
           strokeColor = "#0284c7";
-          weight = 3.5;
+          strokeWeight = 3.5;
         } else {
           strokeColor = "#059669";
-          weight = 2.5;
+          strokeWeight = 2.5;
         }
 
         if (route.status === "CUT") {
           strokeColor = "#dc2626";
-          dashArray = "6, 6";
         } else if (route.status === "DEGRADED") {
           strokeColor = "#ea580c";
         }
 
-        const polyline = L.polyline(route.coordinates, {
-          color: strokeColor,
-          weight: weight,
-          opacity: 0.85,
-          dashArray: dashArray,
-        }).addTo(map);
+        const path = route.coordinates.map((c: [number, number]) => ({
+          lat: c[0],
+          lng: c[1],
+        }));
 
-        const routePopup = `
-          <div style="font-family: inherit; font-size: 12px; min-width: 200px; padding: 2px;">
-            <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px; font-size: 13px;">${route.name}</div>
-            <div style="display: flex; gap: 4px; margin-bottom: 6px;">
-              <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #334155;">${route.cable_type}</span>
-              <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #e0f2fe; color: #0369a1;">${route.core_count} Core</span>
-              <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: ${route.status === 'ACTIVE' ? '#dcfce7' : '#fee2e2'}; color: ${route.status === 'ACTIVE' ? '#15803d' : '#b91c1c'};">${route.status}</span>
+        const polyline = new google.maps.Polyline({
+          path,
+          strokeColor,
+          strokeOpacity: 0.85,
+          strokeWeight,
+          map,
+        });
+        polylinesRef.current.push(polyline);
+
+        const routeInfoWindow = new google.maps.InfoWindow({
+          content: `
+            <div style="font-family: inherit; font-size: 12px; min-width: 200px; padding: 4px; color: #1e293b;">
+              <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px; font-size: 13px;">${route.name}</div>
+              <div style="display: flex; gap: 4px; margin-bottom: 6px;">
+                <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #334155;">${route.cable_type}</span>
+                <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #e0f2fe; color: #0369a1;">${route.core_count} Core</span>
+                <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: ${route.status === 'ACTIVE' ? '#dcfce7' : '#fee2e2'}; color: ${route.status === 'ACTIVE' ? '#15803d' : '#b91c1c'};">${route.status}</span>
+              </div>
+              <div style="font-size: 11px; color: #64748b;">Panjang Jalur: <strong style="color: #0f172a;">${(route.length_meters / 1000).toFixed(2)} km (${route.length_meters} m)</strong></div>
             </div>
-            <div style="font-size: 11px; color: #64748b;">Panjang Jalur: <strong style="color: #0f172a;">${(route.length_meters / 1000).toFixed(2)} km (${route.length_meters} m)</strong></div>
-          </div>
-        `;
-        polyline.bindPopup(routePopup);
+          `,
+        });
+
+        polyline.addListener("click", (e: any) => {
+          if (activeInfoWindowRef.current) activeInfoWindowRef.current.close();
+          routeInfoWindow.setPosition(e.latLng);
+          routeInfoWindow.open(map);
+          activeInfoWindowRef.current = routeInfoWindow;
+        });
       });
 
       // Filter ODP nodes based on UI filters
@@ -199,8 +207,7 @@ export default function AdminFibergridPage() {
         return true;
       });
 
-      markersRef.current = {};
-      const markerGroup: any[] = [];
+      const bounds = new google.maps.LatLngBounds();
 
       filtered.forEach((odp) => {
         const pct = odp.total_ports > 0 ? (odp.used_ports / odp.total_ports) * 100 : 0;
@@ -222,45 +229,43 @@ export default function AdminFibergridPage() {
           statusBadgeText = "#b45309";
         }
 
-        const iconHtml = `
-          <div style="
-            background: ${pinBg};
-            border: 2px solid #ffffff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-            border-radius: 9999px;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #ffffff;
-            font-weight: 800;
-            font-size: 10px;
-            cursor: pointer;
-          " title="${odp.code} - ${odp.name}">
-            ${odp.used_ports}/${odp.total_ports}
-          </div>
+        const pinSvg = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="34" height="42" viewBox="0 0 34 42">
+            <defs>
+              <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.35"/>
+              </filter>
+            </defs>
+            <path d="M17 0 C7.6 0 0 7.6 0 17 C0 29.5 17 42 17 42 C17 42 34 29.5 34 17 C34 7.6 26.4 0 17 0 Z" fill="${pinBg}" stroke="#ffffff" stroke-width="2" filter="url(#sh)"/>
+            <circle cx="17" cy="17" r="12" fill="#ffffff" opacity="0.25"/>
+          </svg>
         `;
 
-        const customIcon = L.divIcon({
-          className: "custom-odp-pin",
-          html: iconHtml,
-          iconSize: [32, 32],
-          iconAnchor: [16, 16],
-          popupAnchor: [0, -16],
+        const marker = new google.maps.Marker({
+          position: { lat: odp.latitude, lng: odp.longitude },
+          map,
+          title: `${odp.code} - ${odp.name}`,
+          icon: {
+            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(pinSvg)}`,
+            scaledSize: new google.maps.Size(34, 42),
+            anchor: new google.maps.Point(17, 42),
+            labelOrigin: new google.maps.Point(17, 16),
+          },
+          label: {
+            text: `${odp.used_ports}/${odp.total_ports}`,
+            color: "#ffffff",
+            fontSize: "9px",
+            fontWeight: "700",
+          },
         });
 
-        const marker = L.marker([odp.latitude, odp.longitude], { icon: customIcon }).addTo(map);
-        markersRef.current[odp.id] = marker;
-        markerGroup.push([odp.latitude, odp.longitude]);
-
         const popupContent = `
-          <div style="font-family: inherit; font-size: 12px; min-width: 230px; padding: 2px;">
+          <div style="font-family: inherit; font-size: 12px; min-width: 240px; padding: 4px; color: #1e293b;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:6px; margin-bottom:8px;">
               <span style="font-weight:700; color:#0f172a; font-size:13px;">${odp.code}</span>
               <span style="font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; background:${statusBadgeBg}; color:${statusBadgeText};">${odp.status}</span>
             </div>
-            <div style="color:#1e293b; font-weight:600; margin-bottom:4px;">${odp.name}</div>
+            <div style="color:#0f172a; font-weight:600; margin-bottom:4px;">${odp.name}</div>
             <div style="color:#64748b; font-size:11px; margin-bottom:6px;">Cluster: <strong style="color:#0f172a;">${odp.cluster}</strong> | Splitter: <strong style="color:#0f172a;">${odp.splitter_spec}</strong></div>
             
             <div style="background:#f8fafc; border: 1px solid #e2e8f0; padding:6px 8px; border-radius:6px; margin-bottom:8px;">
@@ -285,56 +290,69 @@ export default function AdminFibergridPage() {
             </div>
           </div>
         `;
-        marker.bindPopup(popupContent);
+
+        const infoWindow = new google.maps.InfoWindow({
+          content: popupContent,
+        });
+
+        marker.addListener("click", () => {
+          if (activeInfoWindowRef.current) activeInfoWindowRef.current.close();
+          infoWindow.open(map, marker);
+          activeInfoWindowRef.current = infoWindow;
+        });
+
+        markersRef.current[odp.id] = { marker, infoWindow };
+        bounds.extend({ lat: odp.latitude, lng: odp.longitude });
       });
 
-      if (markerGroup.length > 0) {
-        map.fitBounds(markerGroup, { padding: [50, 50], maxZoom: 15 });
+      if (filtered.length > 0) {
+        map.fitBounds(bounds);
+        const listener = google.maps.event.addListener(map, "idle", () => {
+          if (map.getZoom() > 16) {
+            map.setZoom(16);
+          }
+          google.maps.event.removeListener(listener);
+        });
       }
     };
 
-    if ((window as any).L) {
-      initLeafletMap();
+    if ((window as any).google && (window as any).google.maps) {
+      initGoogleMap();
     } else {
-      if (!document.getElementById("leaflet-css")) {
-        const link = document.createElement("link");
-        link.id = "leaflet-css";
-        link.rel = "stylesheet";
-        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-        document.head.appendChild(link);
-      }
-
-      if (!document.getElementById("leaflet-js")) {
+      const scriptId = "google-maps-js";
+      if (!document.getElementById(scriptId)) {
         const script = document.createElement("script");
-        script.id = "leaflet-js";
-        script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+        script.id = scriptId;
+        script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA&libraries=places,geometry";
+        script.async = true;
+        script.defer = true;
         script.onload = () => {
-          if (isMounted) initLeafletMap();
+          if (isMounted) initGoogleMap();
         };
         document.head.appendChild(script);
       } else {
-        const existing = document.getElementById("leaflet-js");
+        const existing = document.getElementById(scriptId);
         existing?.addEventListener("load", () => {
-          if (isMounted) initLeafletMap();
+          if (isMounted) initGoogleMap();
         });
       }
     }
 
     return () => {
       isMounted = false;
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
     };
   }, [odpNodes, fiberRoutes, clusterFilter, statusFilter, searchOdp]);
 
   const focusOnODP = (odp: ODPNode) => {
-    if (!mapInstanceRef.current) return;
-    mapInstanceRef.current.setView([odp.latitude, odp.longitude], 17);
-    const marker = markersRef.current[odp.id];
-    if (marker) {
-      marker.openPopup();
+    const item = markersRef.current[odp.id];
+    if (item && mapInstanceRef.current) {
+      mapInstanceRef.current.panTo({ lat: odp.latitude, lng: odp.longitude });
+      mapInstanceRef.current.setZoom(17);
+      if (activeInfoWindowRef.current) {
+        activeInfoWindowRef.current.close();
+      }
+      item.infoWindow.open(mapInstanceRef.current, item.marker);
+      activeInfoWindowRef.current = item.infoWindow;
     }
   };
 
@@ -383,30 +401,6 @@ export default function AdminFibergridPage() {
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
-
-          <a
-            href={nexusUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition flex items-center gap-1.5"
-            title="Buka portal teknisi lapangan EngineNexus"
-          >
-            <Compass className="w-3.5 h-3.5 text-blue-600" />
-            <span>EngineNexus Lapangan</span>
-            <ExternalLink className="w-3 h-3 text-slate-400" />
-          </a>
-
-          <a
-            href={fibergridUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-4 py-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-600 text-white text-xs font-bold rounded-lg transition flex items-center gap-2 shadow-sm"
-            title="Buka konsol fisik NOC EngineFibergrid di tab baru"
-          >
-            <Network className="w-4 h-4" />
-            <span>Buka EngineFibergrid NOC</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
         </div>
       </div>
 
@@ -598,7 +592,7 @@ export default function AdminFibergridPage() {
             </p>
           </div>
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
             Single Source of Truth: EngineNexus
           </span>
         </div>
