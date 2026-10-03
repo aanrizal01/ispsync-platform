@@ -434,7 +434,8 @@ export default function AdminPasspointPage() {
                         )}
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
