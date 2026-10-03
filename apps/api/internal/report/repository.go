@@ -73,8 +73,24 @@ func (r *Repository) GetFinancialSummary(ctx context.Context) (*FinancialSummary
 		onlineGrossPaid = 0
 		onlineCommission = 0
 	}
-	summary.VoucherOnlineCollected = onlineGrossPaid
-	summary.TotalAgentCommission = onlineCommission
+
+	// 5b. Passpoint Orders (WiFi Roaming / Hotspot 2.0 - dipotong diskon via final_price)
+	const passpointOrdersQuery = `
+		SELECT
+			COALESCE(SUM(final_price), 0),
+			COALESCE(SUM(agent_commission), 0)
+		FROM passpoint_orders
+		WHERE status = 'PAID'
+	`
+	var passpointGrossPaid int64
+	var passpointCommission int64
+	if err := r.db.QueryRow(ctx, passpointOrdersQuery).Scan(&passpointGrossPaid, &passpointCommission); err != nil {
+		passpointGrossPaid = 0
+		passpointCommission = 0
+	}
+
+	summary.VoucherOnlineCollected = onlineGrossPaid + passpointGrossPaid
+	summary.TotalAgentCommission = onlineCommission + passpointCommission
 
 	// 6. Hotspot Vouchers Offline (agent batch purchases debited from balance)
 	const voucherOfflineQuery = `
@@ -344,6 +360,23 @@ func (r *Repository) GetVoucherTaxTransactions(ctx context.Context, from, to str
 		FROM agent_balance_mutations m
 		JOIN agents a ON a.id = m.agent_id
 		WHERE m.mutation_type = 'VOUCHER_OFFLINE_BUY'
+
+		UNION ALL
+
+		SELECT
+			TO_CHAR(COALESCE(po.paid_at, po.created_at), 'YYYY-MM-DD HH24:MI') AS created_at,
+			po.order_id AS ref_num,
+			'PASSPOINT' AS channel,
+			COALESCE(a.name, 'Direct Passpoint') AS agent_name,
+			po.package_name AS template_name,
+			po.original_price AS face_value,
+			po.discount_amount AS discount_amount,
+			po.final_price AS net_paid,
+			po.agent_commission AS agent_commission,
+			COALESCE(po.paid_at, po.created_at) AS raw_time
+		FROM passpoint_orders po
+		LEFT JOIN agents a ON a.id = po.agent_id
+		WHERE po.status = 'PAID'
 	`
 
 	wrapQ := fmt.Sprintf(`
@@ -468,6 +501,30 @@ func (r *Repository) GetMonthlyRevenueData(ctx context.Context, year int) ([]Mon
 			if err := rowsOnline.Scan(&mStr, &onlinePaid); err == nil {
 				if item, exists := dataMap[mStr]; exists {
 					item.VoucherOnlinePaid = onlinePaid
+				}
+			}
+		}
+	}
+
+	// 2b. Query Passpoint Orders (WiFi Roaming / Hotspot 2.0 - final_price setelah diskon)
+	const passpointQuery = `
+		SELECT
+			TO_CHAR(COALESCE(paid_at, created_at), 'YYYY-MM') AS month_str,
+			COALESCE(SUM(final_price), 0) AS passpoint_paid
+		FROM passpoint_orders
+		WHERE status = 'PAID'
+		  AND EXTRACT(YEAR FROM COALESCE(paid_at, created_at)) = $1
+		GROUP BY TO_CHAR(COALESCE(paid_at, created_at), 'YYYY-MM')
+	`
+	rowsPasspoint, err := r.db.Query(ctx, passpointQuery, year)
+	if err == nil {
+		defer rowsPasspoint.Close()
+		for rowsPasspoint.Next() {
+			var mStr string
+			var passpointPaid int64
+			if err := rowsPasspoint.Scan(&mStr, &passpointPaid); err == nil {
+				if item, exists := dataMap[mStr]; exists {
+					item.VoucherOnlinePaid += passpointPaid
 				}
 			}
 		}
