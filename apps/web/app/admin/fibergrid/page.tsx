@@ -9,7 +9,6 @@ import {
   Filter,
   Navigation,
   Eye,
-  Trash2,
   Plus,
   RefreshCw,
   ExternalLink,
@@ -364,16 +363,6 @@ export default function AdminFibergridPage() {
     const marker = markersRef.current[odp.id];
     if (marker) {
       marker.openPopup();
-    }
-  };
-
-  const handleDeleteODP = async (id: string, code: string) => {
-    if (!confirm(`Hapus titik ODP ${code}? Tindakan ini tidak dapat dibatalkan.`)) return;
-    try {
-      await networkApi.deleteODP(id);
-      fetchFTTXData();
-    } catch (err: any) {
-      alert(err.message || "Gagal menghapus titik ODP");
     }
   };
 
@@ -781,22 +770,15 @@ export default function AdminFibergridPage() {
                         {odp.address || "-"}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center justify-end">
                           <button
                             type="button"
                             onClick={() => focusOnODP(odp)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                            title="Fokus di Peta"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+                            title="Arahkan kamera GIS ke titik ODP ini"
                           >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteODP(odp.id, odp.code)}
-                            className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                            title="Hapus Titik ODP"
-                          >
-                            <Trash2 className="w-4 h-4" />
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Fokus Peta</span>
                           </button>
                         </div>
                       </td>
