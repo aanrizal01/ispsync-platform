@@ -1547,6 +1547,10 @@ export default function AdminAgentsPage() {
                       <span className="absolute right-3 top-2 text-slate-400 font-bold">%</span>
                     </div>
                     <span className="text-[10px] text-slate-500">Potongan harga untuk pembeli</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Master Agent Hierarchy */}
               <div className="bg-purple-50/70 p-4 rounded-xl border border-purple-200 space-y-3">
                 <div className="flex items-center justify-between">

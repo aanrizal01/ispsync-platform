@@ -1205,6 +1205,7 @@ export default function AgentDashboardPage() {
         <div className="md:col-span-6 bg-linear-to-br from-slate-900 via-slate-800 to-blue-950 text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between relative overflow-hidden">
           <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-44 h-44 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
 
+          <div>
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
