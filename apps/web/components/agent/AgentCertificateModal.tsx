@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Printer, X, Award, ShieldCheck, CheckCircle2 } from "lucide-react";
 
 export interface AgentCertificateData {
@@ -38,7 +39,12 @@ export default function AgentCertificateModal({
   agent,
   companyProfile,
 }: AgentCertificateModalProps) {
+  const [mounted, setMounted] = useState(false);
   const printAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -50,7 +56,7 @@ export default function AgentCertificateModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen || !agent) return null;
+  if (!mounted || !isOpen || !agent) return null;
 
   const issueDate = agent.created_at ? new Date(agent.created_at) : new Date();
   const validUntil = new Date(issueDate);
@@ -76,35 +82,33 @@ export default function AgentCertificateModal({
 
   const logoUrl = companyProfile.logoUrl || "/web/dev_logo.svg";
 
-  return (
-    <div id="agent-certificate-modal" className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto">
+  return createPortal(
+    <div id="agent-certificate-portal" className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto">
       <style jsx global>{`
         @media print {
           @page {
             size: A4 landscape;
             margin: 8mm;
           }
-          body {
+          html, body {
             background: white !important;
             color: black !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            height: auto !important;
+            overflow: visible !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          body * {
-            visibility: hidden;
+          body > *:not(#agent-certificate-portal) {
+            display: none !important;
           }
-          #agent-certificate-modal,
-          #agent-certificate-modal * {
-            visibility: visible !important;
-          }
-          #agent-certificate-modal {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
+          #agent-certificate-portal {
+            display: block !important;
+            position: static !important;
             width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
-            display: block !important;
             background: white !important;
           }
           nav, aside, header, footer {
@@ -297,6 +301,7 @@ export default function AgentCertificateModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

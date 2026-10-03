@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Printer, X, FileText, CheckCircle2, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { Printer, X, FileText } from "lucide-react";
 
 export interface AgentPksData {
   id: string;
@@ -44,6 +45,12 @@ export default function AgentPksModal({
   agent,
   companyProfile,
 }: AgentPksModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -54,7 +61,7 @@ export default function AgentPksModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen || !agent) return null;
+  if (!mounted || !isOpen || !agent) return null;
 
   const agreementDate = agent.created_at ? new Date(agent.created_at) : new Date();
   const formattedDate = agreementDate.toLocaleDateString("id-ID", {
@@ -66,46 +73,44 @@ export default function AgentPksModal({
   const regNumber = `PKS/ISP/AGN/${agreementYear}/${agent.code}`;
   const logoUrl = companyProfile.logoUrl || "/web/dev_logo.svg";
 
-  return (
+  return createPortal(
     <div
-      id="agent-pks-modal-root"
+      id="agent-pks-portal"
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto print:overflow-visible print:backdrop-blur-none"
     >
       <style jsx global>{`
         @media print {
           @page {
             size: A4 portrait;
-            margin: 15mm 20mm;
+            margin: 12mm 18mm;
           }
           html, body {
-            background: white !important;
-            color: black !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+            margin: 0 !important;
+            padding: 0 !important;
             height: auto !important;
             min-height: 100% !important;
             overflow: visible !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          body * {
-            visibility: hidden;
+          /* Hide all application UI except this modal portal */
+          body > *:not(#agent-pks-portal) {
+            display: none !important;
           }
-          #agent-pks-modal-root,
-          #agent-pks-modal-root * {
-            visibility: visible !important;
-          }
-          #agent-pks-modal-root {
+          #agent-pks-portal {
+            display: block !important;
             position: static !important;
-            inset: auto !important;
-            width: 100% !important;
-            height: auto !important;
             margin: 0 !important;
             padding: 0 !important;
+            width: 100% !important;
+            height: auto !important;
             background: transparent !important;
-            backdrop-filter: none !important;
             overflow: visible !important;
-            display: block !important;
           }
           #agent-pks-card {
+            display: block !important;
             position: static !important;
             width: 100% !important;
             max-width: none !important;
@@ -118,25 +123,34 @@ export default function AgentPksModal({
             border-radius: 0 !important;
             background: transparent !important;
             overflow: visible !important;
-            display: block !important;
           }
           #agent-pks-printable {
+            display: block !important;
             width: 100% !important;
             max-height: none !important;
             height: auto !important;
             margin: 0 !important;
             padding: 0 !important;
             overflow: visible !important;
-            display: block !important;
+          }
+          .pks-header {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            margin-bottom: 1.25rem !important;
+          }
+          .pks-parties {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            margin-bottom: 1.25rem !important;
           }
           .pks-pasal-block {
-            page-break-inside: avoid;
-            break-inside: avoid;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
           }
           .pks-signatures {
-            page-break-inside: avoid;
-            break-inside: avoid;
-            margin-top: 2rem;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            margin-top: 2rem !important;
           }
           nav, aside, header, footer {
             display: none !important;
@@ -187,51 +201,54 @@ export default function AgentPksModal({
           id="agent-pks-printable"
           className="p-8 sm:p-12 overflow-y-auto font-sans text-slate-900 text-xs sm:text-sm leading-relaxed print:p-0 print:overflow-visible print:m-0 print:text-black"
         >
-          {/* Kop Surat Resmi */}
-          <div className="text-center pb-4 border-b-4 border-double border-slate-900 mb-6">
-            {/* Logo Perusahaan */}
-            <div className="flex flex-col items-center justify-center mb-2">
-              <img
-                src={logoUrl}
-                alt={companyProfile.brandName || "Logo"}
-                className="h-12 sm:h-14 w-auto max-w-[280px] object-contain mb-1"
-                onError={(e: any) => {
-                  e.currentTarget.src = "/logo.png";
-                }}
-              />
-              <h1 className="text-lg sm:text-xl font-black uppercase tracking-wider text-slate-950 font-serif">
-                {companyProfile.companyName}
-              </h1>
+          {/* Header Block (Kop + Judul) - Kept together so it never splits across pages */}
+          <div className="pks-header">
+            {/* Kop Surat Resmi */}
+            <div className="text-center pb-3 border-b-4 border-double border-slate-900 mb-5">
+              {/* Logo Perusahaan */}
+              <div className="flex flex-col items-center justify-center mb-1.5">
+                <img
+                  src={logoUrl}
+                  alt={companyProfile.brandName || "Logo"}
+                  className="h-11 sm:h-12 w-auto max-w-[260px] object-contain mb-1"
+                  onError={(e: any) => {
+                    e.currentTarget.src = "/logo.png";
+                  }}
+                />
+                <h1 className="text-base sm:text-lg font-black uppercase tracking-wider text-slate-950 font-serif">
+                  {companyProfile.companyName}
+                </h1>
+              </div>
+
+              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-700">
+                Penyelenggara Jasa Akses Internet (Internet Service Provider)
+              </p>
+              <p className="text-[10px] text-slate-600 font-mono mt-0.5">
+                NPWP: {companyProfile.npwp}
+              </p>
+              <p className="text-[10px] text-slate-600 mt-0.5">
+                Kantor: {companyProfile.address} &bull; Telp/WA: {companyProfile.phone} &bull; Email: {companyProfile.emailSupport}
+              </p>
             </div>
 
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-700 mt-0.5">
-              Penyelenggara Jasa Akses Internet (Internet Service Provider)
-            </p>
-            <p className="text-[11px] text-slate-600 font-mono mt-0.5">
-              NPWP: {companyProfile.npwp}
-            </p>
-            <p className="text-[11px] text-slate-600 mt-0.5">
-              Kantor: {companyProfile.address} &bull; Telp/WA: {companyProfile.phone} &bull; Email: {companyProfile.emailSupport}
-            </p>
-          </div>
-
-          {/* Judul & Nomor Surat */}
-          <div className="text-center mb-6">
-            <h2 className="text-base sm:text-lg font-black uppercase tracking-wide underline underline-offset-4 text-slate-950 font-serif">
-              SURAT PERJANJIAN KERJA SAMA (PKS) KEMITRAAN AGEN RESMI
-            </h2>
-            <p className="text-xs font-mono font-bold text-slate-700 mt-1">
-              Nomor Registrasi: {regNumber}
-            </p>
+            {/* Judul & Nomor Surat */}
+            <div className="text-center mb-4">
+              <h2 className="text-sm sm:text-base font-black uppercase tracking-wide underline underline-offset-4 text-slate-950 font-serif">
+                SURAT PERJANJIAN KERJA SAMA (PKS) KEMITRAAN AGEN RESMI
+              </h2>
+              <p className="text-xs font-mono font-bold text-slate-700 mt-1">
+                Nomor Registrasi: {regNumber}
+              </p>
+            </div>
           </div>
 
           {/* Pembukaan & Para Pihak */}
-          <div className="space-y-3 mb-5 text-justify leading-relaxed">
+          <div className="pks-parties space-y-2.5 mb-5 text-justify leading-relaxed">
             <p>
               Pada hari ini, tanggal <strong>{formattedDate}</strong>, telah dibuat dan ditandatangani Perjanjian Kerja Sama Kemitraan Distribusi Layanan Internet, Voucher Hotspot, WiFi Roaming Passpoint, dan Loket Pembayaran Tagihan (selanjutnya disebut <strong>&quot;Perjanjian&quot;</strong>), oleh dan antara:
             </p>
 
-            <div className="pl-4 border-l-2 border-slate-300 space-y-2">
+            <div className="pl-4 border-l-2 border-slate-300 space-y-1.5 py-1">
               <p>
                 <strong>1. {companyProfile.companyName}</strong>, sebuah perseroan terbatas berizin resmi penyelenggara jasa internet ISP, beralamat kantor di {companyProfile.address}, dalam hal ini bertindak untuk dan atas nama perseroan (selanjutnya disebut sebagai <strong>&quot;PIHAK PERTAMA&quot;</strong>).
               </p>
@@ -246,40 +263,40 @@ export default function AgentPksModal({
           </div>
 
           {/* Pasal-Pasal */}
-          <div className="space-y-4 text-justify">
+          <div className="space-y-3.5 text-justify">
             <div className="pks-pasal-block">
-              <h4 className="font-bold text-slate-950 font-serif">PASAL 1 — DASAR KEMITRAAN &amp; LEGALITAS</h4>
-              <p className="text-xs text-slate-700 mt-0.5">
+              <h4 className="font-bold text-slate-950 font-serif text-xs sm:text-sm">PASAL 1 — DASAR KEMITRAAN &amp; LEGALITAS</h4>
+              <p className="text-[11px] sm:text-xs text-slate-700 mt-0.5 leading-relaxed">
                 1. PIHAK PERTAMA adalah Badan Hukum Penyelenggara Jasa Internet (ISP) berizin resmi dari Kementerian Komunikasi dan Informatika RI.<br />
                 2. PIHAK KEDUA bertindak semata-mata sebagai <strong>Mitra Saluran Distribusi Resmi (Channel Partner)</strong> bagi produk PIHAK PERTAMA, dan hubungan ini merupakan kemitraan bisnis keagenan, bukan ketenagakerjaan/karyawan, serta bukan pengalihan izin telekomunikasi.
               </p>
             </div>
 
             <div className="pks-pasal-block">
-              <h4 className="font-bold text-slate-950 font-serif">PASAL 2 — RUANG LINGKUP LAYANAN</h4>
-              <p className="text-xs text-slate-700 mt-0.5">
+              <h4 className="font-bold text-slate-950 font-serif text-xs sm:text-sm">PASAL 2 — RUANG LINGKUP LAYANAN</h4>
+              <p className="text-[11px] sm:text-xs text-slate-700 mt-0.5 leading-relaxed">
                 PIHAK KEDUA ditunjuk sah untuk melayani: (a) Penjualan kode voucher Hotspot WiFi digital/fisik; (b) Penyaluran dan aktivasi paket WiFi Roaming Passpoint (Hotspot 2.0); (c) Penerimaan setoran loket pembayaran tagihan bulanan pelanggan resmi PIHAK PERTAMA.
               </p>
             </div>
 
             <div className="pks-pasal-block">
-              <h4 className="font-bold text-slate-950 font-serif">PASAL 3 — HAK &amp; KEWAJIBAN PARA PIHAK</h4>
-              <p className="text-xs text-slate-700 mt-0.5">
+              <h4 className="font-bold text-slate-950 font-serif text-xs sm:text-sm">PASAL 3 — HAK &amp; KEWAJIBAN PARA PIHAK</h4>
+              <p className="text-[11px] sm:text-xs text-slate-700 mt-0.5 leading-relaxed">
                 1. PIHAK PERTAMA berkewajiban menyediakan aplikasi loket agen yang stabil, pasokan voucher, dan menyetorkan PPN resmi ke kas negara.<br />
                 2. PIHAK KEDUA berhak atas bagi hasil/komisi resmi, dan berkewajiban menjual produk sesuai tarif HET resmi serta menerbitkan struk/bukti bayar sah kepada pelanggan akhir.
               </p>
             </div>
 
             <div className="pks-pasal-block">
-              <h4 className="font-bold text-slate-950 font-serif">PASAL 4 — LARANGAN KERAS &amp; INTEGRITAS (ANTI RT/RW NET ILEGAL)</h4>
-              <p className="text-xs text-slate-700 mt-0.5">
+              <h4 className="font-bold text-slate-950 font-serif text-xs sm:text-sm">PASAL 4 — LARANGAN KERAS &amp; INTEGRITAS (ANTI RT/RW NET ILEGAL)</h4>
+              <p className="text-[11px] sm:text-xs text-slate-700 mt-0.5 leading-relaxed">
                 PIHAK KEDUA <strong>dilarang keras</strong>: (a) Menjual kembali bandwidth mentah secara ilegal, menarik kabel LAN/FO ke tetangga di luar izin resmi, atau menyelenggarakan RT/RW Net ilegal; (b) Memodifikasi konfigurasi perangkat Access Point/ONT; (c) Mengenakan pungutan biaya liar di luar tarif resmi. Pelanggaran mengakibatkan pemutusan kerja sama seketika dan penerusan ke ranah hukum UU Telekomunikasi No. 36/1999.
               </p>
             </div>
 
             <div className="pks-pasal-block">
-              <h4 className="font-bold text-slate-950 font-serif">PASAL 5 — SKEMA KOMISI &amp; KETENTUAN PERPAJAKAN</h4>
-              <p className="text-xs text-slate-700 mt-0.5">
+              <h4 className="font-bold text-slate-950 font-serif text-xs sm:text-sm">PASAL 5 — SKEMA KOMISI &amp; KETENTUAN PERPAJAKAN</h4>
+              <p className="text-[11px] sm:text-xs text-slate-700 mt-0.5 leading-relaxed">
                 1. <strong>Komisi Voucher Offline / Grosir:</strong> Cashback sebesar <strong>{agent.offline_cashback_pct ?? 15}%</strong>.<br />
                 2. <strong>Komisi Transaksi Online / Kode Promo:</strong> Komisi sebesar <strong>{agent.online_cashback_pct ?? 10}%</strong> (Diskon pelanggan: {agent.online_discount_pct ?? 10}%).<br />
                 3. <strong>Pajak (PMK No. 6/PMK.03/2021):</strong> Nilai jual paket sudah mencakup PPN 11% yang disetorkan langsung oleh PIHAK PERTAMA ke kas negara, di mana Dasar Pengenaan Pajak (DPP) dihitung dari harga bersih setelah diskon resmi (<em>final price / 1.11</em>).
@@ -287,37 +304,38 @@ export default function AgentPksModal({
             </div>
 
             <div className="pks-pasal-block">
-              <h4 className="font-bold text-slate-950 font-serif">PASAL 6 — MASA BERLAKU &amp; PENYELESAIAN PERSELISIHAN</h4>
-              <p className="text-xs text-slate-700 mt-0.5">
+              <h4 className="font-bold text-slate-950 font-serif text-xs sm:text-sm">PASAL 6 — MASA BERLAKU &amp; PENYELESAIAN PERSELISIHAN</h4>
+              <p className="text-[11px] sm:text-xs text-slate-700 mt-0.5 leading-relaxed">
                 Perjanjian ini berlaku selama 1 (satu) tahun sejak ditandatangani. Segala perselisihan diselesaikan secara musyawarah mufakat, dan apabila tidak tercapai mufakat, PARA PIHAK sepakat memilih domisili hukum di Pengadilan Negeri setempat.
               </p>
             </div>
           </div>
 
           {/* Tanda Tangan */}
-          <div className="pks-signatures grid grid-cols-2 gap-8 pt-8 mt-6 border-t border-slate-200">
+          <div className="pks-signatures grid grid-cols-2 gap-8 pt-6 mt-6 border-t border-slate-200">
             <div className="text-center">
-              <p className="font-bold text-slate-900">PIHAK PERTAMA</p>
-              <p className="text-xs text-slate-600">{companyProfile.companyName}</p>
-              <div className="h-20 flex items-center justify-center my-1 text-slate-400 text-[11px] italic border border-dashed border-slate-300 rounded-lg max-w-[200px] mx-auto bg-slate-50">
+              <p className="font-bold text-slate-900 text-xs sm:text-sm">PIHAK PERTAMA</p>
+              <p className="text-[11px] text-slate-600">{companyProfile.companyName}</p>
+              <div className="h-16 sm:h-20 flex items-center justify-center my-1 text-slate-400 text-[10px] italic border border-dashed border-slate-300 rounded-lg max-w-[180px] mx-auto bg-slate-50">
                 [ Meterai Rp 10.000 &amp; Cap ]
               </div>
-              <p className="font-bold text-slate-900 underline mt-2">Pimpinan Perusahaan</p>
-              <p className="text-[11px] text-slate-500">Direktur / Authorized Representative</p>
+              <p className="font-bold text-slate-900 underline text-xs mt-1">Pimpinan Perusahaan</p>
+              <p className="text-[10px] text-slate-500">Direktur / Authorized Representative</p>
             </div>
 
             <div className="text-center">
-              <p className="font-bold text-slate-900">PIHAK KEDUA</p>
-              <p className="text-xs text-slate-600">Mitra Agen / Pengelola Gerai</p>
-              <div className="h-20 flex items-center justify-center my-1 text-slate-400 text-[11px] italic border border-dashed border-slate-300 rounded-lg max-w-[200px] mx-auto bg-slate-50">
+              <p className="font-bold text-slate-900 text-xs sm:text-sm">PIHAK KEDUA</p>
+              <p className="text-[11px] text-slate-600">Mitra Agen / Pengelola Gerai</p>
+              <div className="h-16 sm:h-20 flex items-center justify-center my-1 text-slate-400 text-[10px] italic border border-dashed border-slate-300 rounded-lg max-w-[180px] mx-auto bg-slate-50">
                 [ Tanda Tangan Mitra ]
               </div>
-              <p className="font-bold text-slate-900 underline mt-2">{agent.name}</p>
-              <p className="text-[11px] text-slate-500">Pemilik / Penanggung Jawab Gerai</p>
+              <p className="font-bold text-slate-900 underline text-xs mt-1">{agent.name}</p>
+              <p className="text-[10px] text-slate-500">Pemilik / Penanggung Jawab Gerai</p>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
