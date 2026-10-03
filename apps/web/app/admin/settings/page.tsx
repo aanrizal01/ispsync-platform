@@ -3154,6 +3154,8 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         </div>
+      )}
+
       {/* Tab 5: Domain & Sub-Brand WiFi */}
       {activeTab === "domain" && (
         <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-6">
