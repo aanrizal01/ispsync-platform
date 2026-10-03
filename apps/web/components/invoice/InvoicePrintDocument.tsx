@@ -286,9 +286,12 @@ export function InvoicePrintDocument({
               ))}
             </tbody>
           </table>
+        </div>
 
+        {/* Bottom Section: Breakdown, Payment Methods & Formal Footer */}
+        <div className="mt-auto space-y-4 pt-2">
           {/* Breakdown & Calculation */}
-          <div className="flex justify-between items-start gap-4 mb-6">
+          <div className="flex justify-between items-start gap-4">
             <div className="w-1/2 p-3 border border-slate-300 rounded text-xs bg-slate-50 space-y-2">
               <p className="font-bold text-slate-800">Instruksi Pembayaran Transfer Bank:</p>
               {bankAccounts.length > 0 ? (
@@ -341,50 +344,50 @@ export function InvoicePrintDocument({
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Formal Signature & Footer */}
-        <div className="pt-4 border-t border-slate-300">
-          <div className="flex justify-between items-end text-xs">
-            <div className="max-w-sm text-[10px] text-slate-500">
-              <p className="font-bold text-slate-700 mb-0.5">Catatan Penting:</p>
-              <ul className="list-disc list-inside space-y-0.5">
-                {footerNotesList.map((line, idx) => (
-                  <li key={idx}>{line.replace(/^[•\-\*]\s*/, "")}</li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Verification QR Code & Barcode Loket */}
-            <div className="flex items-center gap-2.5">
-              {isQrEnabled && (
-                <div className="flex items-center gap-2 border border-slate-300 rounded-lg p-2 bg-slate-50/70 max-w-[190px]">
-                  <div className="w-12 h-12 bg-white p-0.5 border border-slate-300 rounded shrink-0 flex items-center justify-center">
-                    <img
-                      src={qrCodeUrl}
-                      alt="QR Verifikasi"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                  <div className="text-[9px] leading-tight text-slate-700">
-                    <p className="font-extrabold text-slate-900 uppercase tracking-tight">VERIFIKASI RESMI</p>
-                    <p className="text-[8px] text-slate-500 mt-0.5 leading-snug">Pindai QR untuk validasi keabsahan dokumen faktur ini.</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Official Signature Box */}
-            <div className="text-center w-52">
-              <p className="text-[11px] text-slate-600 mb-1">
-                Diterbitkan secara sah oleh,
-              </p>
-              <p className="text-xs font-bold text-slate-800">{template.company_name}</p>
-              <div className="h-16 flex items-center justify-center text-slate-300 text-[10px] italic">
-                ( Cap &amp; Tanda Tangan Resmi )
+          {/* Formal Signature & Footer */}
+          <div className="pt-4 border-t border-slate-300">
+            <div className="flex justify-between items-end text-xs">
+              <div className="max-w-sm text-[10px] text-slate-500">
+                <p className="font-bold text-slate-700 mb-0.5">Catatan Penting:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  {footerNotesList.map((line, idx) => (
+                    <li key={idx}>{line.replace(/^[•\-\*]\s*/, "")}</li>
+                  ))}
+                </ul>
               </div>
-              <div className="border-t border-slate-400 pt-1 font-bold text-slate-800 text-[11px]">
-                Bagian Keuangan &amp; Billing
+
+              {/* Verification QR Code & Barcode Loket */}
+              <div className="flex items-center gap-2.5">
+                {isQrEnabled && (
+                  <div className="flex items-center gap-2 border border-slate-300 rounded-lg p-2 bg-slate-50/70 max-w-[190px]">
+                    <div className="w-12 h-12 bg-white p-0.5 border border-slate-300 rounded shrink-0 flex items-center justify-center">
+                      <img
+                        src={qrCodeUrl}
+                        alt="QR Verifikasi"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <div className="text-[9px] leading-tight text-slate-700">
+                      <p className="font-extrabold text-slate-900 uppercase tracking-tight">VERIFIKASI RESMI</p>
+                      <p className="text-[8px] text-slate-500 mt-0.5 leading-snug">Pindai QR untuk validasi keabsahan dokumen faktur ini.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Official Signature Box */}
+              <div className="text-center w-52">
+                <p className="text-[11px] text-slate-600 mb-1">
+                  Diterbitkan secara sah oleh,
+                </p>
+                <p className="text-xs font-bold text-slate-800">{template.company_name}</p>
+                <div className="h-16 flex items-center justify-center text-slate-300 text-[10px] italic">
+                  ( Cap &amp; Tanda Tangan Resmi )
+                </div>
+                <div className="border-t border-slate-400 pt-1 font-bold text-slate-800 text-[11px]">
+                  Bagian Keuangan &amp; Billing
+                </div>
               </div>
             </div>
           </div>
@@ -999,7 +1002,10 @@ export function InvoicePrintDocument({
             </tbody>
           </table>
         </div>
+      </div>
 
+      {/* Bottom Section: Breakdown, Calculation & Footer */}
+      <div className="mt-auto space-y-4 pt-2">
         {/* Breakdown & Calculation */}
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
           <div className="w-full sm:w-1/2 p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1.5">
@@ -1056,10 +1062,9 @@ export function InvoicePrintDocument({
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Legal & Stamp Footer */}
-      <div className="border-t border-slate-200 pt-4 mt-auto">
+        {/* Legal & Stamp Footer */}
+        <div className="border-t border-slate-200 pt-3">
         <div className="flex flex-col sm:flex-row justify-between items-end gap-3 text-xs text-slate-500">
           <div className="max-w-md">
             <p className="font-bold text-slate-700 mb-0.5">Ketentuan &amp; Informasi Penting:</p>
@@ -1115,6 +1120,7 @@ export function InvoicePrintDocument({
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
