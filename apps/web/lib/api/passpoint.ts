@@ -217,8 +217,8 @@ export const passpointApi = {
       body: JSON.stringify(data),
     }),
 
-  getCredentials: (page = 1, limit = 20) =>
-    request<{ data: PasspointCredential[]; meta: { total: number; page: number; limit: number } }>(
+  getCredentials: (page = 1, limit = 50) =>
+    request<PasspointCredential[] | { data: PasspointCredential[]; meta: { total: number; page: number; limit: number } }>(
       `/passpoint/credentials?page=${page}&limit=${limit}`
     ),
 

@@ -75,8 +75,10 @@ export default function AdminPasspointPage() {
         passpointApi.getProfiles(),
         passpointApi.getCredentials(1, 50),
       ]);
-      setProfiles(profRes.data || []);
-      setCredentials(credRes.data || []);
+      const profList = Array.isArray(profRes) ? profRes : (profRes as any)?.data || [];
+      const credList = Array.isArray(credRes) ? credRes : (credRes as any)?.data || [];
+      setProfiles(profList);
+      setCredentials(credList);
     } catch (err: any) {
       setError(err.message || "Gagal memuat data Passpoint");
     } finally {
