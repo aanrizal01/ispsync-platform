@@ -121,12 +121,73 @@
 
 ## 6. Hubungan Kode di Komputer Lokal
 
-1. **`c:\Users\62811\Downloads\ISPSYNC`** (Workspace Saat Ini):
-   * Source code Go Core Multi-Tenant Engine (`ispsync-linux`, SQLite WAL, Subdomain Resolver, Jartaplok Sharing Broker, OLT/BRAS Dispatcher).
+1. **`c:\Users\62811\Downloads\ISPSYNC`** (Workspace Utama Saat Ini):
+   * Monorepo lengkap: Go Core REST API (`apps/api`), Next.js 16 Web (`apps/web`), Universal Mobile App (`apps/mobile`), Docker configs, Caddyfile, dan database migrations.
 2. **`c:\Users\62811\Documents\GOGIGABILL`**:
-   * Monorepo GitHub (`https://github.com/aanrizal01/GOGIGABILL.git`), Dockerfiles, Caddyfile, Next.js Frontend.
+   * Repository arsip migrasi awal.
 3. **`c:\Users\62811\Documents\ISP`**:
    * Data registrasi lama, KML ODP Payakumbuh/Harau, formulir KPI.
 4. **`c:\Users\62811\Documents\FTTX`**:
    * Driver OMCI OLT (Huawei, ZTE C320, FiberHome, VSOL/Jolink 1-Port) & CWMP TR-069.
+
+---
+
+## 7. Arsitektur Isolasi Subdomain & Sub-Brand WiFi (Carrier-Grade)
+
+Sistem menerapkan pemisahan domain secara ketat antara **Akses Publik** dan **Internal ISP**:
+
+| Wilayah Akses | Format Domain Standar | Contoh Custom Domain | Rute & Peruntukan Layanan |
+|---|---|---|---|
+| **Publik (Hotspot & Mitra)** | `wifi.{tenant}.ispsync.id` | `hotspot.gowifi.id` | `/hotspot/buy`, `/hotspot/login`, `/passpoint`, `/agent/register`, `/agent/login`, `/agent/dashboard` |
+| **Terisolasi (Backoffice ISP)** | `ledger.{tenant}.ispsync.id` | `ledger.gogiga.net.id` | `/login`, `/admin/*` (CRM, Billing, Keuangan, NOC, Konfigurasi Router, Audit Logs) |
+| **Pelanggan Rumahan (FTTH)** | `portal.{tenant}.ispsync.id` | `member.gogiga.net.id` | Cek faktur bulanan PPPoE, riwayat pemakaian & bukti bayar mandiri |
+
+### Mekanisme Keamanan:
+* Pelanggan voucher publik yang mengakses captive portal tidak akan pernah melihat ataupun dapat melakukan probing terhadap form login backoffice internal ISP.
+* Didukung **Zero-Configuration On-Demand TLS**: Caddy secara otomatis menerbitkan sertifikat Let's Encrypt HTTPS instan saat custom domain sub-brand (seperti `hotspot.gowifi.id`) pertama kali diarahkan ke IP VPS `103.179.65.73`.
+
+---
+
+## 8. Modul Pengaturan Domain & Sub-Brand di Ledger (`/admin/settings`)
+
+Menu konfigurasi visual di Backoffice Ledger:
+1. **Identitas Sub-Brand Hotspot:** Pengaturan nama brand khusus publik (misal `@gowifi`, `@wifi.id`) yang otomatis tampil di captive portal, struk thermal, dan Passpoint.
+2. **Pemetaan Domain Publik & Terisolasi:** Form input dinamis untuk `wifi_domain`, `ledger_domain`, `portal_domain`, dan `primary_domain`.
+3. **Panduan DNS A-Record Real-time:** Menampilkan IP target server VPS (`103.179.65.73`).
+4. **1-Click MikroTik Walled Garden Generator:** Script otomatis yang mencantumkan domain WiFi + Payment Gateway (Midtrans, Duitku, Xendit, Tripay) siap salin ke terminal RouterOS.
+5. **Live Quick Links:** Tautan instan untuk pengujian rute publik dan backoffice.
+
+---
+
+## 9. Sistem Pendaftaran Mitra Agen Berkinerja Tinggi & Anti-Spam
+
+Untuk mencegah kelebihan beban server (*form flooding*) dan menghemat kapasitas disk storage:
+1. **Smart Client-Side Image Compression ([image-compressor.ts](apps/web/lib/utils/image-compressor.ts)):**
+   * Menggunakan kanvas HTML5 di browser pendaftar sebelum foto dikirim ke server.
+   * Resolusi dibatasi maksimal 1280px dan kompresi JPEG 0.8.
+   * Foto kamera HP resolusi tinggi (8-15 MB) terkompresi otomatis menjadi **150-250 KB** (menghemat **~97% bandwidth dan kapasitas disk VPS**).
+   * Badge indikator visual: `✓ Auto-Kompresi Gambar Aktif (Hemat 97%)`.
+2. **Anti-Flooding & Honeypot Protection:**
+   * **Honeypot Trap:** Input perangkap tersembunyi yang langsung membatalkan kiriman bot/script otomatis.
+   * **Durasi Pengisian Minimal:** Menolak kiriman form yang terisi dalam waktu kurang dari 2.5 detik.
+   * **Submission Cooldown:** Batas waktu kirim ulang 60 detik per sesi peramban.
+   * **IP Rate Limiter In-Memory:** Maksimal 5 registrasi per 10 menit per IP address.
+   * **Cek Duplikasi NIK & Nomor HP:** Memastikan tidak ada data ganda di database PostgreSQL.
+   * **Auto-Fill Referral Code:** Otomatis mengisi kode referral agen dari parameter URL (`?ref=`, `?agent=`, `?sales=`, `?promo=`).
+
+---
+
+## 10. Aplikasi Mobile Universal Aliansi Bersama (`apps/mobile`)
+
+Satu aplikasi resmi untuk Android & iPhone (iOS) yang dapat digunakan bersama oleh seluruh ISP mitra aliansi:
+* **Teknologi:** React Native + Expo SDK 57 (React 19, React Native 0.86).
+* **Multi-Tenant Discovery:**
+  * Pindai QR di stiker modem router ONT atau faktur tagihan pelanggan.
+  * Auto-detect SSID / gateway IP saat HP terhubung ke hotspot WiFi ISP.
+  * Pencarian katalog direktori ISP nasional.
+* **Dual-Mode:**
+  * **Pelanggan:** Beli voucher QRIS, pasang profil WiFi Passpoint 2.0 (Hotspot 2.0), cek kuota & tagihan FTTH.
+  * **Mitra Loket:** Kasir warung, jual voucher, scan barcode SN, dan cetak langsung (*direct print*) ke printer thermal Bluetooth ESC/POS (58mm & 80mm) untuk Android (SPP) dan iOS (BLE) tanpa dialog browser.
+* **Native JavaScript Bridge:** Menyediakan `window.AndroidPrinter` & `window.ISPSYNC_MOBILE` sehingga modul web portal loket kasir langsung kompatibel.
+* **Panduan Penggunaan Lengkap:** Tersedia di [`docs/MANUAL_APLIKASI_MOBILE_UNIVERSAL.md`](docs/MANUAL_APLIKASI_MOBILE_UNIVERSAL.md).
 

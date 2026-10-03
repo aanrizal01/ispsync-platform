@@ -7,12 +7,13 @@ Modern ISP billing system supporting **PPPoE**, **Hotspot**, **Voucher**, **Pass
 | Layer | Technology |
 |---|---|
 | Backend | Go 1.23, chi router, pgx/v5 |
-| Database | PostgreSQL 16 |
+| Database | PostgreSQL 16 + PostGIS |
 | Cache / Queue | Redis 7 |
-| Frontend | Next.js 14 (App Router, TypeScript) |
-| UI | Tailwind CSS, shadcn/ui |
-| AAA | FreeRADIUS 3.2 (rlm_sql → PostgreSQL) |
-| Reverse Proxy | Caddy v2 |
+| Frontend Web | Next.js 16 (App Router, Turbopack, TypeScript) |
+| Mobile App | React Native, Expo SDK 57 (Android & iOS) |
+| UI Design System | Tailwind CSS, Linear Telco Dark Design Standard |
+| AAA Engine | FreeRADIUS 3.2 (rlm_sql → PostgreSQL) |
+| Reverse Proxy | Caddy v2 (On-Demand TLS Auto-SSL) |
 | Container | Docker + Compose |
 
 ## Prerequisites
@@ -101,6 +102,22 @@ GET    /api/v1/devices
 POST   /api/v1/devices                     # All-in-One API + RADIUS NAS registration
 GET    /api/v1/devices/{id}/test-conn
 
+# Domain & WiFi Settings (Multi-Tenant & Sub-Brand)
+GET    /api/v1/settings/domain
+PUT    /api/v1/settings/domain
+
+# Hotspot, Voucher & Passpoint WiFi 2.0
+GET    /api/v1/hotspot/plans
+POST   /api/v1/hotspot/buy
+GET    /api/v1/passpoint/profile
+POST   /api/v1/passpoint/register
+
+# Mitra Agen & Loket Kasir (Anti-Flooding Protected)
+POST   /api/v1/agents/register
+POST   /api/v1/agents/login
+GET    /api/v1/agents/dashboard
+POST   /api/v1/agents/vouchers/print
+
 # Health
 GET  /health
 GET  /ready
@@ -108,29 +125,35 @@ GET  /ready
 
 ## 📖 Dokumentasi & Buku Manual
 
+- [Buku Manual Aplikasi Mobile Universal (Android & iOS)](docs/MANUAL_APLIKASI_MOBILE_UNIVERSAL.md) — Panduan integrasi aliansi multi-tenant, koneksi printer thermal Bluetooth ESC/POS (58mm & 80mm), Passpoint Hotspot 2.0 auto-connect, dan pengujian via Expo SDK 57.
+- [Buku Master SOP Ekosistem Digital 3 Engine](docs/MASTER_SOP_EKOSISTEM_3_ENGINE_ISPSYNC.md) — Standar Operasional Prosedur terpadu untuk FiberGrid (Infrastruktur GIS FO), Nexus (Sales & Lapangan), dan Ledger (Billing, Keuangan & AAA).
+- [Perjanjian Kerjasama (PKS) Kemitraan Agen & Loket](docs/PKS_KEMITRAAN_AGEN_ISPSYNC.md) — Perjanjian resmi kemitraan agen loket, skema komisi bagi hasil, dan perlindungan anti-fraud.
 - [Buku Manual Billing & Panduan Operasional ISP](docs/BILLING_MANUAL.md) — Panduan komprehensif arsitektur billing, siklus faktur, kalkulasi PPN/proration, modul kemitraan bagi hasil, dan integrasi router/isolir.
-
+- [Panduan Standar Desain Linear Telco](GEMINI.md) — Design system standar carrier-grade, palet warna slate-950/cyan, serta larangan anti-pattern capsule gimmicks.
 
 ## Project Structure
 
 ```
-GOGIGABILL/
+ISPSYNC/
 ├── apps/
-│   ├── api/                # Go backend
+│   ├── api/                # Go 1.23 REST API Backend
 │   │   ├── cmd/api/        # API server entrypoint
 │   │   ├── cmd/worker/     # Background worker entrypoint
-│   │   ├── internal/       # Domain packages (auth, customer, billing...)
+│   │   ├── internal/       # Domain packages (auth, agent, billing, settings...)
 │   │   ├── migrations/     # SQL migrations
 │   │   └── pkg/            # Reusable packages (money, crypto)
-│   └── web/                # Next.js frontend
-│       ├── app/            # App Router pages
-│       ├── components/     # UI components
-│       ├── features/       # Feature modules
-│       └── lib/            # API client, auth, utils
+│   ├── web/                # Next.js 16 Web Frontend (Turbopack)
+│   │   ├── app/            # App Router (admin backoffice, hotspot, agent, passpoint)
+│   │   ├── components/     # UI components (Linear Telco Dark)
+│   │   └── lib/            # API client, auth, utils (smart image compressor)
+│   └── mobile/             # Universal Mobile App (Expo SDK 57, React Native 0.86)
+│       ├── App.tsx         # Root entry point with tenant switcher
+│       ├── assets/         # App icons & splash screens
+│       └── src/            # Screens (TenantSelect, MainPortal, PrinterSettings)
 ├── config/                 # Caddy, FreeRADIUS configs
-├── docker/                 # Docker build contexts
-├── keys/                   # JWT RSA keys (gitignored)
-├── scripts/                # Setup + utility scripts
+├── deploy/                 # Docker Compose production & Caddyfile configs
+├── docs/                   # Buku manual operasional, SOP, dan PKS resmi
+├── scripts/                # Setup + utility deployment scripts
 └── docker-compose.yml
 ```
 
@@ -176,15 +199,17 @@ After running migrations and seed:
 | 6 | ✅ Done | Voucher System & Hotspot Bandwidth Profiles |
 | 7 | ✅ Done | FreeRADIUS AAA Integration (rlm_sql, radcheck, radreply, radusergroup) |
 | 8 | ✅ Done | Captive Portal & Walled Garden Isolation Engine |
-| 9 | 📋 Planned | Passpoint / Hotspot 2.0 Integration |
+| 9 | ✅ Done | **Passpoint / Hotspot 2.0 Integration** (EAP-SIM / TTLS, `.mobileconfig` Auto-Installer) |
 | 10 | ✅ Done | MikroTik Adapter (RouterOS API port 8728 + FreeRADIUS NAS Auto-Attachment) |
 | 11 | 🔄 In Progress | Juniper BNG Adapter (Junos REST API / RFC 3576 CoA PoD) |
 | 12 | ✅ Done | **Partnership & Revenue Sharing Module** (Reseller/Sub-ISP, Split Rules, Settlement) |
-| 13 | 📋 Planned | Notification Dispatcher (WhatsApp Gateway & Email Alerts) |
-| 14 | 📋 Planned | Financial Reporting & Ledger Export |
-| 15 | 📋 Planned | Production Hardening & High Availability Deployment |
+| 13 | ✅ Done | Notification Dispatcher (WhatsApp Gateway & Automated Invoice Reminders) |
+| 14 | ✅ Done | Financial Reporting, Ledger & Date-Range Export with Print |
+| 15 | ✅ Done | Production Hardening, Caddy On-Demand TLS & Multi-Tenant VPS Deployment |
 | 16 | 📋 Planned | **SmartOLT Integration & Jartaplok Bridge** (Live Optical Telemetry, ONU Lifecycle, Wholesale Port Auto-COGS) |
-| 17 | 📋 Planned | **Blank Scratch Voucher & On-Demand Quota Injection** (Telco-Grade Blank Card Stock, Barcode/Camera Scan, Real-Time Agent Balance Debit) |
+| 17 | ✅ Done | **Mitra Agen & Blank Scratch Voucher POS** (Smart Client Compression 97%, Anti-Spam Honeypot, ESC/POS Bluetooth Print) |
+| 18 | ✅ Done | **Subdomain Isolation & Domain Engine** (`wifi.*` / `hotspot.*` vs `ledger.*`, Zero-Config Auto-SSL) |
+| 19 | ✅ Done | **Universal Mobile App Aliansi Bersama** (Expo SDK 57, React Native 0.86, Android & iOS Dual-Mode) |
 
 ## Security Notes
 

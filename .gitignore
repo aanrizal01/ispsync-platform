@@ -20,11 +20,14 @@ apps/api/vendor/
 apps/api/*.exe
 apps/api/*.test
 
-# ── Node / Next.js ────────────────────────────────────────────────
+# ── Node / Next.js / Expo ─────────────────────────────────────────
 node_modules/
 apps/web/.next/
 apps/web/out/
 apps/web/.turbo/
+.expo/
+apps/mobile/.expo/
+apps/mobile/.expo-shared/
 
 # ── Docker volumes (local bind mounts) ────────────────────────────
 postgres_data/

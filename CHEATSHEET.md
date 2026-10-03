@@ -21,33 +21,42 @@
 
 Tenant **`dev`** (*Laboratorium ISPSYNC R&D / Telecom DevLab*) digunakan untuk pengujian fitur baru, integrasi API, dan simulasi operasional.
 
-### A. Engine 3: ISPSYNC Ledger (Billing, Finance, Loket & Passpoint)
-* **URL Login Backoffice**: [https://billing.dev.ispsync.id/login](https://billing.dev.ispsync.id/login) *(atau `https://ledger.dev.ispsync.id/login`)*
+### A. Engine 3: ISPSYNC Ledger (Backoffice Terisolasi ISP)
+* **URL Login Backoffice**: [https://ledger.dev.ispsync.id/login](https://ledger.dev.ispsync.id/login)
   * **Email**: `private@ispsync.id` *(atau `admin@dev.ispsync.id`)*
   * **Password**: `RahasiaAan2026!` *(atau `DevLab2026!`)*
-* **Pusat Kredensial Passpoint**: [https://billing.dev.ispsync.id/admin/passpoint](https://billing.dev.ispsync.id/admin/passpoint)
-  * Kelola akun EAP-TTLS, unduh profil Apple `.mobileconfig`, panduan Android/Windows.
-* **Dashboard Loket Agen**: [https://billing.dev.ispsync.id/agent](https://billing.dev.ispsync.id/agent)
-  * Loket pembayaran tagihan (scan barcode POS), cetak voucher hotspot, terbitkan akses Passpoint konter (15%).
-* **Portal Publik Passpoint WiFi**: [https://billing.dev.ispsync.id/passpoint](https://billing.dev.ispsync.id/passpoint)
-  * Pembelian mandiri QRIS & pasang ulang profil pelanggan.
+* **Pengaturan Domain & Sub-Brand WiFi**: [https://ledger.dev.ispsync.id/admin/settings](https://ledger.dev.ispsync.id/admin/settings) (Tab: *Domain & Sub-Brand WiFi*)
+* **Pusat Kredensial Passpoint**: [https://ledger.dev.ispsync.id/admin/passpoint](https://ledger.dev.ispsync.id/admin/passpoint)
 
-### B. Engine 1: ISPSYNC Nexus (Operasional NOC, Portal & Lapangan)
-* **URL Login**: [https://nexus.dev.ispsync.id](https://nexus.dev.ispsync.id) *(atau `https://portal.dev.ispsync.id`)*
+### B. Portal Publik Hotspot, Voucher, Passpoint & Mitra Loket (`wifi.dev.ispsync.id`)
+* **Beli Voucher Mandiri (QRIS)**: [https://wifi.dev.ispsync.id/hotspot/buy](https://wifi.dev.ispsync.id/hotspot/buy) *(atau `https://hotspot.gowifi.id/hotspot/buy`)*
+* **Captive Portal Login Hotspot**: [https://wifi.dev.ispsync.id/hotspot/login](https://wifi.dev.ispsync.id/hotspot/login)
+* **Passpoint Hotspot 2.0 (Unduh Profil WiFi)**: [https://wifi.dev.ispsync.id/passpoint](https://wifi.dev.ispsync.id/passpoint)
+* **Pendaftaran Mitra Agen (Auto-Kompres 97% & Anti-Spam)**: [https://wifi.dev.ispsync.id/agent/register](https://wifi.dev.ispsync.id/agent/register)
+* **Dashboard Kasir Loket Agen**: [https://wifi.dev.ispsync.id/agent/dashboard](https://wifi.dev.ispsync.id/agent/dashboard) *(atau `/agent/login`)*
+
+### C. Engine 1: ISPSYNC Nexus (Operasional NOC, Portal & Lapangan)
+* **URL Login**: [https://nexus.dev.ispsync.id](https://nexus.dev.ispsync.id)
 * **Kredensial User Lab Dev**:
   * **Lead / Owner**: `admin` / `DevLab2026!` *(Role: OWNER)*
   * **NOC Specialist**: `noc` / `DevLab2026!` *(Role: NOC)*
   * **Sales Lapangan**: `sales` / `DevLab2026!` *(Role: SALES)*
   * **Teknisi Lapangan**: `teknisi` / `DevLab2026!` *(Role: TECHNICIAN)*
 
-### C. Engine 2: ISPSYNC FiberGrid (Infrastruktur Fiber & GIS)
+### D. Engine 2: ISPSYNC FiberGrid (Infrastruktur Fiber & GIS)
 * **URL**: [https://fttx.dev.ispsync.id](https://fttx.dev.ispsync.id)
 * Pemetaan rute kabel FO, ODC, ODP testbed, dan monitoring OLT lab.
 
-### D. Member Portal SaaS (Langganan Platform ISPSYNC)
+### E. Member Portal SaaS (Langganan Platform ISPSYNC)
 * **URL**: [https://dev.ispsync.id/member](https://dev.ispsync.id/member) *(atau `https://ispsync.id/member`)*
   * **Email**: `admin@dev.ispsync.id`
   * **Password**: `DevLab2026!`
+
+### F. Aplikasi Mobile Universal (Android & iOS — Expo SDK 57)
+* **Source Code**: `apps/mobile/`
+* **Jalankan Lokal**: `cd apps/mobile && npx.cmd expo start`
+* **URL Expo Go**: `exp://192.168.223.75:8081` (Akun Expo: `anri01`)
+* **Dokumentasi Lengkap**: [`docs/MANUAL_APLIKASI_MOBILE_UNIVERSAL.md`](docs/MANUAL_APLIKASI_MOBILE_UNIVERSAL.md)
 
 ---
 

@@ -364,3 +364,36 @@ Hanya akun admin yang memiliki izin (*permission*) `invoices:void` yang dapat me
 #### Q: Bagaimana jika GenieACS server mati atau belum running saat pelanggan ganti password WiFi?
 ISPSYNC Ledger memiliki mekanisme toleransi gangguan (*offline graceful fallback*). Perubahan password WiFi pelanggan akan tetap dicatat ke database ISPSYNC Ledger dan sistem mencatat peringatan log tanpa menyebabkan crash/error fatal pada halaman portal pelanggan. Saat GenieACS online kembali, konfigurasi disinkronisasikan ke modem fisik.
 
+---
+
+## 12. Manajemen Domain & Isolasi Jaringan Publik vs Backoffice
+
+Sesuai standar keamanan telekomunikasi tingkat tinggi (*Carrier-Grade*), antarmuka publik dan administrasi internal wajib dipisahkan:
+
+1. **Jalur Publik (`wifi.{tenant}.ispsync.id` atau `hotspot.{brand}.id`):**
+   * Digunakan oleh pelanggan untuk membeli voucher online (`/hotspot/buy`), login captive portal (`/hotspot/login`), mengunduh profil Passpoint Hotspot 2.0 (`/passpoint`), serta pendaftaran dan loket agen (`/agent/*`).
+   * Dilengkapi proteksi anti-spam bot (honeypot field, cooldown 60s, rate limiter IP).
+   * Dilengkapi kompresor kanvas gambar pintar di browser pendaftar (mengurangi foto KTP 10MB menjadi ~180KB, menghemat 97% storage server).
+2. **Jalur Internal Terisolasi (`ledger.{tenant}.ispsync.id`):**
+   * Khusus staf finance, admin, NOC, dan integrasi API perbankan.
+   * Terisolasi penuh dari lalu lintas pengguna voucher hotspot publik.
+3. **Pengaturan Domain di Backoffice (`/admin/settings`):**
+   * Tab **"Domain & Sub-Brand WiFi"** memungkinkan ISP mengatur sub-brand publik (seperti `@gowifi`), domain akses, DNS A-Record (`103.179.65.73`), dan script Walled Garden MikroTik dengan 1-klik salin.
+
+---
+
+## 13. Integrasi Aplikasi Mobile Kasir Agen & Cetak Printer Thermal
+
+Mitra loket dan agen kasir warung dapat menggunakan **Aplikasi Mobile Universal ISPSYNC Connect** (Android & iOS) yang terhubung ke modul billing:
+
+1. **Direct Bluetooth Thermal Print (ESC/POS):**
+   * Mendukung ukuran kertas **58 mm (standar saku)** dan **80 mm (kasir desktop)**.
+   * Kompatibel dengan semua merk printer thermal Bluetooth (Panda, Blueprint, VSC, MiniPOS 5802, BellaV, Eppos).
+   * Mencetak struk voucher fisik atau kuitansi pelunasan faktur dalam waktu **< 1 detik** tanpa dialog browser.
+2. **Koneksi Dual-Platform:**
+   * Android: Bluetooth Serial Port Profile (SPP).
+   * iPhone (iOS): Bluetooth Low Energy (BLE / GATT) tanpa sertifikasi MFi.
+3. **JavaScript Bridge Otomatis:**
+   * Halaman web kasir `/agent/dashboard` secara otomatis mengenali aplikasi mobile via `window.AndroidPrinter` & `window.ISPSYNC_MOBILE`.
+
+
