@@ -823,6 +823,9 @@ export default function AdminPasspointPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
         {/* Tab 3: Packages */}
         {activeTab === "packages" && (
           <div className="overflow-x-auto">
