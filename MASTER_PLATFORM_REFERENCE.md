@@ -90,6 +90,13 @@
   * NOC Core: `noc` / `Password@123`
   * Sales: `sales` / `Password@123`
   * Teknisi Lapangan: `teknisi` / `Password@123`
+* **Tenant Staging & R&D Lab Login (`dev`) — Laboratorium ISPSYNC R&D**:
+  * Engine 3 Ledger / Billing: `https://billing.dev.ispsync.id/login` (`private@ispsync.id` / `RahasiaAan2026!` atau `admin@dev.ispsync.id` / `DevLab2026!`)
+  * Engine 1 Nexus / Portals: `https://nexus.dev.ispsync.id` (`admin`, `noc`, `sales`, `teknisi` / `DevLab2026!`)
+  * Engine 2 FiberGrid GIS: `https://fttx.dev.ispsync.id`
+  * Member SaaS Portal: `https://dev.ispsync.id/member` (`admin@dev.ispsync.id` / `DevLab2026!`)
+  * Loket Kasir Agen: `https://billing.dev.ispsync.id/agent`
+  * Passpoint Wi-Fi 2.0: `https://billing.dev.ispsync.id/passpoint` (Admin: `/admin/passpoint`)
 
 ---
 
