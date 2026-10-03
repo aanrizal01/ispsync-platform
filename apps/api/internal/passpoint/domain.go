@@ -34,6 +34,8 @@ type Credential struct {
 	Password            string     `json:"password"`
 	Status              string     `json:"status"` // ACTIVE, SUSPENDED, REVOKED
 	LastAuthenticatedAt *time.Time `json:"last_authenticated_at,omitempty"`
+	ExpiresAt           *time.Time `json:"expires_at,omitempty"`
+	PackageName         *string    `json:"package_name,omitempty"`
 	CreatedAt           time.Time  `json:"created_at"`
 	UpdatedAt           time.Time  `json:"updated_at"`
 }

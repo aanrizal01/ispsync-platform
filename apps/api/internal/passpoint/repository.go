@@ -126,10 +126,19 @@ func (r *Repository) GetCredentialByID(ctx context.Context, id uuid.UUID) (*Cred
 	const q = `
 		SELECT c.id, c.customer_id, cust.full_name, cust.customer_number,
 		       c.profile_id, p.name, c.username, c.password, c.status,
-		       c.last_authenticated_at, c.created_at, c.updated_at
+		       c.last_authenticated_at, c.created_at, c.updated_at,
+		       COALESCE(po.expires_at, c.created_at + INTERVAL '30 days') as expires_at,
+		       COALESCE(po.package_name, 'Passpoint Standar') as package_name
 		FROM passpoint_credentials c
 		JOIN customers cust ON cust.id = c.customer_id
 		JOIN passpoint_profiles p ON p.id = c.profile_id
+		LEFT JOIN LATERAL (
+			SELECT expires_at, package_name
+			FROM passpoint_orders
+			WHERE credential_id = c.id AND status = 'PAID'
+			ORDER BY created_at DESC
+			LIMIT 1
+		) po ON true
 		WHERE c.id = $1
 	`
 	var cred Credential
@@ -137,6 +146,7 @@ func (r *Repository) GetCredentialByID(ctx context.Context, id uuid.UUID) (*Cred
 		&cred.ID, &cred.CustomerID, &cred.CustomerName, &cred.CustomerNumber,
 		&cred.ProfileID, &cred.ProfileName, &cred.Username, &cred.Password, &cred.Status,
 		&cred.LastAuthenticatedAt, &cred.CreatedAt, &cred.UpdatedAt,
+		&cred.ExpiresAt, &cred.PackageName,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -151,10 +161,19 @@ func (r *Repository) ListCredentialsByCustomer(ctx context.Context, customerID u
 	const q = `
 		SELECT c.id, c.customer_id, cust.full_name, cust.customer_number,
 		       c.profile_id, p.name, c.username, c.password, c.status,
-		       c.last_authenticated_at, c.created_at, c.updated_at
+		       c.last_authenticated_at, c.created_at, c.updated_at,
+		       COALESCE(po.expires_at, c.created_at + INTERVAL '30 days') as expires_at,
+		       COALESCE(po.package_name, 'Passpoint Standar') as package_name
 		FROM passpoint_credentials c
 		JOIN customers cust ON cust.id = c.customer_id
 		JOIN passpoint_profiles p ON p.id = c.profile_id
+		LEFT JOIN LATERAL (
+			SELECT expires_at, package_name
+			FROM passpoint_orders
+			WHERE credential_id = c.id AND status = 'PAID'
+			ORDER BY created_at DESC
+			LIMIT 1
+		) po ON true
 		WHERE c.customer_id = $1
 		ORDER BY c.created_at DESC
 	`
@@ -171,6 +190,7 @@ func (r *Repository) ListCredentialsByCustomer(ctx context.Context, customerID u
 			&cred.ID, &cred.CustomerID, &cred.CustomerName, &cred.CustomerNumber,
 			&cred.ProfileID, &cred.ProfileName, &cred.Username, &cred.Password, &cred.Status,
 			&cred.LastAuthenticatedAt, &cred.CreatedAt, &cred.UpdatedAt,
+			&cred.ExpiresAt, &cred.PackageName,
 		); err != nil {
 			return nil, fmt.Errorf("scan credential: %w", err)
 		}
@@ -189,10 +209,19 @@ func (r *Repository) ListCredentials(ctx context.Context, limit, offset int) ([]
 	const q = `
 		SELECT c.id, c.customer_id, cust.full_name, cust.customer_number,
 		       c.profile_id, p.name, c.username, c.password, c.status,
-		       c.last_authenticated_at, c.created_at, c.updated_at
+		       c.last_authenticated_at, c.created_at, c.updated_at,
+		       COALESCE(po.expires_at, c.created_at + INTERVAL '30 days') as expires_at,
+		       COALESCE(po.package_name, 'Passpoint Standar') as package_name
 		FROM passpoint_credentials c
 		JOIN customers cust ON cust.id = c.customer_id
 		JOIN passpoint_profiles p ON p.id = c.profile_id
+		LEFT JOIN LATERAL (
+			SELECT expires_at, package_name
+			FROM passpoint_orders
+			WHERE credential_id = c.id AND status = 'PAID'
+			ORDER BY created_at DESC
+			LIMIT 1
+		) po ON true
 		ORDER BY c.created_at DESC
 		LIMIT $1 OFFSET $2
 	`
@@ -209,6 +238,7 @@ func (r *Repository) ListCredentials(ctx context.Context, limit, offset int) ([]
 			&cred.ID, &cred.CustomerID, &cred.CustomerName, &cred.CustomerNumber,
 			&cred.ProfileID, &cred.ProfileName, &cred.Username, &cred.Password, &cred.Status,
 			&cred.LastAuthenticatedAt, &cred.CreatedAt, &cred.UpdatedAt,
+			&cred.ExpiresAt, &cred.PackageName,
 		); err != nil {
 			return nil, 0, fmt.Errorf("scan credential: %w", err)
 		}

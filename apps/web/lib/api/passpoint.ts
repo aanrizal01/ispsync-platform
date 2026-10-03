@@ -28,6 +28,8 @@ export interface PasspointCredential {
   password?: string;
   status: "ACTIVE" | "SUSPENDED" | "REVOKED";
   last_authenticated_at?: string;
+  expires_at?: string;
+  package_name?: string;
   created_at: string;
   updated_at: string;
 }

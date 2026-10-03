@@ -298,9 +298,9 @@ export default function AdminPasspointPage() {
                   <th className="px-6 py-3">Pelanggan</th>
                   <th className="px-6 py-3">Username EAP (Identity)</th>
                   <th className="px-6 py-3">Password WiFi (EAP)</th>
-                  <th className="px-6 py-3">Profil Jaringan</th>
+                  <th className="px-6 py-3">Profil &amp; Paket</th>
                   <th className="px-6 py-3">Status</th>
-                  <th className="px-6 py-3">Dibuat</th>
+                  <th className="px-6 py-3">Masa Aktif &amp; Kadaluarsa</th>
                   <th className="px-6 py-3 text-right">Aksi</th>
                 </tr>
               </thead>
@@ -318,7 +318,14 @@ export default function AdminPasspointPage() {
                     </td>
                   </tr>
                 ) : (
-                  credentials.map((c) => (
+                  credentials.map((c) => {
+                    const expDate = c.expires_at ? new Date(c.expires_at) : null;
+                    const createdDate = new Date(c.created_at);
+                    const now = new Date();
+                    const isExpired = expDate ? expDate.getTime() < now.getTime() : false;
+                    const daysRemaining = expDate ? Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
+
+                    return (
                     <tr key={c.id} className="hover:bg-slate-50/50 transition">
                       <td className="px-6 py-4">
                         <div className="font-semibold text-slate-900">{c.customer_name || "-"}</div>
@@ -354,7 +361,10 @@ export default function AdminPasspointPage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-xs font-medium text-slate-600">{c.profile_name}</td>
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-xs text-slate-800">{c.package_name || "Passpoint Standar"}</div>
+                        <div className="text-[11px] text-slate-400">{c.profile_name}</div>
+                      </td>
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -368,8 +378,30 @@ export default function AdminPasspointPage() {
                           {c.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-xs text-slate-500">
-                        {new Date(c.created_at).toLocaleDateString("id-ID")}
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1.5">
+                            {isExpired ? (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                Kadaluarsa
+                              </span>
+                            ) : daysRemaining !== null ? (
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                daysRemaining <= 3 
+                                  ? "bg-amber-50 text-amber-700 border border-amber-200" 
+                                  : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              }`}>
+                                {daysRemaining} Hari Lagi
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="text-[11.5px] font-semibold text-slate-700">
+                            <span className="text-slate-400 font-normal">Exp:</span> {expDate ? expDate.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "-"}
+                          </div>
+                          <div className="text-[10px] text-slate-400">
+                            Dibuat: {createdDate.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                          </div>
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-right space-x-1.5 whitespace-nowrap">
                         <button
@@ -664,6 +696,18 @@ export default function AdminPasspointPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                <div>
+                  <span className="text-slate-500">Paket:</span> <span className="font-bold text-slate-800">{issuedCredential.package_name || "Passpoint Standar"}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500">Masa Berlaku:</span>{" "}
+                  <span className="font-bold text-emerald-700">
+                    {issuedCredential.expires_at ? new Date(issuedCredential.expires_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "30 Hari"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-blue-200/60">
                 <div>
                   <span className="text-slate-500">Domain:</span> <span className="font-bold text-slate-800">wifi.ispsync.id</span>
                 </div>
