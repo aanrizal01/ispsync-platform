@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
@@ -112,6 +113,11 @@ export const MainPortalScreen: React.FC<Props> = ({
 
       {/* Top Bar Navigation */}
       <View style={styles.topBar}>
+        <Image
+          source={require("../../assets/logo.png")}
+          style={styles.headerLogo}
+          resizeMode="contain"
+        />
         <View style={styles.tenantMeta}>
           <Text style={styles.tenantName} numberOfLines={1}>
             {tenant.brandName}
@@ -199,6 +205,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#1e293b",
+  },
+  headerLogo: {
+    width: 28,
+    height: 28,
+    marginRight: 10,
+    borderRadius: 6,
   },
   tenantMeta: {
     flex: 1,

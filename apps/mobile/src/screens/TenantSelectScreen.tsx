@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
@@ -49,10 +50,17 @@ export const TenantSelectScreen: React.FC<Props> = ({
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#020617" />
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Header */}
+        {/* Header with Official ISPSYNC Logo */}
         <View style={styles.header}>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>ISPSYNC ALIANSI MOBILE</Text>
+          <View style={styles.logoRow}>
+            <Image
+              source={require("../../assets/logo-full.png")}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>ALIANSI MOBILE</Text>
+            </View>
           </View>
           <Text style={styles.title}>Pilih Jaringan ISP Anda</Text>
           <Text style={styles.subtitle}>
@@ -166,15 +174,24 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 20,
   },
+  logoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  logoImage: {
+    width: 140,
+    height: 38,
+  },
   badge: {
     alignSelf: "flex-start",
     backgroundColor: "#1e293b",
     borderColor: "#334155",
     borderWidth: 1,
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 6,
-    marginBottom: 10,
   },
   badgeText: {
     color: "#06b6d4",
