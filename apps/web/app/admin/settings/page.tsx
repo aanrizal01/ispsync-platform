@@ -793,7 +793,7 @@ export default function AdminSettingsPage() {
                 <h2 className="text-base font-black text-slate-900">
                   Kustomisasi Template Faktur &amp; Kop Surat Resmi
                 </h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800">
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200">
                   LIVE REAL-TIME
                 </span>
               </div>
@@ -822,7 +822,7 @@ export default function AdminSettingsPage() {
                     <Layout className="w-4 h-4 text-blue-600" />
                     <h3 className="text-sm font-bold text-slate-900">Model &amp; Gaya Desain Faktur</h3>
                   </div>
-                  <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                  <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
                     4 Pilihan Tersedia
                   </span>
                 </div>
@@ -1013,12 +1013,12 @@ export default function AdminSettingsPage() {
                             enable_qr_verification: invoiceTemplate.enable_qr_verification === false ? true : false,
                           })
                         }
-                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-md border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
                           invoiceTemplate.enable_qr_verification !== false ? "bg-blue-600" : "bg-slate-300"
                         }`}
                       >
                         <span
-                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-sm bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
                             invoiceTemplate.enable_qr_verification !== false ? "translate-x-5" : "translate-x-0"
                           }`}
                         />
@@ -1148,7 +1148,7 @@ export default function AdminSettingsPage() {
                             {index === 0 ? "Rekening Utama (Default)" : `Rekening Tambahan #${index + 1}`}
                           </span>
                           {acc.bank_name && (
-                            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-800 border border-indigo-200">
                               {acc.bank_name}
                             </span>
                           )}
@@ -1799,13 +1799,13 @@ export default function AdminSettingsPage() {
                 </p>
               </div>
               <div className="hidden sm:flex items-center gap-2 text-[11px] font-bold">
-                <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-800 border border-blue-200">
                   PPPoE: {pgSettings.pppoe_provider.toUpperCase()}
                 </span>
-                <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                <span className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
                   Voucher: {pgSettings.voucher_provider.toUpperCase()}
                 </span>
-                <span className="px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+                <span className="px-2.5 py-1 rounded-md bg-purple-50 text-purple-800 border border-purple-200">
                   Passpoint: {pgSettings.passpoint_provider.toUpperCase()}
                 </span>
               </div>
@@ -2574,7 +2574,7 @@ export default function AdminSettingsPage() {
                         {index === 0 ? "Rekening Utama (Default)" : `Rekening Tambahan #${index + 1}`}
                       </span>
                       {acc.bank_name && (
-                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
                           {acc.bank_name}
                         </span>
                       )}
@@ -3008,7 +3008,7 @@ export default function AdminSettingsPage() {
                   <HelpCircle className="w-4 h-4 text-blue-600" />
                   Panduan & Petunjuk Keamanan Sistem
                 </span>
-                <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">
+                <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-200 font-bold">
                   Bantuan Fitur
                 </span>
               </div>
@@ -3060,10 +3060,10 @@ export default function AdminSettingsPage() {
               {/* Toggle Switch */}
               <div className="flex items-center gap-2">
                 <span
-                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                  className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
                     securitySettings.enable_ip_whitelist
-                      ? "bg-emerald-100 text-emerald-800"
-                      : "bg-slate-200 text-slate-600"
+                      ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                      : "bg-slate-100 text-slate-600 border-slate-300"
                   }`}
                 >
                   {securitySettings.enable_ip_whitelist ? "AKTIF" : "NONAKTIF (Akses Bebas)"}
@@ -3080,7 +3080,7 @@ export default function AdminSettingsPage() {
                     }
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                  <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-md peer peer-checked:after:translate-x-5 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-sm after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
                 </label>
               </div>
             </div>
@@ -3153,10 +3153,10 @@ export default function AdminSettingsPage() {
               {/* Toggle Switch */}
               <div className="flex items-center gap-2">
                 <span
-                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                  className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
                     securitySettings.enable_walled_garden
-                      ? "bg-purple-100 text-purple-800"
-                      : "bg-slate-200 text-slate-600"
+                      ? "bg-purple-50 text-purple-800 border-purple-300"
+                      : "bg-slate-100 text-slate-600 border-slate-300"
                   }`}
                 >
                   {securitySettings.enable_walled_garden ? "AKTIF" : "NONAKTIF"}
@@ -3173,7 +3173,7 @@ export default function AdminSettingsPage() {
                     }
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
+                  <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-md peer peer-checked:after:translate-x-5 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-sm after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600"></div>
                 </label>
               </div>
             </div>
@@ -3291,10 +3291,10 @@ export default function AdminSettingsPage() {
               {/* Toggle Switch */}
               <div className="flex items-center gap-2">
                 <span
-                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                  className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
                     securitySettings.enable_mac_lock
-                      ? "bg-emerald-100 text-emerald-800"
-                      : "bg-slate-200 text-slate-600"
+                      ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                      : "bg-slate-100 text-slate-600 border-slate-300"
                   }`}
                 >
                   {securitySettings.enable_mac_lock ? "AKTIF (Terkunci)" : "NONAKTIF (Bebas / MAC Acak Diizinkan)"}
@@ -3311,7 +3311,7 @@ export default function AdminSettingsPage() {
                     }
                     className="sr-only peer"
                   />
-                  <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                  <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-md peer peer-checked:after:translate-x-5 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-sm after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
                 </label>
               </div>
             </div>
@@ -3353,13 +3353,12 @@ export default function AdminSettingsPage() {
               {/* Status Badge */}
               <div className="flex items-center gap-2 self-start sm:self-auto">
                 <span
-                  className={`text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 ${
+                  className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border ${
                     securitySettings.google_maps_api_key && securitySettings.google_maps_api_key.trim() !== ""
-                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                      : "bg-amber-100 text-amber-800 border border-amber-300"
+                      ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                      : "bg-amber-50 text-amber-800 border-amber-300"
                   }`}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                   {securitySettings.google_maps_api_key && securitySettings.google_maps_api_key.trim() !== ""
                     ? "Kunci API Terkonfigurasi"
                     : "Default Fallback"}

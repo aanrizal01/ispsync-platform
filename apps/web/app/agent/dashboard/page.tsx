@@ -1120,7 +1120,7 @@ export default function AgentDashboardPage() {
 
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
             <div className="space-y-2.5 max-w-xl">
-              <div className="inline-flex items-center gap-2 bg-blue-500/20 text-blue-300 border border-blue-400/30 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
+              <div className="inline-flex items-center gap-2 bg-blue-500/20 text-blue-300 border border-blue-400/30 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
                 <Smartphone className="w-3.5 h-3.5" />
                 <span>Solusi Cetak Struk Bluetooth Anti Gagal</span>
               </div>
@@ -1203,12 +1203,12 @@ export default function AgentDashboardPage() {
                   Saldo Dompet Agen
                 </span>
                 {dashboard?.is_master ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-black bg-purple-500/30 text-purple-200 border border-purple-400/40">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-black bg-purple-500/30 text-purple-200 border border-purple-400/40">
                     <Crown className="w-3 h-3 text-amber-300 fill-amber-300" />
                     MASTER AGENT ({dashboard.override_pct || 3}%)
                   </span>
                 ) : dashboard?.agent.parent_agent_name ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/10 text-slate-300 border border-white/15">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-white/10 text-slate-300 border border-white/15">
                     Induk: {dashboard.agent.parent_agent_name}
                   </span>
                 ) : null}
@@ -1314,7 +1314,7 @@ export default function AgentDashboardPage() {
                 <Sparkles className="w-4 h-4 text-amber-200" />
                 Kode Promo Harian Anda
               </span>
-              <span className="text-[11px] font-semibold bg-black/20 text-amber-100 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-black/25 text-amber-100 px-2 py-0.5 rounded-md border border-white/10">
                 Berlaku Hari Ini ({dashboard?.valid_date || "Hari Ini"})
               </span>
             </div>
@@ -1401,7 +1401,7 @@ export default function AgentDashboardPage() {
         >
           <Landmark className="w-4 h-4 shrink-0" />
           <span>Loket Tagihan</span>
-          <span className="inline-block text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-emerald-700/60 text-emerald-100 font-bold">
+          <span className="inline-block text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-emerald-700/60 text-emerald-100 font-bold border border-emerald-600/40">
             PPOB
           </span>
         </button>
@@ -1430,7 +1430,7 @@ export default function AgentDashboardPage() {
         >
           <Sparkles className="w-4 h-4 shrink-0" />
           <span>Voucher Gesek</span>
-          <span className="inline-block text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-black/20 text-white font-bold">
+          <span className="inline-block text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-black/25 text-white font-bold border border-white/10">
             SN
           </span>
         </button>
@@ -1446,7 +1446,7 @@ export default function AgentDashboardPage() {
         >
           <Wifi className="w-4 h-4 shrink-0" />
           <span>Beli Passpoint</span>
-          <span className="inline-block text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-cyan-700/60 text-cyan-100 font-bold">
+          <span className="inline-block text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-cyan-700/60 text-cyan-100 font-bold border border-cyan-500/40">
             15%
           </span>
         </button>
@@ -1489,7 +1489,7 @@ export default function AgentDashboardPage() {
           >
             <Crown className="w-4 h-4 shrink-0 text-amber-300 fill-amber-300" />
             <span>Jaringan Sub-Agen</span>
-            <span className="inline-block text-[9px] font-mono px-1.5 py-0.5 rounded-full bg-purple-700/60 text-purple-100 font-bold">
+            <span className="inline-block text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-purple-700/60 text-purple-100 font-bold border border-purple-500/40">
               {dashboard.sub_agents_count || (dashboard.sub_agents ? dashboard.sub_agents.length : 0)}
             </span>
           </button>
@@ -1503,9 +1503,9 @@ export default function AgentDashboardPage() {
           <div className="bg-linear-to-r from-emerald-700 via-teal-700 to-slate-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
             <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-48 h-48 bg-emerald-400/10 rounded-full blur-2xl pointer-events-none" />
             <div className="relative z-10 max-w-2xl">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 text-emerald-100 text-xs font-bold mb-3 backdrop-blur-xs border border-white/10">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/15 text-emerald-100 text-[10px] font-bold uppercase tracking-wider mb-3 backdrop-blur-xs border border-white/10">
                 <Landmark className="w-3.5 h-3.5 text-emerald-300" />
-                Loket PPOB Internet & Tagihan Bulanan
+                Loket PPOB Internet &amp; Tagihan Bulanan
               </div>
               <h2 className="text-xl sm:text-2xl font-black tracking-tight">
                 Bayar Tagihan Bulanan Pelanggan
@@ -1613,7 +1613,7 @@ export default function AgentDashboardPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={cn(
-                      "px-3 py-1 rounded-full text-xs font-black uppercase tracking-wide",
+                      "px-2.5 py-1 rounded-md text-[10.5px] font-bold uppercase tracking-wider",
                       isPaid
                         ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                         : activeInv.is_overdue
@@ -2090,7 +2090,7 @@ export default function AgentDashboardPage() {
                         <td className="py-3 px-4">
                           <span
                             className={cn(
-                              "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold",
+                              "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold",
                               v.status === "UNUSED" || v.status === "CREATED"
                                 ? "bg-blue-50 text-blue-700 border border-blue-200"
                                 : v.status === "ACTIVE"
@@ -2194,7 +2194,7 @@ export default function AgentDashboardPage() {
 
                         <span
                           className={cn(
-                            "inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-bold shrink-0",
+                            "inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-bold shrink-0",
                             v.status === "UNUSED" || v.status === "CREATED"
                               ? "bg-blue-50 text-blue-700 border border-blue-200"
                               : v.status === "ACTIVE"
@@ -2532,12 +2532,12 @@ export default function AgentDashboardPage() {
                     <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs">
                       <span className="font-semibold text-slate-600">Deteksi Jumlah Kartu:</span>
                       {rangeCount > 0 ? (
-                        <span className="font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 px-3 py-1 rounded-full flex items-center gap-1.5">
+                        <span className="font-bold text-emerald-700 bg-emerald-50 border border-emerald-300 px-2.5 py-1 rounded-md flex items-center gap-1.5">
                           <Check className="w-3.5 h-3.5" />
                           {rangeCount} Lembar Kartu Berurutan
                         </span>
                       ) : rangeCount === -1 ? (
-                        <span className="font-bold text-rose-700 bg-rose-100 px-3 py-1 rounded-full">
+                        <span className="font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-md">
                           Maksimal 500 kartu per aktivasi
                         </span>
                       ) : (
@@ -2763,27 +2763,27 @@ export default function AgentDashboardPage() {
 
                     <div>
                       {inquiryResult.status === "BLANK" && (
-                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                        <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
                           BLANK (Belum Diinjeksi Paket)
                         </span>
                       )}
                       {inquiryResult.status === "UNUSED" && (
-                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">
+                        <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-blue-50 text-blue-800 border border-blue-300">
                           SIAP DIGUNAKAN (Belum Login)
                         </span>
                       )}
                       {inquiryResult.status === "ACTIVE" && (
-                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                        <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
                           SEDANG AKTIF ONLINE
                         </span>
                       )}
                       {inquiryResult.status === "EXPIRED" && (
-                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-300">
+                        <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300">
                           KEDALUWARSA / HABIS
                         </span>
                       )}
                       {inquiryResult.status === "REVOKED" && (
-                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                        <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-rose-50 text-rose-800 border border-rose-300">
                           DIBATALKAN / DIGANTI DARURAT
                         </span>
                       )}
@@ -3014,27 +3014,27 @@ export default function AgentDashboardPage() {
 
                               <td className="py-3 px-4">
                                 {item.status === "UNUSED" && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                  <span className="px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
                                     Siap Pakai
                                   </span>
                                 )}
                                 {item.status === "ACTIVE" && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                  <span className="px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
                                     Aktif Online
                                   </span>
                                 )}
                                 {item.status === "EXPIRED" && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                  <span className="px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
                                     Expired
                                   </span>
                                 )}
                                 {item.status === "REVOKED" && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                                  <span className="px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-rose-50 text-rose-800 border border-rose-200">
                                     Void / Diganti
                                   </span>
                                 )}
                                 {item.status === "BLANK" && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                  <span className="px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
                                     Blanko
                                   </span>
                                 )}
@@ -3094,27 +3094,27 @@ export default function AgentDashboardPage() {
 
                               <div>
                                 {item.status === "UNUSED" && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                  <span className="px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
                                     Siap Pakai
                                   </span>
                                 )}
                                 {item.status === "ACTIVE" && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                  <span className="px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
                                     Aktif Online
                                   </span>
                                 )}
                                 {item.status === "EXPIRED" && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                  <span className="px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
                                     Expired
                                   </span>
                                 )}
                                 {item.status === "REVOKED" && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                                  <span className="px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-rose-50 text-rose-800 border border-rose-200">
                                     Void / Diganti
                                   </span>
                                 )}
                                 {item.status === "BLANK" && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                  <span className="px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
                                     Blanko
                                   </span>
                                 )}
@@ -3212,7 +3212,7 @@ export default function AgentDashboardPage() {
             <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-48 h-48 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-mono font-bold mb-3 border border-cyan-500/30">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-cyan-500/15 text-cyan-300 text-[10px] font-mono font-bold uppercase tracking-wider mb-3 border border-cyan-500/30">
                   <Wifi className="w-3.5 h-3.5" />
                   HOTSPOT 2.0 CARRIER-GRADE
                 </div>
@@ -3879,7 +3879,7 @@ export default function AgentDashboardPage() {
                       <td className="py-3 px-4">
                         <span
                           className={cn(
-                            "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold",
+                            "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold",
                             req.status === "PENDING"
                               ? "bg-amber-50 text-amber-700 border border-amber-200"
                               : req.status === "APPROVED"
@@ -3930,7 +3930,7 @@ export default function AgentDashboardPage() {
 
                       <span
                         className={cn(
-                          "inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-bold",
+                          "inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-bold",
                           req.status === "PENDING"
                             ? "bg-amber-50 text-amber-700 border border-amber-200"
                             : req.status === "APPROVED"
@@ -3987,7 +3987,7 @@ export default function AgentDashboardPage() {
             <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-64 h-64 bg-purple-500/15 rounded-full blur-3xl pointer-events-none" />
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="space-y-2">
-                <div className="inline-flex items-center gap-2 bg-purple-500/20 text-purple-300 border border-purple-400/30 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
+                <div className="inline-flex items-center gap-2 bg-purple-500/20 text-purple-300 border border-purple-400/30 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
                   <Crown className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
                   <span>Program Kemitraan Master Distributor</span>
                 </div>
@@ -4075,7 +4075,7 @@ export default function AgentDashboardPage() {
                 </h4>
                 <p className="text-xs text-slate-500">Seluruh mitra konter yang terhubung di bawah kode Master Anda</p>
               </div>
-              <span className="text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 px-3 py-1 rounded-full self-start sm:self-auto">
+              <span className="text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-md self-start sm:self-auto">
                 {dashboard.sub_agents?.length || 0} Sub-Agen Aktif
               </span>
             </div>
@@ -4125,7 +4125,7 @@ export default function AgentDashboardPage() {
                         </td>
                         <td className="py-3.5 px-4">
                           <span className={cn(
-                            "px-2 py-0.5 rounded-full text-xs font-semibold",
+                            "px-2 py-0.5 rounded-md text-xs font-semibold",
                             sub.status === "ACTIVE"
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               : "bg-slate-100 text-slate-600 border border-slate-200"
@@ -4510,7 +4510,7 @@ export default function AgentDashboardPage() {
                   setShowPasspointModal(false);
                   setPasspointManualError(null);
                 }}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-sm font-bold transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center text-sm font-bold transition-colors cursor-pointer"
               >
                 ✕
               </button>
@@ -4733,7 +4733,7 @@ export default function AgentDashboardPage() {
                   setBillInquiry(null);
                   setConfirmPaymentStep(false);
                 }}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition-all cursor-pointer"
                 title="Tutup"
               >
                 <X className="w-4 h-4" />
@@ -4855,7 +4855,7 @@ export default function AgentDashboardPage() {
                       <div className="font-mono font-bold text-slate-900 text-sm">{activeInv.invoice_number}</div>
                     </div>
                     <span className={cn(
-                      "px-2.5 py-0.5 rounded-full text-[10.5px] font-bold",
+                      "px-2 py-0.5 rounded-md text-[10.5px] font-bold",
                       isPaid
                         ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
                         : activeInv.is_overdue
@@ -5084,7 +5084,7 @@ export default function AgentDashboardPage() {
         >
           <div className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] flex flex-col p-6 shadow-2xl space-y-5 overflow-y-auto my-auto animate-in fade-in zoom-in-95 duration-150">
             <div className="text-center space-y-2">
-              <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+              <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-black text-slate-900">Pembayaran Berhasil!</h3>
@@ -5205,7 +5205,7 @@ export default function AgentDashboardPage() {
         >
           <div className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] flex flex-col p-6 shadow-2xl space-y-5 overflow-y-auto my-auto animate-in fade-in zoom-in-95 duration-150">
             <div className="text-center space-y-2">
-              <div className="w-14 h-14 bg-cyan-100 text-cyan-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+              <div className="w-14 h-14 bg-cyan-100 text-cyan-600 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
                 <Wifi className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-black text-slate-900">Transaksi Passpoint Berhasil!</h3>
@@ -5345,7 +5345,7 @@ export default function AgentDashboardPage() {
               <button
                 type="button"
                 onClick={() => setShowSettingsModal(false)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
                 title="Tutup (Kembali ke Dashboard)"
               >
                 <X className="w-4 h-4" />
