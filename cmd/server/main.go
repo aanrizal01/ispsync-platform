@@ -221,6 +221,7 @@ func main() {
 				j.Get("/billing", apiH.JartaplokBilling)
 				j.Get("/odps", apiH.JartaplokODPs)
 				j.Post("/odps", apiH.SyncODPFromFiberGrid)
+				j.Post("/upload-kml", apiH.UploadJartaplokKML)
 				j.Get("/ports", apiH.JartaplokPorts)
 			})
 			part.Get("/registrations", apiH.AdminListRegistrations)
