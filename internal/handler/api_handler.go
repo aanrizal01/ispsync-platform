@@ -398,6 +398,17 @@ func (h *APIHandler) ProvisionSubscriber(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	// 1c. Bila ODP pelanggan adalah ODP sewaan (Jartaplok), pakai satu port kuota sewa (sekali per pelanggan).
+	if code := strings.TrimSpace(sub.NearestODPCode); code != "" && (sub.SerialNumber == nil || strings.TrimSpace(*sub.SerialNumber) == "") {
+		if _, err := h.store.ConsumeSharedODPPort(r.Context(), t.ID, code); err != nil {
+			if errors.Is(err, repository.ErrSharedODPFull) {
+				h.errorResponse(w, http.StatusConflict, "Kuota port sewa ODP "+code+" sudah penuh; hubungi pemilik infrastruktur untuk menambah port")
+			} else {
+				h.errorResponse(w, http.StatusInternalServerError, "Gagal memakai port sewa: "+err.Error())
+			}
+			return
+		}
+	}
 	// 2. Generate Kredensial PPPoE
 	pppoeUser := fmt.Sprintf("sub%s@%s", sub.SubscriberNo, t.Slug)
 	pppoePass := randomPassword(12)

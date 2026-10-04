@@ -61,6 +61,10 @@ type Storage interface {
 
 	// Jartaplok (Local Fixed Network Sharing)
 	ListJartaplokAgreements(ctx context.Context, tenantID string) ([]domain.JartaplokAgreement, error)
+	CreateJartaplokAgreement(ctx context.Context, providerID, clientSlug, scope string, rate float64) (*domain.JartaplokAgreement, error)
+	AddSharedODP(ctx context.Context, providerID, agreementID, odpCode string, ports int) error
+	SetJartaplokAgreementStatus(ctx context.Context, providerID, agreementID, status string) error
+	ConsumeSharedODPPort(ctx context.Context, clientID, odpCode string) (bool, error)
 	GetTenantCapabilities(ctx context.Context, tenantID string) (domain.TenantCapabilities, error)
 	SetTenantCapabilities(ctx context.Context, caps domain.TenantCapabilities) error
 

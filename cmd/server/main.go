@@ -171,6 +171,9 @@ func main() {
 
 		// Jartaplok Sharing Agreements
 		api.With(adminOnly).Get("/jartaplok/agreements", apiH.ListJartaplokAgreements)
+	api.With(ownerOnly).Post("/jartaplok/agreements", apiH.CreateJartaplokAgreement)
+	api.With(ownerOnly).Post("/jartaplok/agreements/{id}/odps", apiH.LeaseJartaplokODP)
+	api.With(ownerOnly).Post("/jartaplok/agreements/{id}/status", apiH.SetJartaplokAgreementStatus)
 	api.With(adminOnly).Get("/tenant/capabilities", apiH.GetCapabilities)
 
 		// â”€â”€ GOGIGANET PORTAL COMPATIBLE SUB-ROUTES â”€â”€â”€â”€â”€â”€â”€â”€â”€
