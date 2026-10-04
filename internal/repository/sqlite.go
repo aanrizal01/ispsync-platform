@@ -1445,3 +1445,17 @@ func (s *SQLiteStorage) SetTenantCapabilities(ctx context.Context, caps domain.T
 	_, err := s.db.ExecContext(ctx, "INSERT INTO tenant_capabilities (tenant_id, uses_fibergrid, own_infrastructure, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP) ON CONFLICT (tenant_id) DO UPDATE SET uses_fibergrid = excluded.uses_fibergrid, own_infrastructure = excluded.own_infrastructure, updated_at = excluded.updated_at", caps.TenantID, caps.UsesFiberGrid, caps.OwnInfrastructure)
 	return err
 }
+
+func (s *SQLiteStorage) UpdateUserStatus(ctx context.Context, tenantID, userID, status string) error {
+	_, err := s.db.ExecContext(ctx, "UPDATE users SET status = ? WHERE tenant_id = ? AND id = ?", strings.ToUpper(status), tenantID, userID)
+	return err
+}
+
+func (s *SQLiteStorage) ResetUserPassword(ctx context.Context, tenantID, username, newPassword string) error {
+	pwHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	_, err = s.db.ExecContext(ctx, "UPDATE users SET password_hash = ? WHERE tenant_id = ? AND LOWER(username) = LOWER(?)", string(pwHash), tenantID, username)
+	return err
+}

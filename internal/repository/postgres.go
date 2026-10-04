@@ -1360,3 +1360,17 @@ func (s *PostgresStorage) SetTenantCapabilities(ctx context.Context, caps domain
 	_, err := s.db.ExecContext(ctx, "INSERT INTO tenant_capabilities (tenant_id, uses_fibergrid, own_infrastructure, updated_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) ON CONFLICT (tenant_id) DO UPDATE SET uses_fibergrid = excluded.uses_fibergrid, own_infrastructure = excluded.own_infrastructure, updated_at = excluded.updated_at", caps.TenantID, caps.UsesFiberGrid, caps.OwnInfrastructure)
 	return err
 }
+
+func (s *PostgresStorage) UpdateUserStatus(ctx context.Context, tenantID, userID, status string) error {
+	_, err := s.db.ExecContext(ctx, "UPDATE users SET status = $1 WHERE tenant_id = $2 AND id = $3", strings.ToUpper(status), tenantID, userID)
+	return err
+}
+
+func (s *PostgresStorage) ResetUserPassword(ctx context.Context, tenantID, username, newPassword string) error {
+	pwHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	_, err = s.db.ExecContext(ctx, "UPDATE users SET password_hash = $1 WHERE tenant_id = $2 AND LOWER(username) = LOWER($3)", string(pwHash), tenantID, username)
+	return err
+}

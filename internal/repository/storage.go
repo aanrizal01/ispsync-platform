@@ -73,6 +73,8 @@ type Storage interface {
 	ListTenantAddons(ctx context.Context, tenantID string) ([]domain.TenantAddon, error)
 	CreateTenantAddon(ctx context.Context, addon *domain.TenantAddon) error
 	CreateUser(ctx context.Context, user *domain.User, rawPassword string) error
+	UpdateUserStatus(ctx context.Context, tenantID, userID, status string) error
+	ResetUserPassword(ctx context.Context, tenantID, username, newPassword string) error
 
 	// Close
 	Close() error

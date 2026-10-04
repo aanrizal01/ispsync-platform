@@ -229,10 +229,14 @@ func main() {
 		})
 
 		api.Route("/superuser", func(sup chi.Router) {
-			sup.Use(platformOwner)
+			sup.Use(ownerOnly)
 			sup.Get("/overview", apiH.SuperuserOverview)
 			sup.Get("/jartaplok-partners", apiH.SuperuserJartaplokPartners)
-		sup.Put("/tenants/{slug}/capabilities", apiH.SuperuserSetCapabilities)
+			sup.Get("/staff", apiH.SuperuserListStaff)
+			sup.Post("/staff", apiH.CreateStaffUser)
+			sup.Put("/staff/{id}", apiH.SuperuserUpdateStaff)
+			sup.Post("/staff/reset-password", apiH.SuperuserResetStaffPassword)
+			sup.With(platformOwner).Put("/tenants/{slug}/capabilities", apiH.SuperuserSetCapabilities)
 		})
 
 		// Staff Quota & Add-on Management
