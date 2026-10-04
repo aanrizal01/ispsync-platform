@@ -703,12 +703,19 @@ func (h *APIHandler) PublicCoverageCheck(w http.ResponseWriter, r *http.Request)
 	}
 
 	isCovered := dist <= 250.0
+	clusterArea := "Area Distribusi"
+	if odp != nil && odp.Code != "" {
+		parts := strings.Split(odp.Code, "-")
+		if len(parts) >= 2 && parts[0] == "ODP" {
+			clusterArea = "Cluster " + strings.Split(parts[1], "/")[0]
+		}
+	}
 	h.successResponse(w, "Coverage checked successfully", map[string]interface{}{
 		"is_covered":        isCovered,
 		"distance_meters":   mathRound(dist, 1),
 		"max_radius_meters": 250.0,
 		"available_ports":   odp.TotalPorts - odp.UsedPorts,
-		"cluster_area":      "Payakumbuh Metro",
+		"cluster_area":      clusterArea,
 		"nearest_odp": map[string]interface{}{
 			"id":              odp.ID,
 			"code":            odp.Code,
@@ -719,7 +726,7 @@ func (h *APIHandler) PublicCoverageCheck(w http.ResponseWriter, r *http.Request)
 			"used_ports":      odp.UsedPorts,
 			"available_ports": odp.TotalPorts - odp.UsedPorts,
 			"status":          odp.Status,
-			"cluster_area":    "Payakumbuh Metro",
+			"cluster_area":    clusterArea,
 			"is_shared":       odp.IsSharedJartaplok,
 			"provider_name":   odp.OwnerTenantName,
 		},
@@ -893,6 +900,11 @@ func (h *APIHandler) PublicODPs(w http.ResponseWriter, r *http.Request) {
 	}
 	var out []odpOut
 	for _, o := range odps {
+		clusterArea := "Area Distribusi"
+		parts := strings.Split(o.Code, "-")
+		if len(parts) >= 2 && parts[0] == "ODP" {
+			clusterArea = "Cluster " + strings.Split(parts[1], "/")[0]
+		}
 		out = append(out, odpOut{
 			ID:             o.ID,
 			Code:           o.Code,
@@ -903,7 +915,7 @@ func (h *APIHandler) PublicODPs(w http.ResponseWriter, r *http.Request) {
 			UsedPorts:      o.UsedPorts,
 			AvailablePorts: o.TotalPorts - o.UsedPorts,
 			Status:         o.Status,
-			ClusterArea:    "Payakumbuh Metro",
+			ClusterArea:    clusterArea,
 			IsShared:       o.IsSharedJartaplok,
 			ProviderName:   o.OwnerTenantName,
 		})
@@ -911,24 +923,58 @@ func (h *APIHandler) PublicODPs(w http.ResponseWriter, r *http.Request) {
 	h.successResponse(w, "ODPs retrieved", out)
 }
 
-// PublicClusters daftar klaster coverage
+// PublicClusters daftar klaster coverage dinamis berbasis ODP tenant aktif
 func (h *APIHandler) PublicClusters(w http.ResponseWriter, r *http.Request) {
 	t := middleware.GetTenant(r)
-	odps, _ := h.store.ListODPs(r.Context(), t.ID)
-	h.successResponse(w, "Clusters retrieved", []map[string]interface{}{
-		{
-			"name":        "Payakumbuh Metro",
-			"total_odps":  len(odps),
-			"active_odps": len(odps),
+	if t == nil {
+		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
+		return
+	}
+	odps, err := h.store.ListODPs(r.Context(), t.ID)
+	if err != nil || len(odps) == 0 {
+		h.successResponse(w, "Clusters retrieved", []map[string]interface{}{})
+		return
+	}
+
+	type clusterStat struct {
+		name       string
+		totalODPs  int
+		activeODPs int
+	}
+	clusterMap := make(map[string]*clusterStat)
+
+	for _, o := range odps {
+		cName := "Cluster Distribusi Utama"
+		parts := strings.Split(o.Code, "-")
+		if len(parts) >= 2 && parts[0] == "ODP" {
+			areaCode := strings.Split(parts[1], "/")[0]
+			cName = fmt.Sprintf("Cluster %s", areaCode)
+		} else if o.OwnerTenantName != "" && o.IsSharedJartaplok {
+			cName = fmt.Sprintf("Jartaplok %s", o.OwnerTenantName)
+		}
+
+		stat, exists := clusterMap[cName]
+		if !exists {
+			stat = &clusterStat{name: cName}
+			clusterMap[cName] = stat
+		}
+		stat.totalODPs++
+		if o.Status == "ACTIVE" || o.Status == "AVAILABLE" || o.Status == "" {
+			stat.activeODPs++
+		}
+	}
+
+	var clusters []map[string]interface{}
+	for _, stat := range clusterMap {
+		clusters = append(clusters, map[string]interface{}{
+			"name":        stat.name,
+			"total_odps":  stat.totalODPs,
+			"active_odps": stat.activeODPs,
 			"is_active":   true,
-		},
-		{
-			"name":        "Harau Valley",
-			"total_odps":  3,
-			"active_odps": 3,
-			"is_active":   true,
-		},
-	})
+		})
+	}
+
+	h.successResponse(w, "Clusters retrieved", clusters)
 }
 
 // PublicTrack pelacakan status registrasi mandiri
