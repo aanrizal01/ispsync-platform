@@ -27,8 +27,8 @@ type CompanyInfo struct {
 // DefaultCompanyInfo returns standard ISPSYNC corporate credentials.
 func DefaultCompanyInfo() CompanyInfo {
 	return CompanyInfo{
-		CompanyName:   "PT GIGA NUSANTARA SOLUSINDO",
-		BrandName:     "GOGIGA NET",
+		CompanyName:   "PT Inovasi Sistem Pintar",
+		BrandName:     "ISPSYNC LEDGER",
 		LicenseNo:     "SK Kominfo RI No. 128/TEL.02.02/2024 (Izin ISP & Jartaplok)",
 		TaxID:         "03.882.194.5-014.000",
 		Address:       "Gedung Cyber 1 Lt. 3, Jl. Kuningan Barat No. 8, Jakarta Selatan",
@@ -38,7 +38,7 @@ func DefaultCompanyInfo() CompanyInfo {
 		BankBCA:       "8910-234-567",
 		BankMandiri:   "111-00-9876543-2",
 		BankBRI:       "0018-01-002345-50-9",
-		AccountHolder: "PT GIGA NUSANTARA SOLUSINDO",
+		AccountHolder: "PT Inovasi Sistem Pintar",
 	}
 }
 

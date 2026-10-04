@@ -572,7 +572,7 @@ func (s *Service) ResendWhatsApp(ctx context.Context, id uuid.UUID) error {
 		durationText = "Unlimited"
 	}
 
-	msg := fmt.Sprintf(`*GOGIGA HOTSPOT - KODE VOUCHER INTERNET*
+	msg := fmt.Sprintf(`*ISPSYNC HOTSPOT - KODE VOUCHER INTERNET*
 
 Halo! Berikut adalah kode voucher hotspot Anda:
 
@@ -583,11 +583,11 @@ Halo! Berikut adalah kode voucher hotspot Anda:
 🆔 *Order ID:* %s
 
 👉 *Cara Penggunaan:*
-1. Hubungkan perangkat Anda ke sinyal WiFi *GOGIGA HOTSPOT*.
+1. Hubungkan perangkat Anda ke sinyal WiFi *ISPSYNC HOTSPOT*.
 2. Buka browser atau klik notifikasi 'Masuk ke Jaringan'.
 3. Masukkan Kode Voucher di atas lalu klik Login.
 
-Selamat menikmati internet dari GOGIGANET!`,
+Selamat menikmati internet dari ISPSYNC!`,
 		tplName, durationText, v.Code, v.Password, orderID)
 
 	if err := s.waSender.Send(ctx, phone, "Voucher Hotspot WiFi", msg); err != nil {

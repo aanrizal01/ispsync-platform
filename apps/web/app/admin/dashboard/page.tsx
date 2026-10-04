@@ -129,8 +129,10 @@ export default function DashboardPage() {
       case "billing-worker":
         return <Layers className="w-5 h-5 text-amber-500" />;
       case "gogiga-isp":
+      case "ispsync-core":
         return <Sparkles className="w-5 h-5 text-purple-500" />;
       case "gogiga-fttx":
+      case "ispsync-fttx":
         return <Cpu className="w-5 h-5 text-cyan-500" />;
       case "nas-gateway":
         return <Network className="w-5 h-5 text-teal-500" />;

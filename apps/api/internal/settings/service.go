@@ -115,7 +115,7 @@ func (s *Service) GetDomainSettings(ctx context.Context) (*DomainSettings, error
 
 func (s *Service) UpdateDomainSettings(ctx context.Context, input DomainSettings) (*DomainSettings, error) {
 	if input.PrimaryDomain == "" {
-		input.PrimaryDomain = "gogiga.net.id"
+		input.PrimaryDomain = "ispsync.id"
 	}
 	if input.LedgerDomain == "" {
 		input.LedgerDomain = "ledger.dev.ispsync.id"

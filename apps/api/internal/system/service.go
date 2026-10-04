@@ -166,7 +166,7 @@ func (s *Service) CheckAll(ctx context.Context) (*SystemStatusResponse, error) {
 	}
 
 	services = append(services, ServiceStatus{
-		ID:          "gogiga-isp",
+		ID:          "ispsync-core",
 		Name:        "ISPSYNC Core / Nexus",
 		Category:    "service",
 		Status:      ispStatus,
@@ -189,7 +189,7 @@ func (s *Service) CheckAll(ctx context.Context) (*SystemStatusResponse, error) {
 	}
 
 	services = append(services, ServiceStatus{
-		ID:          "gogiga-fttx",
+		ID:          "ispsync-fttx",
 		Name:        "ISPSYNC FiberGrid",
 		Category:    "network",
 		Status:      fttxStatus,

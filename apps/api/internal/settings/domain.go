@@ -186,7 +186,7 @@ type DomainSettings struct {
 
 func DefaultDomainSettings() DomainSettings {
     return DomainSettings{
-        PrimaryDomain:   "gogiga.net.id",
+        PrimaryDomain:   "ispsync.id",
         LedgerDomain:    "ledger.dev.ispsync.id",
         WifiDomain:      "wifi.dev.ispsync.id",
         WifiBrandName:   "@gowifi",
