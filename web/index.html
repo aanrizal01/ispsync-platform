@@ -495,6 +495,26 @@
     }
   </style>
 
+<script>
+(function () {
+  var origFetch = window.fetch;
+  window.fetch = function (input, init) {
+    try {
+      var url = typeof input === 'string' ? input : (input && input.url) || '';
+      if (url.indexOf('/api/v1/') === 0 && url.indexOf('/api/v1/public/') !== 0 && url.indexOf('/api/v1/auth/login') !== 0) {
+        var tok = localStorage.getItem('auth_session_token') || sessionStorage.getItem('auth_session_token');
+        if (tok) {
+          init = init || {};
+          var h = new Headers(init.headers || (input && input.headers) || {});
+          if (!h.has('Authorization')) h.set('Authorization', 'Bearer ' + tok);
+          init.headers = h;
+        }
+      }
+    } catch (e) {}
+    return origFetch.call(this, input, init);
+  };
+})();
+</script>
 </head>
 <body class="min-h-screen flex flex-col antialiased selection:bg-primary-500 selection:text-white">
 

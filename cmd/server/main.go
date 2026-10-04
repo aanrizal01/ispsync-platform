@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"ispsync/internal/auth"
 	"ispsync/internal/handler"
 	"ispsync/internal/middleware"
 	"ispsync/internal/repository"
@@ -91,7 +92,8 @@ func main() {
 	defer store.Close()
 
 	// 2. Inisialisasi Handlers
-	apiH := handler.NewAPIHandler(store)
+	sessionSecret := auth.LoadSecret()
+	apiH := handler.NewAPIHandler(store, sessionSecret)
 	pageH := handler.NewPageHandler(store)
 
 	// 3. Router Setup
@@ -116,45 +118,57 @@ func main() {
 	r.Use(middleware.TenantResolver(store, baseDomain))
 
 	// API Endpoints
+	// Middleware otorisasi (sesi staf bertanda tangan; wajib milik tenant yang diakses)
+	adminOnly := middleware.RequireRoles(sessionSecret, false, "OWNER", "NOC")
+	financeStaff := middleware.RequireRoles(sessionSecret, false, "OWNER", "NOC", "FINANCE")
+	anyStaff := middleware.RequireRoles(sessionSecret, false, "OWNER", "NOC", "FINANCE", "SALES", "TECHNICIAN")
+	fieldStaff := middleware.RequireRoles(sessionSecret, false, "OWNER", "NOC", "TECHNICIAN")
+	ownerOnly := middleware.RequireRoles(sessionSecret, false, "OWNER")
+	platformOwner := middleware.RequireRoles(sessionSecret, true, "OWNER")
+
 	r.Route("/api/v1", func(api chi.Router) {
+		// â”€â”€ PUBLIK (tanpa login) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 		// Caddy On-Demand TLS Permission Verification Hook
 		api.Get("/caddy/ask", apiH.CaddyAsk)
 
 		api.Get("/context", apiH.GetContext)
-		api.Post("/tenant/custom-domain", apiH.UpdateCustomDomain)
-		api.Post("/tenant/profile", apiH.UpdateTenantProfile)
-		api.Post("/tenant/mikrotik/generate", apiH.GenerateMikrotikVPN)
-		api.Post("/tenant/hotspot/generate", apiH.GenerateHotspotConfig)
-		api.Post("/tenant/isolir/generate", apiH.GenerateIsolirScript)
-		api.Post("/tenant/mikrotik/kick", apiH.KickSubscriber)
 		api.Get("/plans", apiH.ListPlans)
 		api.Get("/odps", apiH.ListODPs)
-		api.Get("/olts", apiH.ListOLTs)
 		api.Post("/coverage-check", apiH.CheckCoverage)
 		api.Post("/register", apiH.Register)
+		api.Get("/registrations/{regNo}", apiH.PublicTrack)
+
+		// â”€â”€ PENGATURAN TENANT (OWNER/NOC) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+		api.With(adminOnly).Post("/tenant/custom-domain", apiH.UpdateCustomDomain)
+		api.With(adminOnly).Post("/tenant/profile", apiH.UpdateTenantProfile)
+		api.With(adminOnly).Post("/tenant/mikrotik/generate", apiH.GenerateMikrotikVPN)
+		api.With(adminOnly).Post("/tenant/hotspot/generate", apiH.GenerateHotspotConfig)
+		api.With(adminOnly).Post("/tenant/isolir/generate", apiH.GenerateIsolirScript)
+		api.With(adminOnly).Post("/tenant/mikrotik/kick", apiH.KickSubscriber)
+		api.With(adminOnly).Get("/olts", apiH.ListOLTs)
 
 		// Invoices & Billing
-		api.Get("/invoices", apiH.ListInvoices)
-		api.Post("/invoices/{id}/pay", apiH.PayInvoice)
+		api.With(financeStaff).Get("/invoices", apiH.ListInvoices)
+		api.With(financeStaff).Post("/invoices/{id}/pay", apiH.PayInvoice)
 
 		// Vouchers & Hotspot POS Blanko
-		api.Get("/vouchers", apiH.ListVouchers)
-		api.Post("/vouchers/generate", apiH.GenerateVouchers)
+		api.With(financeStaff).Get("/vouchers", apiH.ListVouchers)
+		api.With(financeStaff).Post("/vouchers/generate", apiH.GenerateVouchers)
 
-		// Subscriber Management
-		api.Get("/subscribers", apiH.ListSubscribers)
-		api.Get("/subscribers/{id}", apiH.GetSubscriber)
-		api.Post("/subscribers/{id}/status", apiH.UpdateSubscriberStatus)
-		api.Post("/subscribers/{id}/provision", apiH.ProvisionSubscriber)
+		// Subscriber Management (memuat kredensial PPPoE -> hanya OWNER/NOC)
+		api.With(adminOnly).Get("/subscribers", apiH.ListSubscribers)
+		api.With(adminOnly).Get("/subscribers/{id}", apiH.GetSubscriber)
+		api.With(adminOnly).Post("/subscribers/{id}/status", apiH.UpdateSubscriberStatus)
+		api.With(adminOnly).Post("/subscribers/{id}/provision", apiH.ProvisionSubscriber)
 
 		// Work Orders / SPK & BAST
-		api.Get("/work-orders", apiH.ListWorkOrders)
-		api.Post("/work-orders/{id}/bast", apiH.CompleteBAST)
+		api.With(anyStaff).Get("/work-orders", apiH.ListWorkOrders)
+		api.With(fieldStaff).Post("/work-orders/{id}/bast", apiH.CompleteBAST)
 
 		// Jartaplok Sharing Agreements
-		api.Get("/jartaplok/agreements", apiH.ListJartaplokAgreements)
+		api.With(adminOnly).Get("/jartaplok/agreements", apiH.ListJartaplokAgreements)
 
-		// ── GOGIGANET PORTAL COMPATIBLE SUB-ROUTES ─────────
+		// â”€â”€ GOGIGANET PORTAL COMPATIBLE SUB-ROUTES â”€â”€â”€â”€â”€â”€â”€â”€â”€
 		api.Route("/public", func(pub chi.Router) {
 			pub.Post("/coverage-check", apiH.PublicCoverageCheck)
 			pub.Get("/plans", apiH.PublicPlans)
@@ -174,6 +188,7 @@ func main() {
 		})
 
 		api.Route("/admin", func(adm chi.Router) {
+			adm.Use(adminOnly)
 			adm.Get("/registrations", apiH.AdminListRegistrations)
 			adm.Get("/odps", apiH.AdminListODPs)
 			adm.Post("/odps", apiH.AdminCreateODP)
@@ -186,12 +201,14 @@ func main() {
 		})
 
 		api.Route("/technician", func(tech chi.Router) {
+			tech.Use(fieldStaff)
 			tech.Get("/work-orders", apiH.TechnicianListWorkOrders)
 			tech.Get("/work-orders/{id}", apiH.TechnicianGetWorkOrder)
 			tech.Post("/work-orders/{id}/bast", apiH.TechnicianCompleteBAST)
 		})
 
 		api.Route("/partner", func(part chi.Router) {
+			part.Use(adminOnly)
 			part.Route("/jartaplok", func(j chi.Router) {
 				j.Get("/billing", apiH.JartaplokBilling)
 				j.Get("/odps", apiH.JartaplokODPs)
@@ -201,21 +218,22 @@ func main() {
 			part.Get("/registrations", apiH.AdminListRegistrations)
 			part.Get("/registrations/{regNo}", apiH.PublicTrack)
 		})
-		api.Get("/registrations/{regNo}", apiH.PublicTrack)
-
 
 		api.Route("/superuser", func(sup chi.Router) {
+			sup.Use(platformOwner)
 			sup.Get("/overview", apiH.SuperuserOverview)
 			sup.Get("/jartaplok-partners", apiH.SuperuserJartaplokPartners)
 		})
 
 		// Staff Quota & Add-on Management
 		api.Route("/staff", func(st chi.Router) {
+			st.Use(ownerOnly)
 			st.Get("/quota", apiH.GetStaffQuota)
 			st.Get("/users", apiH.ListStaffUsers)
 			st.Post("/users", apiH.CreateStaffUser)
 		})
 		api.Route("/addons", func(ad chi.Router) {
+			ad.Use(ownerOnly)
 			ad.Get("/", apiH.ListAddons)
 			ad.Post("/purchase", apiH.PurchaseAddon)
 		})

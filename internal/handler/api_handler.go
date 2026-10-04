@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"ispsync/internal/access"
+	"ispsync/internal/auth"
 	"ispsync/internal/domain"
 	"ispsync/internal/middleware"
 	"ispsync/internal/repository"
@@ -16,20 +17,31 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/go-routeros/routeros"
+	"golang.org/x/crypto/bcrypt"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
 
+// dummyBcryptHash dipakai agar waktu verifikasi sama untuk akun yang tidak ada.
+var dummyBcryptHash = func() string {
+	h, _ := bcrypt.GenerateFromPassword([]byte("dummy-password-for-timing"), bcrypt.DefaultCost)
+	return string(h)
+}()
+
 type APIHandler struct {
-	store repository.Storage
-	olt   *access.OLTDispatcher
-	bras  *access.BRASDispatcher
+	store      repository.Storage
+	olt        *access.OLTDispatcher
+	bras       *access.BRASDispatcher
+	authSecret []byte
+	throttle   *loginThrottle
 }
 
-func NewAPIHandler(store repository.Storage) *APIHandler {
+func NewAPIHandler(store repository.Storage, authSecret []byte) *APIHandler {
 	return &APIHandler{
-		store: store,
-		olt:   access.NewOLTDispatcher(),
-		bras:  access.NewBRASDispatcher(),
+		store:      store,
+		olt:        access.NewOLTDispatcher(),
+		bras:       access.NewBRASDispatcher(),
+		authSecret: authSecret,
+		throttle:   newLoginThrottle(),
 	}
 }
 
@@ -907,45 +919,82 @@ func (h *APIHandler) PublicReferralCheck(w http.ResponseWriter, r *http.Request)
 	})
 }
 
-// AuthLogin login terpadu staf
+// AuthLogin login terpadu staf: verifikasi bcrypt terhadap tabel users milik tenant.
 func (h *APIHandler) AuthLogin(w http.ResponseWriter, r *http.Request) {
 	t := middleware.GetTenant(r)
 	var req struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
-	_ = json.NewDecoder(r.Body).Decode(&req)
-
-	role := "SUPER_ADMIN"
-	u := strings.ToLower(req.Username)
-	if u == "sales" {
-		role = "SALES"
-	} else if u == "teknisi" || u == "technician" {
-		role = "TECHNICIAN"
-	} else if u == "noc" {
-		role = "ADMIN_NOC"
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<16)).Decode(&req); err != nil {
+		h.failResponse(w, http.StatusBadRequest, "Permintaan tidak valid")
+		return
+	}
+	username := strings.TrimSpace(req.Username)
+	if username == "" || req.Password == "" {
+		h.failResponse(w, http.StatusBadRequest, "Username dan password wajib diisi")
+		return
 	}
 
-	token := "sess_" + uuid.New().String()
+	key := t.ID + "|" + strings.ToLower(username)
+	if h.throttle.Blocked(key) {
+		h.failResponse(w, http.StatusTooManyRequests, "Terlalu banyak percobaan gagal. Coba lagi dalam 15 menit")
+		return
+	}
+
+	user, err := h.store.GetUserByUsername(r.Context(), t.ID, username)
+	hash := dummyBcryptHash
+	if err == nil && user != nil {
+		hash = user.PasswordHash
+	}
+	// Selalu jalankan bcrypt agar waktu respons tidak membocorkan keberadaan akun.
+	pwOK := bcrypt.CompareHashAndPassword([]byte(hash), []byte(req.Password)) == nil
+	if err != nil || user == nil || !pwOK || !strings.EqualFold(user.Status, "ACTIVE") {
+		h.throttle.Fail(key)
+		h.failResponse(w, http.StatusUnauthorized, "Username atau password salah")
+		return
+	}
+	h.throttle.Reset(key)
+
+	token, err := auth.Issue(h.authSecret, auth.Claims{
+		UserID: user.ID, TenantID: t.ID, Username: user.Username, Role: strings.ToUpper(user.Role),
+	})
+	if err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal membuat sesi")
+		return
+	}
+	display := auth.DisplayRole(user.Role)
 	h.successResponse(w, "Login berhasil", map[string]interface{}{
-		"token":       token,
-		"username":    req.Username,
-		"role":        role,
-		"roles":       []string{"SUPER_ADMIN", "ADMIN_NOC", "SALES", "TECHNICIAN"},
-		"tenant_slug": t.Slug,
-		"tenant_name": t.Name,
-		"full_name":   "Petugas " + req.Username,
+		"token":        token,
+		"username":     user.Username,
+		"role":         display,
+		"roles":        []string{display},
+		"is_superuser": strings.EqualFold(user.Role, "OWNER"),
+		"tenant_slug":  t.Slug,
+		"tenant_name":  t.Name,
+		"full_name":    user.FullName,
 	})
 }
 
-// AuthMe informasi sesi aktif
+// AuthMe informasi sesi aktif (dari token yang diverifikasi).
 func (h *APIHandler) AuthMe(w http.ResponseWriter, r *http.Request) {
 	t := middleware.GetTenant(r)
+	hdr := r.Header.Get("Authorization")
+	if !strings.HasPrefix(hdr, "Bearer ") {
+		h.failResponse(w, http.StatusUnauthorized, "Login diperlukan")
+		return
+	}
+	c, err := auth.Verify(h.authSecret, strings.TrimPrefix(hdr, "Bearer "))
+	if err != nil || t == nil || c.TenantID != t.ID {
+		h.failResponse(w, http.StatusUnauthorized, "Sesi tidak valid atau berakhir")
+		return
+	}
+	display := auth.DisplayRole(c.Role)
 	h.successResponse(w, "Session valid", map[string]interface{}{
-		"username":     "owner",
-		"role":         "SUPER_ADMIN",
-		"roles":        []string{"SUPER_ADMIN"},
-		"is_superuser": true,
+		"username":     c.Username,
+		"role":         display,
+		"roles":        []string{display},
+		"is_superuser": strings.EqualFold(c.Role, "OWNER"),
 		"tenant_slug":  t.Slug,
 	})
 }
