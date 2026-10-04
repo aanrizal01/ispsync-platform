@@ -142,6 +142,14 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. Injected Early Tenant Context Script
+	brandShort := tCtx.Tenant.PrefixID
+	if brandShort == "" || strings.HasPrefix(strings.ToUpper(brandShort), "PT") {
+		brandShort = strings.ToUpper(tCtx.Tenant.Slug)
+	}
+	if brandShort == "" {
+		brandShort = "ISPSYNC"
+	}
+
 	tenantScript := fmt.Sprintf(`
   <!-- DYNAMIC ISPSYNC TENANT INJECTION -->
   <script>
@@ -167,7 +175,7 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
       } catch (e) {}
     })();
   </script>
-`, tCtx.Tenant.ID, tCtx.Tenant.Slug, tCtx.Tenant.Name, tCtx.Tenant.PrefixID, tCtx.Tenant.LogoURL, tCtx.Tenant.BrandColor, tCtx.Tenant.ContactPhone, tCtx.Tenant.ContactEmail, tCtx.Tenant.Address, tCtx.AppType, tCtx.Subdomain, tCtx.Host, string(allTenantsJSON), mode, tCtx.Tenant.Name)
+`, tCtx.Tenant.ID, tCtx.Tenant.Slug, tCtx.Tenant.Name, tCtx.Tenant.PrefixID, tCtx.Tenant.LogoURL, tCtx.Tenant.BrandColor, tCtx.Tenant.ContactPhone, tCtx.Tenant.ContactEmail, tCtx.Tenant.Address, tCtx.AppType, tCtx.Subdomain, tCtx.Host, string(allTenantsJSON), mode, brandShort)
 
 	// Inject script into <head>
 	html = strings.Replace(html, "<head>", "<head>\n"+tenantScript, 1)
