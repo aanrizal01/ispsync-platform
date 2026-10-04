@@ -338,22 +338,30 @@ func (h *APIHandler) ProvisionSubscriber(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	oltDev, err := h.store.GetOLTByID(r.Context(), t.ID, req.OLTID)
-	if err != nil {
-		h.errorResponse(w, http.StatusBadRequest, "OLT not found")
-		return
-	}
+	// ISP murni (tanpa infrastruktur sendiri & tanpa OLT) tidak mengeksekusi OLT: ONT diaktifkan oleh
+	// penyedia infrastruktur (bitstream/sewa). Nexus hanya mencatat SN dan membuat kredensial PPPoE.
+	var script string
+	var oltLog interface{}
+	if req.OLTID == "" && !h.tenantCaps(r).OwnInfrastructure {
+		oltLog = "ONT diaktifkan oleh penyedia infrastruktur; tidak ada OLT yang dieksekusi dari tenant ini"
+	} else {
+		oltDev, err := h.store.GetOLTByID(r.Context(), t.ID, req.OLTID)
+		if err != nil {
+			h.errorResponse(w, http.StatusBadRequest, "OLT not found")
+			return
+		}
 
-	// 1. Generate & kirim perintah OLT
-	script := h.olt.GenerateScript(access.OLTProvisionParams{
-		Vendor:       oltDev.Vendor,
-		PONPort:      req.PONPort,
-		ONUID:        req.ONUID,
-		SerialNumber: req.SerialNumber,
-		CustomerName: sub.FullName,
-		VLANID:       req.VLANID,
-	})
-	oltLog, _ := h.olt.ExecuteProvision(r.Context(), oltDev.HostIP, oltDev.Port, oltDev.Username, "", script)
+		// 1. Generate & kirim perintah OLT
+		script = h.olt.GenerateScript(access.OLTProvisionParams{
+			Vendor:       oltDev.Vendor,
+			PONPort:      req.PONPort,
+			ONUID:        req.ONUID,
+			SerialNumber: req.SerialNumber,
+			CustomerName: sub.FullName,
+			VLANID:       req.VLANID,
+		})
+		oltLog, _ = h.olt.ExecuteProvision(r.Context(), oltDev.HostIP, oltDev.Port, oltDev.Username, "", script)
+	}
 
 	// 1b. Catat ONT di FiberGrid (Engine 1). Bila gagal, pelanggan TIDAK diaktifkan.
 	fgNote := "Tenant tidak memakai FiberGrid; ONT tidak dicatat di FiberGrid"
