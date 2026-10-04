@@ -91,6 +91,7 @@ func (h *APIHandler) GetContext(w http.ResponseWriter, r *http.Request) {
 		"app_type":  tCtx.AppType,
 		"subdomain": tCtx.Subdomain,
 		"host":      tCtx.Host,
+		"capabilities": h.tenantCapsFor(r),
 	})
 }
 
@@ -355,8 +356,8 @@ func (h *APIHandler) ProvisionSubscriber(w http.ResponseWriter, r *http.Request)
 	oltLog, _ := h.olt.ExecuteProvision(r.Context(), oltDev.HostIP, oltDev.Port, oltDev.Username, "", script)
 
 	// 1b. Catat ONT di FiberGrid (Engine 1). Bila gagal, pelanggan TIDAK diaktifkan.
-	fgNote := "FiberGrid belum dikonfigurasi; ONT tidak dicatat"
-	if h.fg.Configured() {
+	fgNote := "Tenant tidak memakai FiberGrid; ONT tidak dicatat di FiberGrid"
+	if h.fg.Configured() && h.tenantCaps(r).UsesFiberGrid {
 		regReq := fibergrid.RegisterONTRequest{
 			SerialNumber:   req.SerialNumber,
 			MACAddress:     req.MACAddress,

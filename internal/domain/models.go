@@ -280,3 +280,10 @@ type MikrotikRouter struct {
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
+
+// TenantCapabilities flag kemampuan per tenant (FiberGrid & infrastruktur sendiri).
+type TenantCapabilities struct {
+	TenantID           string `json:"tenant_id"`
+	UsesFiberGrid      bool   `json:"uses_fibergrid"`
+	OwnInfrastructure bool   `json:"own_infrastructure"`
+}

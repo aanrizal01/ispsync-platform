@@ -28,6 +28,9 @@ func randomPassword(n int) string {
 
 // subscriberSN mengambil SN ONT milik pelanggan pada tenant aktif (isolasi tenant lewat store).
 func (h *APIHandler) subscriberSN(w http.ResponseWriter, r *http.Request) (string, bool) {
+	if !h.requireFiberGrid(w, r) {
+		return "", false
+	}
 	t := middleware.GetTenant(r)
 	sub, err := h.store.GetSubscriberByID(r.Context(), t.ID, chi.URLParam(r, "id"))
 	if err != nil || sub == nil {

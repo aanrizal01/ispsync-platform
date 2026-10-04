@@ -245,6 +245,13 @@ func (s *PostgresStorage) migrate() error {
 		UNIQUE(tenant_id, code)
 	);
 
+	CREATE TABLE IF NOT EXISTS tenant_capabilities (
+		tenant_id TEXT PRIMARY KEY REFERENCES tenants(id) ON DELETE CASCADE,
+		uses_fibergrid BOOLEAN NOT NULL DEFAULT FALSE,
+		own_infrastructure BOOLEAN NOT NULL DEFAULT FALSE,
+		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);
+
 	CREATE TABLE IF NOT EXISTS jartaplok_agreements (
 		id TEXT PRIMARY KEY,
 		agreement_no TEXT NOT NULL UNIQUE,
@@ -1338,4 +1345,18 @@ func (s *PostgresStorage) GenerateVouchers(ctx context.Context, tenantID string,
 		UsedVouchers:  0,
 		CreatedAt:     now,
 	}, nil
+}
+
+func (s *PostgresStorage) GetTenantCapabilities(ctx context.Context, tenantID string) (domain.TenantCapabilities, error) {
+	caps := domain.TenantCapabilities{TenantID: tenantID}
+	err := s.db.QueryRowContext(ctx, "SELECT uses_fibergrid, own_infrastructure FROM tenant_capabilities WHERE tenant_id = $1", tenantID).Scan(&caps.UsesFiberGrid, &caps.OwnInfrastructure)
+	if err == sql.ErrNoRows {
+		return caps, nil
+	}
+	return caps, err
+}
+
+func (s *PostgresStorage) SetTenantCapabilities(ctx context.Context, caps domain.TenantCapabilities) error {
+	_, err := s.db.ExecContext(ctx, "INSERT INTO tenant_capabilities (tenant_id, uses_fibergrid, own_infrastructure, updated_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) ON CONFLICT (tenant_id) DO UPDATE SET uses_fibergrid = excluded.uses_fibergrid, own_infrastructure = excluded.own_infrastructure, updated_at = excluded.updated_at", caps.TenantID, caps.UsesFiberGrid, caps.OwnInfrastructure)
+	return err
 }

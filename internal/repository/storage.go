@@ -61,6 +61,8 @@ type Storage interface {
 
 	// Jartaplok (Local Fixed Network Sharing)
 	ListJartaplokAgreements(ctx context.Context, tenantID string) ([]domain.JartaplokAgreement, error)
+	GetTenantCapabilities(ctx context.Context, tenantID string) (domain.TenantCapabilities, error)
+	SetTenantCapabilities(ctx context.Context, caps domain.TenantCapabilities) error
 
 	// Add-ons & Staff Quota
 	GetStaffQuotaStatus(ctx context.Context, tenantID string) (*domain.StaffQuotaStatus, error)

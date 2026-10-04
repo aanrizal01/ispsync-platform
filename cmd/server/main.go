@@ -171,6 +171,7 @@ func main() {
 
 		// Jartaplok Sharing Agreements
 		api.With(adminOnly).Get("/jartaplok/agreements", apiH.ListJartaplokAgreements)
+	api.With(adminOnly).Get("/tenant/capabilities", apiH.GetCapabilities)
 
 		// â”€â”€ GOGIGANET PORTAL COMPATIBLE SUB-ROUTES â”€â”€â”€â”€â”€â”€â”€â”€â”€
 		api.Route("/public", func(pub chi.Router) {
@@ -227,6 +228,7 @@ func main() {
 			sup.Use(platformOwner)
 			sup.Get("/overview", apiH.SuperuserOverview)
 			sup.Get("/jartaplok-partners", apiH.SuperuserJartaplokPartners)
+		sup.Put("/tenants/{slug}/capabilities", apiH.SuperuserSetCapabilities)
 		})
 
 		// Staff Quota & Add-on Management

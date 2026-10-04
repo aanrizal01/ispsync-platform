@@ -257,6 +257,13 @@ func (s *SQLiteStorage) migrate() error {
 	CREATE INDEX IF NOT EXISTS idx_invoices_tenant ON invoices(tenant_id);
 	CREATE INDEX IF NOT EXISTS idx_vouchers_tenant ON vouchers(tenant_id);
 
+	CREATE TABLE IF NOT EXISTS tenant_capabilities (
+		tenant_id TEXT PRIMARY KEY REFERENCES tenants(id) ON DELETE CASCADE,
+		uses_fibergrid INTEGER NOT NULL DEFAULT 0,
+		own_infrastructure INTEGER NOT NULL DEFAULT 0,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+
 	CREATE TABLE IF NOT EXISTS jartaplok_agreements (
 		id TEXT PRIMARY KEY,
 		agreement_no TEXT NOT NULL,
@@ -1423,4 +1430,18 @@ func (s *SQLiteStorage) GenerateVouchers(ctx context.Context, tenantID string, p
 		UsedVouchers:  0,
 		CreatedAt:     now,
 	}, nil
+}
+
+func (s *SQLiteStorage) GetTenantCapabilities(ctx context.Context, tenantID string) (domain.TenantCapabilities, error) {
+	caps := domain.TenantCapabilities{TenantID: tenantID}
+	err := s.db.QueryRowContext(ctx, "SELECT uses_fibergrid, own_infrastructure FROM tenant_capabilities WHERE tenant_id = ?", tenantID).Scan(&caps.UsesFiberGrid, &caps.OwnInfrastructure)
+	if err == sql.ErrNoRows {
+		return caps, nil
+	}
+	return caps, err
+}
+
+func (s *SQLiteStorage) SetTenantCapabilities(ctx context.Context, caps domain.TenantCapabilities) error {
+	_, err := s.db.ExecContext(ctx, "INSERT INTO tenant_capabilities (tenant_id, uses_fibergrid, own_infrastructure, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP) ON CONFLICT (tenant_id) DO UPDATE SET uses_fibergrid = excluded.uses_fibergrid, own_infrastructure = excluded.own_infrastructure, updated_at = excluded.updated_at", caps.TenantID, caps.UsesFiberGrid, caps.OwnInfrastructure)
+	return err
 }
