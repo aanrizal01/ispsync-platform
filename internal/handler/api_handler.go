@@ -11,6 +11,7 @@ import (
 	"ispsync/internal/access"
 	"ispsync/internal/auth"
 	"ispsync/internal/domain"
+	"ispsync/internal/fibergrid"
 	"ispsync/internal/middleware"
 	"ispsync/internal/repository"
 
@@ -33,6 +34,7 @@ type APIHandler struct {
 	bras       *access.BRASDispatcher
 	authSecret []byte
 	throttle   *loginThrottle
+	fg         *fibergrid.Client
 }
 
 func NewAPIHandler(store repository.Storage, authSecret []byte) *APIHandler {
@@ -42,6 +44,7 @@ func NewAPIHandler(store repository.Storage, authSecret []byte) *APIHandler {
 		bras:       access.NewBRASDispatcher(),
 		authSecret: authSecret,
 		throttle:   newLoginThrottle(),
+		fg:         fibergrid.NewFromEnv(),
 	}
 }
 
@@ -327,6 +330,12 @@ func (h *APIHandler) ProvisionSubscriber(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	req.SerialNumber = strings.TrimSpace(req.SerialNumber)
+	if req.SerialNumber == "" {
+		h.errorResponse(w, http.StatusBadRequest, "serial_number ONT wajib diisi")
+		return
+	}
+
 	oltDev, err := h.store.GetOLTByID(r.Context(), t.ID, req.OLTID)
 	if err != nil {
 		h.errorResponse(w, http.StatusBadRequest, "OLT not found")
@@ -344,9 +353,25 @@ func (h *APIHandler) ProvisionSubscriber(w http.ResponseWriter, r *http.Request)
 	})
 	oltLog, _ := h.olt.ExecuteProvision(r.Context(), oltDev.HostIP, oltDev.Port, oltDev.Username, "", script)
 
+	// 1b. Catat ONT di FiberGrid (Engine 1). Bila gagal, pelanggan TIDAK diaktifkan.
+	fgNote := "FiberGrid belum dikonfigurasi; ONT tidak dicatat"
+	if h.fg.Configured() {
+		if _, err := h.fg.RegisterONT(r.Context(), fibergrid.RegisterONTRequest{
+			SerialNumber:   req.SerialNumber,
+			MACAddress:     req.MACAddress,
+			PONPort:        req.PONPort,
+			RegistrationNo: sub.SubscriberNo,
+			CustomerName:   sub.FullName,
+		}); err != nil {
+			h.errorResponse(w, http.StatusBadGateway, "Gagal mencatat ONT di FiberGrid: "+err.Error())
+			return
+		}
+		fgNote = "ONT tercatat di FiberGrid"
+	}
+
 	// 2. Generate Kredensial PPPoE
 	pppoeUser := fmt.Sprintf("sub%s@%s", sub.SubscriberNo, t.Slug)
-	pppoePass := "giga" + strconv.FormatInt(time.Now().Unix()%10000, 10)
+	pppoePass := randomPassword(12)
 	brasScript := h.bras.GenerateMikrotikScript(access.BRASProvisionParams{
 		Username:      pppoeUser,
 		Password:      pppoePass,
@@ -372,6 +397,7 @@ func (h *APIHandler) ProvisionSubscriber(w http.ResponseWriter, r *http.Request)
 		"bras_log":       brasLog,
 		"pppoe_username": pppoeUser,
 		"pppoe_password": pppoePass,
+		"fibergrid":      fgNote,
 	})
 }
 

@@ -160,6 +160,10 @@ func main() {
 		api.With(adminOnly).Get("/subscribers/{id}", apiH.GetSubscriber)
 		api.With(adminOnly).Post("/subscribers/{id}/status", apiH.UpdateSubscriberStatus)
 		api.With(adminOnly).Post("/subscribers/{id}/provision", apiH.ProvisionSubscriber)
+		api.With(adminOnly).Get("/subscribers/{id}/ont", apiH.SubscriberONT)
+		api.With(adminOnly).Post("/subscribers/{id}/ont/reboot", apiH.SubscriberONTReboot)
+		api.With(adminOnly).Get("/subscribers/{id}/ont/wifi", apiH.SubscriberONTWifi)
+		api.With(adminOnly).Put("/subscribers/{id}/ont/wifi", apiH.SubscriberONTWifiUpdate)
 
 		// Work Orders / SPK & BAST
 		api.With(anyStaff).Get("/work-orders", apiH.ListWorkOrders)
