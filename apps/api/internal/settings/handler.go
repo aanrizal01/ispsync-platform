@@ -28,6 +28,7 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 	r.Get("/walled-garden", h.GetWalledGarden)
 	r.Get("/payment-gateway", h.GetPaymentGatewaySettings)
 	r.Get("/domain", h.GetDomainSettings)
+	r.Get("/maps", h.GetMapsConfig)
 
 	// Admin protected route: update invoice template, billing addons, domain & security policy
 	r.Group(func(r chi.Router) {
@@ -163,6 +164,22 @@ func (h *Handler) GetWalledGarden(w http.ResponseWriter, r *http.Request) {
 		"success": true,
 		"enabled": sec.EnableWalledGarden,
 		"hosts":   hosts,
+	})
+}
+
+func (h *Handler) GetMapsConfig(w http.ResponseWriter, r *http.Request) {
+	sec, err := h.service.GetSecuritySettings(r.Context())
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+	key := sec.GoogleMapsAPIKey
+	if key == "" {
+		key = "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA"
+	}
+	middleware.JSON(w, http.StatusOK, map[string]interface{}{
+		"success":             true,
+		"google_maps_api_key": key,
 	})
 }
 

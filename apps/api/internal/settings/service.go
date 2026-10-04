@@ -72,6 +72,9 @@ func (s *Service) UpdateSecuritySettings(ctx context.Context, input SecuritySett
 	if input.WalledGardenHosts == "" {
 		input.WalledGardenHosts = "ledger.ispsync.id, nexus.ispsync.id, fibergrid.ispsync.id, api.midtrans.com, app.midtrans.com"
 	}
+	if strings.TrimSpace(input.GoogleMapsAPIKey) == "" {
+		input.GoogleMapsAPIKey = DefaultSecuritySettings().GoogleMapsAPIKey
+	}
 
 	if err := s.repo.SaveSecuritySettings(ctx, &input); err != nil {
 		return nil, err

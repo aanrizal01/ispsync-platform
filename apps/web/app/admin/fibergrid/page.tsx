@@ -20,6 +20,7 @@ import {
   FiberRoute,
   FTTXStats,
 } from "@/lib/api/network";
+import { settingsApi } from "@/lib/api/settings";
 
 export default function AdminFibergridPage() {
   const [tenantSlug, setTenantSlug] = useState("dev");
@@ -316,14 +317,18 @@ export default function AdminFibergridPage() {
       }
     };
 
-    if ((window as any).google && (window as any).google.maps) {
-      initGoogleMap();
-    } else {
+    const loadScriptWithKey = (key: string) => {
+      if (!isMounted) return;
+      if ((window as any).google && (window as any).google.maps) {
+        initGoogleMap();
+        return;
+      }
       const scriptId = "google-maps-js";
-      if (!document.getElementById(scriptId)) {
-        const script = document.createElement("script");
+      let script = document.getElementById(scriptId) as HTMLScriptElement | null;
+      if (!script) {
+        script = document.createElement("script");
         script.id = scriptId;
-        script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA&libraries=places,geometry";
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places,geometry`;
         script.async = true;
         script.defer = true;
         script.onload = () => {
@@ -331,11 +336,27 @@ export default function AdminFibergridPage() {
         };
         document.head.appendChild(script);
       } else {
-        const existing = document.getElementById(scriptId);
-        existing?.addEventListener("load", () => {
+        script.addEventListener("load", () => {
           if (isMounted) initGoogleMap();
         });
+        if ((window as any).google && (window as any).google.maps) {
+          initGoogleMap();
+        }
       }
+    };
+
+    if ((window as any).google && (window as any).google.maps) {
+      initGoogleMap();
+    } else {
+      settingsApi
+        .getMapsSettings()
+        .then((res) => {
+          const key = res?.google_maps_api_key || "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA";
+          loadScriptWithKey(key);
+        })
+        .catch(() => {
+          loadScriptWithKey("AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA");
+        });
     }
 
     return () => {

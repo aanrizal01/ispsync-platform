@@ -36,6 +36,9 @@ import {
   Smartphone,
   Receipt,
   Send,
+  MapPin,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   settingsApi,
@@ -72,6 +75,8 @@ export default function AdminSettingsPage() {
   const [copiedScript, setCopiedScript] = useState<string | null>(null);
   const [clientIP, setClientIP] = useState<string>("");
   const [showSecurityHelp, setShowSecurityHelp] = useState<boolean>(true);
+  const [showMapsKey, setShowMapsKey] = useState<boolean>(false);
+  const [copiedMapsKey, setCopiedMapsKey] = useState<boolean>(false);
   const [loadingTemplate, setLoadingTemplate] = useState(false);
 
   // phpIPAM State
@@ -3319,6 +3324,115 @@ export default function AdminSettingsPage() {
                 <li><strong>Voucher Fisik / Gesek:</strong> Jika MAC berbeda, pelanggan cukup memasukkan Serial Number (SN) kartu voucher untuk mereset kuncian ke HP baru.</li>
                 <li><strong>Voucher Online (QRIS):</strong> Jika MAC berbeda, pelanggan cukup memasukkan Nomor WhatsApp pembelian atau Order ID tanpa perlu menunggu OTP.</li>
                 <li><strong>Jika dinonaktifkan:</strong> Seluruh voucher dapat login dari perangkat mana saja tanpa verifikasi kuncian MAC (cocok jika banyak pelanggan memakai MAC acak/randomized MAC).</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Feature 5: Integrasi Google Maps Platform & Peta GIS (FiberGrid) */}
+          <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 flex items-center justify-center shrink-0 mt-0.5">
+                  <MapPin className="w-5 h-5 text-cyan-600" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-xs font-black text-slate-900">
+                      Google Maps Platform &amp; Peta Topologi GIS (FiberGrid)
+                    </h3>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
+                      GIS &amp; Geocoding
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Kunci API Google Maps untuk pemetaan tiang/ODP, jalur fiber optik (FiberGrid), pencarian koordinat pelanggan, dan navigasi teknisi lapangan.
+                  </p>
+                </div>
+              </div>
+
+              {/* Status Badge */}
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <span
+                  className={`text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 ${
+                    securitySettings.google_maps_api_key && securitySettings.google_maps_api_key.trim() !== ""
+                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                      : "bg-amber-100 text-amber-800 border border-amber-300"
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  {securitySettings.google_maps_api_key && securitySettings.google_maps_api_key.trim() !== ""
+                    ? "Kunci API Terkonfigurasi"
+                    : "Default Fallback"}
+                </span>
+              </div>
+            </div>
+
+            {/* Input Form with Show/Hide and Copy */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                <span>Google Maps API Key (Browser / JavaScript API)</span>
+                <span className="text-[10px] text-slate-400 font-normal">
+                  Diperlukan: Maps JavaScript API, Places API, Geocoding API
+                </span>
+              </label>
+
+              <div className="relative flex items-center">
+                <input
+                  type={showMapsKey ? "text" : "password"}
+                  value={securitySettings.google_maps_api_key ?? ""}
+                  onChange={(e) =>
+                    setSecuritySettings({
+                      ...securitySettings,
+                      google_maps_api_key: e.target.value,
+                    })
+                  }
+                  placeholder="Contoh: AIzaSy..."
+                  className="w-full pl-3.5 pr-24 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all placeholder:text-slate-400 shadow-2xs"
+                />
+
+                <div className="absolute right-1.5 flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowMapsKey(!showMapsKey)}
+                    title={showMapsKey ? "Sembunyikan API Key" : "Tampilkan API Key"}
+                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                  >
+                    {showMapsKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (securitySettings.google_maps_api_key) {
+                        navigator.clipboard.writeText(securitySettings.google_maps_api_key);
+                        setCopiedMapsKey(true);
+                        setTimeout(() => setCopiedMapsKey(false), 2000);
+                      }
+                    }}
+                    title="Salin API Key"
+                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                  >
+                    {copiedMapsKey ? (
+                      <Check className="w-4 h-4 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Informational Guidance */}
+            <div className="p-3 bg-white rounded-xl border border-slate-200/90 text-[11px] text-slate-600 space-y-1.5 leading-relaxed">
+              <div className="flex items-center gap-2 font-bold text-slate-800">
+                <Globe className="w-3.5 h-3.5 text-cyan-600 shrink-0" />
+                <span>Panduan Integrasi Google Cloud Platform:</span>
+              </div>
+              <ul className="list-disc list-inside space-y-0.5 text-slate-500 pl-1">
+                <li>Buka <strong>Google Cloud Console &gt; APIs &amp; Services &gt; Credentials</strong> untuk membuat atau menyalin API Key.</li>
+                <li>Pastikan mengaktifkan 3 library API berikut di GCP project: <strong>Maps JavaScript API</strong>, <strong>Places API</strong>, dan <strong>Geocoding API</strong>.</li>
+                <li>Pada <em>Application restrictions</em>, disarankan membatasi ke domain ISP Anda (misal: <code>*.ispsync.id/*</code>) agar kuota API aman.</li>
+                <li>Jika kolom ini dikosongkan, sistem otomatis menerapkan kunci API bawaan platform ISPSYNC.</li>
               </ul>
             </div>
           </div>

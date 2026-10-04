@@ -86,10 +86,15 @@ type SecuritySettings struct {
     EnableWalledGarden bool      `json:"enable_walled_garden"`
     WalledGardenHosts  string    `json:"walled_garden_hosts"`
     EnableMACLock      bool      `json:"enable_mac_lock"`
+    GoogleMapsAPIKey   string    `json:"google_maps_api_key"`
     UpdatedAt          time.Time `json:"updated_at,omitempty"`
 }
 
 func DefaultSecuritySettings() SecuritySettings {
+    gmapsKey := os.Getenv("GOOGLE_MAPS_API_KEY")
+    if gmapsKey == "" {
+        gmapsKey = "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA"
+    }
     return SecuritySettings{
         JWTExpiryHours:     8,
         EnableIPWhitelist:  false,
@@ -97,6 +102,7 @@ func DefaultSecuritySettings() SecuritySettings {
         EnableWalledGarden: false,
         WalledGardenHosts:  "ledger.ispsync.id, nexus.ispsync.id, fibergrid.ispsync.id, api.midtrans.com, app.midtrans.com",
         EnableMACLock:      true,
+        GoogleMapsAPIKey:   gmapsKey,
     }
 }
 

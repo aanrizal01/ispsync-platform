@@ -129,6 +129,9 @@ func (r *Repository) GetSecuritySettings(ctx context.Context) (*SecuritySettings
 	if err := json.Unmarshal(valBytes, &s); err != nil {
 		return nil, err
 	}
+	if s.GoogleMapsAPIKey == "" {
+		s.GoogleMapsAPIKey = DefaultSecuritySettings().GoogleMapsAPIKey
+	}
 	s.UpdatedAt = updatedAt
 	return &s, nil
 }

@@ -100,6 +100,9 @@ export const settingsApi = {
   getClientIP: () =>
     request<{ success: boolean; ip: string }>("/settings/client-ip"),
 
+  getMapsSettings: () =>
+    request<{ success: boolean; google_maps_api_key: string }>("/settings/maps"),
+
   getPaymentGatewaySettings: () =>
     request<PaymentGatewaySettings>("/settings/payment-gateway"),
 
@@ -167,6 +170,7 @@ export interface SecuritySettings {
   enable_walled_garden: boolean;
   walled_garden_hosts: string;
   enable_mac_lock: boolean;
+  google_maps_api_key?: string;
   updated_at?: string;
 }
 
@@ -177,6 +181,7 @@ export const defaultSecuritySettings: SecuritySettings = {
   enable_walled_garden: false,
   walled_garden_hosts: "ispsync.id, portal.ispsync.id, api.midtrans.com, app.midtrans.com",
   enable_mac_lock: true,
+  google_maps_api_key: "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA",
 };
 
 export type PaymentProviderOption = "midtrans" | "duitku" | "xendit" | "tripay" | "nicepay" | "manual";
