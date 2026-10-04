@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -356,17 +357,44 @@ func (h *APIHandler) ProvisionSubscriber(w http.ResponseWriter, r *http.Request)
 	// 1b. Catat ONT di FiberGrid (Engine 1). Bila gagal, pelanggan TIDAK diaktifkan.
 	fgNote := "FiberGrid belum dikonfigurasi; ONT tidak dicatat"
 	if h.fg.Configured() {
-		if _, err := h.fg.RegisterONT(r.Context(), fibergrid.RegisterONTRequest{
+		regReq := fibergrid.RegisterONTRequest{
 			SerialNumber:   req.SerialNumber,
 			MACAddress:     req.MACAddress,
 			PONPort:        req.PONPort,
 			RegistrationNo: sub.SubscriberNo,
 			CustomerName:   sub.FullName,
-		}); err != nil {
+		}
+		fgNote = "ONT tercatat di FiberGrid (tanpa ODP: kode ODP pelanggan tidak ada di FiberGrid)"
+		// Petakan ODP terdekat pelanggan ke ODP FiberGrid lewat kode (tidak peka huruf besar/kecil).
+		if code := strings.TrimSpace(sub.NearestODPCode); code != "" {
+			odp, err := h.fg.LookupODP(r.Context(), code)
+			switch {
+			case err == nil:
+				if odp.TotalPorts > 0 && odp.UsedPorts >= odp.TotalPorts {
+					h.errorResponse(w, http.StatusConflict, "ODP "+odp.Code+" di FiberGrid sudah penuh ("+strconv.Itoa(odp.UsedPorts)+"/"+strconv.Itoa(odp.TotalPorts)+" port)")
+					return
+				}
+				if strings.EqualFold(odp.Status, "MAINTENANCE") {
+					h.errorResponse(w, http.StatusConflict, "ODP "+odp.Code+" sedang maintenance")
+					return
+				}
+				regReq.ODPNodeID = odp.ID
+				regReq.OLTDeviceID = odp.OLTID
+				if regReq.PONPort == "" {
+					regReq.PONPort = odp.PONPort
+				}
+				fgNote = "ONT tercatat di FiberGrid pada ODP " + odp.Code
+			case errors.Is(err, fibergrid.ErrNotFound):
+				// ODP bukan milik jaringan FiberGrid: lanjut tanpa pemetaan.
+			default:
+				h.errorResponse(w, http.StatusBadGateway, "Gagal memeriksa ODP di FiberGrid: "+err.Error())
+				return
+			}
+		}
+		if _, err := h.fg.RegisterONT(r.Context(), regReq); err != nil {
 			h.errorResponse(w, http.StatusBadGateway, "Gagal mencatat ONT di FiberGrid: "+err.Error())
 			return
 		}
-		fgNote = "ONT tercatat di FiberGrid"
 	}
 
 	// 2. Generate Kredensial PPPoE

@@ -121,6 +121,8 @@ func (c *Client) LookupONT(ctx context.Context, sn string) (*ONT, error) {
 type RegisterONTRequest struct {
 	SerialNumber   string `json:"serial_number"`
 	MACAddress     string `json:"mac_address,omitempty"`
+	ODPNodeID      string `json:"odp_node_id,omitempty"`
+	OLTDeviceID    string `json:"olt_device_id,omitempty"`
 	PONPort        string `json:"pon_port,omitempty"`
 	RegistrationNo string `json:"registration_no"`
 	CustomerName   string `json:"customer_name"`
@@ -149,4 +151,30 @@ func (c *Client) UpdateWifi(ctx context.Context, sn string, body map[string]inte
 // Reboot memerintahkan reboot modem.
 func (c *Client) Reboot(ctx context.Context, sn string) (json.RawMessage, error) {
 	return c.do(ctx, http.MethodPost, "/api/v1/internal/acs/cpe/"+url.PathEscape(sn)+"/reboot", nil)
+}
+
+// ODP ringkasan ODP FiberGrid hasil lookup kode.
+type ODP struct {
+	ID         string `json:"id"`
+	Code       string `json:"code"`
+	Name       string `json:"name"`
+	OLTID      string `json:"olt_device_id"`
+	OLTCode    string `json:"olt_code"`
+	PONPort    string `json:"pon_port"`
+	TotalPorts int    `json:"total_ports"`
+	UsedPorts  int    `json:"used_ports"`
+	Status     string `json:"status"`
+}
+
+// LookupODP mencari ODP FiberGrid berdasarkan kode (tidak peka huruf besar/kecil).
+func (c *Client) LookupODP(ctx context.Context, code string) (*ODP, error) {
+	data, err := c.do(ctx, http.MethodGet, "/api/v1/internal/odp/lookup?code="+url.QueryEscape(code), nil)
+	if err != nil {
+		return nil, err
+	}
+	var o ODP
+	if err := json.Unmarshal(data, &o); err != nil {
+		return nil, err
+	}
+	return &o, nil
 }
