@@ -328,7 +328,7 @@ func (s *SQLiteStorage) seedDefaultTenant() error {
 		ispkuID = uuid.New().String()
 		_, err := s.db.ExecContext(ctx, `
 			INSERT INTO tenants (id, slug, name, short_name, prefix_id, logo_url, brand_color, contact_phone, contact_email, address, status, created_at, updated_at)
-			VALUES (?, 'ispku', 'PT. ISP Kita Nusantara', 'ISPKU', 'ISPKU', '', '#2563eb', '081288889999', 'info@ispku.ispsync.id', 'Jalan Merdeka No. 12, Padang, Sumatera Barat', 'ACTIVE', ?, ?)
+			VALUES (?, 'ispku', 'PT. ISP Kita Nusantara', 'ISPKU', 'ISPKU', '', '#2563eb', '081288889999', 'info@ispku.ispsync.id', 'Jl. Jenderal Sudirman No. 125, Kota Pekanbaru, Riau', 'ACTIVE', ?, ?)
 		`, ispkuID, now, now)
 		if err != nil {
 			return err
@@ -431,7 +431,7 @@ func (s *SQLiteStorage) seedDefaultTenant() error {
 		ispmuID = uuid.New().String()
 		_, err := s.db.ExecContext(ctx, `
 			INSERT INTO tenants (id, slug, name, short_name, prefix_id, logo_url, brand_color, contact_phone, contact_email, address, status, created_at, updated_at)
-			VALUES (?, 'ispmu', 'PT. ISP Mitra Utama', 'ISPMU', 'ISPMU', '', '#7c3aed', '081377778888', 'info@ispmu.ispsync.id', 'Jalan Sudirman No. 88, Bukittinggi, Sumatera Barat', 'ACTIVE', ?, ?)
+			VALUES (?, 'ispmu', 'PT. ISP Mitra Utama', 'ISPMU', 'ISPMU', '', '#7c3aed', '081377778888', 'info@ispmu.ispsync.id', 'Jl. Khatib Sulaiman No. 45, Kota Padang, Sumatera Barat', 'ACTIVE', ?, ?)
 		`, ispmuID, now, now)
 		if err != nil {
 			return err

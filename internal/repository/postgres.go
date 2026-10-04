@@ -315,7 +315,7 @@ func (s *PostgresStorage) seedDefaultTenant() error {
 		ispkuID = uuid.New().String()
 		_, err := s.db.ExecContext(ctx, `
 			INSERT INTO tenants (id, slug, name, short_name, prefix_id, logo_url, brand_color, contact_phone, contact_email, address, status, created_at, updated_at)
-			VALUES ($1, 'ispku', 'PT. ISP Kita Nusantara', 'ISPKU', 'ISPKU', '', '#2563eb', '081288889999', 'info@ispku.ispsync.id', 'Jalan Merdeka No. 12, Padang, Sumatera Barat', 'ACTIVE', $2, $3)
+			VALUES ($1, 'ispku', 'PT. ISP Kita Nusantara', 'ISPKU', 'ISPKU', '', '#2563eb', '081288889999', 'info@ispku.ispsync.id', 'Jl. Jenderal Sudirman No. 125, Kota Pekanbaru, Riau', 'ACTIVE', $2, $3)
 		`, ispkuID, now, now)
 		if err != nil {
 			return err
@@ -383,7 +383,7 @@ func (s *PostgresStorage) seedDefaultTenant() error {
 		ispmuID = uuid.New().String()
 		_, err := s.db.ExecContext(ctx, `
 			INSERT INTO tenants (id, slug, name, short_name, prefix_id, logo_url, brand_color, contact_phone, contact_email, address, status, created_at, updated_at)
-			VALUES ($1, 'ispmu', 'PT. Mitra Usaha Data', 'ISPMU', 'ISPMU', '', '#059669', '081377776666', 'admin@ispmu.ispsync.id', 'Jalan Sudirman No. 45, Bukittinggi', 'ACTIVE', $2, $3)
+			VALUES ($1, 'ispmu', 'PT. Mitra Usaha Data', 'ISPMU', 'ISPMU', '', '#059669', '081377776666', 'admin@ispmu.ispsync.id', 'Jl. Khatib Sulaiman No. 45, Kota Padang, Sumatera Barat', 'ACTIVE', $2, $3)
 		`, ispmuID, now, now)
 		if err != nil {
 			return err
@@ -443,7 +443,7 @@ func (s *PostgresStorage) seedDefaultTenant() error {
 		devID = uuid.New().String()
 		_, err := s.db.ExecContext(ctx, `
 			INSERT INTO tenants (id, slug, name, short_name, prefix_id, logo_url, brand_color, contact_phone, contact_email, address, status, created_at, updated_at)
-			VALUES ($1, 'dev', 'Laboratorium ISPSYNC R&D', 'DEVLAB', 'DEV', '', '#7c3aed', '081100002026', 'dev@ispsync.id', 'Data Center NOC ISPSYNC', 'ACTIVE', $2, $3)
+			VALUES ($1, 'dev', 'Laboratorium ISPSYNC R&D', 'DEVLAB', 'DEV', '', '#7c3aed', '081100002026', 'dev@ispsync.id', 'Gedung Cyber 1 Lt. 3, Jl. Kuningan Barat No. 8, Jakarta Selatan', 'ACTIVE', $2, $3)
 		`, devID, now, now)
 		if err != nil {
 			return err
