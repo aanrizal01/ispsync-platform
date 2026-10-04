@@ -31,7 +31,7 @@ func DefaultCompanyInfo() CompanyInfo {
 		BrandName:     "GOGIGA NET",
 		LicenseNo:     "SK Kominfo RI No. 128/TEL.02.02/2024 (Izin ISP & Jartaplok)",
 		TaxID:         "03.882.194.5-014.000",
-		Address:       "Gedung Cyber Plaza Lt. 3, Jl. Merdeka No. 45, Jakarta / Cabang Payakumbuh",
+		Address:       "Gedung Cyber 1 Lt. 3, Jl. Kuningan Barat No. 8, Jakarta Selatan",
 		Phone:         "+62 811-6677-8899 / (021) 5088-7766",
 		Email:         "info@ispsync.id",
 		Website:       "https://ispsync.id",
