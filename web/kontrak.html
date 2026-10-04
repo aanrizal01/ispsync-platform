@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kontrak Sewa ODP</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/40 text-slate-200 font-sans relative overflow-x-hidden">
+<div class="absolute -top-32 -left-32 w-80 h-80 bg-cyan-600/20 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute top-1/2 -right-32 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute -bottom-32 left-1/4 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+<main class="relative max-w-6xl mx-auto px-4 py-8 space-y-6">
+  <header class="flex items-start justify-between gap-4 flex-wrap">
+    <div>
+      <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700" id="brand">-</span>
+      <h1 class="mt-2 text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-400">Kontrak Sewa ODP</h1>
+      <p class="text-xs text-slate-400">Sewakan port ODP ke ISP lain dengan tarif per port. Penyewa hanya melihat ODP sewaan, bukan pelanggan Anda.</p>
+    </div>
+    <a href="/" class="text-xs font-semibold text-slate-300 hover:text-white border border-slate-700 rounded-md px-3 py-1.5">&larr; Dashboard</a>
+  </header>
+
+  <div id="msg" class="hidden text-xs rounded-xl border px-3.5 py-2.5"></div>
+
+  <section id="create-box" class="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm space-y-3">
+    <h2 class="text-sm font-bold text-slate-100">Buat kontrak baru</h2>
+    <form id="f-create" class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+      <input id="c-client" required placeholder="Slug ISP penyewa (mis. ispmu)" class="rounded-xl bg-slate-950/60 border border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+      <input id="c-scope" required placeholder="Area (mis. Kota Padang)" class="rounded-xl bg-slate-950/60 border border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+      <input id="c-rate" required type="number" min="0" step="500" placeholder="Tarif per port / bulan (Rp)" class="rounded-xl bg-slate-950/60 border border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+      <button class="rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-bold px-3 py-2">Buat kontrak</button>
+    </form>
+  </section>
+
+  <section class="space-y-3">
+    <h2 class="text-sm font-bold text-slate-100">Kontrak</h2>
+    <div id="list" class="grid gap-3"></div>
+  </section>
+
+  <footer class="pt-6 text-center text-[11px] text-slate-500" id="foot"></footer>
+</main>
+
+<script>
+(function () {
+  var tok = localStorage.getItem('auth_session_token') || sessionStorage.getItem('auth_session_token');
+  var $ = function (id) { return document.getElementById(id); };
+  var myTenant = '';
+  var rupiah = function (n) { return 'Rp ' + Math.round(n || 0).toLocaleString('id-ID'); };
+
+  function msg(text, ok) {
+    var m = $('msg');
+    m.textContent = text;
+    m.className = 'text-xs rounded-xl border px-3.5 py-2.5 ' + (ok ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-red-500/10 border-red-500/30 text-red-300');
+  }
+  function api(method, path, body) {
+    return fetch('/api/v1' + path, {
+      method: method,
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + tok },
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error(j.message || j.error || ('HTTP ' + r.status));
+        return j;
+      });
+    });
+  }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function cell(label, value) {
+    var d = el('div');
+    d.appendChild(el('div', 'text-[10px] uppercase tracking-wider text-slate-500', label));
+    d.appendChild(el('div', 'text-sm font-bold text-slate-100', value));
+    return d;
+  }
+
+  function render(list) {
+    var box = $('list');
+    box.textContent = '';
+    if (!list || !list.length) {
+      box.appendChild(el('p', 'text-xs text-slate-500', 'Belum ada kontrak.'));
+      return;
+    }
+    list.forEach(function (a) {
+      var mine = a.provider_tenant_slug === myTenant;
+      var card = el('div', 'p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm space-y-3');
+      var head = el('div', 'flex items-center justify-between gap-2 flex-wrap');
+      head.appendChild(el('div', 'text-xs font-mono text-slate-300', a.agreement_no));
+      var right = el('div', 'flex items-center gap-2');
+      right.appendChild(el('span', 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700', mine ? 'Anda pemilik' : 'Anda penyewa'));
+      right.appendChild(el('span', 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 ' + (a.status === 'ACTIVE' ? 'text-emerald-400' : 'text-amber-400'), a.status));
+      head.appendChild(right);
+      card.appendChild(head);
+
+      var g = el('div', 'grid grid-cols-2 sm:grid-cols-6 gap-3');
+      g.appendChild(cell('Pemilik', a.provider_tenant_slug));
+      g.appendChild(cell('Penyewa', a.client_tenant_slug));
+      g.appendChild(cell('Area', a.scope_area));
+      g.appendChild(cell('ODP / port', a.total_shared_odps + ' / ' + a.used_ports + ' dari ' + a.allocated_ports));
+      g.appendChild(cell('Tarif/port', rupiah(a.settlement_rate_per_port)));
+      g.appendChild(cell('Tagihan bulanan', rupiah(a.monthly_bill)));
+      card.appendChild(g);
+
+      if (mine) {
+        var f = el('form', 'flex flex-wrap items-center gap-2 text-xs');
+        var code = el('input', 'rounded-xl bg-slate-950/60 border border-slate-700 px-3 py-1.5 w-44 focus:outline-none focus:ring-2 focus:ring-cyan-500');
+        code.placeholder = 'Kode ODP milik Anda'; code.required = true;
+        var ports = el('input', 'rounded-xl bg-slate-950/60 border border-slate-700 px-3 py-1.5 w-24 focus:outline-none focus:ring-2 focus:ring-cyan-500');
+        ports.type = 'number'; ports.min = 1; ports.placeholder = 'Port'; ports.required = true;
+        var b = el('button', 'rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-3 py-1.5', 'Sewakan ODP');
+        f.appendChild(code); f.appendChild(ports); f.appendChild(b);
+        f.addEventListener('submit', function (ev) {
+          ev.preventDefault();
+          api('POST', '/jartaplok/agreements/' + encodeURIComponent(a.id) + '/odps', { odp_code: code.value, ports: parseInt(ports.value, 10) })
+            .then(function () { msg('ODP disewakan.', true); load(); })
+            .catch(function (e) { msg(e.message, false); });
+        });
+        card.appendChild(f);
+
+        var st = el('div', 'flex gap-2');
+        ['ACTIVE', 'SUSPENDED', 'TERMINATED'].forEach(function (s) {
+          if (s === a.status) return;
+          var sb = el('button', 'text-[11px] rounded-md border border-slate-700 hover:bg-slate-800 px-2.5 py-1 text-slate-300', s === 'ACTIVE' ? 'Aktifkan' : s === 'SUSPENDED' ? 'Tangguhkan' : 'Akhiri');
+          sb.addEventListener('click', function () {
+            if (s === 'TERMINATED' && !confirm('Akhiri kontrak ini?')) return;
+            api('POST', '/jartaplok/agreements/' + encodeURIComponent(a.id) + '/status', { status: s })
+              .then(function () { msg('Status diperbarui.', true); load(); })
+              .catch(function (e) { msg(e.message, false); });
+          });
+          st.appendChild(sb);
+        });
+        card.appendChild(st);
+      }
+      box.appendChild(card);
+    });
+  }
+
+  function load() {
+    api('GET', '/jartaplok/agreements').then(render).catch(function (e) { msg(e.message, false); });
+  }
+
+  fetch('/api/v1/context').then(function (r) { return r.json(); }).then(function (c) {
+    var t = c.tenant || {};
+    myTenant = t.slug || '';
+    $('brand').textContent = (t.short_name || t.slug || '').toUpperCase();
+    document.title = 'Kontrak Sewa ODP | ' + (t.short_name || '').toUpperCase();
+    $('foot').textContent = '\u00a9 ' + new Date().getFullYear() + ' ' + (t.name || '') + '. All rights reserved.';
+    if (c.capabilities && !c.capabilities.own_infrastructure) $('create-box').classList.add('hidden');
+    if (!tok) { msg('Anda belum masuk. Silakan login dari dashboard terlebih dahulu.', false); return; }
+    load();
+  });
+
+  $('f-create').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    api('POST', '/jartaplok/agreements', { client_slug: $('c-client').value, scope_area: $('c-scope').value, rate_per_port: parseFloat($('c-rate').value) })
+      .then(function () { msg('Kontrak dibuat.', true); $('f-create').reset(); load(); })
+      .catch(function (e) { msg(e.message, false); });
+  });
+})();
+</script>
+</body>
+</html>
