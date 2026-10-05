@@ -105,7 +105,9 @@ func (r *Repository) fetchFromNexus(ctx context.Context) ([]ODPNode, bool) {
 	if tenantSlug == "" {
 		tenantSlug = "dev"
 	}
-	req.Header.Set("Host", fmt.Sprintf("nexus.%s.ispsync.id", tenantSlug))
+	host := fmt.Sprintf("nexus.%s.ispsync.id", tenantSlug)
+	req.Host = host
+	req.Header.Set("Host", host)
 
 	client := &http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Do(req)
