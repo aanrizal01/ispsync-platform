@@ -18,6 +18,9 @@ import {
   Users,
   Sparkles,
 } from "lucide-react";
+import { LedgerShowcase } from "@/components/showcase/LedgerShowcase";
+import { NexusShowcase } from "@/components/showcase/NexusShowcase";
+import { FiberGridShowcase } from "@/components/showcase/FiberGridShowcase";
 
 export default async function InternationalLandingPage() {
   const headersList = await headers();
@@ -35,6 +38,19 @@ export default async function InternationalLandingPage() {
 
   if (host.startsWith("hotspot.") || host.startsWith("wifi.") || host.startsWith("passpoint.")) {
     redirect("/hotspot");
+  }
+
+  // Master Engine Showcase Subdomains (Pure technical presentation, no CTA)
+  if (host === "ledger.ispsync.id" || host === "billing.ispsync.id") {
+    return <LedgerShowcase />;
+  }
+
+  if (host === "nexus.ispsync.id" || host === "portal.ispsync.id") {
+    return <NexusShowcase />;
+  }
+
+  if (host === "fibergrid.ispsync.id" || host === "fttx.ispsync.id") {
+    return <FiberGridShowcase />;
   }
 
   // Check if request is for the main SaaS public landing page

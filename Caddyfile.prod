@@ -184,6 +184,16 @@ https:// {
             header_up X-Real-IP {remote_host}
             header_down Cache-Control "no-cache, no-store, must-revalidate"
         }
+    # 0.9. Master Engine Showcase Subdomains (Pure technical presentation, no CTA)
+    @engine_showcase {
+        header_regexp Host ^(ledger|billing|nexus|portal|fibergrid|fttx)\.ispsync\.id$
+    }
+    handle @engine_showcase {
+        reverse_proxy web:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_down Cache-Control "no-cache, no-store, must-revalidate"
+        }
     }
 
     # 1. CMS & Billing Backoffice App (Next.js & API)

@@ -143,15 +143,9 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 						}
 					} else {
 						// Subdomain tunggal level 1 (contoh: nexus.ispsync.id, portal.ispsync.id, ispku.ispsync.id)
-						if sub == "nexus" || sub == "portal" {
-							tenantSlug = "ispku"
-							appType = domain.AppPortal
-						} else if sub == "sales" {
-							tenantSlug = "ispku"
-							appType = domain.AppSales
-						} else if sub == "teknisi" {
-							tenantSlug = "ispku"
-							appType = domain.AppTeknisi
+						if sub == "nexus" || sub == "portal" || sub == "sales" || sub == "teknisi" {
+							// Subdomain engine master tanpa tenant tidak boleh membajak tenant tertentu
+							tenantSlug = ""
 						} else {
 							// Subdomain murni tenant: ispku.ispsync.id
 							tenantSlug = sub

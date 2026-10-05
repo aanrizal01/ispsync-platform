@@ -58,7 +58,7 @@ func TestNexusSubdomainResolution(t *testing.T) {
 		expectedApp  domain.AppType
 		expectedSlug string
 	}{
-		{"nexus.ispsync.id", domain.AppPortal, "ispku"},
+		{"nexus.ispku.ispsync.id", domain.AppPortal, "ispku"},
 		{"nexus.dev.ispsync.id", domain.AppPortal, "dev"},
 		{"nexus.ispmu.ispsync.id", domain.AppPortal, "ispmu"},
 		{"portal.ispku.ispsync.id", domain.AppPortal, "ispku"},
