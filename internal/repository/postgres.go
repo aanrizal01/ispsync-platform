@@ -1555,11 +1555,13 @@ func (s *PostgresStorage) UpdateTenantSettings(ctx context.Context, tenantID str
 	if settings.PPPoEPassLength <= 0 {
 		settings.PPPoEPassLength = 6
 	}
-	if settings.TaxMode == "" {
-		settings.TaxMode = "NON_PKP"
+	taxModeInsert := settings.TaxMode
+	if taxModeInsert == "" {
+		taxModeInsert = "NON_PKP"
 	}
-	if settings.TaxRatePPN <= 0 {
-		settings.TaxRatePPN = 11.0
+	taxRateInsert := settings.TaxRatePPN
+	if taxRateInsert <= 0 {
+		taxRateInsert = 11.0
 	}
 	_, err := s.db.ExecContext(ctx, `
 		INSERT INTO tenant_integration_settings (
@@ -1585,14 +1587,15 @@ func (s *PostgresStorage) UpdateTenantSettings(ctx context.Context, tenantID str
 			pppoe_pass_static = EXCLUDED.pppoe_pass_static,
 			pppoe_pass_char_type = EXCLUDED.pppoe_pass_char_type,
 			pppoe_pass_length = EXCLUDED.pppoe_pass_length,
-			tax_mode = EXCLUDED.tax_mode,
-			tax_rate_ppn = EXCLUDED.tax_rate_ppn,
-			npwp = EXCLUDED.npwp,
+			tax_mode = CASE WHEN $18 != '' THEN $18 ELSE tenant_integration_settings.tax_mode END,
+			tax_rate_ppn = CASE WHEN $19 > 0 THEN $19 ELSE tenant_integration_settings.tax_rate_ppn END,
+			npwp = CASE WHEN $20 != '' THEN $20 ELSE tenant_integration_settings.npwp END,
 			updated_at = CURRENT_TIMESTAMP
 	`, tenantID, settings.GoogleMapsAPIKey, settings.TelegramBotToken, settings.TelegramChatID,
 		settings.NotifyNewRegistration, settings.NotifyODPFull, settings.NotifyRouterDown,
 		settings.PPPoEPrefix, settings.PPPoEIdSource, settings.PPPoERealm, settings.PPPoEPassFormat, settings.PPPoEPassStatic,
 		settings.PPPoEPassCharType, settings.PPPoEPassLength,
+		taxModeInsert, taxRateInsert, settings.NPWP,
 		settings.TaxMode, settings.TaxRatePPN, settings.NPWP)
 	return err
 }

@@ -1640,11 +1640,13 @@ func (s *SQLiteStorage) UpdateTenantSettings(ctx context.Context, tenantID strin
 	if settings.PPPoEPassLength <= 0 {
 		settings.PPPoEPassLength = 6
 	}
-	if settings.TaxMode == "" {
-		settings.TaxMode = "NON_PKP"
+	taxModeInsert := settings.TaxMode
+	if taxModeInsert == "" {
+		taxModeInsert = "NON_PKP"
 	}
-	if settings.TaxRatePPN <= 0 {
-		settings.TaxRatePPN = 11.0
+	taxRateInsert := settings.TaxRatePPN
+	if taxRateInsert <= 0 {
+		taxRateInsert = 11.0
 	}
 	_, err := s.db.ExecContext(ctx, `
 		INSERT INTO tenant_integration_settings (
@@ -1670,14 +1672,15 @@ func (s *SQLiteStorage) UpdateTenantSettings(ctx context.Context, tenantID strin
 			pppoe_pass_static = excluded.pppoe_pass_static,
 			pppoe_pass_char_type = excluded.pppoe_pass_char_type,
 			pppoe_pass_length = excluded.pppoe_pass_length,
-			tax_mode = excluded.tax_mode,
-			tax_rate_ppn = excluded.tax_rate_ppn,
-			npwp = excluded.npwp,
+			tax_mode = CASE WHEN ? != '' THEN ? ELSE tenant_integration_settings.tax_mode END,
+			tax_rate_ppn = CASE WHEN ? > 0 THEN ? ELSE tenant_integration_settings.tax_rate_ppn END,
+			npwp = CASE WHEN ? != '' THEN ? ELSE tenant_integration_settings.npwp END,
 			updated_at = CURRENT_TIMESTAMP
 	`, tenantID, settings.GoogleMapsAPIKey, settings.TelegramBotToken, settings.TelegramChatID,
 		notifReg, notifODP, notifRouter,
 		settings.PPPoEPrefix, settings.PPPoEIdSource, settings.PPPoERealm, settings.PPPoEPassFormat, settings.PPPoEPassStatic,
 		settings.PPPoEPassCharType, settings.PPPoEPassLength,
-		settings.TaxMode, settings.TaxRatePPN, settings.NPWP)
+		taxModeInsert, taxRateInsert, settings.NPWP,
+		settings.TaxMode, settings.TaxMode, settings.TaxRatePPN, settings.TaxRatePPN, settings.NPWP, settings.NPWP)
 	return err
 }
