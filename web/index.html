@@ -4548,49 +4548,44 @@
 
           </div>
 
-          <!-- 3. KONFIGURASI PENOMORAN AKUN & KREDENSIAL PPPOE (CARRIER-GRADE LINEAR TELCO DARK) -->
-          <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border border-slate-800 shadow-2xl p-6 sm:p-7 space-y-6 text-slate-100 font-sans">
+          <!-- 3. KONFIGURASI PENOMORAN AKUN & KREDENSIAL PPPOE (CLEAN LIGHT THEME) -->
+          <div class="bg-slate-50/70 border border-slate-200/90 rounded-xl p-5 sm:p-6 space-y-6 text-slate-800 font-sans shadow-xs">
             
-            <!-- Ambient Aurora Radial Glows -->
-            <div class="absolute -top-32 -left-32 w-80 h-80 bg-cyan-600/15 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute top-1/2 -right-32 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute -bottom-32 left-1/3 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
             <!-- Header Section -->
-            <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-800/90">
-              <div class="flex items-center gap-3.5">
-                <div class="w-11 h-11 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-                  <i data-lucide="network" class="w-5 h-5"></i>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 flex items-center justify-center shrink-0">
+                  <i data-lucide="network" class="w-5 h-5 text-cyan-600"></i>
                 </div>
                 <div>
-                  <h3 class="text-base font-bold text-white font-mono tracking-tight flex items-center gap-2">
+                  <h3 class="text-sm font-bold text-slate-900 font-mono flex items-center gap-2">
                     FORMAT PENOMORAN AKUN PPPOE
                   </h3>
-                  <p class="text-xs text-slate-400">Standarisasi Pola Username &amp; Password Pelanggan MikroTik / RADIUS / BNG</p>
+                  <p class="text-[11px] text-slate-500">Standarisasi Pola Username &amp; Password Pelanggan MikroTik / RADIUS / BNG</p>
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <span id="badge-pppoe-format-status" class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-slate-800 text-cyan-400 border border-cyan-500/30 shadow-[0_0_10px_rgba(6,182,212,0.15)]">
+                <span id="badge-pppoe-format-status" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-cyan-50 text-cyan-700 border border-cyan-200">
                   STANDAR AKTIF
                 </span>
               </div>
             </div>
 
-            <p class="relative z-10 text-xs text-slate-300 leading-relaxed font-sans">
-              Atur format otomatis penomoran username dan password PPPoE bagi pelanggan baru. Konfigurasi ini diterapkan otomatis oleh worker ISPSYNC saat admin menyetujui pendaftaran atau menekan tombol <strong class="text-cyan-300 font-mono">"Generate Otomatis"</strong> di detail pelanggan.
+            <p class="text-xs text-slate-600 leading-relaxed font-sans">
+              Atur format otomatis penomoran username dan password PPPoE bagi pelanggan baru. Konfigurasi ini diterapkan otomatis oleh worker ISPSYNC saat admin menyetujui pendaftaran atau menekan tombol <strong class="text-blue-600 font-mono">"Generate Otomatis"</strong> di detail pelanggan.
             </p>
 
-            <!-- Quick Template Selector (Dark Glassmorphism) -->
-            <div class="relative z-10 p-3.5 sm:p-4 rounded-xl bg-slate-900/80 border border-slate-800 backdrop-blur-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+            <!-- Quick Template Selector -->
+            <div class="p-3.5 sm:p-4 rounded-lg bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
               <div class="text-xs space-y-0.5">
-                <span class="font-bold text-slate-100 font-mono flex items-center gap-1.5">
-                  <i data-lucide="sparkles" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span class="font-bold text-slate-800 font-mono flex items-center gap-1.5">
+                  <i data-lucide="sparkles" class="w-3.5 h-3.5 text-blue-600"></i>
                   Preset Template Penomoran Cepat:
                 </span>
-                <p class="text-[11px] text-slate-400">Pilih salah satu template bawaan industri ISP atau sesuaikan manual di bawah.</p>
+                <p class="text-[11px] text-slate-500">Pilih salah satu template bawaan industri ISP atau sesuaikan manual di bawah.</p>
               </div>
               <div class="flex items-center gap-2">
-                <select id="select-pppoe-preset-template" onchange="applyPPPoEPresetTemplate(this.value)" class="text-xs font-mono px-3.5 py-2 bg-slate-950 border border-slate-700 rounded-lg text-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-400 cursor-pointer shadow-inner">
+                <select id="select-pppoe-preset-template" onchange="applyPPPoEPresetTemplate(this.value)" class="text-xs font-mono px-3.5 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-2xs font-semibold">
                   <option value="area-seq">Kode Area + No. Urut (999000001@[slug])</option>
                   <option value="default">Default ISPSYNC (sub-[NoReg]@[slug])</option>
                   <option value="phone">Telco Standard ([NoHP]@[slug])</option>
@@ -4602,24 +4597,24 @@
             </div>
 
             <!-- Configuration Grid (Username & Password) -->
-            <div class="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               
               <!-- Left: Format Username -->
-              <div class="p-5 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm space-y-4 shadow-sm">
-                <div class="flex items-center gap-2 text-xs font-bold font-mono text-cyan-400 uppercase tracking-wider pb-2 border-b border-slate-800">
-                  <i data-lucide="user-check" class="w-4 h-4 text-cyan-400"></i>
+              <div class="p-5 rounded-lg bg-white border border-slate-200 space-y-4 shadow-2xs">
+                <div class="flex items-center gap-2 text-xs font-bold font-mono text-cyan-700 uppercase tracking-wider pb-2 border-b border-slate-100">
+                  <i data-lucide="user-check" class="w-4 h-4 text-cyan-600"></i>
                   <span>1. Format Username PPPoE</span>
                 </div>
 
                 <div class="space-y-1.5">
-                  <label class="block text-xs font-semibold text-slate-300 font-mono">Prefix Awalan / Kode Area</label>
-                  <input type="text" id="input-setting-pppoe-prefix" oninput="onPPPoEInputChange()" placeholder="999 atau sub-" value="999" class="w-full text-xs font-mono px-3.5 py-2.5 bg-slate-950/90 border border-slate-700/80 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-400 transition shadow-inner" />
-                  <p class="text-[10px] text-slate-400">Contoh: Kode Area <code class="font-mono text-cyan-400">999</code>, prefix <code class="font-mono text-cyan-400">sub-</code>, <code class="font-mono text-cyan-400">c-</code>, atau kosongkan jika tanpa awalan.</p>
+                  <label class="block text-xs font-semibold text-slate-700 font-mono">Prefix Awalan / Kode Area</label>
+                  <input type="text" id="input-setting-pppoe-prefix" oninput="onPPPoEInputChange()" placeholder="999 atau sub-" value="999" class="w-full text-xs font-mono px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition shadow-2xs" />
+                  <p class="text-[11px] text-slate-500">Contoh: Kode Area <code class="font-mono text-cyan-700 bg-cyan-50 px-1 py-0.5 rounded border border-cyan-100">999</code>, prefix <code class="font-mono text-cyan-700 bg-cyan-50 px-1 py-0.5 rounded border border-cyan-100">sub-</code>, <code class="font-mono text-cyan-700 bg-cyan-50 px-1 py-0.5 rounded border border-cyan-100">c-</code>, atau kosongkan jika tanpa awalan.</p>
                 </div>
 
                 <div class="space-y-1.5">
-                  <label class="block text-xs font-semibold text-slate-300 font-mono">Sumber ID Utama Pelanggan</label>
-                  <select id="select-setting-pppoe-id-source" onchange="onPPPoEInputChange()" class="w-full text-xs font-mono px-3.5 py-2.5 bg-slate-950/90 border border-slate-700/80 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-400 cursor-pointer shadow-inner">
+                  <label class="block text-xs font-semibold text-slate-700 font-mono">Sumber ID Utama Pelanggan</label>
+                  <select id="select-setting-pppoe-id-source" onchange="onPPPoEInputChange()" class="w-full text-xs font-mono px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 cursor-pointer shadow-2xs">
                     <option value="SEQ_NO6">Nomor Urut Pendaftaran 6 Digit (misal: 000001)</option>
                     <option value="SEQ_NO5">Nomor Urut Pendaftaran 5 Digit (misal: 00001)</option>
                     <option value="SEQ_NO4">Nomor Urut Pendaftaran 4 Digit (misal: 0001)</option>
@@ -4631,26 +4626,26 @@
                     <option value="RANDOM_NUM6">6 Digit Angka Acak Unik (misal: 839102)</option>
                     <option value="RANDOM_ALPHANUM6">6 Karakter Alfanumerik Acak (misal: k8x2m9)</option>
                   </select>
-                  <p class="text-[10px] text-slate-400">Nomor pengenal unik yang diambil otomatis dari data pendaftaran.</p>
+                  <p class="text-[11px] text-slate-500">Nomor pengenal unik yang diambil otomatis dari data pendaftaran.</p>
                 </div>
 
                 <div class="space-y-1.5">
-                  <label class="block text-xs font-semibold text-slate-300 font-mono">Domain / Realm PPPoE (@realm)</label>
-                  <input type="text" id="input-setting-pppoe-realm" oninput="onPPPoEInputChange()" placeholder="@ispku atau @dev" class="w-full text-xs font-mono px-3.5 py-2.5 bg-slate-950/90 border border-slate-700/80 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-400 transition shadow-inner" />
-                  <p class="text-[10px] text-slate-400">Default otomatis memakai <code class="font-mono text-cyan-400">@tenant</code> jika dikosongkan.</p>
+                  <label class="block text-xs font-semibold text-slate-700 font-mono">Domain / Realm PPPoE (@realm)</label>
+                  <input type="text" id="input-setting-pppoe-realm" oninput="onPPPoEInputChange()" placeholder="@ispku atau @dev" class="w-full text-xs font-mono px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition shadow-2xs" />
+                  <p class="text-[11px] text-slate-500">Default otomatis memakai <code class="font-mono text-cyan-700 bg-cyan-50 px-1 py-0.5 rounded border border-cyan-100">@tenant</code> jika dikosongkan.</p>
                 </div>
               </div>
 
               <!-- Right: Format Password -->
-              <div class="p-5 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm space-y-4 shadow-sm">
-                <div class="flex items-center gap-2 text-xs font-bold font-mono text-blue-400 uppercase tracking-wider pb-2 border-b border-slate-800">
-                  <i data-lucide="lock" class="w-4 h-4 text-blue-400"></i>
+              <div class="p-5 rounded-lg bg-white border border-slate-200 space-y-4 shadow-2xs">
+                <div class="flex items-center gap-2 text-xs font-bold font-mono text-blue-700 uppercase tracking-wider pb-2 border-b border-slate-100">
+                  <i data-lucide="lock" class="w-4 h-4 text-blue-600"></i>
                   <span>2. Format Password PPPoE</span>
                 </div>
 
                 <div class="space-y-1.5">
-                  <label class="block text-xs font-semibold text-slate-300 font-mono">Pola Password Otomatis</label>
-                  <select id="select-setting-pppoe-pass-format" onchange="onPPPoEPassFormatChanged()" class="w-full text-xs font-mono px-3.5 py-2.5 bg-slate-950/90 border border-slate-700/80 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 cursor-pointer shadow-inner">
+                  <label class="block text-xs font-semibold text-slate-700 font-mono">Pola Password Otomatis</label>
+                  <select id="select-setting-pppoe-pass-format" onchange="onPPPoEPassFormatChanged()" class="w-full text-xs font-mono px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-2xs">
                     <option value="PREFIX_RANDOM">Prefix Statis + Digit Acak (misal: isp + 489201)</option>
                     <option value="RANDOM">Karakter Acak Murni (misal: 489201 / k8P2xM9a)</option>
                     <option value="RANDOM_NUM6">6 Angka Acak Murni (Legacy)</option>
@@ -4659,30 +4654,30 @@
                     <option value="PHONE_FULL">Nomor HP Lengkap Pelanggan</option>
                     <option value="STATIC">Password Statis Tetap (Sama untuk semua akun)</option>
                   </select>
-                  <p class="text-[10px] text-slate-400">Metode pembuatan password rahasia yang di-inject ke MikroTik secret.</p>
+                  <p class="text-[11px] text-slate-500">Metode pembuatan password rahasia yang di-inject ke MikroTik secret.</p>
                 </div>
 
                 <div class="space-y-1.5" id="container-setting-pppoe-pass-static">
-                  <label class="block text-xs font-semibold text-slate-300 font-mono" id="label-setting-pppoe-pass-static">Prefix Kata Sandi</label>
-                  <input type="text" id="input-setting-pppoe-pass-static" oninput="onPPPoEInputChange()" placeholder="isp" value="isp" class="w-full text-xs font-mono px-3.5 py-2.5 bg-slate-950/90 border border-slate-700/80 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition shadow-inner" />
-                  <p class="text-[10px] text-slate-400" id="hint-setting-pppoe-pass-static">Awalan sebelum karakter acak, misal: <code class="font-mono text-cyan-400">isp</code> &rarr; <code class="font-mono text-cyan-400">isp489201</code>.</p>
+                  <label class="block text-xs font-semibold text-slate-700 font-mono" id="label-setting-pppoe-pass-static">Prefix Kata Sandi</label>
+                  <input type="text" id="input-setting-pppoe-pass-static" oninput="onPPPoEInputChange()" placeholder="isp" value="isp" class="w-full text-xs font-mono px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-2xs" />
+                  <p class="text-[11px] text-slate-500" id="hint-setting-pppoe-pass-static">Awalan sebelum karakter acak, misal: <code class="font-mono text-blue-700 bg-blue-50 px-1 py-0.5 rounded border border-blue-100">isp</code> &rarr; <code class="font-mono text-blue-700 bg-blue-50 px-1 py-0.5 rounded border border-blue-100">isp489201</code>.</p>
                 </div>
 
                 <!-- Pengaturan Karakter & Panjang Password Acak -->
                 <div id="container-setting-pppoe-random-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div class="space-y-1.5">
-                    <label class="block text-xs font-semibold text-slate-300 font-mono">Tipe Karakter Acak</label>
-                    <select id="select-setting-pppoe-pass-char-type" onchange="onPPPoEInputChange()" class="w-full text-xs font-mono px-3.5 py-2.5 bg-slate-950/90 border border-slate-700/80 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 cursor-pointer shadow-inner">
+                    <label class="block text-xs font-semibold text-slate-700 font-mono">Tipe Karakter Acak</label>
+                    <select id="select-setting-pppoe-pass-char-type" onchange="onPPPoEInputChange()" class="w-full text-xs font-mono px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-2xs">
                       <option value="NUMERIC">Angka Saja (0-9)</option>
                       <option value="ALPHA">Huruf Saja (a-z, A-Z)</option>
                       <option value="ALPHANUMERIC">Mix Angka & Huruf (0-9, a-z, A-Z)</option>
                       <option value="ALPHANUM_SYMBOLS">Mix Huruf, Angka & Simbol (!@#$%)</option>
                     </select>
-                    <p class="text-[10px] text-slate-400">Pilihan variasi karakter acak.</p>
+                    <p class="text-[11px] text-slate-500">Pilihan variasi karakter acak.</p>
                   </div>
                   <div class="space-y-1.5">
-                    <label class="block text-xs font-semibold text-slate-300 font-mono">Panjang Digit Acak</label>
-                    <select id="select-setting-pppoe-pass-length" onchange="onPPPoEInputChange()" class="w-full text-xs font-mono px-3.5 py-2.5 bg-slate-950/90 border border-slate-700/80 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 cursor-pointer shadow-inner">
+                    <label class="block text-xs font-semibold text-slate-700 font-mono">Panjang Digit Acak</label>
+                    <select id="select-setting-pppoe-pass-length" onchange="onPPPoEInputChange()" class="w-full text-xs font-mono px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-2xs">
                       <option value="4">4 Digit / Karakter</option>
                       <option value="6" selected>6 Digit / Karakter (Default)</option>
                       <option value="8">8 Digit / Karakter (Standar ISP)</option>
@@ -4690,71 +4685,71 @@
                       <option value="12">12 Digit / Karakter (High Security)</option>
                       <option value="16">16 Digit / Karakter (Maksimum)</option>
                     </select>
-                    <p class="text-[10px] text-slate-400">Jumlah panjang digit password acak.</p>
+                    <p class="text-[11px] text-slate-500">Jumlah panjang digit password acak.</p>
                   </div>
                 </div>
 
                 <!-- Info Box Carrier Grade -->
-                <div class="p-3 rounded-lg bg-blue-950/40 border border-blue-800/60 text-[11px] text-blue-300 space-y-1 font-sans">
-                  <div class="font-semibold text-blue-200 flex items-center gap-1.5">
-                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <div class="p-3.5 rounded-lg bg-blue-50 border border-blue-200/80 text-[11px] text-blue-900 space-y-1 font-sans">
+                  <div class="font-semibold text-blue-800 flex items-center gap-1.5">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-blue-600"></i>
                     <span>Kiat Operasional Carrier-Grade:</span>
                   </div>
-                  <p class="text-blue-300/90 leading-relaxed">
+                  <p class="text-blue-700/90 leading-relaxed">
                     Format password yang mudah diingat (misal 6 digit terakhir HP atau prefix brand) mempercepat aktivasi teknisi saat konfigurasi port PPPoE di modem pelanggan (ONT/CPE).
                   </p>
                 </div>
               </div>
             </div>
 
-            <!-- Live Interactive Preview Box (High-Contrast Linear Terminal) -->
-            <div class="relative z-10 p-5 rounded-xl bg-slate-950/95 border border-cyan-500/30 text-slate-100 shadow-[0_0_30px_rgba(6,182,212,0.12)] space-y-4 font-mono">
-              <div class="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-slate-800">
+            <!-- Live Interactive Preview Box (Clean High-Contrast Terminal) -->
+            <div class="p-4 sm:p-5 rounded-lg bg-white border border-slate-200 shadow-2xs space-y-4 font-mono">
+              <div class="flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-slate-100">
                 <div class="flex items-center gap-2">
-                  <div class="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#06b6d4]"></div>
-                  <span class="text-xs font-bold uppercase tracking-wider text-cyan-400">
+                  <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-800">
                     LIVE PREVIEW HASIL GENERATE PPPOE
                   </span>
                 </div>
-                <span class="text-[11px] text-slate-400 font-sans">
+                <span class="text-[11px] text-slate-500 font-sans">
                   Simulasi Berdasarkan Data Pelanggan Uji
                 </span>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
-                <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800/90 shadow-sm">
-                  <span class="text-[10px] text-slate-400 font-mono block mb-1">SIMULASI USERNAME PPPOE:</span>
-                  <span id="preview-pppoe-user" class="text-cyan-400 font-extrabold text-base select-all tracking-wide">999000001@dev</span>
+                <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
+                  <span class="text-[10px] text-slate-500 font-mono block mb-1">SIMULASI USERNAME PPPOE:</span>
+                  <span id="preview-pppoe-user" class="text-blue-600 font-extrabold text-base select-all tracking-wide">999000001@dev</span>
                 </div>
-                <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800/90 shadow-sm">
-                  <span class="text-[10px] text-slate-400 font-mono block mb-1">SIMULASI PASSWORD PPPOE:</span>
-                  <span id="preview-pppoe-pass" class="text-emerald-400 font-extrabold text-base select-all tracking-wide">isp489201</span>
+                <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-200">
+                  <span class="text-[10px] text-slate-500 font-mono block mb-1">SIMULASI PASSWORD PPPOE:</span>
+                  <span id="preview-pppoe-pass" class="text-emerald-600 font-extrabold text-base select-all tracking-wide">isp489201</span>
                 </div>
               </div>
 
-              <div class="pt-2 text-[11px] text-slate-400 border-t border-slate-800/90 flex flex-wrap items-center justify-between gap-3">
+              <div class="pt-2 text-[11px] text-slate-500 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center gap-2 overflow-x-auto max-w-full">
-                  <span class="text-slate-400 shrink-0 font-sans">Preview MikroTik CLI:</span>
-                  <code id="preview-pppoe-cli" class="text-slate-300 font-mono text-[11px] select-all whitespace-nowrap bg-slate-900 px-2 py-1 rounded border border-slate-800">/ppp secret add name="999000001@dev" password="***" service=pppoe</code>
+                  <span class="text-slate-500 shrink-0 font-sans">Preview MikroTik CLI:</span>
+                  <code id="preview-pppoe-cli" class="text-slate-700 font-mono text-[11px] select-all whitespace-nowrap bg-slate-100 px-2.5 py-1 rounded border border-slate-200">/ppp secret add name="999000001@dev" password="***" service=pppoe</code>
                 </div>
-                <button type="button" onclick="updatePPPoELivePreview(true)" class="px-3 py-1.5 text-xs font-mono text-cyan-300 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/50 rounded-lg transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-98">
-                  <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <button type="button" onclick="updatePPPoELivePreview(true)" class="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition flex items-center gap-1.5 shadow-2xs active:scale-98 cursor-pointer">
+                  <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-blue-600"></i>
                   <span>Acak Contoh Baru</span>
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- Bottom Security & Multi-Tenant Notice -->
-          <div class="p-4 rounded-xl bg-slate-900 text-slate-300 border border-slate-800 flex items-start gap-3.5">
-            <div class="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 mt-0.5">
-              <i data-lucide="shield-check" class="w-4 h-4"></i>
+          <!-- Bottom Security & Multi-Tenant Notice (Clean Light) -->
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3.5 shadow-2xs">
+            <div class="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+              <i data-lucide="shield-check" class="w-4 h-4 text-blue-600"></i>
             </div>
             <div class="space-y-1">
-              <h4 class="text-xs font-bold text-slate-100 font-mono flex items-center gap-2">
+              <h4 class="text-xs font-bold text-slate-800 font-mono flex items-center gap-2">
                 KEAMANAN KREDENSIAL MULTI-TENANT ISPSYNC
               </h4>
-              <p class="text-[11px] text-slate-400 leading-normal">
+              <p class="text-[11px] text-slate-500 leading-normal font-sans">
                 Kredensial API Key Google Maps, Token Telegram, dan pengaturan penomoran akun PPPoE disimpan secara terisolasi per-tenant pada database PostgreSQL carrier-grade. Konfigurasi tidak pernah bocor antar tenant dan hanya diterapkan pada jaringan ISP Anda.
               </p>
             </div>
@@ -21299,10 +21294,10 @@
 
           if (pppoeBadge) {
             if (prefixVal !== 'sub-' || idSourceVal !== 'REG_NO' || passFormatVal !== 'PREFIX_RANDOM' || passStaticVal !== 'isp') {
-              pppoeBadge.className = 'text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-slate-800 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.15)]';
+              pppoeBadge.className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200';
               pppoeBadge.innerText = 'TERKONFIGURASI';
             } else {
-              pppoeBadge.className = 'text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-slate-800 text-cyan-400 border border-cyan-500/30 shadow-[0_0_10px_rgba(6,182,212,0.15)]';
+              pppoeBadge.className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-cyan-50 text-cyan-700 border border-cyan-200';
               pppoeBadge.innerText = 'STANDAR AKTIF';
             }
           }
