@@ -302,5 +302,7 @@ type TenantIntegrationSettings struct {
 	PPPoERealm            string    `json:"pppoe_realm"`
 	PPPoEPassFormat       string    `json:"pppoe_pass_format"`
 	PPPoEPassStatic       string    `json:"pppoe_pass_static"`
+	PPPoEPassCharType     string    `json:"pppoe_pass_char_type"`
+	PPPoEPassLength       int       `json:"pppoe_pass_length"`
 	UpdatedAt             time.Time `json:"updated_at"`
 }

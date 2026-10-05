@@ -4651,9 +4651,10 @@
                 <div class="space-y-1.5">
                   <label class="block text-xs font-semibold text-slate-300 font-mono">Pola Password Otomatis</label>
                   <select id="select-setting-pppoe-pass-format" onchange="onPPPoEPassFormatChanged()" class="w-full text-xs font-mono px-3.5 py-2.5 bg-slate-950/90 border border-slate-700/80 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 cursor-pointer shadow-inner">
-                    <option value="PREFIX_RANDOM">Prefix Statis + 6 Angka Acak (misal: isp + 489201)</option>
-                    <option value="RANDOM_NUM6">6 Angka Acak Murni (misal: 489201)</option>
-                    <option value="RANDOM_ALPHANUM8">8 Karakter Alfanumerik Acak (misal: k8P2xM9a)</option>
+                    <option value="PREFIX_RANDOM">Prefix Statis + Digit Acak (misal: isp + 489201)</option>
+                    <option value="RANDOM">Karakter Acak Murni (misal: 489201 / k8P2xM9a)</option>
+                    <option value="RANDOM_NUM6">6 Angka Acak Murni (Legacy)</option>
+                    <option value="RANDOM_ALPHANUM8">8 Karakter Alfanumerik Acak (Legacy)</option>
                     <option value="PHONE_LAST6">6 Digit Terakhir No. HP Pelanggan</option>
                     <option value="PHONE_FULL">Nomor HP Lengkap Pelanggan</option>
                     <option value="STATIC">Password Statis Tetap (Sama untuk semua akun)</option>
@@ -4664,7 +4665,33 @@
                 <div class="space-y-1.5" id="container-setting-pppoe-pass-static">
                   <label class="block text-xs font-semibold text-slate-300 font-mono" id="label-setting-pppoe-pass-static">Prefix Kata Sandi</label>
                   <input type="text" id="input-setting-pppoe-pass-static" oninput="onPPPoEInputChange()" placeholder="isp" value="isp" class="w-full text-xs font-mono px-3.5 py-2.5 bg-slate-950/90 border border-slate-700/80 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 transition shadow-inner" />
-                  <p class="text-[10px] text-slate-400" id="hint-setting-pppoe-pass-static">Awalan sebelum digit acak, misal: <code class="font-mono text-cyan-400">isp</code> &rarr; <code class="font-mono text-cyan-400">isp489201</code>.</p>
+                  <p class="text-[10px] text-slate-400" id="hint-setting-pppoe-pass-static">Awalan sebelum karakter acak, misal: <code class="font-mono text-cyan-400">isp</code> &rarr; <code class="font-mono text-cyan-400">isp489201</code>.</p>
+                </div>
+
+                <!-- Pengaturan Karakter & Panjang Password Acak -->
+                <div id="container-setting-pppoe-random-options" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div class="space-y-1.5">
+                    <label class="block text-xs font-semibold text-slate-300 font-mono">Tipe Karakter Acak</label>
+                    <select id="select-setting-pppoe-pass-char-type" onchange="onPPPoEInputChange()" class="w-full text-xs font-mono px-3.5 py-2.5 bg-slate-950/90 border border-slate-700/80 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 cursor-pointer shadow-inner">
+                      <option value="NUMERIC">Angka Saja (0-9)</option>
+                      <option value="ALPHA">Huruf Saja (a-z, A-Z)</option>
+                      <option value="ALPHANUMERIC">Mix Angka & Huruf (0-9, a-z, A-Z)</option>
+                      <option value="ALPHANUM_SYMBOLS">Mix Huruf, Angka & Simbol (!@#$%)</option>
+                    </select>
+                    <p class="text-[10px] text-slate-400">Pilihan variasi karakter acak.</p>
+                  </div>
+                  <div class="space-y-1.5">
+                    <label class="block text-xs font-semibold text-slate-300 font-mono">Panjang Digit Acak</label>
+                    <select id="select-setting-pppoe-pass-length" onchange="onPPPoEInputChange()" class="w-full text-xs font-mono px-3.5 py-2.5 bg-slate-950/90 border border-slate-700/80 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 cursor-pointer shadow-inner">
+                      <option value="4">4 Digit / Karakter</option>
+                      <option value="6" selected>6 Digit / Karakter (Default)</option>
+                      <option value="8">8 Digit / Karakter (Standar ISP)</option>
+                      <option value="10">10 Digit / Karakter</option>
+                      <option value="12">12 Digit / Karakter (High Security)</option>
+                      <option value="16">16 Digit / Karakter (Maksimum)</option>
+                    </select>
+                    <p class="text-[10px] text-slate-400">Jumlah panjang digit password acak.</p>
+                  </div>
                 </div>
 
                 <!-- Info Box Carrier Grade -->
@@ -15802,8 +15829,36 @@
         idSource: 'REG_NO',
         realm: '@' + slug,
         passFormat: 'PREFIX_RANDOM',
-        passStatic: 'isp'
+        passStatic: 'isp',
+        passCharType: 'NUMERIC',
+        passLength: 6
       };
+    }
+
+    function generateRandomPPPoEString(charType, length) {
+      const len = Math.max(4, Math.min(32, parseInt(length, 10) || 6));
+      let charset = '0123456789';
+      if (charType === 'ALPHA') {
+        charset = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
+      } else if (charType === 'ALPHANUMERIC') {
+        charset = '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
+      } else if (charType === 'ALPHANUM_SYMBOLS') {
+        charset = '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ!@#$%';
+      }
+
+      let res = '';
+      if (charType === 'NUMERIC' || !charType) {
+        res += Math.floor(1 + Math.random() * 9);
+        for (let i = 1; i < len; i++) {
+          res += Math.floor(Math.random() * 10);
+        }
+        return res;
+      }
+
+      for (let i = 0; i < len; i++) {
+        res += charset.charAt(Math.floor(Math.random() * charset.length));
+      }
+      return res;
     }
 
     function buildPPPoECredentials(reg, customConfig) {
@@ -15894,16 +15949,21 @@
       // 3. Determine password
       let password = '';
       const passStatic = (cfg.passStatic !== undefined ? cfg.passStatic : 'isp').trim();
+      const passCharType = cfg.passCharType || 'NUMERIC';
+      const passLength = parseInt(cfg.passLength, 10) || 6;
+
       switch (cfg.passFormat) {
         case 'RANDOM_NUM6':
-          password = String(Math.floor(100000 + Math.random() * 900000));
+          password = generateRandomPPPoEString('NUMERIC', 6);
           break;
         case 'RANDOM_ALPHANUM8':
-          const chars8 = '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
-          password = Array.from({length: 8}, () => chars8.charAt(Math.floor(Math.random() * chars8.length))).join('');
+          password = generateRandomPPPoEString('ALPHANUMERIC', 8);
+          break;
+        case 'RANDOM':
+          password = generateRandomPPPoEString(passCharType, passLength);
           break;
         case 'PHONE_LAST6':
-          password = rawPhone.length >= 6 ? rawPhone.slice(-6) : String(Math.floor(100000 + Math.random() * 900000));
+          password = rawPhone.length >= 6 ? rawPhone.slice(-6) : generateRandomPPPoEString('NUMERIC', 6);
           break;
         case 'PHONE_FULL':
           password = rawPhone || ('08' + Math.floor(1000000000 + Math.random() * 9000000000));
@@ -15913,7 +15973,7 @@
           break;
         case 'PREFIX_RANDOM':
         default:
-          password = (passStatic || 'isp') + Math.floor(100000 + Math.random() * 900000);
+          password = (passStatic || 'isp') + generateRandomPPPoEString(passCharType, passLength);
           break;
       }
 
@@ -15940,7 +16000,9 @@
             idSource: d.pppoe_id_source || 'REG_NO',
             realm: d.pppoe_realm !== undefined ? d.pppoe_realm : ('@' + slug),
             passFormat: d.pppoe_pass_format || 'PREFIX_RANDOM',
-            passStatic: d.pppoe_pass_static !== undefined ? d.pppoe_pass_static : 'isp'
+            passStatic: d.pppoe_pass_static !== undefined ? d.pppoe_pass_static : 'isp',
+            passCharType: d.pppoe_pass_char_type || 'NUMERIC',
+            passLength: parseInt(d.pppoe_pass_length, 10) || 6
           };
         }
       } catch (e) {
@@ -21175,12 +21237,19 @@
           const realmVal = (d.pppoe_realm !== undefined && d.pppoe_realm !== '') ? d.pppoe_realm : ('@' + slug);
           const passFormatVal = d.pppoe_pass_format || 'PREFIX_RANDOM';
           const passStaticVal = d.pppoe_pass_static !== undefined ? d.pppoe_pass_static : 'isp';
+          const passCharTypeVal = d.pppoe_pass_char_type || 'NUMERIC';
+          const passLengthVal = d.pppoe_pass_length || 6;
+
+          const pppoePassCharTypeSelect = document.getElementById('select-setting-pppoe-pass-char-type');
+          const pppoePassLengthSelect = document.getElementById('select-setting-pppoe-pass-length');
 
           if (pppoePrefixInput) pppoePrefixInput.value = prefixVal;
           if (pppoeIdSourceSelect) pppoeIdSourceSelect.value = idSourceVal;
           if (pppoeRealmInput) pppoeRealmInput.value = realmVal;
           if (pppoePassFormatSelect) pppoePassFormatSelect.value = passFormatVal;
           if (pppoePassStaticInput) pppoePassStaticInput.value = passStaticVal;
+          if (pppoePassCharTypeSelect) pppoePassCharTypeSelect.value = passCharTypeVal;
+          if (pppoePassLengthSelect) pppoePassLengthSelect.value = String(passLengthVal);
 
           if (presetSelect) {
             if (prefixVal === '999' && idSourceVal === 'SEQ_NO6') {
@@ -21203,7 +21272,9 @@
             idSource: idSourceVal,
             realm: realmVal,
             passFormat: passFormatVal,
-            passStatic: passStaticVal
+            passStatic: passStaticVal,
+            passCharType: passCharTypeVal,
+            passLength: passLengthVal
           };
 
           if (mapsBadge) {
@@ -21266,6 +21337,8 @@
       const pppoeRealm = (document.getElementById('input-setting-pppoe-realm')?.value || '').trim();
       const pppoePassFormat = document.getElementById('select-setting-pppoe-pass-format')?.value || 'PREFIX_RANDOM';
       const pppoePassStatic = (document.getElementById('input-setting-pppoe-pass-static')?.value || 'isp').trim();
+      const pppoePassCharType = document.getElementById('select-setting-pppoe-pass-char-type')?.value || 'NUMERIC';
+      const pppoePassLength = parseInt(document.getElementById('select-setting-pppoe-pass-length')?.value, 10) || 6;
 
       try {
         const res = await fetch('/api/v1/tenant/settings', {
@@ -21288,7 +21361,9 @@
             pppoe_id_source: pppoeIdSource,
             pppoe_realm: pppoeRealm,
             pppoe_pass_format: pppoePassFormat,
-            pppoe_pass_static: pppoePassStatic
+            pppoe_pass_static: pppoePassStatic,
+            pppoe_pass_char_type: pppoePassCharType,
+            pppoe_pass_length: pppoePassLength
           })
         });
         const json = await res.json();
@@ -21298,7 +21373,9 @@
             idSource: pppoeIdSource,
             realm: pppoeRealm,
             passFormat: pppoePassFormat,
-            passStatic: pppoePassStatic
+            passStatic: pppoePassStatic,
+            passCharType: pppoePassCharType,
+            passLength: pppoePassLength
           };
           showNexusSettingsBanner('Pengaturan integrasi & format penomoran PPPoE berhasil disimpan secara aman ke database!', 'success');
           loadNexusSettings();
@@ -21344,22 +21421,32 @@
       const label = document.getElementById('label-setting-pppoe-pass-static');
       const hint = document.getElementById('hint-setting-pppoe-pass-static');
       const input = document.getElementById('input-setting-pppoe-pass-static');
+      const containerRandom = document.getElementById('container-setting-pppoe-random-options');
 
-      if (!container || !label || !hint) return;
-
-      if (fmt === 'PREFIX_RANDOM') {
-        container.classList.remove('hidden');
-        label.innerText = 'Prefix Kata Sandi';
-        if (input && !input.value) input.value = 'isp';
-        hint.innerHTML = 'Awalan sebelum 6 angka acak, misal: <code class="font-mono text-cyan-400">isp</code> &rarr; <code class="font-mono text-cyan-400">isp489201</code>.';
-      } else if (fmt === 'STATIC') {
-        container.classList.remove('hidden');
-        label.innerText = 'Nilai Password Statis';
-        if (input && !input.value) input.value = 'isp123456';
-        hint.innerHTML = 'Kata sandi tetap yang sama untuk seluruh akun baru, misal: <code class="font-mono text-cyan-400">isp123456</code>.';
-      } else {
-        container.classList.add('hidden');
+      if (container && label && hint) {
+        if (fmt === 'PREFIX_RANDOM') {
+          container.classList.remove('hidden');
+          label.innerText = 'Prefix Kata Sandi';
+          if (input && !input.value) input.value = 'isp';
+          hint.innerHTML = 'Awalan sebelum karakter acak, misal: <code class="font-mono text-cyan-400">isp</code> &rarr; <code class="font-mono text-cyan-400">isp489201</code>.';
+        } else if (fmt === 'STATIC') {
+          container.classList.remove('hidden');
+          label.innerText = 'Nilai Password Statis';
+          if (input && !input.value) input.value = 'isp123456';
+          hint.innerHTML = 'Kata sandi tetap yang sama untuk seluruh akun baru, misal: <code class="font-mono text-cyan-400">isp123456</code>.';
+        } else {
+          container.classList.add('hidden');
+        }
       }
+
+      if (containerRandom) {
+        if (fmt === 'PREFIX_RANDOM' || fmt === 'RANDOM' || fmt === 'RANDOM_NUM6' || fmt === 'RANDOM_ALPHANUM8') {
+          containerRandom.classList.remove('hidden');
+        } else {
+          containerRandom.classList.add('hidden');
+        }
+      }
+
       updatePPPoELivePreview();
     }
 
@@ -21422,6 +21509,8 @@
       const realmRaw = document.getElementById('input-setting-pppoe-realm')?.value ?? '';
       const passFormat = document.getElementById('select-setting-pppoe-pass-format')?.value || 'PREFIX_RANDOM';
       const passStatic = document.getElementById('input-setting-pppoe-pass-static')?.value ?? 'isp';
+      const passCharType = document.getElementById('select-setting-pppoe-pass-char-type')?.value || 'NUMERIC';
+      const passLength = parseInt(document.getElementById('select-setting-pppoe-pass-length')?.value, 10) || 6;
       const slug = (window.__ISPSYNC_TENANT__ && window.__ISPSYNC_TENANT__.slug) || window.__EARLY_TENANT_SLUG__ || 'isp';
 
       let realm = realmRaw.trim();
@@ -21439,6 +21528,8 @@
         realm,
         passFormat,
         passStatic,
+        passCharType,
+        passLength,
         realmExplicitEmpty: realm === ''
       };
 

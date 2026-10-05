@@ -322,6 +322,8 @@ func (s *SQLiteStorage) migrate() error {
 		pppoe_realm TEXT DEFAULT '',
 		pppoe_pass_format TEXT DEFAULT 'PREFIX_RANDOM',
 		pppoe_pass_static TEXT DEFAULT 'isp',
+		pppoe_pass_char_type TEXT DEFAULT 'NUMERIC',
+		pppoe_pass_length INTEGER DEFAULT 6,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 		FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
 	);
@@ -335,6 +337,8 @@ func (s *SQLiteStorage) migrate() error {
 	_, _ = s.db.Exec("ALTER TABLE tenant_integration_settings ADD COLUMN pppoe_realm TEXT DEFAULT ''")
 	_, _ = s.db.Exec("ALTER TABLE tenant_integration_settings ADD COLUMN pppoe_pass_format TEXT DEFAULT 'PREFIX_RANDOM'")
 	_, _ = s.db.Exec("ALTER TABLE tenant_integration_settings ADD COLUMN pppoe_pass_static TEXT DEFAULT 'isp'")
+	_, _ = s.db.Exec("ALTER TABLE tenant_integration_settings ADD COLUMN pppoe_pass_char_type TEXT DEFAULT 'NUMERIC'")
+	_, _ = s.db.Exec("ALTER TABLE tenant_integration_settings ADD COLUMN pppoe_pass_length INTEGER DEFAULT 6")
 	return err
 }
 
@@ -1517,6 +1521,7 @@ func (s *SQLiteStorage) GetTenantSettings(ctx context.Context, tenantID string) 
 		       COALESCE(notify_new_registration, 1), COALESCE(notify_odp_full, 1), COALESCE(notify_router_down, 1),
 		       COALESCE(pppoe_prefix, 'sub-'), COALESCE(pppoe_id_source, 'REG_NO'), COALESCE(pppoe_realm, ''),
 		       COALESCE(pppoe_pass_format, 'PREFIX_RANDOM'), COALESCE(pppoe_pass_static, 'isp'),
+		       COALESCE(pppoe_pass_char_type, 'NUMERIC'), COALESCE(pppoe_pass_length, 6),
 		       COALESCE(updated_at, CURRENT_TIMESTAMP)
 		FROM tenant_integration_settings
 		WHERE tenant_id = ?
@@ -1527,6 +1532,7 @@ func (s *SQLiteStorage) GetTenantSettings(ctx context.Context, tenantID string) 
 	err := row.Scan(&st.TenantID, &st.GoogleMapsAPIKey, &st.TelegramBotToken, &st.TelegramChatID,
 		&notifReg, &notifODP, &notifRouter,
 		&st.PPPoEPrefix, &st.PPPoEIdSource, &st.PPPoERealm, &st.PPPoEPassFormat, &st.PPPoEPassStatic,
+		&st.PPPoEPassCharType, &st.PPPoEPassLength,
 		&st.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return &domain.TenantIntegrationSettings{
@@ -1542,6 +1548,8 @@ func (s *SQLiteStorage) GetTenantSettings(ctx context.Context, tenantID string) 
 			PPPoERealm:            "",
 			PPPoEPassFormat:       "PREFIX_RANDOM",
 			PPPoEPassStatic:       "isp",
+			PPPoEPassCharType:     "NUMERIC",
+			PPPoEPassLength:       6,
 			UpdatedAt:             time.Now(),
 		}, nil
 	}
@@ -1559,6 +1567,12 @@ func (s *SQLiteStorage) GetTenantSettings(ctx context.Context, tenantID string) 
 		st.PPPoEIdSource = "REG_NO"
 		st.PPPoEPassFormat = "PREFIX_RANDOM"
 		st.PPPoEPassStatic = "isp"
+	}
+	if st.PPPoEPassCharType == "" {
+		st.PPPoEPassCharType = "NUMERIC"
+	}
+	if st.PPPoEPassLength <= 0 {
+		st.PPPoEPassLength = 6
 	}
 	return &st, nil
 }
@@ -1582,14 +1596,21 @@ func (s *SQLiteStorage) UpdateTenantSettings(ctx context.Context, tenantID strin
 		settings.PPPoEPassFormat = "PREFIX_RANDOM"
 		settings.PPPoEPassStatic = "isp"
 	}
+	if settings.PPPoEPassCharType == "" {
+		settings.PPPoEPassCharType = "NUMERIC"
+	}
+	if settings.PPPoEPassLength <= 0 {
+		settings.PPPoEPassLength = 6
+	}
 	_, err := s.db.ExecContext(ctx, `
 		INSERT INTO tenant_integration_settings (
 			tenant_id, google_maps_api_key, telegram_bot_token, telegram_chat_id,
 			notify_new_registration, notify_odp_full, notify_router_down,
 			pppoe_prefix, pppoe_id_source, pppoe_realm, pppoe_pass_format, pppoe_pass_static,
+			pppoe_pass_char_type, pppoe_pass_length,
 			updated_at
 		)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		ON CONFLICT (tenant_id) DO UPDATE SET
 			google_maps_api_key = excluded.google_maps_api_key,
 			telegram_bot_token = excluded.telegram_bot_token,
@@ -1602,9 +1623,12 @@ func (s *SQLiteStorage) UpdateTenantSettings(ctx context.Context, tenantID strin
 			pppoe_realm = excluded.pppoe_realm,
 			pppoe_pass_format = excluded.pppoe_pass_format,
 			pppoe_pass_static = excluded.pppoe_pass_static,
+			pppoe_pass_char_type = excluded.pppoe_pass_char_type,
+			pppoe_pass_length = excluded.pppoe_pass_length,
 			updated_at = CURRENT_TIMESTAMP
 	`, tenantID, settings.GoogleMapsAPIKey, settings.TelegramBotToken, settings.TelegramChatID,
 		notifReg, notifODP, notifRouter,
-		settings.PPPoEPrefix, settings.PPPoEIdSource, settings.PPPoERealm, settings.PPPoEPassFormat, settings.PPPoEPassStatic)
+		settings.PPPoEPrefix, settings.PPPoEIdSource, settings.PPPoERealm, settings.PPPoEPassFormat, settings.PPPoEPassStatic,
+		settings.PPPoEPassCharType, settings.PPPoEPassLength)
 	return err
 }
