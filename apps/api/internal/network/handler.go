@@ -291,7 +291,8 @@ func (h *Handler) DeleteODP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListFiberRoutes(w http.ResponseWriter, r *http.Request) {
-	routes, err := h.service.ListFiberRoutes(r.Context())
+	ctx := WithTenantSlug(r.Context(), extractTenantSlug(r))
+	routes, err := h.service.ListFiberRoutes(ctx)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return

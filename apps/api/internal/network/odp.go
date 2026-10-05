@@ -279,7 +279,12 @@ func (r *Repository) DeleteODPNode(ctx context.Context, id string) error {
 }
 
 func (r *Repository) ListFiberRoutes(ctx context.Context) ([]FiberRoute, error) {
-	// Sample backbone & distribution fiber lines in operational cluster
+	tenantSlug, _ := ctx.Value(tenantCtxKey{}).(string)
+	if tenantSlug != "ispku" {
+		return []FiberRoute{}, nil
+	}
+
+	// Sample backbone & distribution fiber lines in operational cluster (ispku - Harau / Sarilamak)
 	routes := []FiberRoute{
 		{
 			ID:          "fb_bb_01",
