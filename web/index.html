@@ -4740,6 +4740,106 @@
             </div>
           </div>
 
+          <!-- 4. KONFIGURASI FISKAL & PERPAJAKAN TENANT (PKP / NON-PKP / E-FAKTUR) -->
+          <div class="bg-slate-50/70 border border-slate-200/90 rounded-xl p-5 sm:p-6 space-y-6 text-slate-800 font-sans shadow-xs">
+            
+            <!-- Header Section -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center shrink-0">
+                  <i data-lucide="receipt-text" class="w-5 h-5 text-amber-600"></i>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-slate-900 font-mono flex items-center gap-2">
+                    PROFIL FISKAL &amp; PERPAJAKAN ISP
+                  </h3>
+                  <p class="text-[11px] text-slate-500">Standarisasi Skema PPN, Integrasi e-Faktur Pajak, dan Kebijakan Faktur Tagihan</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="badge-tax-status" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 font-mono">
+                  NON-PKP (BEBAS PPN)
+                </span>
+              </div>
+            </div>
+
+            <p class="text-xs text-slate-600 leading-relaxed font-sans">
+              Atur status kepatuhan perpajakan tenant ISP Anda. Sistem otomatis menyesuaikan kalkulasi faktur pelanggan, memisahkan Dasar Pengenaan Pajak (DPP), dan menjaga agar pembagian komisi mitra/sales terbebas dari potongan pajak.
+            </p>
+
+            <!-- Configuration Grid (Tax Regime, Rate, NPWP) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              
+              <!-- 1. Tax Regime / Mode -->
+              <div class="space-y-1.5 md:col-span-2">
+                <label class="block text-xs font-semibold text-slate-700 font-mono">
+                  Status Pengusaha Kena Pajak (Status Fiskal ISP)
+                </label>
+                <select id="select-setting-tax-mode" onchange="onTaxModeInputChange()" class="w-full text-xs font-mono px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 cursor-pointer shadow-2xs font-semibold">
+                  <option value="NON_PKP">NON-PKP / Non-Pajak (Bebas PPN 0% • Default untuk RT/RW Net &amp; ISP Rintisan)</option>
+                  <option value="PKP_INCLUSIVE">PKP - Harga Jual Sudah Termasuk PPN (Inclusive / Nett • All-in)</option>
+                  <option value="PKP_EXCLUSIVE">PKP - Harga Jual Belum Termasuk PPN (Exclusive • Ditambah PPN 11%)</option>
+                </select>
+                <p id="desc-setting-tax-mode" class="text-[11px] text-slate-500 font-sans">
+                  Pelanggan ditagih murni sesuai nominal paket yang diinput tanpa penambahan PPN. Sesuai ketentuan untuk ISP non-PKP.
+                </p>
+              </div>
+
+              <!-- 2. PPN Rate -->
+              <div class="space-y-1.5">
+                <label class="block text-xs font-semibold text-slate-700 font-mono">
+                  Tarif PPN Efektif (%)
+                </label>
+                <div class="relative">
+                  <input type="number" id="input-setting-tax-rate-ppn" oninput="onTaxModeInputChange()" value="11" min="0" max="100" step="0.5" class="w-full text-xs font-mono px-3.5 py-2.5 pr-8 bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition shadow-2xs font-bold" />
+                  <span class="absolute right-3 top-2.5 text-slate-400 font-mono text-xs">%</span>
+                </div>
+                <p class="text-[11px] text-slate-500 font-sans">Tarif PPN Indonesia saat ini 11% (UU HPP).</p>
+              </div>
+
+            </div>
+
+            <!-- NPWP Input Row -->
+            <div class="space-y-1.5">
+              <label class="block text-xs font-semibold text-slate-700 font-mono">
+                Nomor Pokok Wajib Pajak (NPWP) Resmi ISP
+              </label>
+              <input type="text" id="input-setting-tax-npwp" placeholder="Contoh: 01.234.567.8-012.000" maxlength="24" class="w-full text-xs font-mono px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition shadow-2xs" />
+              <p class="text-[11px] text-slate-500 font-sans">
+                NPWP resmi perusahaan yang akan dicetak pada Header Faktur Penagihan &amp; lembar ekspor e-Faktur Pajak.
+              </p>
+            </div>
+
+            <!-- Simulation Box (Live Preview) -->
+            <div class="p-4 rounded-lg bg-white border border-slate-200 space-y-2.5 shadow-2xs">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold font-mono text-slate-800 flex items-center gap-1.5 uppercase">
+                  <i data-lucide="calculator" class="w-3.5 h-3.5 text-amber-600"></i>
+                  <span>Simulasi Perhitungan Faktur Pelanggan (Contoh Paket Rp 200.000):</span>
+                </span>
+                <span id="preview-tax-badge-calc" class="text-[9.5px] font-mono font-bold text-slate-500 uppercase">-</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
+                <div class="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                  <span class="text-[10px] text-slate-500 block mb-0.5">DASAR PENGENAAN PAJAK (DPP):</span>
+                  <strong id="preview-tax-dpp" class="text-slate-900 text-sm font-bold">Rp 200.000</strong>
+                  <span class="text-[9.5px] text-slate-400 block mt-0.5">Dasar bagi hasil mitra</span>
+                </div>
+                <div class="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                  <span class="text-[10px] text-slate-500 block mb-0.5">PPN TITIPAN NEGARA:</span>
+                  <strong id="preview-tax-ppn" class="text-amber-800 text-sm font-bold">Rp 0</strong>
+                  <span id="preview-tax-ppn-sub" class="text-[9.5px] text-slate-400 block mt-0.5">Bebas PPN (0%)</span>
+                </div>
+                <div class="p-3 rounded-lg bg-emerald-50/70 border border-emerald-200">
+                  <span class="text-[10px] text-emerald-800 block mb-0.5">TOTAL FAKTUR PELANGGAN:</span>
+                  <strong id="preview-tax-total" class="text-emerald-900 text-base font-black">Rp 200.000</strong>
+                  <span id="preview-tax-total-sub" class="text-[9.5px] text-emerald-700 block mt-0.5">Yang harus dibayar pelanggan</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
           <!-- Bottom Security & Multi-Tenant Notice (Clean Light) -->
           <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-start gap-3.5 shadow-2xs">
             <div class="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
@@ -5648,7 +5748,10 @@
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1.5 font-sans">Pilihan Paket Langganan <span class="text-rose-500">*</span></label>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="block text-xs font-semibold text-slate-700 font-sans">Pilihan Paket Langganan <span class="text-rose-500">*</span></label>
+              <span id="sales-reg-plan-tax-hint" class="text-[10px] font-sans font-semibold text-slate-500"></span>
+            </div>
             <select id="sales-reg-input-plan" required onchange="handleSalesPlanSelectChange()" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-md text-xs sm:text-sm font-sans text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition shadow-2xs">
               <option value="">Memuat paket layanan...</option>
             </select>
@@ -6772,8 +6875,9 @@
           <!-- Baris 2: Biaya OTC / Kabel Tambahan & Tarif Bulanan -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
-              <label class="block text-[11px] font-mono font-bold uppercase text-slate-800 mb-1">
-                Biaya Pasang / Kabel Ekstra (OTC Rp):
+              <label class="block text-[11px] font-mono font-bold uppercase text-slate-800 mb-1 flex items-center justify-between">
+                <span>Biaya Pasang / Kabel Ekstra (OTC Rp):</span>
+                <span id="detail-pricing-otc-tax-hint" class="text-[9.5px] font-sans font-semibold text-slate-500"></span>
               </label>
               <div class="relative">
                 <span class="absolute left-3.5 top-2.5 text-slate-400 font-mono text-xs">Rp</span>
@@ -6782,8 +6886,9 @@
               <span class="text-[9.5px] text-slate-500 block mt-1">Biaya kelebihan kabel dropcore yang disepakati pelanggan</span>
             </div>
             <div>
-              <label class="block text-[11px] font-mono font-bold uppercase text-slate-800 mb-1">
-                Tarif Bulanan Nego / Resmi (MRC Rp):
+              <label class="block text-[11px] font-mono font-bold uppercase text-slate-800 mb-1 flex items-center justify-between">
+                <span>Tarif Bulanan Nego / Resmi (MRC Rp):</span>
+                <span id="detail-pricing-monthly-tax-hint" class="text-[9.5px] font-sans font-semibold text-slate-500"></span>
               </label>
               <div class="relative">
                 <span class="absolute left-3.5 top-2.5 text-slate-400 font-mono text-xs">Rp</span>
@@ -15968,6 +16073,14 @@
             passCharType: d.pppoe_pass_char_type || 'NUMERIC',
             passLength: parseInt(d.pppoe_pass_length, 10) || 6
           };
+          window.__TENANT_TAX_CONFIG__ = {
+            taxMode: d.tax_mode || 'NON_PKP',
+            taxRatePPN: d.tax_rate_ppn !== undefined ? Number(d.tax_rate_ppn) : 11.0,
+            npwp: d.npwp || ''
+          };
+          if (typeof updateGlobalPricingTaxHints === 'function') {
+            updateGlobalPricingTaxHints();
+          }
         }
       } catch (e) {
         console.warn('Could not preload tenant PPPoE config:', e);
@@ -16489,6 +16602,9 @@
         return;
       }
       currentDetailRegistration = r;
+      if (typeof updateGlobalPricingTaxHints === 'function') {
+        updateGlobalPricingTaxHints();
+      }
       try {
         const safeName = (r.full_name || 'Pelanggan').replace(/'/g, "\\'");
 
@@ -21411,6 +21527,27 @@
             }
           }
 
+          // Load Tax & Fiscal Settings
+          const taxModeSelect = document.getElementById('select-setting-tax-mode');
+          const taxRateInput = document.getElementById('input-setting-tax-rate-ppn');
+          const taxNpwpInput = document.getElementById('input-setting-tax-npwp');
+          
+          const taxModeVal = d.tax_mode || 'NON_PKP';
+          const taxRateVal = d.tax_rate_ppn !== undefined ? Number(d.tax_rate_ppn) : 11.0;
+          const taxNpwpVal = d.npwp || '';
+
+          if (taxModeSelect) taxModeSelect.value = taxModeVal;
+          if (taxRateInput) taxRateInput.value = taxRateVal;
+          if (taxNpwpInput) taxNpwpInput.value = taxNpwpVal;
+
+          window.__TENANT_TAX_CONFIG__ = {
+            taxMode: taxModeVal,
+            taxRatePPN: taxRateVal,
+            npwp: taxNpwpVal
+          };
+
+          onTaxModeInputChange();
+          updateGlobalPricingTaxHints();
           onPPPoEPassFormatChanged();
           updatePPPoELivePreview();
         }
@@ -21444,6 +21581,10 @@
       const pppoePassCharType = document.getElementById('select-setting-pppoe-pass-char-type')?.value || 'NUMERIC';
       const pppoePassLength = parseInt(document.getElementById('select-setting-pppoe-pass-length')?.value, 10) || 6;
 
+      const taxMode = document.getElementById('select-setting-tax-mode')?.value || 'NON_PKP';
+      const taxRatePPN = parseFloat(document.getElementById('input-setting-tax-rate-ppn')?.value) || 11.0;
+      const taxNpwp = (document.getElementById('input-setting-tax-npwp')?.value || '').trim();
+
       try {
         const res = await fetch('/api/v1/tenant/settings', {
           method: 'POST',
@@ -21467,7 +21608,10 @@
             pppoe_pass_format: pppoePassFormat,
             pppoe_pass_static: pppoePassStatic,
             pppoe_pass_char_type: pppoePassCharType,
-            pppoe_pass_length: pppoePassLength
+            pppoe_pass_length: pppoePassLength,
+            tax_mode: taxMode,
+            tax_rate_ppn: taxRatePPN,
+            npwp: taxNpwp
           })
         });
         const json = await res.json();
@@ -21481,7 +21625,14 @@
             passCharType: pppoePassCharType,
             passLength: pppoePassLength
           };
-          showNexusSettingsBanner('Pengaturan integrasi & format penomoran PPPoE berhasil disimpan secara aman ke database!', 'success');
+          window.__TENANT_TAX_CONFIG__ = {
+            taxMode: taxMode,
+            taxRatePPN: taxRatePPN,
+            npwp: taxNpwp
+          };
+          updateTaxBadgeAndPreview();
+          updateGlobalPricingTaxHints();
+          showNexusSettingsBanner('Pengaturan integrasi, PPPoE & profil perpajakan berhasil disimpan!', 'success');
           loadNexusSettings();
         } else {
           showNexusSettingsBanner('Gagal menyimpan pengaturan: ' + (json.error || json.message || 'Unknown error'), 'error');
@@ -21494,6 +21645,121 @@
           btn.innerHTML = origHtml;
           lucide.createIcons();
         }
+      }
+    }
+
+    function onTaxModeInputChange() {
+      const mode = document.getElementById('select-setting-tax-mode')?.value || 'NON_PKP';
+      const descEl = document.getElementById('desc-setting-tax-mode');
+      if (descEl) {
+        if (mode === 'NON_PKP') {
+          descEl.innerText = 'Pelanggan ditagih murni sesuai nominal paket yang diinput tanpa penambahan PPN. Sesuai ketentuan untuk ISP non-PKP.';
+        } else if (mode === 'PKP_INCLUSIVE') {
+          descEl.innerText = 'Harga paket yang diinput Sales/NOC sudah dianggap NETT (termasuk PPN). Sistem otomatis memecah DPP dan PPN saat cetak faktur/e-Faktur.';
+        } else if (mode === 'PKP_EXCLUSIVE') {
+          descEl.innerText = 'Harga paket yang diinput Sales/NOC adalah Dasar Pengenaan Pajak (DPP). Sistem otomatis menambahkan PPN 11% di atas harga tersebut.';
+        }
+      }
+      updateTaxBadgeAndPreview();
+    }
+
+    function updateTaxBadgeAndPreview() {
+      const mode = document.getElementById('select-setting-tax-mode')?.value || (window.__TENANT_TAX_CONFIG__ ? window.__TENANT_TAX_CONFIG__.taxMode : 'NON_PKP');
+      const rateInput = document.getElementById('input-setting-tax-rate-ppn');
+      const rate = parseFloat(rateInput?.value) || (window.__TENANT_TAX_CONFIG__ ? window.__TENANT_TAX_CONFIG__.taxRatePPN : 11.0);
+      const badge = document.getElementById('badge-tax-status');
+      const badgeCalc = document.getElementById('preview-tax-badge-calc');
+
+      if (badge) {
+        if (mode === 'PKP_INCLUSIVE') {
+          badge.className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono';
+          badge.innerText = 'PKP INCLUSIVE (NETT)';
+        } else if (mode === 'PKP_EXCLUSIVE') {
+          badge.className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 font-mono';
+          badge.innerText = 'PKP EXCLUSIVE (+PPN)';
+        } else {
+          badge.className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 font-mono';
+          badge.innerText = 'NON-PKP (BEBAS PPN)';
+        }
+      }
+
+      if (badgeCalc) {
+        badgeCalc.innerText = mode === 'PKP_INCLUSIVE' ? 'SKEMA INCLUSIVE (NETT)' : (mode === 'PKP_EXCLUSIVE' ? 'SKEMA EXCLUSIVE (+PPN)' : 'SKEMA NON-PKP (BEBAS PPN)');
+      }
+
+      // Simulation with sample package Rp 200.000
+      const sampleGross = 200000;
+      let dpp = sampleGross;
+      let ppn = 0;
+      let total = sampleGross;
+
+      if (mode === 'PKP_INCLUSIVE') {
+        const divider = 1 + (rate / 100);
+        dpp = Math.round(sampleGross / divider);
+        ppn = sampleGross - dpp;
+        total = sampleGross;
+      } else if (mode === 'PKP_EXCLUSIVE') {
+        dpp = sampleGross;
+        ppn = Math.round(sampleGross * (rate / 100));
+        total = dpp + ppn;
+      } else {
+        dpp = sampleGross;
+        ppn = 0;
+        total = sampleGross;
+      }
+
+      const dppEl = document.getElementById('preview-tax-dpp');
+      const ppnEl = document.getElementById('preview-tax-ppn');
+      const ppnSubEl = document.getElementById('preview-tax-ppn-sub');
+      const totalEl = document.getElementById('preview-tax-total');
+      const totalSubEl = document.getElementById('preview-tax-total-sub');
+
+      if (dppEl) dppEl.innerText = 'Rp ' + dpp.toLocaleString('id-ID');
+      if (ppnEl) ppnEl.innerText = mode === 'NON_PKP' ? 'Rp 0' : '+ Rp ' + ppn.toLocaleString('id-ID');
+      if (ppnSubEl) {
+        ppnSubEl.innerText = mode === 'NON_PKP' ? 'Bebas PPN (0%)' : `PPN ${rate}% titipan DJP`;
+      }
+      if (totalEl) totalEl.innerText = 'Rp ' + total.toLocaleString('id-ID');
+      if (totalSubEl) {
+        totalSubEl.innerText = mode === 'PKP_INCLUSIVE' ? 'Sesuai harga paket (Nett)' : (mode === 'PKP_EXCLUSIVE' ? `Paket + PPN ${rate}%` : 'Murni tarif paket');
+      }
+    }
+
+    function updateGlobalPricingTaxHints() {
+      const cfg = window.__TENANT_TAX_CONFIG__ || { taxMode: 'NON_PKP', taxRatePPN: 11.0 };
+      const mode = cfg.taxMode || 'NON_PKP';
+      const rate = cfg.taxRatePPN || 11.0;
+
+      let hintText = '';
+      let hintClass = 'text-[9.5px] font-sans font-semibold ';
+
+      if (mode === 'PKP_INCLUSIVE') {
+        hintText = `(Nett • Termasuk PPN ${rate}%)`;
+        hintClass += 'text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200';
+      } else if (mode === 'PKP_EXCLUSIVE') {
+        hintText = `(Sebelum PPN +${rate}%)`;
+        hintClass += 'text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200';
+      } else {
+        hintText = '(Bebas PPN / Non-PKP)';
+        hintClass += 'text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200';
+      }
+
+      const mrcHint = document.getElementById('detail-pricing-monthly-tax-hint');
+      if (mrcHint) {
+        mrcHint.innerText = hintText;
+        mrcHint.className = hintClass;
+      }
+
+      const otcHint = document.getElementById('detail-pricing-otc-tax-hint');
+      if (otcHint) {
+        otcHint.innerText = hintText;
+        otcHint.className = hintClass;
+      }
+
+      const salesHint = document.getElementById('sales-reg-plan-tax-hint');
+      if (salesHint) {
+        salesHint.innerText = hintText;
+        salesHint.className = hintClass;
       }
     }
 
@@ -24154,6 +24420,9 @@
       document.getElementById('sales-reg-modal-partner-code').innerText = `${partner.name} (${partner.code})`;
 
       await loadSalesRegistrationPlans();
+      if (typeof updateGlobalPricingTaxHints === 'function') {
+        updateGlobalPricingTaxHints();
+      }
 
       modal.classList.remove('hidden');
       if (window.lucide) lucide.createIcons();
@@ -28940,6 +29209,7 @@
       applySubdomainRouting();
       syncSSOSession();
       if (typeof updatePortalAuthChromeVisibility === 'function') updatePortalAuthChromeVisibility();
+      if (typeof ensureTenantPPPoEConfigLoaded === 'function') ensureTenantPPPoEConfigLoaded();
 
       // Auto-detect referral code dari URL (?ref=... atau ?sales=...) atau localStorage
       const urlParams = new URLSearchParams(window.location.search);

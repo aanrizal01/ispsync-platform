@@ -305,5 +305,8 @@ type TenantIntegrationSettings struct {
 	PPPoEPassStatic       string    `json:"pppoe_pass_static"`
 	PPPoEPassCharType     string    `json:"pppoe_pass_char_type"`
 	PPPoEPassLength       int       `json:"pppoe_pass_length"`
+	TaxMode               string    `json:"tax_mode"`       // "NON_PKP", "PKP_INCLUSIVE", "PKP_EXCLUSIVE"
+	TaxRatePPN            float64   `json:"tax_rate_ppn"`   // Basis persen, misal 11.0 untuk PPN 11%
+	NPWP                  string    `json:"npwp"`           // NPWP resmi entitas ISP
 	UpdatedAt             time.Time `json:"updated_at"`
 }

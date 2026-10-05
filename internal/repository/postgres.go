@@ -314,6 +314,9 @@ func (s *PostgresStorage) migrate() error {
 		pppoe_pass_static TEXT DEFAULT 'isp',
 		pppoe_pass_char_type TEXT DEFAULT 'NUMERIC',
 		pppoe_pass_length INTEGER DEFAULT 6,
+		tax_mode TEXT DEFAULT 'NON_PKP',
+		tax_rate_ppn DOUBLE PRECISION DEFAULT 11.0,
+		npwp TEXT DEFAULT '',
 		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 	);
 
@@ -324,6 +327,9 @@ func (s *PostgresStorage) migrate() error {
 	ALTER TABLE tenant_integration_settings ADD COLUMN IF NOT EXISTS pppoe_pass_static TEXT DEFAULT 'isp';
 	ALTER TABLE tenant_integration_settings ADD COLUMN IF NOT EXISTS pppoe_pass_char_type TEXT DEFAULT 'NUMERIC';
 	ALTER TABLE tenant_integration_settings ADD COLUMN IF NOT EXISTS pppoe_pass_length INTEGER DEFAULT 6;
+	ALTER TABLE tenant_integration_settings ADD COLUMN IF NOT EXISTS tax_mode TEXT DEFAULT 'NON_PKP';
+	ALTER TABLE tenant_integration_settings ADD COLUMN IF NOT EXISTS tax_rate_ppn DOUBLE PRECISION DEFAULT 11.0;
+	ALTER TABLE tenant_integration_settings ADD COLUMN IF NOT EXISTS npwp TEXT DEFAULT '';
 	ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS billing_type TEXT DEFAULT 'PREPAID';
 	`
 	_, err := s.db.Exec(schema)
@@ -1474,6 +1480,7 @@ func (s *PostgresStorage) GetTenantSettings(ctx context.Context, tenantID string
 		       COALESCE(pppoe_prefix, 'sub-'), COALESCE(pppoe_id_source, 'REG_NO'), COALESCE(pppoe_realm, ''),
 		       COALESCE(pppoe_pass_format, 'PREFIX_RANDOM'), COALESCE(pppoe_pass_static, 'isp'),
 		       COALESCE(pppoe_pass_char_type, 'NUMERIC'), COALESCE(pppoe_pass_length, 6),
+		       COALESCE(tax_mode, 'NON_PKP'), COALESCE(tax_rate_ppn, 11.0), COALESCE(npwp, ''),
 		       COALESCE(updated_at, CURRENT_TIMESTAMP)
 		FROM tenant_integration_settings
 		WHERE tenant_id = $1
@@ -1484,6 +1491,7 @@ func (s *PostgresStorage) GetTenantSettings(ctx context.Context, tenantID string
 		&st.NotifyNewRegistration, &st.NotifyODPFull, &st.NotifyRouterDown,
 		&st.PPPoEPrefix, &st.PPPoEIdSource, &st.PPPoERealm, &st.PPPoEPassFormat, &st.PPPoEPassStatic,
 		&st.PPPoEPassCharType, &st.PPPoEPassLength,
+		&st.TaxMode, &st.TaxRatePPN, &st.NPWP,
 		&st.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return &domain.TenantIntegrationSettings{
@@ -1501,6 +1509,9 @@ func (s *PostgresStorage) GetTenantSettings(ctx context.Context, tenantID string
 			PPPoEPassStatic:       "isp",
 			PPPoEPassCharType:     "NUMERIC",
 			PPPoEPassLength:       6,
+			TaxMode:               "NON_PKP",
+			TaxRatePPN:            11.0,
+			NPWP:                  "",
 			UpdatedAt:             time.Now(),
 		}, nil
 	}
@@ -1522,6 +1533,12 @@ func (s *PostgresStorage) GetTenantSettings(ctx context.Context, tenantID string
 	if st.PPPoEPassLength <= 0 {
 		st.PPPoEPassLength = 6
 	}
+	if st.TaxMode == "" {
+		st.TaxMode = "NON_PKP"
+	}
+	if st.TaxRatePPN <= 0 {
+		st.TaxRatePPN = 11.0
+	}
 	return &st, nil
 }
 
@@ -1538,15 +1555,22 @@ func (s *PostgresStorage) UpdateTenantSettings(ctx context.Context, tenantID str
 	if settings.PPPoEPassLength <= 0 {
 		settings.PPPoEPassLength = 6
 	}
+	if settings.TaxMode == "" {
+		settings.TaxMode = "NON_PKP"
+	}
+	if settings.TaxRatePPN <= 0 {
+		settings.TaxRatePPN = 11.0
+	}
 	_, err := s.db.ExecContext(ctx, `
 		INSERT INTO tenant_integration_settings (
 			tenant_id, google_maps_api_key, telegram_bot_token, telegram_chat_id,
 			notify_new_registration, notify_odp_full, notify_router_down,
 			pppoe_prefix, pppoe_id_source, pppoe_realm, pppoe_pass_format, pppoe_pass_static,
 			pppoe_pass_char_type, pppoe_pass_length,
+			tax_mode, tax_rate_ppn, npwp,
 			updated_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, CURRENT_TIMESTAMP)
 		ON CONFLICT (tenant_id) DO UPDATE SET
 			google_maps_api_key = EXCLUDED.google_maps_api_key,
 			telegram_bot_token = EXCLUDED.telegram_bot_token,
@@ -1561,10 +1585,14 @@ func (s *PostgresStorage) UpdateTenantSettings(ctx context.Context, tenantID str
 			pppoe_pass_static = EXCLUDED.pppoe_pass_static,
 			pppoe_pass_char_type = EXCLUDED.pppoe_pass_char_type,
 			pppoe_pass_length = EXCLUDED.pppoe_pass_length,
+			tax_mode = EXCLUDED.tax_mode,
+			tax_rate_ppn = EXCLUDED.tax_rate_ppn,
+			npwp = EXCLUDED.npwp,
 			updated_at = CURRENT_TIMESTAMP
 	`, tenantID, settings.GoogleMapsAPIKey, settings.TelegramBotToken, settings.TelegramChatID,
 		settings.NotifyNewRegistration, settings.NotifyODPFull, settings.NotifyRouterDown,
 		settings.PPPoEPrefix, settings.PPPoEIdSource, settings.PPPoERealm, settings.PPPoEPassFormat, settings.PPPoEPassStatic,
-		settings.PPPoEPassCharType, settings.PPPoEPassLength)
+		settings.PPPoEPassCharType, settings.PPPoEPassLength,
+		settings.TaxMode, settings.TaxRatePPN, settings.NPWP)
 	return err
 }
