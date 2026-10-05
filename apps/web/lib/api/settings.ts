@@ -171,6 +171,18 @@ export const settingsApi = {
         body: JSON.stringify(data),
       }
     ),
+
+  getTenantSettings: () =>
+    request<TenantIntegrationSettings>("/tenant/settings"),
+
+  updateTenantSettings: (data: Partial<TenantIntegrationSettings>) =>
+    request<TenantIntegrationSettings>(
+      "/tenant/settings",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      }
+    ),
 };
 
 export interface BillingAddonSettings {
@@ -324,5 +336,34 @@ export const defaultFiberGridIntegrationSettings: FiberGridIntegrationSettings =
   api_key: "",
   tenant_code: "",
   auto_sync_routes: true,
+};
+
+export type TaxRegimeMode = "NON_PKP" | "PKP_INCLUSIVE" | "PKP_EXCLUSIVE";
+
+export interface TenantIntegrationSettings {
+  tenant_id?: string;
+  google_maps_api_key?: string;
+  telegram_bot_token?: string;
+  telegram_chat_id?: string;
+  notify_on_new_registration?: boolean;
+  notify_on_odp_full?: boolean;
+  notify_on_router_down?: boolean;
+  pppoe_prefix?: string;
+  pppoe_id_source?: string;
+  pppoe_realm?: string;
+  pppoe_pass_format?: string;
+  pppoe_pass_static?: string;
+  pppoe_pass_char_type?: string;
+  pppoe_pass_length?: number;
+  tax_mode?: TaxRegimeMode;
+  tax_rate_ppn?: number;
+  npwp?: string;
+  updated_at?: string;
+}
+
+export const defaultTenantIntegrationSettings: TenantIntegrationSettings = {
+  tax_mode: "NON_PKP",
+  tax_rate_ppn: 11.0,
+  npwp: "",
 };
 

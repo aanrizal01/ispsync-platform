@@ -39,6 +39,7 @@ import {
   MapPin,
   Eye,
   EyeOff,
+  Calculator,
 } from "lucide-react";
 import {
   settingsApi,
@@ -54,6 +55,9 @@ import {
   defaultDomainSettings,
   FiberGridIntegrationSettings,
   defaultFiberGridIntegrationSettings,
+  TaxRegimeMode,
+  TenantIntegrationSettings,
+  defaultTenantIntegrationSettings,
 } from "@/lib/api/settings";
 import { ipamApi, type IPAMSettings, type Subnet, type TestResult } from "@/lib/api/ipam";
 import { InvoicePrintDocument } from "@/components/invoice/InvoicePrintDocument";
@@ -128,7 +132,9 @@ export default function AdminSettingsPage() {
     website: "",
     invoiceFooterNote: "",
 
-    // Billing Engine
+    // Billing Engine & Fiscal Profile
+    taxMode: "NON_PKP" as TaxRegimeMode,
+    taxRatePPN: 11.0,
     defaultTaxBps: 1100, // 11%
     gracePeriodDays: 7,
     autoInvoiceHour: "00:01",
@@ -442,6 +448,32 @@ export default function AdminSettingsPage() {
         console.error("Failed to load FiberGrid settings:", err);
       });
 
+    // Load Tenant Integration & Fiscal Tax settings
+    settingsApi
+      .getTenantSettings()
+      .then((data) => {
+        if (data) {
+          const mode = (data.tax_mode as TaxRegimeMode) || "NON_PKP";
+          const rate = data.tax_rate_ppn !== undefined ? Number(data.tax_rate_ppn) : 11.0;
+          setSettings((prev) => ({
+            ...prev,
+            taxMode: mode,
+            taxRatePPN: rate,
+            defaultTaxBps: Math.round(rate * 100),
+            npwp: data.npwp || prev.npwp,
+          }));
+          if (data.npwp) {
+            setInvoiceTemplate((prev) => ({
+              ...prev,
+              tax_id: data.npwp || prev.tax_id,
+            }));
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to load tenant integration settings via settingsApi:", err);
+      });
+
     // Detect current client IP
     settingsApi
       .getClientIP()
@@ -556,8 +588,23 @@ export default function AdminSettingsPage() {
     setSaving(true);
     setSaveSuccess(false);
     try {
+      // Save tenant integration & fiscal tax settings to PostgreSQL database
+      await settingsApi
+        .updateTenantSettings({
+          tax_mode: settings.taxMode,
+          tax_rate_ppn: settings.taxRatePPN,
+          npwp: settings.npwp,
+        })
+        .catch((err) => {
+          console.warn("Direct settingsApi update failed:", err);
+        });
+
       // Save invoice template settings to PostgreSQL database
-      await settingsApi.updateInvoiceTemplate(invoiceTemplate);
+      const updatedInvoiceTemplate = {
+        ...invoiceTemplate,
+        tax_id: settings.npwp || invoiceTemplate.tax_id,
+      };
+      await settingsApi.updateInvoiceTemplate(updatedInvoiceTemplate);
 
       // Save billing addons settings to PostgreSQL database
       await settingsApi.updateBillingAddons(billingAddons);
@@ -607,6 +654,29 @@ export default function AdminSettingsPage() {
       setSaving(false);
     }
   };
+
+  // Fiscal simulation calculation (Sample package Rp 200.000)
+  const sampleGross = 200000;
+  const currentTaxRate = settings.taxRatePPN || 11.0;
+  let previewDpp = sampleGross;
+  let previewPpn = 0;
+  let previewTotal = sampleGross;
+
+  if (settings.taxMode === "PKP_INCLUSIVE") {
+    const divider = 1 + currentTaxRate / 100;
+    previewDpp = Math.round(sampleGross / divider);
+    previewPpn = sampleGross - previewDpp;
+    previewTotal = sampleGross;
+  } else if (settings.taxMode === "PKP_EXCLUSIVE") {
+    previewDpp = sampleGross;
+    previewPpn = Math.round(sampleGross * (currentTaxRate / 100));
+    previewTotal = previewDpp + previewPpn;
+  } else {
+    // NON_PKP
+    previewDpp = sampleGross;
+    previewPpn = 0;
+    previewTotal = sampleGross;
+  }
 
   return (
     <div className="space-y-6">
@@ -1635,38 +1705,187 @@ export default function AdminSettingsPage() {
 
       {/* Tab 2: Billing & Tax */}
       {activeTab === "billing" && (
-        <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-6">
-          <div>
-            <h2 className="text-base font-black text-slate-900">Parameter Perhitungan Billing & Pajak</h2>
-            <p className="text-xs text-slate-500">
-              Menentukan aturan perhitungan PPN, siklus penerbitan otomatis, dan skema kemitraan.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-              <label className="block text-xs font-bold text-slate-800">
-                Tarif PPN (Basis Points)
-              </label>
+        <div className="space-y-6">
+          {/* Card 1: PROFIL FISKAL & PERPAJAKAN ISP */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-6">
+            {/* Header Section */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 flex items-center justify-center shrink-0">
+                  <Receipt className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 font-mono flex items-center gap-2">
+                    PROFIL FISKAL &amp; PERPAJAKAN ISP
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Standarisasi Skema PPN, Integrasi e-Faktur Pajak, dan Kebijakan Faktur Tagihan
+                  </p>
+                </div>
+              </div>
               <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  value={settings.defaultTaxBps / 100}
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md font-mono ${
+                    settings.taxMode === "PKP_INCLUSIVE"
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                      : settings.taxMode === "PKP_EXCLUSIVE"
+                      ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                      : "bg-slate-100 text-slate-700 border border-slate-200"
+                  }`}
+                >
+                  {settings.taxMode === "PKP_INCLUSIVE"
+                    ? "PKP INCLUSIVE (NETT)"
+                    : settings.taxMode === "PKP_EXCLUSIVE"
+                    ? "PKP EXCLUSIVE (+PPN)"
+                    : "NON-PKP (BEBAS PPN)"}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed font-sans">
+              Atur status kepatuhan perpajakan tenant ISP Anda. Sistem otomatis menyesuaikan kalkulasi faktur pelanggan, memisahkan Dasar Pengenaan Pajak (DPP), dan menjaga agar pembagian komisi mitra/sales terbebas dari potongan pajak.
+            </p>
+
+            {/* Configuration Grid (Tax Regime, Rate, NPWP) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* 1. Tax Regime / Mode */}
+              <div className="space-y-1.5 md:col-span-2">
+                <label className="block text-xs font-semibold text-slate-700 font-mono">
+                  Status Pengusaha Kena Pajak (Status Fiskal ISP)
+                </label>
+                <select
+                  value={settings.taxMode}
                   onChange={(e) =>
                     setSettings({
                       ...settings,
-                      defaultTaxBps: (parseInt(e.target.value) || 0) * 100,
+                      taxMode: e.target.value as TaxRegimeMode,
                     })
                   }
-                  placeholder="11"
-                  className="w-24 px-3 py-1.5 text-xs font-bold border border-slate-300 rounded-lg bg-white"
-                />
-                <span className="text-xs font-bold text-slate-600">% (1100 bps = 11%)</span>
+                  className="w-full text-xs font-mono px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 cursor-pointer shadow-2xs font-semibold"
+                >
+                  <option value="NON_PKP">NON-PKP / Non-Pajak (Bebas PPN 0% • Default untuk RT/RW Net &amp; ISP Rintisan)</option>
+                  <option value="PKP_INCLUSIVE">PKP - Harga Jual Sudah Termasuk PPN (Inclusive / Nett • All-in)</option>
+                  <option value="PKP_EXCLUSIVE">PKP - Harga Jual Belum Termasuk PPN (Exclusive • Ditambah PPN 11%)</option>
+                </select>
+                <p className="text-[11px] text-slate-500 font-sans">
+                  {settings.taxMode === "NON_PKP" &&
+                    "Pelanggan ditagih murni sesuai nominal paket yang diinput tanpa penambahan PPN. Sesuai ketentuan untuk ISP non-PKP."}
+                  {settings.taxMode === "PKP_INCLUSIVE" &&
+                    "Harga paket yang diinput Sales/NOC sudah dianggap NETT (termasuk PPN). Sistem otomatis memecah DPP dan PPN saat cetak faktur/e-Faktur."}
+                  {settings.taxMode === "PKP_EXCLUSIVE" &&
+                    "Harga paket yang diinput Sales/NOC adalah Dasar Pengenaan Pajak (DPP). Sistem otomatis menambahkan PPN 11% di atas harga tersebut."}
+                </p>
               </div>
-              <p className="text-[11px] text-slate-500">
-                Pajak titipan negara dihitung dari Subtotal (DPP) dan tidak dipotongkan ke mitra.
+
+              {/* 2. PPN Rate */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-700 font-mono">
+                  Tarif PPN Efektif (%)
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={settings.taxRatePPN}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0;
+                      setSettings({
+                        ...settings,
+                        taxRatePPN: val,
+                        defaultTaxBps: Math.round(val * 100),
+                      });
+                    }}
+                    min={0}
+                    max={100}
+                    step={0.5}
+                    className="w-full text-xs font-mono px-3.5 py-2.5 pr-8 bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition shadow-2xs font-bold"
+                  />
+                  <span className="absolute right-3 top-2.5 text-slate-400 font-mono text-xs">%</span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-sans">Tarif PPN Indonesia saat ini 11% (UU HPP).</p>
+              </div>
+            </div>
+
+            {/* NPWP Input Row */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-700 font-mono">
+                Nomor Pokok Wajib Pajak (NPWP) Resmi ISP
+              </label>
+              <input
+                type="text"
+                value={settings.npwp}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSettings({ ...settings, npwp: val });
+                  setInvoiceTemplate((prev) => ({ ...prev, tax_id: val }));
+                }}
+                placeholder="Contoh: 01.234.567.8-012.000"
+                maxLength={24}
+                className="w-full text-xs font-mono px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition shadow-2xs"
+              />
+              <p className="text-[11px] text-slate-500 font-sans">
+                NPWP resmi perusahaan yang akan dicetak pada Header Faktur Penagihan &amp; lembar ekspor e-Faktur Pajak.
               </p>
             </div>
+
+            {/* Simulation Box (Live Preview) */}
+            <div className="p-4 rounded-xl bg-white border border-slate-200 space-y-2.5 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold font-mono text-slate-800 flex items-center gap-1.5 uppercase">
+                  <Calculator className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Simulasi Perhitungan Faktur Pelanggan (Contoh Paket Rp 200.000):</span>
+                </span>
+                <span className="text-[9.5px] font-mono font-bold text-slate-500 uppercase">
+                  {settings.taxMode === "PKP_INCLUSIVE"
+                    ? "SKEMA INCLUSIVE (NETT)"
+                    : settings.taxMode === "PKP_EXCLUSIVE"
+                    ? "SKEMA EXCLUSIVE (+PPN)"
+                    : "SKEMA NON-PKP (BEBAS PPN)"}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                  <span className="text-[10px] text-slate-500 block mb-0.5">DASAR PENGENAAN PAJAK (DPP):</span>
+                  <strong className="text-slate-900 text-sm font-bold">
+                    Rp {previewDpp.toLocaleString("id-ID")}
+                  </strong>
+                  <span className="text-[9.5px] text-slate-400 block mt-0.5">Dasar bagi hasil mitra</span>
+                </div>
+                <div className="p-3 rounded-lg bg-slate-50 border border-slate-200">
+                  <span className="text-[10px] text-slate-500 block mb-0.5">PPN TITIPAN NEGARA:</span>
+                  <strong className="text-amber-800 text-sm font-bold">
+                    {settings.taxMode === "NON_PKP" ? "Rp 0" : `+ Rp ${previewPpn.toLocaleString("id-ID")}`}
+                  </strong>
+                  <span className="text-[9.5px] text-slate-400 block mt-0.5">
+                    {settings.taxMode === "NON_PKP" ? "Bebas PPN (0%)" : `PPN ${currentTaxRate}% titipan DJP`}
+                  </span>
+                </div>
+                <div className="p-3 rounded-lg bg-emerald-50/70 border border-emerald-200">
+                  <span className="text-[10px] text-emerald-800 block mb-0.5">TOTAL FAKTUR PELANGGAN:</span>
+                  <strong className="text-emerald-900 text-base font-black">
+                    Rp {previewTotal.toLocaleString("id-ID")}
+                  </strong>
+                  <span className="text-[9.5px] text-emerald-700 block mt-0.5">
+                    {settings.taxMode === "PKP_INCLUSIVE"
+                      ? "Sesuai harga paket (Nett)"
+                      : settings.taxMode === "PKP_EXCLUSIVE"
+                      ? `Paket + PPN ${currentTaxRate}%`
+                      : "Murni tarif paket"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Parameter Operasional Billing & Kemitraan */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs space-y-6">
+            <div>
+              <h2 className="text-base font-black text-slate-900">Parameter Operasional Penagihan &amp; Isolir</h2>
+              <p className="text-xs text-slate-500">
+                Menentukan masa tenggang pembayaran (*grace period*), penomoran faktur, dan rasio bagi hasil kemitraan.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
               <label className="block text-xs font-bold text-slate-800">
@@ -1838,6 +2057,7 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {/* Tab 3: Payment Gateway & Dynamic Routing Matrix */}
