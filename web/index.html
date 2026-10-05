@@ -6572,13 +6572,6 @@
               </label>
               <select id="detail-pricing-plan-select" onchange="handleDetailPlanSelectChange(this)" class="w-full py-2.5 px-3.5 bg-white border border-slate-300 rounded-md text-xs font-mono font-bold text-slate-900 focus:ring-1 focus:ring-slate-900 focus:border-slate-900 shadow-2xs">
                 <option value="">-- Tetap / Sesuai Paket Saat Ini --</option>
-                <option value="paket-gold-10m|Paket Gold 10 Mbps|183150">Paket Gold 10 Mbps (Rp 183.150/bln)</option>
-                <option value="paket-diamond-20m|Paket Diamond 20 Mbps|259000">Paket Diamond 20 Mbps (Rp 259.000/bln)</option>
-                <option value="paket-epic-30m|Paket Epic 30 Mbps|299000">Paket Epic 30 Mbps (Rp 299.000/bln)</option>
-                <option value="paket-legend-40m|Paket Legend 40 Mbps|329000">Paket Legend 40 Mbps (Rp 329.000/bln)</option>
-                <option value="paket-honor-50m|Paket Honor 50 Mbps|389000">Paket Honor 50 Mbps (Rp 389.000/bln)</option>
-                <option value="paket-glory-100m|Paket Glory 100 Mbps|599000">Paket Glory 100 Mbps (Rp 599.000/bln)</option>
-                <option value="custom|Paket Custom Khusus Lapangan|0">Custom / Nego Sendiri</option>
               </select>
               <span class="text-[9.5px] text-slate-500 block mt-1">Pilih paket resmi layanan (harga bulanan terisi otomatis)</span>
             </div>
@@ -6921,15 +6914,6 @@
             <label class="block text-[11px] font-mono font-bold uppercase text-slate-700 mb-1.5">Pilih Paket Kecepatan Baru <span class="text-rose-600">*</span></label>
             <select id="upgrade-plan-select" onchange="onUpgradePlanChange()" class="w-full bg-white border border-slate-300 rounded-md py-2.5 px-3.5 text-xs font-sans focus:ring-1 focus:ring-slate-900 focus:border-slate-900 focus:outline-none">
               <option value="">-- Pilih Paket Internet Baru --</option>
-              <option value="paket-starter-10m" data-speed="10" data-name="Paket Starter 10M" data-price="165000">Paket Starter 10M (10 Mbps) - Rp 165.000 / bln</option>
-              <option value="paket-diamond-20m" data-speed="20" data-name="Paket Diamond 20M" data-price="259000">Paket Diamond 20M (20 Mbps) - Rp 259.000 / bln</option>
-              <option value="paket-epic-30m" data-speed="30" data-name="Paket Epic 30M" data-price="299000">Paket Epic 30M (30 Mbps) - Rp 299.000 / bln</option>
-              <option value="paket-legend-40m" data-speed="40" data-name="Paket Legend 40M" data-price="329000">Paket Legend 40M (40 Mbps) - Rp 329.000 / bln</option>
-              <option value="paket-honor-50m" data-speed="50" data-name="Paket Honor 50M" data-price="389000">Paket Honor 50M (50 Mbps) - Rp 389.000 / bln</option>
-              <option value="paket-glory-100m" data-speed="100" data-name="Paket Glory 100M" data-price="599000">Paket Glory 100M (100 Mbps) - Rp 599.000 / bln</option>
-              <option value="paket-corp-150m" data-speed="150" data-name="Paket Corporate 150M" data-price="950000">Paket Corporate 150M (150 Mbps) - Rp 950.000 / bln</option>
-              <option value="paket-corp-200m" data-speed="200" data-name="Paket Corporate 200M" data-price="1450000">Paket Corporate 200M (200 Mbps) - Rp 1.450.000 / bln</option>
-              <option value="paket-corp-300m" data-speed="300" data-name="Paket Corporate 300M" data-price="2100000">Paket Corporate 300M (300 Mbps) - Rp 2.100.000 / bln</option>
             </select>
           </div>
 
@@ -10022,6 +10006,13 @@
       if (r.monthly_price !== undefined && r.monthly_price !== null && Number(r.monthly_price) > 0) {
         return Number(r.monthly_price);
       }
+      if (typeof availablePlans !== 'undefined' && Array.isArray(availablePlans)) {
+        const found = availablePlans.find(p => p.id === r.selected_plan_id || p.name === r.selected_plan_name);
+        if (found) {
+          const pPrice = Number(found.price_monthly !== undefined ? found.price_monthly : (found.monthly_price || 0));
+          if (pPrice > 0) return pPrice;
+        }
+      }
       const planId = (r.selected_plan_id || '').toLowerCase();
       const planName = (r.selected_plan_name || '').toLowerCase();
       if (planId.includes('gold') || planName.includes('gold') || planName.includes('10m')) return 183150;
@@ -10033,10 +10024,6 @@
       if (planId.includes('150m') || planName.includes('150m')) return 950000;
       if (planId.includes('200m') || planName.includes('200m')) return 1450000;
       if (planId.includes('300m') || planName.includes('300m')) return 2100000;
-      if (typeof availablePlans !== 'undefined' && Array.isArray(availablePlans)) {
-        const found = availablePlans.find(p => p.id === r.selected_plan_id || p.name === r.selected_plan_name);
-        if (found && found.monthly_price > 0) return Number(found.monthly_price);
-      }
       return 0;
     }
 
@@ -10048,6 +10035,16 @@
       const match = name.match(/(\d+)\s*(mbps|m\b)/i) || id.match(/(\d+)\s*(mbps|m\b)/i);
       if (match) return `${match[1]} Mbps`;
 
+      if (typeof availablePlans !== 'undefined' && Array.isArray(availablePlans)) {
+        const found = availablePlans.find(p => p.id === planId || p.name === planName);
+        if (found) {
+          const speed = found.download_speed_mbps || found.speed_mbps || (found.download_kbps ? Math.round(found.download_kbps / 1024) : 0);
+          if (speed > 0) return `${speed} Mbps`;
+          const m = (found.name || '').match(/(\d+)\s*(mbps|m\b)/i);
+          if (m) return `${m[1]} Mbps`;
+        }
+      }
+
       if (id.includes('gold') || name.includes('gold')) return '10 Mbps';
       if (id.includes('diamond') || name.includes('diamond')) return '20 Mbps';
       if (id.includes('epic') || name.includes('epic')) return '30 Mbps';
@@ -10058,16 +10055,6 @@
         return 'Dedicated B2B';
       }
 
-      if (typeof availablePlans !== 'undefined' && Array.isArray(availablePlans)) {
-        const found = availablePlans.find(p => p.id === planId || p.name === planName);
-        if (found) {
-          if (found.download_kbps && found.download_kbps > 0) {
-            return `${Math.round(found.download_kbps / 1024)} Mbps`;
-          }
-          const m = (found.name || '').match(/(\d+)\s*(mbps|m\b)/i);
-          if (m) return `${m[1]} Mbps`;
-        }
-      }
       return '';
     }
 
@@ -15511,6 +15498,70 @@
       alert(msg || 'Berhasil disalin ke clipboard!');
     }
 
+    async function populateDetailPricingPlanSelect(currentPlanId, currentPlanName, currentMonthlyPrice) {
+      const planSelect = document.getElementById('detail-pricing-plan-select');
+      if (!planSelect) return;
+
+      const render = () => {
+        let optionsHtml = '<option value="">-- Tetap / Sesuai Paket Saat Ini --</option>';
+        let matchedCurrent = false;
+
+        if (availablePlans && availablePlans.length > 0) {
+          optionsHtml += '<optgroup label="Paket Resmi Aktif">';
+          availablePlans.forEach(p => {
+            const price = Number(p.price_monthly !== undefined ? p.price_monthly : (p.monthly_price || 0));
+            const speedMbps = p.download_speed_mbps || p.speed_mbps || (p.download_kbps ? Math.round(p.download_kbps / 1024) : 0);
+            const speedStr = speedMbps > 0 ? ` (${speedMbps} Mbps)` : '';
+            const priceFmt = price > 0 ? `Rp ${price.toLocaleString('id-ID')}/bln` : 'Khusus/Nego';
+            const label = `${p.name}${speedStr} - ${priceFmt}`;
+            const optVal = `${p.id}|${p.name}|${price}`;
+            
+            const isMatch = (currentPlanId && p.id === currentPlanId) || (currentPlanName && p.name.toLowerCase() === currentPlanName.toLowerCase());
+            if (isMatch) matchedCurrent = true;
+
+            optionsHtml += `<option value="${optVal}" ${isMatch ? 'selected' : ''}>${label}</option>`;
+          });
+          optionsHtml += '</optgroup>';
+        }
+
+        // Jika paket saat ini tidak ada di daftar paket aktif tenant (misal paket custom atau paket lama)
+        if (currentPlanName && !matchedCurrent) {
+          const fallbackPrice = Number(currentMonthlyPrice || 0);
+          const priceFmt = fallbackPrice > 0 ? `Rp ${fallbackPrice.toLocaleString('id-ID')}/bln` : '-';
+          optionsHtml += `
+            <optgroup label="Paket Saat Ini (Tercatat)">
+              <option value="${currentPlanId || 'current'}|${currentPlanName}|${fallbackPrice}" selected>
+                ★ ${currentPlanName} (${priceFmt}) [Saat Ini]
+              </option>
+            </optgroup>
+          `;
+        }
+
+        optionsHtml += `
+          <optgroup label="Paket Khusus / Custom">
+            <option value="custom|Paket Custom Khusus Lapangan|0">Custom / Nego Sendiri</option>
+          </optgroup>
+        `;
+
+        planSelect.innerHTML = optionsHtml;
+      };
+
+      render();
+
+      if (!availablePlans || availablePlans.length === 0) {
+        try {
+          const res = await fetch('/api/v1/public/plans');
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            availablePlans = json.data;
+            render();
+          }
+        } catch (e) {
+          console.warn('Gagal memuat paket dinamis:', e);
+        }
+      }
+    }
+
     function handleDetailPlanSelectChange(el) {
       if (!el || !el.value) return;
       const parts = el.value.split('|');
@@ -16057,16 +16108,7 @@
       if (odpInput) odpInput.value = r.nearest_odp_code || '';
       
       if (planSelect) {
-        planSelect.value = '';
-        if (r.selected_plan_id) {
-          for (let i = 0; i < planSelect.options.length; i++) {
-            const optVal = planSelect.options[i].value;
-            if (optVal && optVal.split('|')[0] === r.selected_plan_id) {
-              planSelect.selectedIndex = i;
-              break;
-            }
-          }
-        }
+        populateDetailPricingPlanSelect(r.selected_plan_id, r.selected_plan_name, r.monthly_price);
       }
 
       const activeRole = localStorage.getItem('active_portal_role');
@@ -17560,6 +17602,43 @@
     // ── UPGRADE / GANTI PAKET BANDWIDTH ──────────────────────
     let currentUpgradeReg = null;
 
+    async function populateUpgradePlanSelect(currentPlanId) {
+      const select = document.getElementById('upgrade-plan-select');
+      if (!select) return;
+
+      const render = () => {
+        let optionsHtml = '<option value="">-- Pilih Paket Internet Baru --</option>';
+        if (availablePlans && availablePlans.length > 0) {
+          availablePlans.forEach(p => {
+            const price = Number(p.price_monthly !== undefined ? p.price_monthly : (p.monthly_price || 0));
+            const speedMbps = p.download_speed_mbps || p.speed_mbps || (p.download_kbps ? Math.round(p.download_kbps / 1024) : 0);
+            const speedStr = speedMbps > 0 ? ` (${speedMbps} Mbps)` : '';
+            const priceFmt = price > 0 ? `Rp ${price.toLocaleString('id-ID')} / bln` : 'Khusus/Nego';
+            const isMatch = (currentPlanId && p.id === currentPlanId);
+            optionsHtml += `<option value="${p.id}" data-speed="${speedMbps}" data-name="${p.name}" data-price="${price}" ${isMatch ? 'selected' : ''}>
+              ${p.name}${speedStr} - ${priceFmt}
+            </option>`;
+          });
+        }
+        select.innerHTML = optionsHtml;
+      };
+
+      render();
+
+      if (!availablePlans || availablePlans.length === 0) {
+        try {
+          const res = await fetch('/api/v1/public/plans');
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            availablePlans = json.data;
+            render();
+          }
+        } catch (e) {
+          console.warn('Gagal memuat paket upgrade dinamis:', e);
+        }
+      }
+    }
+
     function openUpgradePlanModal(regId) {
       const reg = (adminRegistrationsList || []).find(r => r.id === regId || r.registration_no === regId) || currentDetailRegistration;
       if (!reg) {
@@ -17593,8 +17672,7 @@
       }
 
       // Pre-fill / reset form
-      const planSelect = document.getElementById('upgrade-plan-select');
-      planSelect.value = '';
+      populateUpgradePlanSelect(reg.selected_plan_id);
       document.getElementById('upgrade-plan-price').value = reg.monthly_price || '';
       document.getElementById('upgrade-plan-effective').value = 'SEGERA';
       document.getElementById('upgrade-plan-notes').value = '';
