@@ -72,19 +72,30 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 	allTenants, _ := h.store.ListTenants(r.Context())
 	allTenantsJSON, _ := json.Marshal(allTenants)
 
-	// Determine active UI mode from subdomain / appType
+	// Determine active UI mode from subdomain / appType or URL path
 	mode := "unified"
-	switch tCtx.AppType {
-	case domain.AppSales:
+	path := strings.ToLower(r.URL.Path)
+	if path == "/rekan" || strings.HasPrefix(path, "/rekan/") || r.URL.Query().Get("app") == "rekan" {
+		mode = "rekan"
+	} else if path == "/sales" || strings.HasPrefix(path, "/sales/") || r.URL.Query().Get("app") == "sales" {
 		mode = "sales"
-	case domain.AppTeknisi:
+	} else if path == "/teknisi" || strings.HasPrefix(path, "/teknisi/") || path == "/technician" || strings.HasPrefix(path, "/technician/") || r.URL.Query().Get("app") == "teknisi" {
 		mode = "technician"
-	case domain.AppNOC:
+	} else if path == "/noc" || strings.HasPrefix(path, "/noc/") || r.URL.Query().Get("app") == "noc" {
 		mode = "noc-fo"
-	case domain.AppCMS:
-		mode = "noc-fo"
-	case domain.AppPortal:
-		mode = "portal"
+	} else {
+		switch tCtx.AppType {
+		case domain.AppSales:
+			mode = "sales"
+		case domain.AppTeknisi:
+			mode = "technician"
+		case domain.AppNOC:
+			mode = "noc-fo"
+		case domain.AppCMS:
+			mode = "noc-fo"
+		case domain.AppPortal:
+			mode = "portal"
+		}
 	}
 
 	// 2. Injected Early Tenant Context Script
@@ -102,6 +113,8 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 		pageTitle = fmt.Sprintf("Masuk | %s Sales", brandShort)
 	case "noc-fo":
 		pageTitle = fmt.Sprintf("Masuk | %s NOC Command Center", brandShort)
+	case "rekan":
+		pageTitle = fmt.Sprintf("Masuk | Portal Rekanan JARTAPLOK %s", brandShort)
 	case "technician":
 		pageTitle = fmt.Sprintf("Masuk | %s Portal Teknisi", brandShort)
 	case "portal":

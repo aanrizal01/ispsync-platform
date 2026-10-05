@@ -61,6 +61,21 @@ export default function ReportsPage() {
   const [monthsRange, setMonthsRange] = useState<number>(6);
   const [exportingCsv, setExportingCsv] = useState(false);
   const [exportingTaxCsv, setExportingTaxCsv] = useState(false);
+  const [portalRekanUrl, setPortalRekanUrl] = useState("https://portal.dev.ispsync.id/rekan/");
+
+  // Dynamic portal rekan URL resolution
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      const proto = window.location.protocol;
+      const base = host.replace(/^(ledger|billing|admin)\./, "");
+      if (base.includes("localhost") || /^[0-9.]+$/.test(base)) {
+        setPortalRekanUrl(`http://${base}:8081/rekan/`);
+      } else {
+        setPortalRekanUrl(`${proto}//portal.${base}/rekan/`);
+      }
+    }
+  }, []);
 
   // BHP & USO State
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
@@ -373,7 +388,7 @@ export default function ReportsPage() {
                     </div>
                   </div>
                   <a
-                    href="https://rekan.ispsync.id"
+                    href={portalRekanUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="text-xs text-rose-600 hover:text-rose-800 font-mono font-bold flex items-center gap-1 hover:underline"

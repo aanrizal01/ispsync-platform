@@ -13,12 +13,13 @@
       try {
         var urlParams = new URLSearchParams(window.location.search);
         var param = (urlParams.get('domain') || urlParams.get('subdomain') || '').toLowerCase();
+        var path = window.location.pathname.toLowerCase();
         var host = window.location.hostname.toLowerCase();
         var mode = 'unified';
-        if (param === 'sales' || host.startsWith('sales.') || host.includes('sales.gogiga')) mode = 'sales';
-        else if (param === 'noc-fo' || host.startsWith('noc-fo.') || host.startsWith('noc.') || host.includes('noc-fo.gogiga')) mode = 'noc-fo';
-        else if (param === 'rekan' || host.startsWith('rekan.') || host.startsWith('mitra.') || host.includes('rekan.gogiga')) mode = 'rekan';
-        else if (param === 'technician' || param === 'teknisi' || host.startsWith('teknisi.') || host.includes('teknisi.gogiga')) mode = 'technician';
+        if (param === 'sales' || path === '/sales' || path.startsWith('/sales/') || host.startsWith('sales.') || host.includes('sales.gogiga')) mode = 'sales';
+        else if (param === 'noc-fo' || path === '/noc' || path.startsWith('/noc/') || path === '/noc-fo' || path.startsWith('/noc-fo/') || host.startsWith('noc-fo.') || host.startsWith('noc.') || host.includes('noc-fo.gogiga')) mode = 'noc-fo';
+        else if (param === 'rekan' || path === '/rekan' || path.startsWith('/rekan/') || host.startsWith('rekan.') || host.startsWith('mitra.') || host.includes('rekan.gogiga')) mode = 'rekan';
+        else if (param === 'technician' || param === 'teknisi' || path === '/teknisi' || path.startsWith('/teknisi/') || path === '/technician' || path.startsWith('/technician/') || host.startsWith('teknisi.') || host.includes('teknisi.gogiga')) mode = 'technician';
         else if (param === 'portal' || host.startsWith('portal.') || host.includes('portal.gogiga')) mode = 'portal';
 
         document.documentElement.setAttribute('data-subdomain', mode);
@@ -65,12 +66,20 @@
             document.title = 'Masuk | ' + earlyBrand + ' Sales';
           } else if (mode === 'noc-fo' || mode === 'noc') {
             document.title = 'Masuk | ' + earlyBrand + ' NOC Command Center';
+          } else if (mode === 'rekan') {
+            document.title = 'Masuk | ' + earlyBrand + ' Portal Rekanan Wholesale';
+          } else if (mode === 'technician') {
+            document.title = 'Masuk | ' + earlyBrand + ' Teknisi Lapangan';
           }
         } else {
           if (mode === 'sales') {
             document.title = 'Dashboard Sales | ' + earlyBrand;
           } else if (mode === 'noc-fo' || mode === 'noc') {
             document.title = 'Dashboard | ' + earlyBrand + ' NOC';
+          } else if (mode === 'rekan') {
+            document.title = earlyBrand + ' • Portal Rekanan Jartaplok Wholesale';
+          } else if (mode === 'technician') {
+            document.title = earlyBrand + ' • Portal Tugas Teknisi & BAST Digital';
           }
         }
 
@@ -27342,6 +27351,12 @@
       // Mendukung simulasi URL di localhost: ?domain=portal | ?domain=sales | ?domain=noc-fo | ?domain=rekan
       const paramDomain = urlParams.get('domain') || urlParams.get('subdomain');
       if (paramDomain) return paramDomain.toLowerCase();
+
+      const path = window.location.pathname.toLowerCase();
+      if (path === '/rekan' || path.startsWith('/rekan/')) return 'rekan';
+      if (path === '/sales' || path.startsWith('/sales/')) return 'sales';
+      if (path === '/teknisi' || path.startsWith('/teknisi/') || path === '/technician' || path.startsWith('/technician/')) return 'technician';
+      if (path === '/noc' || path.startsWith('/noc/') || path === '/noc-fo' || path.startsWith('/noc-fo/')) return 'noc-fo';
 
       const host = window.location.hostname.toLowerCase();
       if (host.startsWith('sales.') || host.includes('sales.gogiga')) return 'sales';
