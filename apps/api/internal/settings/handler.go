@@ -3,6 +3,7 @@ package settings
 import (
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -47,6 +48,11 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 		r.Put("/notification", h.UpdateNotificationSettings)
 		r.Post("/notification", h.UpdateNotificationSettings)
 		r.Post("/test-whatsapp", h.TestWhatsApp)
+
+		r.Get("/fibergrid-integration", h.GetFiberGridSettings)
+		r.Put("/fibergrid-integration", h.UpdateFiberGridSettings)
+		r.Post("/fibergrid-integration", h.UpdateFiberGridSettings)
+		r.Post("/test-fibergrid", h.TestFiberGrid)
 	})
 }
 
@@ -287,6 +293,79 @@ func (h *Handler) TestWhatsApp(w http.ResponseWriter, r *http.Request) {
 		"message": "Pesan uji coba WhatsApp berhasil dikirim ke nomor tujuan",
 	})
 }
+
+func extractTenantSlug(r *http.Request) string {
+	if s := r.Header.Get("X-Tenant-Slug"); s != "" {
+		return s
+	}
+	host := r.Header.Get("X-Forwarded-Host")
+	if host == "" {
+		host = r.Host
+	}
+	if host == "" {
+		if ref := r.Header.Get("Referer"); ref != "" {
+			if u, err := url.Parse(ref); err == nil {
+				host = u.Host
+			}
+		}
+	}
+	if idx := strings.Index(host, ":"); idx != -1 {
+		host = host[:idx]
+	}
+	parts := strings.Split(host, ".")
+	if len(parts) >= 4 {
+		return parts[1]
+	} else if len(parts) == 3 && parts[1] == "ispsync" {
+		return parts[0]
+	}
+	return "dev"
+}
+
+func (h *Handler) GetFiberGridSettings(w http.ResponseWriter, r *http.Request) {
+	tenantSlug := extractTenantSlug(r)
+	settings, err := h.service.GetFiberGridSettings(r.Context(), tenantSlug)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+	middleware.JSON(w, http.StatusOK, settings)
+}
+
+func (h *Handler) UpdateFiberGridSettings(w http.ResponseWriter, r *http.Request) {
+	var input FiberGridIntegrationSettings
+	if err := middleware.DecodeJSON(r, &input); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	tenantSlug := extractTenantSlug(r)
+	updated, err := h.service.UpdateFiberGridSettings(r.Context(), tenantSlug, input)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+	middleware.JSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Konfigurasi integrasi Engine FiberGrid berhasil disimpan",
+		"data":    updated,
+	})
+}
+
+func (h *Handler) TestFiberGrid(w http.ResponseWriter, r *http.Request) {
+	var req TestFiberGridRequest
+	if err := middleware.DecodeJSON(r, &req); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	res, err := h.service.TestFiberGridConnection(r.Context(), req)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+	middleware.JSON(w, http.StatusOK, res)
+}
+
 
 
 

@@ -2,8 +2,10 @@ package settings
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"strings"
 	"time"
 
@@ -219,6 +221,79 @@ func (s *Service) TestWhatsApp(ctx context.Context, input TestWhatsAppRequest) e
 	s.logger.Info("whatsapp test message sent successfully", "provider", provider, "recipient", recipient)
 	return nil
 }
+
+func (s *Service) GetFiberGridSettings(ctx context.Context, tenantSlug string) (*FiberGridIntegrationSettings, error) {
+	return s.repo.GetFiberGridSettings(ctx, tenantSlug)
+}
+
+func (s *Service) UpdateFiberGridSettings(ctx context.Context, tenantSlug string, input FiberGridIntegrationSettings) (*FiberGridIntegrationSettings, error) {
+	if err := s.repo.SaveFiberGridSettings(ctx, tenantSlug, &input); err != nil {
+		return nil, err
+	}
+	return s.repo.GetFiberGridSettings(ctx, tenantSlug)
+}
+
+func (s *Service) TestFiberGridConnection(ctx context.Context, req TestFiberGridRequest) (*TestFiberGridResponse, error) {
+	apiURL := strings.TrimSpace(req.APIURL)
+	if apiURL == "" {
+		return nil, apperrors.BadRequest("URL API FiberGrid wajib diisi")
+	}
+
+	start := time.Now()
+	testEndpoint := strings.TrimRight(apiURL, "/") + "/api/v1/fttx/routes"
+	httpReq, err := http.NewRequestWithContext(ctx, "GET", testEndpoint, nil)
+	if err != nil {
+		return nil, apperrors.BadRequest(fmt.Sprintf("Format URL tidak valid: %v", err))
+	}
+
+	if req.APIKey != "" {
+		httpReq.Header.Set("X-Admin-Key", req.APIKey)
+		httpReq.Header.Set("Authorization", "Bearer "+req.APIKey)
+	}
+
+	client := &http.Client{Timeout: 4 * time.Second}
+	resp, err := client.Do(httpReq)
+	latency := float64(time.Since(start).Microseconds()) / 1000.0
+	if err != nil {
+		return &TestFiberGridResponse{
+			Success:   false,
+			Message:   fmt.Sprintf("Gagal terhubung ke host FiberGrid (%s): %v", apiURL, err),
+			LatencyMs: latency,
+		}, nil
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
+		return &TestFiberGridResponse{
+			Success:   false,
+			Message:   "Koneksi berhasil tetapi ditolak: API Key atau Secret Token salah (Unauthorized)",
+			LatencyMs: latency,
+		}, nil
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return &TestFiberGridResponse{
+			Success:   false,
+			Message:   fmt.Sprintf("Server FiberGrid merespon dengan status error HTTP %d", resp.StatusCode),
+			LatencyMs: latency,
+		}, nil
+	}
+
+	var parsed struct {
+		Success bool  `json:"success"`
+		Data    []any `json:"data"`
+	}
+	_ = json.NewDecoder(resp.Body).Decode(&parsed)
+
+	routesCount := len(parsed.Data)
+	return &TestFiberGridResponse{
+		Success:     true,
+		Message:     fmt.Sprintf("Koneksi berhasil terhubung ke Engine FiberGrid! Ditemukan %d rute kabel fisik aktif.", routesCount),
+		LatencyMs:   latency,
+		RoutesCount: routesCount,
+	}, nil
+}
+
 
 
 

@@ -280,63 +280,97 @@ func (r *Repository) DeleteODPNode(ctx context.Context, id string) error {
 
 func (r *Repository) ListFiberRoutes(ctx context.Context) ([]FiberRoute, error) {
 	tenantSlug, _ := ctx.Value(tenantCtxKey{}).(string)
-	if tenantSlug != "ispku" {
-		return []FiberRoute{}, nil
+	if tenantSlug == "" {
+		tenantSlug = "dev"
 	}
 
-	// Sample backbone & distribution fiber lines in operational cluster (ispku - Harau / Sarilamak)
-	routes := []FiberRoute{
-		{
-			ID:          "fb_bb_01",
-			RouteCode:   "BB-HRU-01",
-			RouteName:   "Backbone Feeder ODC Harau - Simpang 3",
-			CableType:   "BACKBONE",
-			CoreCount:   48,
-			ClusterArea: "Cluster Harau",
-			Status:      "ACTIVE",
-			ColorHex:    "#3b82f6", // Royal Blue
-			Coordinates: [][]float64{
-				{-0.2298, 100.6300},
-				{-0.2260, 100.6350},
-				{-0.2220, 100.6400},
-				{-0.2180, 100.6450},
-			},
-			CreatedAt: time.Now(),
-		},
-		{
-			ID:          "fb_dist_01",
-			RouteCode:   "DST-HRU-01",
-			RouteName:   "Distribusi Simpang 3 - Perum Harau Asri",
-			CableType:   "DISTRIBUTION",
-			CoreCount:   24,
-			ClusterArea: "Cluster Harau",
-			Status:      "ACTIVE",
-			ColorHex:    "#10b981", // Emerald Green
-			Coordinates: [][]float64{
-				{-0.2180, 100.6450},
-				{-0.2150, 100.6480},
-				{-0.2120, 100.6510},
-			},
-			CreatedAt: time.Now(),
-		},
-		{
-			ID:          "fb_feeder_02",
-			RouteCode:   "FDR-SRL-01",
-			RouteName:   "Feeder Jalur Sarilamak Kantor Bupati",
-			CableType:   "FEEDER",
-			CoreCount:   24,
-			ClusterArea: "Cluster Sarilamak",
-			Status:      "ACTIVE",
-			ColorHex:    "#06b6d4", // Cyan
-			Coordinates: [][]float64{
-				{-0.2298, 100.6300},
-				{-0.2350, 100.6250},
-				{-0.2400, 100.6200},
-			},
-			CreatedAt: time.Now(),
-		},
+	// 1. Check custom FiberGrid integration settings in app_settings
+	settingsKey := "fibergrid_integration"
+	if tenantSlug != "" && tenantSlug != "dev" {
+		var exists bool
+		_ = r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM app_settings WHERE key = $1)", "fibergrid_integration_"+tenantSlug).Scan(&exists)
+		if exists {
+			settingsKey = "fibergrid_integration_" + tenantSlug
+		}
 	}
-	return routes, nil
+
+	var valBytes []byte
+	err := r.db.QueryRow(ctx, "SELECT value FROM app_settings WHERE key = $1", settingsKey).Scan(&valBytes)
+	if err == nil {
+		var cfg struct {
+			Enabled        bool   `json:"enabled"`
+			APIURL         string `json:"api_url"`
+			APIKey         string `json:"api_key"`
+			AutoSyncRoutes bool   `json:"auto_sync_routes"`
+		}
+		if jsonErr := json.Unmarshal(valBytes, &cfg); jsonErr == nil && cfg.Enabled && cfg.APIURL != "" {
+			reqURL := strings.TrimRight(cfg.APIURL, "/") + "/api/v1/fttx/routes"
+			req, reqErr := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
+			if reqErr == nil {
+				if cfg.APIKey != "" {
+					req.Header.Set("X-Admin-Key", cfg.APIKey)
+					req.Header.Set("Authorization", "Bearer "+cfg.APIKey)
+				}
+				client := &http.Client{Timeout: 3 * time.Second}
+				resp, doErr := client.Do(req)
+				if doErr == nil && resp.StatusCode == http.StatusOK {
+					defer resp.Body.Close()
+					var fttxResp struct {
+						Success bool `json:"success"`
+						Data    []struct {
+							ID          string `json:"id"`
+							Code        string `json:"code"`
+							CableType   string `json:"cable_type"`
+							LengthMeters int   `json:"length_meters"`
+							CoreCount   int    `json:"core_count"`
+							Status      string `json:"status"`
+							Coordinates string `json:"coordinates"` // JSON string "[[-0.17, 100.65], ...]"
+							Notes       string `json:"notes"`
+						} `json:"data"`
+					}
+					if decodeErr := json.NewDecoder(resp.Body).Decode(&fttxResp); decodeErr == nil && fttxResp.Success {
+						routes := make([]FiberRoute, 0, len(fttxResp.Data))
+						for _, item := range fttxResp.Data {
+							var coords [][]float64
+							_ = json.Unmarshal([]byte(item.Coordinates), &coords)
+							if len(coords) < 2 {
+								continue
+							}
+
+							color := "#10b981" // emerald green (distribution)
+							cableType := "DISTRIBUTION"
+							upType := strings.ToUpper(item.CableType)
+							if strings.Contains(upType, "24C") || strings.Contains(upType, "48C") || strings.Contains(upType, "FEEDER") {
+								color = "#06b6d4" // cyan (feeder)
+								cableType = "FEEDER"
+							}
+							if strings.Contains(strings.ToUpper(item.Code), "OLT") {
+								color = "#3b82f6" // blue (backbone)
+								cableType = "BACKBONE"
+							}
+
+							routes = append(routes, FiberRoute{
+								ID:          item.ID,
+								RouteCode:   item.Code,
+								RouteName:   item.Code,
+								CableType:   cableType,
+								CoreCount:   item.CoreCount,
+								ClusterArea: "FiberGrid",
+								Status:      item.Status,
+								ColorHex:    color,
+								Coordinates: coords,
+								CreatedAt:   time.Now(),
+							})
+						}
+						return routes, nil
+					}
+				}
+			}
+		}
+	}
+
+	// 2. Fallback: if not integrated, return empty (clean state)
+	return []FiberRoute{}, nil
 }
 
 func (r *Repository) GetFTTXStats(ctx context.Context) (*FTTXStats, error) {

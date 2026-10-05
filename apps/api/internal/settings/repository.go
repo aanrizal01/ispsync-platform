@@ -281,5 +281,57 @@ func (r *Repository) SaveNotificationSettings(ctx context.Context, s *Notificati
 	return err
 }
 
+func (r *Repository) GetFiberGridSettings(ctx context.Context, tenantSlug string) (*FiberGridIntegrationSettings, error) {
+	key := "fibergrid_integration"
+	if tenantSlug != "" && tenantSlug != "dev" {
+		var exists bool
+		_ = r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM app_settings WHERE key = $1)", "fibergrid_integration_"+tenantSlug).Scan(&exists)
+		if exists {
+			key = "fibergrid_integration_" + tenantSlug
+		}
+	}
+
+	const query = `SELECT value, updated_at FROM app_settings WHERE key = $1`
+	var valBytes []byte
+	var updatedAt time.Time
+	err := r.db.QueryRow(ctx, query, key).Scan(&valBytes, &updatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			def := DefaultFiberGridIntegrationSettings()
+			return &def, nil
+		}
+		return nil, err
+	}
+
+	var s FiberGridIntegrationSettings
+	if err := json.Unmarshal(valBytes, &s); err != nil {
+		return nil, err
+	}
+	s.UpdatedAt = updatedAt
+	return &s, nil
+}
+
+func (r *Repository) SaveFiberGridSettings(ctx context.Context, tenantSlug string, s *FiberGridIntegrationSettings) error {
+	key := "fibergrid_integration"
+	if tenantSlug != "" && tenantSlug != "dev" {
+		key = "fibergrid_integration_" + tenantSlug
+	}
+
+	valBytes, err := json.Marshal(s)
+	if err != nil {
+		return err
+	}
+
+	const query = `
+		INSERT INTO app_settings (key, value, updated_at)
+		VALUES ($1, $2, NOW())
+		ON CONFLICT (key) DO UPDATE
+		SET value = EXCLUDED.value, updated_at = NOW()
+	`
+	_, err = r.db.Exec(ctx, query, key, valBytes)
+	return err
+}
+
+
 
 

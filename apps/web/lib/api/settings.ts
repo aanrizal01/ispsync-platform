@@ -150,6 +150,27 @@ export const settingsApi = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+
+  getFiberGridSettings: () =>
+    request<FiberGridIntegrationSettings>("/settings/fibergrid-integration"),
+
+  updateFiberGridSettings: (data: FiberGridIntegrationSettings) =>
+    request<{ success: boolean; message: string; data: FiberGridIntegrationSettings }>(
+      "/settings/fibergrid-integration",
+      {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }
+    ),
+
+  testFiberGrid: (data: { api_url: string; api_key: string; tenant_code?: string }) =>
+    request<{ success: boolean; message: string; latency_ms: number; routes_count: number }>(
+      "/settings/test-fibergrid",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      }
+    ),
 };
 
 export interface BillingAddonSettings {
@@ -287,3 +308,21 @@ export const defaultNotificationSettings: NotificationSettings = {
   smtp_user: "",
   smtp_from: "",
 };
+
+export interface FiberGridIntegrationSettings {
+  enabled: boolean;
+  api_url: string;
+  api_key: string;
+  tenant_code?: string;
+  auto_sync_routes: boolean;
+  updated_at?: string;
+}
+
+export const defaultFiberGridIntegrationSettings: FiberGridIntegrationSettings = {
+  enabled: false,
+  api_url: "",
+  api_key: "",
+  tenant_code: "",
+  auto_sync_routes: true,
+};
+

@@ -233,4 +233,36 @@ type TestWhatsAppRequest struct {
     Message   string `json:"message,omitempty"`     // Optional custom message body
 }
 
+type FiberGridIntegrationSettings struct {
+    Enabled        bool      `json:"enabled"`
+    APIURL         string    `json:"api_url"`          // e.g. "http://172.18.0.1:8082" or "https://fibergrid.ispku.ispsync.id"
+    APIKey         string    `json:"api_key"`          // e.g. "gogiga-noc-admin-99a8f27c3d14"
+    TenantCode     string    `json:"tenant_code"`      // e.g. "ispku" or "dev"
+    AutoSyncRoutes bool      `json:"auto_sync_routes"` // whether to fetch routes
+    UpdatedAt      time.Time `json:"updated_at,omitempty"`
+}
+
+func DefaultFiberGridIntegrationSettings() FiberGridIntegrationSettings {
+    return FiberGridIntegrationSettings{
+        Enabled:        false,
+        APIURL:         "",
+        APIKey:         "",
+        TenantCode:     "",
+        AutoSyncRoutes: true,
+    }
+}
+
+type TestFiberGridRequest struct {
+    APIURL     string `json:"api_url"`
+    APIKey     string `json:"api_key"`
+    TenantCode string `json:"tenant_code,omitempty"`
+}
+
+type TestFiberGridResponse struct {
+    Success     bool    `json:"success"`
+    Message     string  `json:"message"`
+    LatencyMs   float64 `json:"latency_ms"`
+    RoutesCount int     `json:"routes_count"`
+}
+
 
