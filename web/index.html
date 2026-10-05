@@ -61,6 +61,7 @@
         else if (mode === 'rekan') hasAuth = !!localStorage.getItem('jartaplok_auth');
         else if (mode === 'portal') hasAuth = !!localStorage.getItem('customer_auth_data');
 
+        var isTrackPath = path === '/track' || path.startsWith('/track/') || path === '/lacak' || path.startsWith('/lacak/');
         if (!hasAuth) {
           if (mode === 'sales') {
             document.title = 'Masuk | ' + earlyBrand + ' Sales';
@@ -70,6 +71,8 @@
             document.title = 'Masuk | ' + earlyBrand + ' Portal Rekanan Wholesale';
           } else if (mode === 'technician') {
             document.title = 'Masuk | ' + earlyBrand + ' Teknisi Lapangan';
+          } else if (mode === 'portal' && isTrackPath) {
+            document.title = 'Lacak Permohonan & Status | ' + earlyBrand;
           }
         } else {
           if (mode === 'sales') {
@@ -84,7 +87,7 @@
         }
 
         // Cek apakah di portal pelanggan sedang meminta mode login/tracking atau sudah ada sesi
-        var isPortalLogin = (mode === 'portal') && (urlParams.get('track') || urlParams.get('login') || urlParams.get('masuk') || !!localStorage.getItem('customer_auth_data'));
+        var isPortalLogin = (mode === 'portal') && (isTrackPath || urlParams.get('track') || urlParams.get('login') || urlParams.get('masuk') || !!localStorage.getItem('customer_auth_data'));
         if (isPortalLogin) {
           document.documentElement.classList.add('is-portal-track');
         }
@@ -27357,6 +27360,7 @@
       if (path === '/sales' || path.startsWith('/sales/')) return 'sales';
       if (path === '/teknisi' || path.startsWith('/teknisi/') || path === '/technician' || path.startsWith('/technician/')) return 'technician';
       if (path === '/noc' || path.startsWith('/noc/') || path === '/noc-fo' || path.startsWith('/noc-fo/')) return 'noc-fo';
+      if (path === '/track' || path.startsWith('/track/') || path === '/lacak' || path.startsWith('/lacak/')) return 'portal';
 
       const host = window.location.hostname.toLowerCase();
       if (host.startsWith('sales.') || host.includes('sales.gogiga')) return 'sales';
@@ -27429,15 +27433,33 @@
         if (adminBtn) adminBtn.classList.add('hidden');
         if (jartaplokBtn) jartaplokBtn.classList.add('hidden');
 
-        // Pada portal.gogiga.net.id:
+        // Pada portal:
         // Tampilan DEFAULT adalah Cek Area & Pendaftaran Layanan Baru (#tab-register)
-        // Buka tab track (login mandiri pelanggan) jika ada permintaan login (?login=1, ?track=...) atau sudah ada sesi aktif
+        // Buka tab track (login mandiri pelanggan) jika path /track, /lacak, atau ?track=, ?login=, atau sudah ada sesi
         const urlParams = new URLSearchParams(window.location.search);
-        const isLoginRequested = urlParams.get('track') || urlParams.get('login') || urlParams.get('masuk');
+        const path = window.location.pathname.toLowerCase();
+        const isTrackPath = path === '/track' || path.startsWith('/track/') || path === '/lacak' || path.startsWith('/lacak/');
+        const isLoginRequested = isTrackPath || urlParams.get('track') || urlParams.get('login') || urlParams.get('masuk');
         const hasSession = !!localStorage.getItem('customer_auth_data');
 
         if (isLoginRequested || hasSession) {
           switchTab('track');
+          let targetReg = urlParams.get('track');
+          if (isTrackPath) {
+            const rawParts = window.location.pathname.split('/');
+            if (rawParts.length >= 3 && rawParts[2].trim()) {
+              targetReg = decodeURIComponent(rawParts[2].trim());
+            }
+          }
+          if (targetReg && targetReg !== '1' && targetReg !== 'true') {
+            setTimeout(function() {
+              const inp = document.getElementById('input-track-no');
+              if (inp) {
+                inp.value = targetReg;
+                if (typeof handleTrackSubmit === 'function') handleTrackSubmit();
+              }
+            }, 300);
+          }
         } else {
           switchTab('register');
         }

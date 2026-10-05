@@ -75,7 +75,10 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 	// Determine active UI mode from subdomain / appType or URL path
 	mode := "unified"
 	path := strings.ToLower(r.URL.Path)
-	if path == "/rekan" || strings.HasPrefix(path, "/rekan/") || r.URL.Query().Get("app") == "rekan" {
+	isTrack := path == "/track" || strings.HasPrefix(path, "/track/") || path == "/lacak" || strings.HasPrefix(path, "/lacak/") || r.URL.Query().Get("track") != ""
+	if isTrack {
+		mode = "portal"
+	} else if path == "/rekan" || strings.HasPrefix(path, "/rekan/") || r.URL.Query().Get("app") == "rekan" {
 		mode = "rekan"
 	} else if path == "/sales" || strings.HasPrefix(path, "/sales/") || r.URL.Query().Get("app") == "sales" {
 		mode = "sales"
@@ -118,7 +121,11 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 	case "technician":
 		pageTitle = fmt.Sprintf("Masuk | %s Portal Teknisi", brandShort)
 	case "portal":
-		pageTitle = fmt.Sprintf("%s • Portal Pelanggan & Jangkauan Fiber", brandShort)
+		if isTrack {
+			pageTitle = fmt.Sprintf("Lacak Status Permohonan | %s", brandShort)
+		} else {
+			pageTitle = fmt.Sprintf("%s • Portal Pelanggan & Jangkauan Fiber", brandShort)
+		}
 	default:
 		pageTitle = fmt.Sprintf("%s • Registrasi & Jangkauan Fiber Optik", brandShort)
 	}
@@ -183,6 +190,11 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 		email = "info@" + tCtx.Host
 	}
 
+	trackClassScript := ""
+	if isTrack {
+		trackClassScript = "document.documentElement.classList.add('is-portal-track');\n"
+	}
+
 	tenantScript := fmt.Sprintf(`
   <!-- DYNAMIC ISPSYNC TENANT INJECTION -->
   <script>
@@ -205,10 +217,11 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
       try {
         document.documentElement.setAttribute('data-subdomain', %q);
         document.title = %q;
+        %s
       } catch (e) {}
     })();
   </script>
-`, tCtx.Tenant.ID, tCtx.Tenant.Slug, tCtx.Tenant.Name, tCtx.Tenant.PrefixID, tCtx.Tenant.LogoURL, tCtx.Tenant.BrandColor, tCtx.Tenant.ContactPhone, tCtx.Tenant.ContactEmail, tCtx.Tenant.Address, tCtx.AppType, tCtx.Subdomain, tCtx.Host, string(allTenantsJSON), mode, pageTitle)
+`, tCtx.Tenant.ID, tCtx.Tenant.Slug, tCtx.Tenant.Name, tCtx.Tenant.PrefixID, tCtx.Tenant.LogoURL, tCtx.Tenant.BrandColor, tCtx.Tenant.ContactPhone, tCtx.Tenant.ContactEmail, tCtx.Tenant.Address, tCtx.AppType, tCtx.Subdomain, tCtx.Host, string(allTenantsJSON), mode, pageTitle, trackClassScript)
 
 	// Inject script into <head>
 	html = strings.Replace(html, "<head>", "<head>\n"+tenantScript, 1)
