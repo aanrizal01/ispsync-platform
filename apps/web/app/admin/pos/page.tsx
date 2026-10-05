@@ -256,14 +256,23 @@ export default function FastPosCashierPage() {
     };
   }, [completedPayment, selectedInvoice, totalDue, paymentMethod, notes, currentUser]);
 
+  const customerAddress = useMemo(() => {
+    if (!selectedCustomer) return "-";
+    if (selectedCustomer.addresses && selectedCustomer.addresses.length > 0) {
+      const addr = selectedCustomer.addresses[0];
+      return [addr.street, addr.district, addr.city].filter(Boolean).join(", ");
+    }
+    return "-";
+  }, [selectedCustomer]);
+
   const receiptCustomerData: ReceiptCustomerData = useMemo(() => {
     return {
       customer_name: selectedCustomer?.full_name || selectedInvoice?.customer_name || "Pelanggan Loket",
       customer_number: selectedCustomer?.customer_number || selectedInvoice?.customer_number || "-",
       phone: selectedCustomer?.phone || selectedInvoice?.customer_phone || "-",
-      address: selectedCustomer?.address || "-",
+      address: customerAddress,
     };
-  }, [selectedCustomer, selectedInvoice]);
+  }, [selectedCustomer, selectedInvoice, customerAddress]);
 
   return (
     <div className="space-y-6 select-none">
@@ -445,10 +454,10 @@ export default function FastPosCashierPage() {
               </div>
 
               {/* Customer Address & Details */}
-              {selectedCustomer?.address && (
+              {customerAddress !== "-" && (
                 <div className="flex items-start gap-2 text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                   <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                  <span className="leading-relaxed">{selectedCustomer.address}</span>
+                  <span className="leading-relaxed">{customerAddress}</span>
                 </div>
               )}
 
