@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -320,8 +321,9 @@ func loadPublicKey(path string) (*rsa.PublicKey, error) {
 }
 
 // ListUsers returns users filtered by search query or role.
-func (s *Service) ListUsers(ctx context.Context, search, roleSlug string) ([]UserListItem, error) {
-	return s.repo.ListUsers(ctx, search, roleSlug)
+// If caller is not root (private@ispsync.id), root account is shielded from results.
+func (s *Service) ListUsers(ctx context.Context, search, roleSlug, callerEmail string) ([]UserListItem, error) {
+	return s.repo.ListUsers(ctx, search, roleSlug, callerEmail)
 }
 
 // CreateUser creates a new system/staff user.
@@ -343,13 +345,27 @@ func (s *Service) CreateUser(ctx context.Context, req CreateUserRequest, creator
 	return user, nil
 }
 
-// UpdateUser updates user profile and role.
-func (s *Service) UpdateUser(ctx context.Context, id uuid.UUID, req UpdateUserRequest, updaterID uuid.UUID) error {
+// UpdateUser updates user profile and role with platform root account protection.
+func (s *Service) UpdateUser(ctx context.Context, id uuid.UUID, req UpdateUserRequest, updaterID uuid.UUID, updaterEmail string) error {
+	targetUser, err := s.repo.GetUserByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if strings.EqualFold(targetUser.Email, "private@ispsync.id") && !strings.EqualFold(updaterEmail, "private@ispsync.id") {
+		return apperrors.Forbidden("Akun root platform dilindungi dan tidak dapat diubah oleh pengguna lain")
+	}
 	return s.repo.UpdateUser(ctx, id, req.FullName, req.Phone, req.IsActive, req.RoleID, updaterID)
 }
 
 // AdminResetPassword sets a new password for a user without requiring their current password.
-func (s *Service) AdminResetPassword(ctx context.Context, id uuid.UUID, newPassword string) error {
+func (s *Service) AdminResetPassword(ctx context.Context, id uuid.UUID, newPassword string, callerEmail string) error {
+	targetUser, err := s.repo.GetUserByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if strings.EqualFold(targetUser.Email, "private@ispsync.id") && !strings.EqualFold(callerEmail, "private@ispsync.id") {
+		return apperrors.Forbidden("Password akun root platform tidak dapat direset oleh pengguna lain")
+	}
 	if len(newPassword) < 8 {
 		return apperrors.BadRequest("password must be at least 8 characters")
 	}
@@ -361,7 +377,14 @@ func (s *Service) AdminResetPassword(ctx context.Context, id uuid.UUID, newPassw
 }
 
 // DeleteUser deletes (soft delete) a user account.
-func (s *Service) DeleteUser(ctx context.Context, id uuid.UUID) error {
+func (s *Service) DeleteUser(ctx context.Context, id uuid.UUID, callerEmail string) error {
+	targetUser, err := s.repo.GetUserByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if strings.EqualFold(targetUser.Email, "private@ispsync.id") {
+		return apperrors.Forbidden("Akun root platform dilindungi dan tidak dapat dihapus")
+	}
 	return s.repo.DeleteUser(ctx, id)
 }
 

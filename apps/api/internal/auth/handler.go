@@ -156,8 +156,13 @@ func (h *Handler) UserRoutes(r chi.Router, authMW *Middleware) {
 func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	search := r.URL.Query().Get("search")
 	roleSlug := r.URL.Query().Get("role")
+	claims := ClaimsFromContext(r.Context())
+	callerEmail := ""
+	if claims != nil {
+		callerEmail = claims.Email
+	}
 
-	users, err := h.service.ListUsers(r.Context(), search, roleSlug)
+	users, err := h.service.ListUsers(r.Context(), search, roleSlug, callerEmail)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -214,8 +219,10 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	claims := ClaimsFromContext(r.Context())
 	updaterID := uuid.Nil
+	updaterEmail := ""
 	if claims != nil {
 		updaterID = claims.UserID
+		updaterEmail = claims.Email
 	}
 
 	idStr := chi.URLParam(r, "id")
@@ -231,7 +238,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.UpdateUser(r.Context(), id, req, updaterID); err != nil {
+	if err := h.service.UpdateUser(r.Context(), id, req, updaterID, updaterEmail); err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
 	}
@@ -241,6 +248,12 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 // AdminResetPassword handles PUT /api/v1/users/{id}/password
 func (h *Handler) AdminResetPassword(w http.ResponseWriter, r *http.Request) {
+	claims := ClaimsFromContext(r.Context())
+	callerEmail := ""
+	if claims != nil {
+		callerEmail = claims.Email
+	}
+
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -254,7 +267,7 @@ func (h *Handler) AdminResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.AdminResetPassword(r.Context(), id, req.NewPassword); err != nil {
+	if err := h.service.AdminResetPassword(r.Context(), id, req.NewPassword, callerEmail); err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
 	}
@@ -265,6 +278,11 @@ func (h *Handler) AdminResetPassword(w http.ResponseWriter, r *http.Request) {
 // DeleteUser handles DELETE /api/v1/users/{id}
 func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	claims := ClaimsFromContext(r.Context())
+	callerEmail := ""
+	if claims != nil {
+		callerEmail = claims.Email
+	}
+
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -278,7 +296,7 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.DeleteUser(r.Context(), id); err != nil {
+	if err := h.service.DeleteUser(r.Context(), id, callerEmail); err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
 	}

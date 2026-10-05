@@ -90,8 +90,15 @@ export default function UsersManagementPage() {
     fetchData();
   };
 
+  // Filter out SaaS platform root account (private@ispsync.id) unless logged in as root
+  const isCallerRoot = currentUser?.email?.toLowerCase() === "private@ispsync.id";
+  const displayedUsers = useMemo(() => {
+    if (isCallerRoot) return users;
+    return users.filter((u) => u.email?.toLowerCase() !== "private@ispsync.id");
+  }, [users, isCallerRoot]);
+
   // Stats
-  const activeCount = useMemo(() => users.filter((u) => u.is_active).length, [users]);
+  const activeCount = useMemo(() => displayedUsers.filter((u) => u.is_active).length, [displayedUsers]);
 
   // Role Badge Styling
   const getRoleBadge = (roleSlug?: string) => {
@@ -288,7 +295,7 @@ export default function UsersManagementPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Pengguna</p>
-              <p className="text-2xl font-bold text-slate-900 mt-1">{users.length}</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">{displayedUsers.length}</p>
             </div>
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
               <Users className="w-5 h-5" />
@@ -376,7 +383,7 @@ export default function UsersManagementPage() {
                     Memuat data pengguna...
                   </td>
                 </tr>
-              ) : users.length === 0 ? (
+              ) : displayedUsers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-400">
                     <Users className="w-8 h-8 mx-auto mb-2 text-slate-300" />
@@ -384,8 +391,9 @@ export default function UsersManagementPage() {
                   </td>
                 </tr>
               ) : (
-                users.map((u) => {
+                displayedUsers.map((u) => {
                   const isCurrent = currentUser?.id === u.id;
+                  const isRootAccount = u.email?.toLowerCase() === "private@ispsync.id";
                   return (
                     <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4">
@@ -394,11 +402,16 @@ export default function UsersManagementPage() {
                             {u.full_name?.charAt(0).toUpperCase() || "U"}
                           </div>
                           <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="font-bold text-slate-900 text-sm">{u.full_name}</span>
                               {isCurrent && (
                                 <span className="text-[10px] bg-blue-50 text-blue-600 font-semibold px-1.5 py-0.5 rounded border border-blue-200">
                                   Anda
+                                </span>
+                              )}
+                              {isRootAccount && (
+                                <span className="text-[10px] bg-slate-900 text-cyan-400 font-bold px-1.5 py-0.5 rounded border border-slate-700">
+                                  SaaS Root
                                 </span>
                               )}
                             </div>
@@ -474,7 +487,7 @@ export default function UsersManagementPage() {
                           >
                             <KeyRound className="w-4 h-4" />
                           </button>
-                          {!isCurrent && (
+                          {!isCurrent && !isRootAccount && (
                             <button
                               onClick={() => openDeleteModal(u)}
                               className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-rose-600 rounded-lg transition-colors"

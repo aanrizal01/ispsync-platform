@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -178,7 +179,8 @@ func (r *Repository) BlacklistToken(ctx context.Context, jti string, expiresAt t
 }
 
 // ListUsers retrieves all users with their primary role.
-func (r *Repository) ListUsers(ctx context.Context, search, roleSlug string) ([]UserListItem, error) {
+// If callerEmail != "private@ispsync.id", root account is excluded from the query.
+func (r *Repository) ListUsers(ctx context.Context, search, roleSlug, callerEmail string) ([]UserListItem, error) {
 	q := `
 		SELECT u.id, u.email, u.full_name, COALESCE(u.phone, ''), u.is_active, u.customer_id,
 		       u.last_login_at, u.created_at,
@@ -190,6 +192,10 @@ func (r *Repository) ListUsers(ctx context.Context, search, roleSlug string) ([]
 	`
 	args := []interface{}{}
 	argIdx := 1
+
+	if !strings.EqualFold(callerEmail, "private@ispsync.id") {
+		q += " AND LOWER(u.email) != 'private@ispsync.id'"
+	}
 
 	if search != "" {
 		q += fmt.Sprintf(" AND (u.email ILIKE $%d OR u.full_name ILIKE $%d OR u.phone ILIKE $%d)", argIdx, argIdx, argIdx)
