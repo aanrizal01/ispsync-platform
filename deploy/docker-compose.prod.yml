@@ -239,7 +239,7 @@ services:
     environment:
       PORT: 8081
       DB_DRIVER: postgres
-      DATABASE_URL: postgres://${POSTGRES_USER:-isp_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-isp_billing}?sslmode=disable
+      DATABASE_URL: postgres://${POSTGRES_USER:-isp_admin}:${POSTGRES_PASSWORD}@postgres:5432/ispsync?sslmode=disable
       BILLING_DATABASE_URL: postgres://${POSTGRES_USER:-isp_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-isp_billing}?sslmode=disable
       GIGABILL_BASE_URL: http://api:8080
       GIGABILL_API_TOKEN: ${GIGABILL_API_TOKEN:-supersecret-admin-token}
