@@ -373,3 +373,73 @@ Tim Layanan Pelanggan {{company_name}}`
 		targetPhone, subject, finalMessage, status, errStr, sentAt,
 	)
 }
+
+// SendCustomerOTP mengirimkan kode verifikasi OTP WhatsApp ke pelanggan
+func (s *NotificationService) SendCustomerOTP(ctx context.Context, tenantName, phone, otpCode string) error {
+	targetPhone := NormalizePhone(phone)
+	if targetPhone == "" {
+		return fmt.Errorf("nomor telepon %q tidak valid", phone)
+	}
+
+	if s.db == nil {
+		return fmt.Errorf("database gateway WhatsApp belum terhubung")
+	}
+
+	// 1. Ambil konfigurasi WhatsApp Gateway dari app_settings
+	var settingsJSON []byte
+	err := s.db.QueryRowContext(ctx, "SELECT value FROM app_settings WHERE key = 'notification_settings'").Scan(&settingsJSON)
+	if err != nil {
+		return fmt.Errorf("pengaturan WhatsApp Gateway belum dikonfigurasi di admin: %w", err)
+	}
+
+	var cfg waConfig
+	if err := json.Unmarshal(settingsJSON, &cfg); err != nil {
+		return fmt.Errorf("format konfigurasi WhatsApp Gateway tidak valid: %w", err)
+	}
+
+	if strings.TrimSpace(cfg.WAApiToken) == "" {
+		return fmt.Errorf("token API WhatsApp Gateway belum diisi di Pengaturan Admin")
+	}
+
+	// 2. Susun pesan OTP resmi
+	brandName := tenantName
+	if brandName == "" {
+		brandName = "ISP"
+	}
+
+	message := fmt.Sprintf("🔐 *KODE VERIFIKASI (OTP)*\n\nHalo Pelanggan %s,\n\nKode OTP Anda untuk masuk ke Portal Mandiri Pelanggan adalah:\n\n👉 *%s*\n\nKode ini berlaku selama 5 menit. Jangan berikan kode ini kepada siapapun termasuk petugas kami demi keamanan akun Anda.\n\nTerima kasih,\nTim Layanan Pelanggan %s", brandName, otpCode, brandName)
+
+	// 3. Dispatch ke Provider (WABLAS atau FONNTE)
+	provider := strings.ToUpper(strings.TrimSpace(cfg.WAProvider))
+	var sendErr error
+	if provider == "WABLAS" {
+		sendErr = s.sendWablas(ctx, cfg.WAServerURL, cfg.WAApiToken, targetPhone, message)
+	} else {
+		// Default ke Fonnte
+		sendErr = s.sendFonnte(ctx, cfg.WAApiToken, targetPhone, message)
+	}
+
+	// 4. Catat riwayat ke tabel notifications di Ledger
+	status := "SENT"
+	var errStr *string
+	var sentAt *time.Time
+	now := time.Now()
+	if sendErr != nil {
+		status = "FAILED"
+		msg := sendErr.Error()
+		errStr = &msg
+		log.Printf("[NOTIFICATION SERVICE] Gagal mengirim OTP WA ke %s: %v", targetPhone, sendErr)
+	} else {
+		sentAt = &now
+		log.Printf("[NOTIFICATION SERVICE] ✅ Berhasil mengirim OTP WA ke %s via %s", targetPhone, provider)
+	}
+
+	_, _ = s.db.ExecContext(ctx,
+		`INSERT INTO notifications (id, channel, recipient, subject, body, status, error_message, sent_at, created_at)
+		 VALUES (gen_random_uuid(), 'WHATSAPP', $1, 'Kode Verifikasi OTP Portal Pelanggan', $2, $3, $4, $5, NOW())`,
+		targetPhone, message, status, errStr, sentAt,
+	)
+
+	return sendErr
+}
+

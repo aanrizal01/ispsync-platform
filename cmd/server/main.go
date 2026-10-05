@@ -212,6 +212,11 @@ func main() {
 			pub.Post("/track/{regNo}/ktp", apiH.PublicTrackKTP)
 			pub.Post("/track/{regNo}/sign-contract", apiH.PublicTrackSignContract)
 			pub.Get("/referral/check", apiH.PublicReferralCheck)
+
+			// Customer Portal Authentication (OTP WhatsApp, Kata Sandi, Sesi)
+			pub.Post("/customer/request-otp", apiH.PublicCustomerRequestOTP)
+			pub.Post("/customer/login", apiH.PublicCustomerLogin)
+			pub.Post("/customer/change-password", apiH.PublicCustomerChangePassword)
 		})
 
 		api.Route("/auth", func(a chi.Router) {
