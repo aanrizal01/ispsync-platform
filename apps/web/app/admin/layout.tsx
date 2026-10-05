@@ -26,6 +26,8 @@ const routeMap: Record<string, { category: string; title: string }> = {
   "/admin/agents": { category: "Hotspot & Voucher", title: "Agen & Reseller" },
   "/admin/passpoint": { category: "Hotspot & Voucher", title: "Passpoint HS2.0" },
   "/admin/network": { category: "Jaringan & Infra", title: "Peta & Jaringan FTTX" },
+  "/admin/nexusgis": { category: "Jaringan & Infra", title: "NexusGIS & Topologi ODP" },
+  "/admin/fibergrid": { category: "Jaringan & Infra", title: "NexusGIS & Topologi ODP" },
   "/admin/radius": { category: "Jaringan & Infra", title: "Server RADIUS" },
   "/admin/partners": { category: "Jaringan & Infra", title: "Mitra ISP" },
   "/admin/notifications": { category: "Sistem & Keamanan", title: "Pusat Notifikasi" },

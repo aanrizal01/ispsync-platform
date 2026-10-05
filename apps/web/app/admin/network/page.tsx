@@ -630,7 +630,7 @@ export default function AdminNetworkPage() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-white">Peta Fibergrid &amp; Nexus GIS</h3>
+              <h3 className="text-sm font-bold text-white">Peta NexusGIS</h3>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                 FTTX &amp; NEXUS
               </span>
@@ -641,10 +641,10 @@ export default function AdminNetworkPage() {
           </div>
         </div>
         <Link
-          href="/admin/fibergrid"
+          href="/admin/nexusgis"
           className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-bold rounded-lg transition shrink-0 flex items-center gap-2 text-center justify-center"
         >
-          <span>Buka Fibergrid &amp; Nexus GIS</span>
+          <span>Buka NexusGIS</span>
           <ExternalLink className="w-3.5 h-3.5" />
         </Link>
       </div>

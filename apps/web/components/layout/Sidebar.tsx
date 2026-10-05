@@ -144,8 +144,8 @@ const navSections: NavSection[] = [
         permission: "network:read",
       },
       {
-        label: "Fibergrid & Nexus GIS",
-        href: "/admin/fibergrid",
+        label: "NexusGIS",
+        href: "/admin/nexusgis",
         icon: Network,
         permission: "network:read",
       },
@@ -300,7 +300,10 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
 
                 <ul className="space-y-0.5">
                   {visibleItems.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                    const isActive =
+                      pathname === item.href ||
+                      pathname.startsWith(item.href + "/") ||
+                      (item.href === "/admin/nexusgis" && (pathname === "/admin/fibergrid" || pathname.startsWith("/admin/fibergrid/")));
                     const Icon = item.icon;
 
                     return (

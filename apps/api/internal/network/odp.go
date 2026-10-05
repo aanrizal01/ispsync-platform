@@ -112,6 +112,13 @@ func (r *Repository) fetchFromNexus(ctx context.Context) []ODPNode {
 	for _, it := range rawItems {
 		clusterArea := "Lokal"
 		providerName := "Internal ISP"
+		if strings.HasPrefix(it.Code, "ODP-HRU") || strings.HasPrefix(it.Code, "ODP-PYK") {
+			clusterArea = "Cluster Harau / Payakumbuh"
+		} else if strings.HasPrefix(it.Code, "ODP-PDG") {
+			clusterArea = "Cluster Padang"
+		} else if strings.HasPrefix(it.Code, "ODP-BKT") {
+			clusterArea = "Cluster Bukittinggi"
+		}
 		if it.IsSharedJartaplok {
 			clusterArea = "Jartaplok " + strings.ToUpper(it.OwnerTenantSlug)
 			if it.OwnerTenantName != "" {
@@ -315,6 +322,32 @@ func (r *Repository) ListFiberRoutes(ctx context.Context) ([]FiberRoute, error) 
 }
 
 func (r *Repository) GetFTTXStats(ctx context.Context) (*FTTXStats, error) {
+	nexusNodes := r.fetchFromNexus(ctx)
+	if len(nexusNodes) > 0 {
+		var totalPorts, usedPorts int
+		for _, n := range nexusNodes {
+			totalPorts += n.TotalPorts
+			usedPorts += n.UsedPorts
+		}
+		avail := totalPorts - usedPorts
+		if avail < 0 {
+			avail = 0
+		}
+		rate := 0.0
+		if totalPorts > 0 {
+			rate = float64(usedPorts) / float64(totalPorts) * 100.0
+		}
+		return &FTTXStats{
+			TotalODP:        len(nexusNodes),
+			TotalPorts:      totalPorts,
+			UsedPorts:       usedPorts,
+			AvailablePorts:  avail,
+			UtilizationRate: rate,
+			TotalRoutes:     3,
+			TotalCableKm:    18.4,
+		}, nil
+	}
+
 	const q = `
 		SELECT COUNT(*),
 		       COALESCE(SUM(total_ports), 0),

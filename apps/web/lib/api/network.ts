@@ -136,6 +136,7 @@ export interface ODPNode {
   name: string;
   code: string;
   cluster: string;
+  cluster_area?: string;
   latitude: number;
   longitude: number;
   total_ports: number;

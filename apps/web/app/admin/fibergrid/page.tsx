@@ -196,13 +196,13 @@ export default function AdminFibergridPage() {
 
       // Filter ODP nodes based on UI filters
       const filtered = odpNodes.filter((odp) => {
-        if (clusterFilter !== "ALL" && odp.cluster !== clusterFilter) return false;
+        if (clusterFilter !== "ALL" && getClusterName(odp) !== clusterFilter) return false;
         if (statusFilter !== "ALL" && odp.status !== statusFilter) return false;
         if (searchOdp.trim() !== "") {
           const q = searchOdp.toLowerCase();
-          const matchCode = odp.code.toLowerCase().includes(q);
-          const matchName = odp.name.toLowerCase().includes(q);
-          const matchAddr = odp.address.toLowerCase().includes(q);
+          const matchCode = (odp.code || "").toLowerCase().includes(q);
+          const matchName = (odp.name || "").toLowerCase().includes(q);
+          const matchAddr = (odp.address || "").toLowerCase().includes(q);
           if (!matchCode && !matchName && !matchAddr) return false;
         }
         return true;
@@ -377,20 +377,38 @@ export default function AdminFibergridPage() {
     }
   };
 
-  const clusters = Array.from(new Set(odpNodes.map((o) => o.cluster).filter(Boolean)));
+  const getClusterName = (odp: ODPNode) => {
+    if (odp.cluster && odp.cluster !== "Lokal") return odp.cluster;
+    if (odp.cluster_area && odp.cluster_area !== "Lokal") return odp.cluster_area;
+    const code = (odp.code || "").toUpperCase();
+    if (code.includes("HRU") || code.includes("PYK")) return "Harau / Payakumbuh";
+    if (code.includes("PDG")) return "Padang";
+    if (code.includes("BKT")) return "Bukittinggi";
+    return "Cluster Umum";
+  };
+
+  const clusters = Array.from(new Set(odpNodes.map(getClusterName).filter(Boolean)));
 
   const filteredODPs = odpNodes.filter((odp) => {
-    if (clusterFilter !== "ALL" && odp.cluster !== clusterFilter) return false;
+    if (clusterFilter !== "ALL" && getClusterName(odp) !== clusterFilter) return false;
     if (statusFilter !== "ALL" && odp.status !== statusFilter) return false;
     if (searchOdp.trim() !== "") {
       const q = searchOdp.toLowerCase();
-      const matchCode = odp.code.toLowerCase().includes(q);
-      const matchName = odp.name.toLowerCase().includes(q);
-      const matchAddr = odp.address.toLowerCase().includes(q);
+      const matchCode = (odp.code || "").toLowerCase().includes(q);
+      const matchName = (odp.name || "").toLowerCase().includes(q);
+      const matchAddr = (odp.address || "").toLowerCase().includes(q);
       if (!matchCode && !matchName && !matchAddr) return false;
     }
     return true;
   });
+
+  // Calculate synchronized stats directly from Nexus ODP Nodes
+  const totalODP = odpNodes.length;
+  const totalPorts = odpNodes.reduce((acc, o) => acc + (o.total_ports || 8), 0);
+  const usedPorts = odpNodes.reduce((acc, o) => acc + (o.used_ports || 0), 0);
+  const availPorts = Math.max(0, totalPorts - usedPorts);
+  const utilRate = totalPorts > 0 ? ((usedPorts / totalPorts) * 100).toFixed(1) : "0.0";
+  const totalFiberKm = (fiberRoutes.reduce((acc, r) => acc + (r.length_meters || 0), 0) / 1000).toFixed(1);
 
   return (
     <div className="space-y-6">
@@ -399,18 +417,18 @@ export default function AdminFibergridPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
-              FIBERGRID &amp; NEXUS GIS
+              NEXUSGIS
             </span>
             <span className="text-xs text-slate-500 font-mono">
-              Single-Source GIS Database
+              EngineNexus Single-Source GIS
             </span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
             <Network className="w-6 h-6 text-blue-600" />
-            Fibergrid &amp; Nexus GIS — Topologi &amp; Sebaran ODP
+            NexusGIS — Topologi &amp; Sebaran ODP
           </h1>
           <p className="text-sm text-slate-500">
-            Monitoring sebaran titik ODP, ketersediaan port, dan uji kelayakan jangkauan pelanggan (Coverage Feasibility) berbasis data spasial dari EngineNexus &amp; Wholesale Jartaplok.
+            Monitoring sebaran titik ODP, ketersediaan port, dan topologi jaringan terintegrasi langsung dari EngineNexus GIS.
           </p>
         </div>
 
@@ -418,7 +436,7 @@ export default function AdminFibergridPage() {
           <button
             onClick={fetchFTTXData}
             className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition"
-            title="Segarkan data ODP"
+            title="Segarkan data ODP dari EngineNexus"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
@@ -433,7 +451,7 @@ export default function AdminFibergridPage() {
           </div>
           <div>
             <div className="text-xs font-medium text-slate-500">Total Titik ODP</div>
-            <div className="text-xl font-bold text-slate-900">{fttxStats?.total_odp || odpNodes.length} Node</div>
+            <div className="text-xl font-bold text-slate-900">{totalODP} Node</div>
             <div className="text-[11px] text-emerald-600 font-medium">Tersebar di {clusters.length || 1} Cluster</div>
           </div>
         </div>
@@ -445,10 +463,10 @@ export default function AdminFibergridPage() {
           <div>
             <div className="text-xs font-medium text-slate-500">Port Distribusi Terpakai</div>
             <div className="text-xl font-bold text-slate-900">
-              {fttxStats?.used_ports || 0} / {fttxStats?.total_ports || 0}
+              {usedPorts} / {totalPorts}
             </div>
             <div className="text-[11px] text-slate-500 font-medium">
-              Sisa bebas: {(fttxStats?.total_ports || 0) - (fttxStats?.used_ports || 0)} Port
+              Sisa bebas: {availPorts} Port
             </div>
           </div>
         </div>
@@ -460,9 +478,7 @@ export default function AdminFibergridPage() {
           <div>
             <div className="text-xs font-medium text-slate-500">Rata-rata Utilisasi Port</div>
             <div className="text-xl font-bold text-slate-900">
-              {fttxStats && fttxStats.total_ports > 0
-                ? ((fttxStats.used_ports / fttxStats.total_ports) * 100).toFixed(1)
-                : "0"}%
+              {utilRate}%
             </div>
             <div className="text-[11px] text-blue-600 font-medium">Kapasitas Splitter 1:8 / 1:16</div>
           </div>
@@ -475,7 +491,7 @@ export default function AdminFibergridPage() {
           <div>
             <div className="text-xs font-medium text-slate-500">Total Jalur Fiber Optik</div>
             <div className="text-xl font-bold text-slate-900">
-              {fttxStats?.total_fiber_km ? fttxStats.total_fiber_km.toFixed(1) : "0"} km
+              {Number(totalFiberKm) > 0 ? totalFiberKm : (fttxStats?.total_fiber_km ? fttxStats.total_fiber_km.toFixed(1) : "0")} km
             </div>
             <div className="text-[11px] text-amber-700 font-medium">{fiberRoutes.length} Rute Terpasang</div>
           </div>
@@ -543,16 +559,62 @@ export default function AdminFibergridPage() {
 
       {/* Interactive GIS Map */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+        <div className="px-5 py-3 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4 text-blue-600" />
             <h2 className="text-sm font-bold text-slate-800">
-              Peta Topologi Geospasial Fiber Optik &amp; Titik ODP
+              Peta Topologi Geospasial Fiber Optik &amp; Titik ODP (NexusGIS)
             </h2>
           </div>
-          <span className="text-[11px] text-slate-500">
-            Klik ikon ODP untuk melihat info teknis port &amp; redaman sinyal. Klik peta untuk salin koordinat.
-          </span>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] text-slate-400 font-medium mr-1">Fokus Area:</span>
+            <button
+              type="button"
+              onClick={() => {
+                setClusterFilter("ALL");
+                if (mapInstanceRef.current && odpNodes.length > 0) {
+                  const b = new (window as any).google.maps.LatLngBounds();
+                  odpNodes.forEach(o => b.extend({ lat: o.latitude, lng: o.longitude }));
+                  mapInstanceRef.current.fitBounds(b);
+                }
+              }}
+              className={`px-2.5 py-1 text-[11px] font-semibold rounded-md border transition ${
+                clusterFilter === "ALL"
+                  ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+              }`}
+            >
+              Semua ({totalODP})
+            </button>
+            {clusters.map((c) => {
+              const count = odpNodes.filter(o => getClusterName(o) === c).length;
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => {
+                    setClusterFilter(c);
+                    const inCluster = odpNodes.filter(o => getClusterName(o) === c);
+                    if (mapInstanceRef.current && inCluster.length > 0) {
+                      const b = new (window as any).google.maps.LatLngBounds();
+                      inCluster.forEach(o => b.extend({ lat: o.latitude, lng: o.longitude }));
+                      mapInstanceRef.current.fitBounds(b);
+                      if (inCluster.length === 1) {
+                        mapInstanceRef.current.setZoom(16);
+                      }
+                    }
+                  }}
+                  className={`px-2.5 py-1 text-[11px] font-semibold rounded-md border transition ${
+                    clusterFilter === c
+                      ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                  }`}
+                >
+                  {c} ({count})
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="relative">
@@ -606,10 +668,10 @@ export default function AdminFibergridPage() {
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
           <div>
             <h2 className="text-base font-semibold text-slate-800">
-              Daftar Titik Distribusi ODP (Optical Distribution Point)
+              Daftar Titik Distribusi ODP (NexusGIS)
             </h2>
             <p className="text-xs text-slate-500">
-              {filteredODPs.length} titik ODP aktif tercatat dalam sistem spasial EngineNexus &amp; FiberGrid
+              {filteredODPs.length} titik ODP aktif tersinkronisasi langsung dari sistem EngineNexus GIS
             </p>
           </div>
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -661,7 +723,7 @@ export default function AdminFibergridPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="font-semibold text-slate-900">{odp.name}</div>
-                        <div className="text-xs text-slate-500">Cluster {odp.cluster}</div>
+                        <div className="text-xs text-slate-500">{getClusterName(odp)}</div>
                       </td>
                       <td className="px-6 py-4 min-w-[160px]">
                         <div className="flex items-center justify-between text-xs mb-1">
@@ -677,7 +739,7 @@ export default function AdminFibergridPage() {
                           />
                         </div>
                         <div className="text-[11px] text-slate-400 mt-1">
-                          Tersedia: <strong className="text-slate-700">{odp.available_ports} port</strong>
+                          Tersedia: <strong className="text-slate-700">{odp.total_ports - odp.used_ports} port</strong>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-xs font-medium text-slate-700">
