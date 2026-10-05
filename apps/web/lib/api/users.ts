@@ -1,10 +1,34 @@
 import { request } from "./client";
 
+export interface Permission {
+  id: string;
+  name: string;
+  slug: string;
+  module: string;
+  action: string;
+}
+
 export interface Role {
   id: string;
   name: string;
   slug: string;
   description: string;
+  is_system?: boolean;
+  user_count?: number;
+  permissions?: Permission[];
+}
+
+export interface CreateRoleData {
+  name: string;
+  slug?: string;
+  description?: string;
+  permission_ids: string[];
+}
+
+export interface UpdateRoleData {
+  name: string;
+  description?: string;
+  permission_ids: string[];
 }
 
 export interface UserItem {
@@ -77,4 +101,37 @@ export const usersApi = {
       method: "DELETE",
     });
   },
+
+  // Roles & Permissions (RBAC)
+  getPermissions: () => {
+    return request<{ permissions: Permission[] }>("/roles/permissions");
+  },
+
+  createRole: (data: CreateRoleData) => {
+    return request<Role>("/roles", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateRole: (id: string, data: UpdateRoleData) => {
+    return request<{ success: boolean; message: string }>(`/roles/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  deleteRole: (id: string) => {
+    return request<{ success: boolean; message: string }>(`/roles/${id}`, {
+      method: "DELETE",
+    });
+  },
+};
+
+export const rolesApi = {
+  getRoles: usersApi.getRoles,
+  getPermissions: usersApi.getPermissions,
+  createRole: usersApi.createRole,
+  updateRole: usersApi.updateRole,
+  deleteRole: usersApi.deleteRole,
 };

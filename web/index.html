@@ -6303,7 +6303,7 @@
               <select id="fg-sync-cluster" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-xs font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                 <option value="Area-1">Area Utama (1)</option>
                 <option value="Area-2">Area Penyangga (2)</option>
-                <option value="Jayapura">Jayapura (Papua)</option>
+                <option value="Area-3">Area-3 (Ekspansi)</option>
               </select>
             </div>
           </div>
@@ -6701,12 +6701,12 @@
           </div>
         </div>
 
-        <!-- Card Telemetri SmartOLT (Jartaplok GNET Zone GOGIGA) -->
+        <!-- Card Telemetri SmartOLT (Jartaplok Wholesale) -->
         <div id="admin-detail-smartolt-card" class="border border-slate-200 bg-white rounded-md p-4 sm:p-5 space-y-3 shadow-2xs">
           <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
             <span class="text-xs font-mono font-bold uppercase text-slate-800 flex items-center gap-2">
               <i data-lucide="radio" class="w-4 h-4 text-blue-600"></i>
-              <span>Telemetri SmartOLT (Zone GOGIGA)</span>
+              <span>Telemetri SmartOLT (Wholesale)</span>
             </span>
             <span id="detail-smartolt-status-pill" class="text-[9px] font-mono text-slate-600 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded font-bold">
               SMARTOLT LIVE
@@ -7042,7 +7042,7 @@
           </div>
         </div>
 
-        <!-- Manajemen Infrastruktur Wholesale: Oper Order ke TIF / GNET & Status Coverage (Auto-Ringkas jika Retail Normal) -->
+        <!-- Manajemen Infrastruktur Wholesale: Oper Order ke Mitra Wholesale & Status Coverage (Auto-Ringkas jika Retail Normal) -->
         <div id="admin-detail-dispatch-card" class="border border-slate-200 bg-white rounded-md p-3.5 sm:p-4 shadow-2xs transition-all">
           <div class="flex items-center justify-between cursor-pointer select-none" onclick="toggleSectionCard('dispatch')">
             <span class="text-xs font-mono font-bold uppercase text-slate-800 flex items-center gap-2">
@@ -7133,7 +7133,7 @@
             </select>
           </div>
           <div id="reassign-odp-manual-box" class="hidden">
-            <input type="text" id="reassign-odp-custom-input" oninput="onReassignODPCustomInput(this.value)" placeholder="Ketik kode ODP (misal: ODP-PYK-0099)" class="w-full px-3 py-2 border border-slate-300 rounded-md text-xs font-mono uppercase font-bold focus:ring-1 focus:ring-slate-900 focus:border-slate-900 bg-white" />
+            <input type="text" id="reassign-odp-custom-input" oninput="onReassignODPCustomInput(this.value)" placeholder="Ketik kode ODP (misal: ODP-HQ-0099)" class="w-full px-3 py-2 border border-slate-300 rounded-md text-xs font-mono uppercase font-bold focus:ring-1 focus:ring-slate-900 focus:border-slate-900 bg-white" />
           </div>
         </div>
 
@@ -7281,7 +7281,6 @@
     </div>
   </div>
 
-  <!-- MODAL OPER ORDER / MANUAL ATTACH KE MITRA WHOLESALE (TIF / GNET) -->
   <!-- MODAL OPER ORDER / MANUAL ATTACH KE MITRA WHOLESALE (JARTUP / JARTAPLOK) -->
   <div id="modal-attach-partner-odp" class="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
     <div class="bg-white max-w-lg w-full rounded-lg border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
@@ -7318,7 +7317,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block text-[11px] font-mono font-bold uppercase text-slate-700 mb-1">Kode / No. ODP Mitra *</label>
-            <input type="text" id="attach-odp-code" required placeholder="Misal: ODP-TIF-PYK-001" class="w-full px-3 py-2 border border-slate-300 rounded-md text-xs font-mono uppercase focus:ring-1 focus:ring-slate-900 focus:border-slate-900" />
+            <input type="text" id="attach-odp-code" required placeholder="Misal: ODP-TIF-HQ-001" class="w-full px-3 py-2 border border-slate-300 rounded-md text-xs font-mono uppercase focus:ring-1 focus:ring-slate-900 focus:border-slate-900" />
             <span class="text-[10px] text-slate-400 block mt-0.5">Kode ODP dari konfirmasi mitra/survei</span>
           </div>
           <div>
@@ -7479,7 +7478,7 @@
       <form onsubmit="handleAddPartnerSubmit(event)" class="p-5 space-y-4">
         <div>
           <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">Kode Sales / Referral</label>
-          <input type="text" id="add-partner-code" placeholder="Contoh: RIKO-PYK" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-md px-4 py-2 text-sm font-mono uppercase tracking-wider outline-none focus:bg-white focus:ring-1 focus:ring-slate-900 focus:border-slate-900 transition" required />
+          <input type="text" id="add-partner-code" placeholder="Contoh: RIKO-HQ" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-md px-4 py-2 text-sm font-mono uppercase tracking-wider outline-none focus:bg-white focus:ring-1 focus:ring-slate-900 focus:border-slate-900 transition" required />
           <p class="text-[10px] text-slate-400 mt-1 font-sans">Akan digunakan sebagai parameter link referral (?ref=KODE)</p>
         </div>
 
@@ -7497,9 +7496,10 @@
         <div>
           <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">Wilayah Cabang Penugasan</label>
           <select id="add-partner-branch" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-md px-4 py-2 text-sm font-mono outline-none focus:bg-white focus:ring-1 focus:ring-slate-900 focus:border-slate-900 transition">
-            <option value="ALL">Nasional / Kantor Pusat</option>
-            <option value="ALL">Semua Cabang / Wilayah</option>
-            <option value="PAPUA">Cabang Papua (Jayapura)</option>
+            <option value="ALL">Nasional / Semua Cabang</option>
+            <option value="HQ">Kantor Pusat (Headquarters)</option>
+            <option value="CABANG-1">Kantor Cabang Wilayah 1</option>
+            <option value="CABANG-2">Kantor Cabang Wilayah 2</option>
           </select>
         </div>
 
@@ -7555,9 +7555,9 @@
           <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">Wilayah / Kantor Cabang Penempatan</label>
           <select id="add-staff-branch" class="w-full bg-white border border-slate-300 text-slate-900 rounded-md px-4 py-2 text-sm font-mono outline-none focus:border-slate-900 transition">
             <option value="ALL">Semua Cabang (Nasional)</option>
-            <option value="PAPUA">Kantor Cabang Papua (PAPUA)</option>
-            
-            <option value="">Pusat / Nasional (Direktur Utama / Root)</option>
+            <option value="HQ">Kantor Pusat (Headquarters)</option>
+            <option value="CABANG-1">Kantor Cabang Wilayah 1</option>
+            <option value="CABANG-2">Kantor Cabang Wilayah 2</option>
           </select>
         </div>
 
@@ -8199,7 +8199,7 @@
             </div>
           </div>
 
-          <!-- CLAUSES VARIANT B: KHUSUS PRABAYAR REGULER (MANDIRI & GNET) -->
+          <!-- CLAUSES VARIANT B: KHUSUS PRABAYAR REGULER (MANDIRI & MITRA WHOLESALE) -->
           <div id="contract-clauses-prepaid" class="space-y-2.5 text-[11px] text-slate-600 font-sans leading-relaxed">
             <!-- 3.1 Hak & Kewajiban Penyedia Layanan (Pihak I) -->
             <div class="bg-slate-50/70 p-3 rounded-md border border-slate-200">
@@ -8404,7 +8404,7 @@
                 </div>
                 <!-- Manual input mode -->
                 <div id="bast-odp-manual-box" class="hidden">
-                  <input type="text" id="bast-odp-custom-input" oninput="onBastOdpCustomInput(this.value)" placeholder="Misal: ODP-PYK-0045" class="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-mono uppercase font-bold text-slate-800" />
+                  <input type="text" id="bast-odp-custom-input" oninput="onBastOdpCustomInput(this.value)" placeholder="Misal: ODP-HQ-0045" class="w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-mono uppercase font-bold text-slate-800" />
                 </div>
                 <div id="bast-odp-changed-badge" class="hidden text-[10px] text-emerald-800 font-mono bg-emerald-100/90 border border-emerald-300 rounded px-2 py-1 flex items-center gap-1">
                   <i data-lucide="check-circle" class="w-3 h-3 text-emerald-600 shrink-0"></i>
@@ -9412,9 +9412,7 @@
           <div id="rekon-partner-selector-wrapper" class="flex items-center gap-1.5 text-xs text-slate-300 font-mono hidden">
             <span class="hidden sm:inline text-slate-400">Mitra:</span>
             <select id="rekon-partner-select" onchange="changeRekonPartner(this.value)" class="bg-slate-800 border border-slate-700 text-white rounded-md px-2.5 py-1.5 text-xs font-mono font-semibold focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900">
-              <option value="GNET-BIARO">Mitra Jartaplok Wholesale (GNET-BIARO)</option>
-              
-              
+              <option value="MITRA-1">Mitra Jartaplok Wholesale</option>
             </select>
           </div>
 
@@ -9955,7 +9953,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1">Kode Rekanan <span class="text-rose-500">*</span></label>
-            <input type="text" id="jp-code" placeholder="Contoh: TIF atau TELKO-PYK" class="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs font-mono font-bold text-slate-900 outline-none focus:border-indigo-600" required />
+            <input type="text" id="jp-code" placeholder="Contoh: TIF atau TELKO-HQ" class="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs font-mono font-bold text-slate-900 outline-none focus:border-indigo-600" required />
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1">No. Kontak WhatsApp <span class="text-rose-500">*</span></label>
@@ -9985,9 +9983,10 @@
           <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1">Wilayah Cabang Penugasan <span class="text-rose-500">*</span></label>
             <select id="jp-branch" class="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs font-mono font-bold text-slate-900 outline-none focus:border-indigo-600">
-              <option value="ALL">Nasional / Multi-Cabang</option>
-              <option value="ALL">Semua Cabang / Wilayah</option>
-              <option value="PAPUA">Cabang Papua (Jayapura)</option>
+              <option value="ALL">Nasional / Semua Cabang</option>
+              <option value="HQ">Kantor Pusat (Headquarters)</option>
+              <option value="CABANG-1">Kantor Cabang Wilayah 1</option>
+              <option value="CABANG-2">Kantor Cabang Wilayah 2</option>
             </select>
           </div>
         </div>
@@ -10000,8 +9999,8 @@
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1">Kebijakan Jeda Layanan (Suspension Policy) <span class="text-rose-500">*</span></label>
           <select id="jp-suspension-policy" class="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs font-bold text-slate-900 outline-none focus:border-indigo-600">
-            <option value="DISALLOWED">[DILARANG] Jeda Layanan Dikunci (Komitmen Kontrak 12 Bln - Rekomendasi TIF)</option>
-            <option value="ALLOWED_WITH_WAIVER">[BEBAS BIAYA] Boleh Jeda &amp; Bebas Biaya Sewa (Rp 0 / Prorata - Rekomendasi GNET)</option>
+            <option value="DISALLOWED">[DILARANG] Jeda Layanan Dikunci (Komitmen Kontrak PKS)</option>
+            <option value="ALLOWED_WITH_WAIVER">[BEBAS BIAYA] Boleh Jeda &amp; Bebas Biaya Sewa (Rp 0 / Prorata)</option>
             <option value="ALLOWED_FULL_BILLING">[BAYAR PENUH] Boleh Jeda Ritel, Tagihan Wholesale Tetap Penuh (100%)</option>
           </select>
           <span class="text-[10px] text-slate-500 block mt-0.5">Tentukan apakah sirkuit pada tiang rekanan ini dapat dijeda sementara atau dikunci sesuai PKS.</span>
@@ -10161,8 +10160,9 @@
             <label class="block text-xs font-semibold text-slate-700 mb-1">Wilayah Cabang <span class="text-rose-500">*</span></label>
             <select id="edit-jp-branch" class="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs font-mono font-bold text-slate-900 outline-none focus:border-amber-600">
               <option value="ALL">Nasional / Multi-Cabang</option>
-              <option value="ALL">Semua Cabang / Wilayah</option>
-              <option value="PAPUA">Cabang Papua (Jayapura)</option>
+              <option value="HQ">Kantor Pusat (HQ)</option>
+              <option value="CABANG-1">Kantor Cabang Wilayah 1</option>
+              <option value="CABANG-2">Kantor Cabang Wilayah 2</option>
             </select>
           </div>
           <div>
@@ -10174,8 +10174,8 @@
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1">Kebijakan Jeda Layanan (Suspension Policy) <span class="text-rose-500">*</span></label>
           <select id="edit-jp-suspension-policy" class="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs font-bold text-slate-900 outline-none focus:border-amber-600">
-            <option value="DISALLOWED">[DILARANG] Jeda Layanan Dikunci (Komitmen Kontrak 12 Bln - Rekomendasi TIF)</option>
-            <option value="ALLOWED_WITH_WAIVER">[BEBAS BIAYA] Boleh Jeda &amp; Bebas Biaya Sewa (Rp 0 / Prorata - Rekomendasi GNET)</option>
+            <option value="DISALLOWED">[DILARANG] Jeda Layanan Dikunci (Komitmen Kontrak PKS)</option>
+            <option value="ALLOWED_WITH_WAIVER">[BEBAS BIAYA] Boleh Jeda &amp; Bebas Biaya Sewa (Rp 0 / Prorata)</option>
             <option value="ALLOWED_FULL_BILLING">[BAYAR PENUH] Boleh Jeda Ritel, Tagihan Wholesale Tetap Penuh (100%)</option>
           </select>
           <span class="text-[10px] text-slate-500 block mt-0.5">Tentukan apakah sirkuit pada tiang rekanan ini dapat dijeda sementara atau dikunci sesuai PKS.</span>
@@ -10756,6 +10756,8 @@
       const odpCode = (regData.nearest_odp_code || '').toUpperCase();
       const isPartnerPostpaid = Boolean(
         partnerCode === 'TELKO-PYK' ||
+        partnerCode === 'TELKO-HQ' ||
+        partnerCode.startsWith('TELKO') ||
         partnerCode === 'TIF' ||
         partnerName.includes('TELKOM') ||
         partnerName.includes('TIF') ||
@@ -15046,11 +15048,12 @@
         }
 
         // Branch indicator badge
-        const bCode = r.branch_code || (r.nearest_odp_code && r.nearest_odp_code.includes('PAPUA') ? 'PAPUA' : 'PYK');
+        const bCode = r.branch_code || 'PUSAT';
         let branchBadge = 'bg-slate-100 text-slate-600 border-slate-200';
-        if (bCode === 'PAPUA') branchBadge = 'bg-sky-50 text-sky-700 border-sky-200 font-bold';
-        else if (bCode === 'PYK') branchBadge = 'bg-indigo-50 text-indigo-700 border-indigo-200 font-bold';
-        else if (bCode === 'GNET-BIARO') branchBadge = 'bg-emerald-50 text-emerald-700 border-emerald-200 font-bold';
+        if (bCode === 'PUSAT' || bCode === 'HQ') branchBadge = 'bg-sky-50 text-sky-700 border-sky-200 font-bold';
+        else if (bCode === 'CABANG-1') branchBadge = 'bg-indigo-50 text-indigo-700 border-indigo-200 font-bold';
+        else if (bCode === 'CABANG-2') branchBadge = 'bg-emerald-50 text-emerald-700 border-emerald-200 font-bold';
+        else branchBadge = 'bg-slate-100 text-slate-700 border-slate-200 font-bold';
 
         return `
           <tr class="hover:bg-slate-50 transition border-b border-slate-100">
@@ -15313,7 +15316,7 @@
 
       // 2. Tambahkan / sinkronkan dari data ODP yang termuat
       (custMapAllODPs || []).forEach(o => {
-        const pid = o.provider_id || 'GNET-BIARO';
+        const pid = o.provider_id || (o.provider_name ? 'MITRA-1' : '');
         const pname = o.provider_name;
         if (pid && pname) {
           if (!providerMap.has(pid)) {
@@ -15379,9 +15382,7 @@
       setTimeout(() => { if (adminCustomerMap) adminCustomerMap.invalidateSize(); }, 150);
 
       const branch = localStorage.getItem('selected_branch_filter') || 'ALL';
-      if (branch === 'PAPUA' && adminCustomerMap) {
-        adminCustomerMap.setView([-2.53371, 140.71813], 12);
-      } else if (branch === 'PYK' && adminCustomerMap) {
+      if (adminCustomerMap) {
         adminCustomerMap.setView([-6.2088, 106.8456], 12);
       }
 
@@ -15430,15 +15431,15 @@
       const pidNorm = (pId || '').toUpperCase();
       const pnameNorm = (pName || '').toUpperCase();
 
-      if (sel === 'TELKO-PYK' || sel === 'TIF') {
-        return pidNorm === 'TELKO-PYK' || pidNorm === 'TIF' || pnameNorm.includes('TELKOM') || pnameNorm.includes('TIF');
+      if (sel === 'TELKO-PYK' || sel === 'TELKO-HQ' || sel.startsWith('TELKO') || sel === 'TIF') {
+        return pidNorm === 'TELKO-PYK' || pidNorm === 'TELKO-HQ' || pidNorm.startsWith('TELKO') || pidNorm === 'TIF' || pnameNorm.includes('TELKOM') || pnameNorm.includes('TIF');
       }
       if (sel === 'GNET2') {
         return pidNorm === 'GNET2' || pnameNorm.includes('(2)');
       }
-      if (sel === 'GNET-BIARO') {
+      if (sel === 'GNET-BIARO' || sel.startsWith('MITRA')) {
         if (pidNorm === 'GNET2' || pnameNorm.includes('(2)')) return false;
-        return pidNorm === 'GNET-BIARO' || pnameNorm.includes('GNET') || pnameNorm.includes('BIARO') || (!pidNorm && !pnameNorm.includes('TELKOM'));
+        return pidNorm === sel || pidNorm === 'GNET-BIARO' || pnameNorm.includes('MITRA') || pnameNorm.includes('GNET') || pnameNorm.includes('BIARO') || (!pidNorm && !pnameNorm.includes('TELKOM'));
       }
       return pidNorm === sel;
     }
@@ -15481,12 +15482,6 @@
       const filteredODPs = custMapAllODPs.filter(o => {
         if (branchFilter !== 'ALL') {
           if (o.branch_code && o.branch_code !== branchFilter) return false;
-          if (branchFilter === 'PAPUA' && !o.cluster_area?.toUpperCase().includes('PAPUA') && !o.code?.toUpperCase().includes('PAPUA')) {
-            return false;
-          }
-          if (branchFilter === 'PYK' && (o.cluster_area?.toUpperCase().includes('PAPUA') || o.code?.toUpperCase().includes('PAPUA'))) {
-            return false;
-          }
         }
         const matchProv = isMatchCustomerMapProvider(selectedProvider, o.provider_id, o.provider_name);
         const matchArea = isMatchCustomerMapArea(selectedArea, o.cluster_area);
@@ -15497,13 +15492,6 @@
       const filteredRegs = (adminRegistrationsList || []).filter(r => {
         if (branchFilter !== 'ALL') {
           if (r.branch_code && r.branch_code !== branchFilter) return false;
-          const odp = (r.nearest_odp_code || '').toUpperCase();
-          const addr = (r.address || '').toUpperCase();
-          if (branchFilter === 'PAPUA') {
-            if (!odp.includes('PAPUA') && !addr.includes('PAPUA') && !addr.includes('JAYAPURA')) return false;
-          } else if (branchFilter === 'PYK') {
-            if (odp.includes('PAPUA') || addr.includes('PAPUA') || addr.includes('JAYAPURA')) return false;
-          }
         }
         let pId = '';
         let pName = r.partner_name || '';
@@ -15747,11 +15735,7 @@
         adminCustomerMap.fitBounds(allBounds, { padding: [40, 40], maxZoom: 16 });
         window._custMapHasFitted = true;
       } else if (allBounds.length === 0 && adminCustomerMap) {
-        if (branchFilter === 'PAPUA') {
-          adminCustomerMap.setView([-2.53371, 140.71813], 12);
-        } else {
-          adminCustomerMap.setView([-6.2088, 106.8456], 12);
-        }
+        adminCustomerMap.setView([-6.2088, 106.8456], 12);
       }
     }
 
@@ -15770,12 +15754,6 @@
       custMapAllODPs.forEach(o => {
         if (branchFilter !== 'ALL') {
           if (o.branch_code && o.branch_code !== branchFilter) return;
-          if (branchFilter === 'PAPUA' && !o.cluster_area?.toUpperCase().includes('PAPUA') && !o.code?.toUpperCase().includes('PAPUA')) {
-            return;
-          }
-          if (branchFilter === 'PYK' && (o.cluster_area?.toUpperCase().includes('PAPUA') || o.code?.toUpperCase().includes('PAPUA'))) {
-            return;
-          }
         }
         if (o.latitude && o.longitude) {
           const matchProv = isMatchCustomerMapProvider(selectedProvider, o.provider_id, o.provider_name);
@@ -15788,11 +15766,7 @@
       if (allBounds.length > 0) {
         adminCustomerMap.fitBounds(allBounds, { padding: [40, 40], maxZoom: 16 });
       } else {
-        if (branchFilter === 'PAPUA') {
-          adminCustomerMap.setView([-2.53371, 140.71813], 12);
-        } else {
-          adminCustomerMap.setView([-6.2088, 106.8456], 12);
-        }
+        adminCustomerMap.setView([-6.2088, 106.8456], 12);
       }
     }
 
@@ -16985,7 +16959,7 @@
         const hasWO = Boolean(r.work_order_no || r.work_order_id);
         const isCompleted = r.status === 'ACTIVE' || r.work_order_status === 'COMPLETED';
 
-        const isGoldenSubcontract = Boolean(r.technician_name && r.technician_name.includes('Golden'));
+        const isGoldenSubcontract = Boolean(r.technician_name && (r.technician_name.includes('Golden') || r.technician_name.includes('Mitra') || r.technician_name.includes('Subkontrak')));
         const techWaGreeting = isGoldenSubcontract 
           ? `Halo Tim Mitra Teknisi Jartaplok Wholesale, mohon bantuan penanganan SPK Pasang Baru (Subkontrak OTC Rp 150.000) berikut:\n\n` +
             `• No. SPK: ${r.work_order_no || 'WO-BARU'}\n` +
@@ -16996,7 +16970,7 @@
             `• Paket: ${r.selected_plan_name}\n` +
             `• ODP Terdekat: ${r.nearest_odp_code || '-'}\n` +
             (r.latitude && r.longitude ? `• Peta: https://maps.google.com/?q=${r.latitude},${r.longitude}\n\n` : '\n') +
-            `Skema: Subkontrak Fulfillment Teknisi Golden (OTC Rp 150.000 tercatat di Rekap Wholesale).\n` +
+            `Skema: Subkontrak Fulfillment Teknisi Mitra Rekanan (OTC Rp 150.000 tercatat di Rekap Wholesale).\n` +
             `Mohon penarikan kabel dropcore, tes redaman OPM (-16 s/d -24 dBm), dan foto BAST digital. Terima kasih.`
           : `Halo Tim Teknisi Lapangan, mohon proses SPK Pasang Baru berikut:\n\n` +
             `• No. SPK: ${r.work_order_no || 'WO-BARU'}\n` +
@@ -17053,7 +17027,7 @@
                 <div>
                   <span class="text-[10px] uppercase font-mono text-slate-500 font-bold block">Surat Perintah Kerja (SPK) Pasang Baru</span>
                   <strong class="text-xs text-slate-900 font-mono">${r.work_order_no || 'WO-BARU'}</strong>
-                  <span class="text-[11px] text-slate-600 font-sans block mt-0.5">Petugas Saat Ini: <strong class="text-slate-800">${curTech}</strong>${isGoldenSubcontract ? ' <span class="px-1.5 py-0.5 rounded text-[9.5px] font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">SUBKONTRAK GOLDEN (OTC RP 150RB)</span>' : ''}</span>
+                  <span class="text-[11px] text-slate-600 font-sans block mt-0.5">Petugas Saat Ini: <strong class="text-slate-800">${curTech}</strong>${isGoldenSubcontract ? ' <span class="px-1.5 py-0.5 rounded text-[9.5px] font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">SUBKONTRAK MITRA (OTC RP 150RB)</span>' : ''}</span>
                 </div>
                 <div class="text-left sm:text-right">
                   <span class="text-[10px] uppercase font-mono text-slate-500 font-bold block">Status Penugasan</span>
@@ -17082,7 +17056,7 @@
                 <div id="detail-reassign-golden-note" class="${isGoldenSubcontract ? '' : 'hidden'} p-2.5 bg-indigo-50 border border-indigo-200 rounded-md text-[11px] text-indigo-900 flex items-start gap-2">
                   <i data-lucide="info" class="w-4 h-4 text-indigo-700 shrink-0 mt-0.5"></i>
                   <div>
-                    <strong class="font-mono font-bold">SKEMA SUBKONTRAK KEMITRAAN (GOLDEN NET):</strong>
+                    <strong class="font-mono font-bold">SKEMA SUBKONTRAK KEMITRAAN (MITRA REKANAN):</strong>
                     <p class="font-sans text-[10.5px] text-indigo-800 mt-0.5 leading-snug">
                       Pekerjaan dialihkan ke armada mitra rekanan dengan biaya pasang baru (OTC) sesuai kontrak kerjasama.
                     </p>
@@ -17115,22 +17089,22 @@
                 Pelanggan telah tercover ODP <strong class="font-mono">${r.nearest_odp_code || '-'}</strong> (~${Math.round(r.distance_to_odp_meters || 0)}m). Terbitkan SPK atau langsung isi BAST untuk mengaktifkan sirkuit:
               </p>
 
-              <!-- Pilihan Penugasan Teknisi / Subkontrak Golden -->
+              <!-- Pilihan Penugasan Teknisi / Subkontrak Mitra Rekanan -->
               <div class="space-y-1.5 pt-2 border-t border-slate-200">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                   <label class="block text-[10px] font-mono font-bold uppercase text-slate-700">Tugaskan Teknisi Pelaksana:</label>
-                  <span class="text-[9.5px] font-mono text-slate-500">Pilih teknisi, lempar ke Bursa Job Pool, atau alihkan ke Mitra Golden</span>
+                  <span class="text-[9.5px] font-mono text-slate-500">Pilih teknisi, lempar ke Bursa Job Pool, atau alihkan ke Mitra Rekanan</span>
                 </div>
                 <select id="detail-assign-technician-select" onchange="onDetailAssignTechChange(this.value)" class="w-full bg-white border border-slate-300 text-slate-800 rounded-md px-3 py-2 text-xs font-sans outline-none focus:border-slate-900">
                   <option value="Job Pool (Terbuka)" selected>Job Pool (Terbuka) - Bursa Terbuka Seluruh Teknisi</option>
                   <option value="Tech-1">Tim Teknisi Lapangan 1</option>
                   <option value="Tech-2">Tim Teknisi Lapangan 2</option>
-                  <option value="Mitra Teknisi Golden">Mitra Teknisi Jartaplok Wholesale</option>
+                  <option value="Mitra Teknisi Rekanan">Mitra Teknisi Jartaplok Wholesale</option>
                 </select>
                 <div id="detail-assign-golden-note" class="hidden p-2.5 bg-indigo-50 border border-indigo-200 rounded-md text-[11px] text-indigo-900 flex items-start gap-2">
                   <i data-lucide="info" class="w-4 h-4 text-indigo-700 shrink-0 mt-0.5"></i>
                   <div>
-                    <strong class="font-mono font-bold">SKEMA SUBKONTRAK KEMITRAAN (GOLDEN NET):</strong>
+                    <strong class="font-mono font-bold">SKEMA SUBKONTRAK KEMITRAAN (MITRA REKANAN):</strong>
                     <p class="font-sans text-[10.5px] text-indigo-800 mt-0.5 leading-snug">
                       Pekerjaan dialihkan ke armada teknisi mitra rekanan sesuai kontrak kerjasama.
                     </p>
@@ -17603,7 +17577,7 @@
     function onDetailAssignTechChange(val) {
       const banner = document.getElementById('detail-assign-golden-note');
       if (banner) {
-        if (val && val.includes('Golden')) {
+        if (val && (val.includes('Golden') || val.includes('Mitra') || val.includes('Subkontrak') || val.includes('Rekanan'))) {
           banner.classList.remove('hidden');
         } else {
           banner.classList.add('hidden');
@@ -17614,7 +17588,7 @@
     function onDetailReassignTechChange(val) {
       const banner = document.getElementById('detail-reassign-golden-note');
       if (banner) {
-        if (val && val.includes('Golden')) {
+        if (val && (val.includes('Golden') || val.includes('Mitra') || val.includes('Subkontrak') || val.includes('Rekanan'))) {
           banner.classList.remove('hidden');
         } else {
           banner.classList.add('hidden');
@@ -17626,10 +17600,10 @@
       const select = document.getElementById('detail-reassign-technician-select');
       if (!select) return;
       const techName = select.value;
-      const isGolden = techName.includes('Golden');
+      const isMitra = techName.includes('Golden') || techName.includes('Mitra') || techName.includes('Subkontrak') || techName.includes('Rekanan');
       const isPool = techName.includes('Pool') || techName.includes('Terbuka');
-      const notes = isGolden 
-        ? 'Dialihkan ke Subkontrak Mitra Golden (OTC Rp 150.000)' 
+      const notes = isMitra 
+        ? 'Dialihkan ke Subkontrak Mitra Rekanan (OTC Rp 150.000)' 
         : (isPool ? 'Dilepaskan kembali ke Bursa Job Pool' : `Ditugaskan oleh NOC/Admin ke ${techName}`);
 
       try {
@@ -18591,7 +18565,7 @@
         if (reg.nearest_odp_code && reg.nearest_odp_code.includes('TIF')) providerId = 'TIF';
         else providerId = 'INTERNAL';
       }
-      let providerName = (odp && odp.provider_name) || (providerId.includes('TIF') ? 'PT Telkom Infrastruktur Indonesia' : 'PT GNET BIARO AKSES (Golden)');
+      let providerName = (odp && odp.provider_name) || (providerId.includes('TIF') || providerId.includes('TELKO') ? 'PT Telkom Infrastruktur Indonesia' : 'Mitra Jartaplok Wholesale');
 
       const provEl = document.getElementById('upgrade-current-provider');
       if (provEl) {
@@ -18878,8 +18852,8 @@
       const partners = (superUserJartaplokPartners && superUserJartaplokPartners.length > 0)
         ? superUserJartaplokPartners
         : [
-            { code: 'GNET-BIARO', name: 'Mitra Jartaplok Wholesale', service_type: 'SEWA_PORT_FO', max_distance_meters: 250 },
-            { code: 'TELKO-PYK', name: 'PT Telkom Infrastruktur Indonesia (TIF)', service_type: 'BITSTREAM', max_distance_meters: 150 }
+            { code: 'MITRA-1', name: 'Mitra Jartaplok Wholesale', service_type: 'SEWA_PORT_FO', max_distance_meters: 250 },
+            { code: 'TELKO-HQ', name: 'PT Telkom Infrastruktur Indonesia (TIF)', service_type: 'BITSTREAM', max_distance_meters: 150 }
           ];
 
       select.innerHTML = partners.map(p => {
@@ -18901,8 +18875,8 @@
       const partners = (superUserJartaplokPartners && superUserJartaplokPartners.length > 0)
         ? superUserJartaplokPartners
         : [
-            { code: 'GNET-BIARO', name: 'Mitra Jartaplok Wholesale', service_type: 'SEWA_PORT_FO', max_distance_meters: 250 },
-            { code: 'TELKO-PYK', name: 'PT Telkom Infrastruktur Indonesia (TIF)', service_type: 'BITSTREAM', max_distance_meters: 150 }
+            { code: 'MITRA-1', name: 'Mitra Jartaplok Wholesale', service_type: 'SEWA_PORT_FO', max_distance_meters: 250 },
+            { code: 'TELKO-HQ', name: 'PT Telkom Infrastruktur Indonesia (TIF)', service_type: 'BITSTREAM', max_distance_meters: 150 }
           ];
       const p = partners.find(x => x.code === partnerCode);
 
@@ -18943,8 +18917,8 @@
         const cleanCode = (partnerCode || '').replace(/[^a-zA-Z0-9]/g, '');
         odpInput.placeholder = `Misal: ODP-${cleanCode}-001`;
         if (!keepOdpValue) {
-          if (partnerCode === 'TELKO-PYK') {
-            odpInput.value = 'ODP-TIF-PYK-';
+          if (partnerCode === 'TELKO-HQ' || partnerCode === 'TELKO-PYK' || (partnerCode && partnerCode.startsWith('TELKO'))) {
+            odpInput.value = 'ODP-TIF-HQ-';
           } else {
             odpInput.value = `ODP-${partnerCode}-`;
           }
@@ -18957,15 +18931,15 @@
       document.getElementById('attach-odp-reg-id').value = regId;
       document.getElementById('attach-odp-regno-subtitle').innerText = `${regNo} • ${name}`;
 
-      let selectedPartner = 'TELKO-PYK';
+      let selectedPartner = 'TELKO-HQ';
       let regRecord = null;
       if (window.adminRegistrationsData) {
         regRecord = window.adminRegistrationsData.find(x => x.id === regId);
         if (regRecord && regRecord.partner_code) {
           selectedPartner = regRecord.partner_code;
         } else if (currentODP) {
-          if (currentODP.startsWith('ODP-TIF')) selectedPartner = 'TELKO-PYK';
-          else if (currentODP.startsWith('ODP-GNET')) selectedPartner = 'GNET-BIARO';
+          if (currentODP.startsWith('ODP-TIF') || currentODP.includes('TELKO')) selectedPartner = 'TELKO-HQ';
+          else if (currentODP.startsWith('ODP-GNET') || currentODP.includes('MITRA')) selectedPartner = 'MITRA-1';
         }
       }
 
@@ -18976,7 +18950,7 @@
         if (currentODP && currentODP.trim()) {
           odpInput.value = currentODP.trim();
         } else {
-          odpInput.value = selectedPartner === 'TELKO-PYK' ? 'ODP-TIF-PYK-' : `ODP-${selectedPartner}-`;
+          odpInput.value = (selectedPartner === 'TELKO-HQ' || selectedPartner === 'TELKO-PYK' || selectedPartner.startsWith('TELKO')) ? 'ODP-TIF-HQ-' : `ODP-${selectedPartner}-`;
         }
       }
 
@@ -19053,8 +19027,8 @@
           const partnerList = (superUserJartaplokPartners && superUserJartaplokPartners.length > 0)
             ? superUserJartaplokPartners
             : [
-                { code: 'GNET-BIARO', name: 'Mitra Jartaplok Wholesale' },
-                { code: 'TELKO-PYK', name: 'PT Telkom Infrastruktur Indonesia (TIF)' }
+                { code: 'MITRA-1', name: 'Mitra Jartaplok Wholesale' },
+                { code: 'TELKO-HQ', name: 'PT Telkom Infrastruktur Indonesia (TIF)' }
               ];
           const partnerObj = partnerList.find(x => x.code === partnerCode);
           const partnerName = partnerObj ? partnerObj.name : partnerCode;
@@ -19270,14 +19244,14 @@
       if (typeof superUserJartaplokPartners !== 'undefined' && Array.isArray(superUserJartaplokPartners)) {
         superUserJartaplokPartners.forEach(p => {
           if (p && p.code) {
-            const code = p.code === 'TIF' ? 'TELKO-PYK' : p.code;
+            const code = p.code;
             provMap.set(code, p.name || code);
           }
         });
       }
 
       (adminODPsList || []).forEach(o => {
-        const pid = o.provider_id || 'GNET-BIARO';
+        const pid = o.provider_id || 'MITRA-1';
         const pname = o.provider_name;
         if (pid && pname) {
           if (!provMap.has(pid)) {
@@ -22474,10 +22448,6 @@
             if (currentBranch !== 'ALL') {
               list = list.filter(r => {
                 if (r.branch_code) return r.branch_code === currentBranch;
-                const odp = (r.nearest_odp_code || '').toUpperCase();
-                const addr = (r.address || '').toUpperCase();
-                if (currentBranch === 'PYK') return !odp.includes('PAPUA') && !addr.includes('PAPUA');
-                if (currentBranch === 'PAPUA') return odp.includes('PAPUA') || addr.includes('PAPUA');
                 return true;
               });
             }
@@ -22510,10 +22480,7 @@
             let list = json.data;
             if (currentBranch !== 'ALL') {
               list = list.filter(s => {
-                const code = (s.code || '').toUpperCase();
-                const name = (s.name || '').toUpperCase();
-                if (currentBranch === 'PYK') return !code.includes('PAPUA') && !name.includes('PAPUA');
-                if (currentBranch === 'PAPUA') return code.includes('PAPUA') || name.includes('PAPUA');
+                if (s.branch_code) return s.branch_code === currentBranch;
                 return true;
               });
             }
@@ -22704,13 +22671,13 @@
       const isBranchManager = role === 'branch_manager';
 
       let branch = 'ALL';
-      let bCode = 'PAPUA';
+      let bCode = 'HQ';
       if (isBranchManager) {
         try {
           const bData = JSON.parse(localStorage.getItem('branch_manager_auth') || '{}');
-          bCode = bData.branch_code || 'PAPUA';
+          bCode = bData.branch_code || 'HQ';
           branch = bCode;
-        } catch(e) { branch = 'PAPUA'; }
+        } catch(e) { branch = 'HQ'; }
       } else {
         branch = localStorage.getItem('selected_branch_filter') || window.activeBranchCode || 'ALL';
       }
@@ -22770,9 +22737,9 @@
           tbody.innerHTML = adminPartnersList.map((p, idx) => {
             const pBranch = p.branch_code || 'ALL';
             let branchBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200">PUSAT / ALL</span>`;
-            if (pBranch === 'PAPUA') {
-              branchBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-sky-50 text-sky-700 border border-sky-200">PAPUA</span>`;
-            } else if (pBranch === 'PYK' || pBranch === 'CABANG-1') {
+            if (pBranch === 'HQ' || pBranch === 'PUSAT') {
+              branchBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-sky-50 text-sky-700 border border-sky-200">${pBranch}</span>`;
+            } else if (pBranch !== 'ALL') {
               branchBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">${pBranch}</span>`;
             }
 
@@ -22941,7 +22908,7 @@
       const codeInput = document.getElementById('add-partner-code');
       if (codeInput) {
         codeInput.value = '';
-        codeInput.placeholder = isBranchManager ? 'Contoh: RIKO-' + bCode : 'Contoh: RIKO-PYK';
+        codeInput.placeholder = isBranchManager ? 'Contoh: RIKO-' + bCode : 'Contoh: RIKO-HQ';
       }
 
       const rateInput = document.getElementById('add-partner-rate');
@@ -23454,8 +23421,8 @@
       const regUpper = r.partner_code.toUpperCase().trim();
       const partnerUpper = partner.code.toUpperCase().trim();
       if (regUpper === partnerUpper) return true;
-      const rc = regUpper.replace(/[-_]?(PYK|TECH|SALES|OFFICIAL)$/, '');
-      const pc = partnerUpper.replace(/[-_]?(PYK|TECH|SALES|OFFICIAL)$/, '');
+      const rc = regUpper.replace(/[-_]?(PYK|HQ|TECH|SALES|OFFICIAL)$/, '');
+      const pc = partnerUpper.replace(/[-_]?(PYK|HQ|TECH|SALES|OFFICIAL)$/, '');
       return rc === pc || regUpper.startsWith(pc) || partnerUpper.startsWith(rc);
     }
 
@@ -24902,12 +24869,12 @@
           const reg = wo.registration || {};
           const odp = (reg.nearest_odp_code || '').toUpperCase();
           const addr = (reg.address || '').toUpperCase();
-          if (branchFilter === 'PYK') {
+          if (branchFilter === 'PYK' || branchFilter === 'HQ') {
             return !odp.includes('PAPUA') && !addr.includes('PAPUA');
           } else if (branchFilter === 'PAPUA') {
             return odp.includes('PAPUA') || addr.includes('PAPUA');
-          } else if (branchFilter === 'GNET-BIARO') {
-            return odp.includes('BIA') || odp.includes('BIO') || addr.includes('BIARO');
+          } else if (branchFilter === 'GNET-BIARO' || branchFilter === 'MITRA-1' || branchFilter.startsWith('MITRA')) {
+            return odp.includes('BIA') || odp.includes('BIO') || addr.includes('BIARO') || odp.includes('MITRA');
           }
           return true;
         });
@@ -25049,7 +25016,7 @@
         const isCompleted = wo.status === 'COMPLETED' || reg.status === 'ACTIVE';
         const isPool = isWorkOrderPool(wo);
         const isMine = isWorkOrderMine(wo, myTechName);
-        const isGoldenSubcontract = Boolean(wo.technician_name && wo.technician_name.includes('Golden'));
+        const isGoldenSubcontract = Boolean(wo.technician_name && (wo.technician_name.includes('Golden') || wo.technician_name.includes('Mitra') || wo.technician_name.includes('Subkontrak') || wo.technician_name.includes('Rekanan')));
 
         // PIC Lapangan dan Nomor Kontak
         const picName = reg.site_pic_name || reg.full_name || 'Pelanggan';
@@ -25071,7 +25038,7 @@
         if (isPool) {
           techBadgeHtml = `<span class="px-2 py-0.5 rounded text-[9.5px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300">BURSA JOB POOL (TERBUKA)</span>`;
         } else if (isGoldenSubcontract) {
-          techBadgeHtml = `<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">SUBKONTRAK GOLDEN</span>`;
+          techBadgeHtml = `<span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">SUBKONTRAK MITRA</span>`;
         } else if (isMine) {
           techBadgeHtml = `<span class="px-1.5 py-0.5 rounded text-[9.5px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">TUGAS SAYA (${wo.technician_name})</span>`;
         } else {
@@ -26173,10 +26140,10 @@
           selBranch.value = localStorage.getItem('selected_branch_filter') || 'ALL';
         }
       } else if (activeRole === 'branch_manager') {
-        let bCode = 'PYK';
+        let bCode = 'HQ';
         try {
           const bData = JSON.parse(localStorage.getItem('branch_manager_auth') || '{}');
-          bCode = bData.branch_code || 'PYK';
+          bCode = bData.branch_code || 'HQ';
         } catch(e) {}
         if (branchSwitcher) branchSwitcher.classList.add('hidden');
         if (branchBadge) {
@@ -26223,10 +26190,10 @@
         }
         if (sideBranchTag) sideBranchTag.innerText = currentBranch;
       } else if (activeRole === 'branch_manager') {
-        let bCode = 'PYK';
+        let bCode = 'HQ';
         try {
           const bData = JSON.parse(localStorage.getItem('branch_manager_auth') || '{}');
-          bCode = bData.branch_code || 'PYK';
+          bCode = bData.branch_code || 'HQ';
         } catch(e) {}
         localStorage.setItem('selected_branch_filter', bCode);
         if (sideBranchBox) sideBranchBox.classList.remove('hidden');
@@ -26558,7 +26525,7 @@
         localStorage.setItem('finance_auth', JSON.stringify({ role: 'Staf Keuangan & Billing', name: data.full_name, username: data.username }));
       }
       if (isSuper || roles.includes('BRANCH_MANAGER')) {
-        const branchCode = (data.branch_code || (data.branch_id === 2 ? 'PAPUA' : 'PYK')).toUpperCase();
+        const branchCode = (data.branch_code || (data.branch_id === 2 ? 'PAPUA' : 'HQ')).toUpperCase();
         localStorage.setItem('branch_manager_auth', JSON.stringify({ role: 'Kepala Cabang', name: data.full_name, username: data.username, branch_code: branchCode }));
       }
       if (isSuper || roles.includes('TECHNICIAN')) {
@@ -26566,11 +26533,11 @@
       }
       if (isSuper || roles.includes('SALES')) {
         let salesCode = (data.username || '').toUpperCase();
-        if (salesCode === 'FAJAR') salesCode = 'FAJAR-PYK';
+        if (salesCode === 'FAJAR') salesCode = 'FAJAR-HQ';
         localStorage.setItem('sales_auth', JSON.stringify({ code: salesCode, name: data.full_name, contact_phone: data.contact_phone || '081277889901', commission_rate: 50000, token: data.token }));
       }
       if (isSuper || roles.includes('JARTAPLOK')) {
-        localStorage.setItem('jartaplok_auth', JSON.stringify({ role: 'Rekanan JARTAPLOK', name: data.full_name || 'PT. GNET BIARO AKSES', username: data.username, apiKey: 'jartaplok2026' }));
+        localStorage.setItem('jartaplok_auth', JSON.stringify({ role: 'Rekanan JARTAPLOK', name: data.full_name || 'Mitra Jartaplok Wholesale', username: data.username, apiKey: 'jartaplok2026' }));
       }
 
       // Determine active role according to current portal subdomain
@@ -26960,7 +26927,7 @@
         });
         const json = await res.json();
         if (json.success && json.data) {
-          localStorage.setItem('jartaplok_auth', JSON.stringify({ role: 'Rekanan JARTAPLOK', name: json.data.partner_name || 'PT. GNET BIARO AKSES', apiKey: password, username }));
+          localStorage.setItem('jartaplok_auth', JSON.stringify({ role: 'Rekanan JARTAPLOK', name: json.data.partner_name || 'Mitra Jartaplok Wholesale', apiKey: password, username }));
           localStorage.setItem('active_portal_role', 'jartaplok');
           updateNavbarPortalBadge();
           switchTab('jartaplok');
@@ -27335,7 +27302,7 @@
         });
         const json = await res.json();
         if (json.success && json.data) {
-          localStorage.setItem('jartaplok_auth', JSON.stringify({ role: 'Rekanan JARTAPLOK', name: json.data.partner_name || 'PT. GNET BIARO AKSES', apiKey: pin, username }));
+          localStorage.setItem('jartaplok_auth', JSON.stringify({ role: 'Rekanan JARTAPLOK', name: json.data.partner_name || 'Mitra Jartaplok Wholesale', apiKey: pin, username }));
           localStorage.setItem('active_portal_role', 'jartaplok');
           updateNavbarPortalBadge();
           initJartaplokPortal();
@@ -28268,7 +28235,7 @@
       document.getElementById('edit-jp-phone').value = partner.contact_phone || '';
       document.getElementById('edit-jp-coverage').value = partner.coverage_area || '';
 
-      const st = partner.service_type || ((partner.code === 'TELKO-PYK' || partner.code === 'TIF' || (partner.name && partner.name.includes('Telkom'))) ? 'BITSTREAM' : 'SEWA_PORT_FO');
+      const st = partner.service_type || ((partner.code === 'TELKO-PYK' || partner.code === 'TELKO-HQ' || (partner.code && partner.code.startsWith('TELKO')) || partner.code === 'TIF' || (partner.name && partner.name.includes('Telkom'))) ? 'BITSTREAM' : 'SEWA_PORT_FO');
       document.getElementById('edit-jp-service-type').value = st;
       
       const policy = partner.suspension_policy || (st === 'BITSTREAM' ? 'DISALLOWED' : 'ALLOWED_WITH_WAIVER');
@@ -28291,7 +28258,7 @@
 
       const branchSel = document.getElementById('edit-jp-branch');
       if (branchSel) {
-        branchSel.value = partner.branch_code || (partner.code && partner.code.includes('PAPUA') ? 'PAPUA' : (partner.branch_id ? 'PYK' : 'ALL'));
+        branchSel.value = partner.branch_code || (partner.code && partner.code.includes('PAPUA') ? 'PAPUA' : (partner.branch_id ? 'HQ' : 'ALL'));
       }
 
       syncServiceTypePlaceholder('edit');
@@ -28424,7 +28391,7 @@
 
       const codeInput = document.getElementById('jp-code');
       if (codeInput) {
-        codeInput.placeholder = isBranchManager ? 'Contoh: PAPUA-FO atau TIF-' + bCode : 'Contoh: TIF atau TELKO-PYK';
+        codeInput.placeholder = isBranchManager ? 'Contoh: PAPUA-FO atau TIF-' + bCode : 'Contoh: TIF atau TELKO-HQ';
       }
 
       const covInput = document.getElementById('jp-coverage');
@@ -28595,7 +28562,7 @@
           if (found.rate_200m) r200 = found.rate_200m;
           if (found.rate_300m) r300 = found.rate_300m;
         }
-      } else if (partnerCode === 'TELKO-PYK' || partnerCode === 'TELKOM') {
+      } else if (partnerCode === 'TELKO-PYK' || partnerCode === 'TELKO-HQ' || partnerCode === 'TELKOM' || (partnerCode && partnerCode.startsWith('TELKO'))) {
         partnerName = 'PT TELKOM INFRASTRUKTUR INDONESIA';
         partnerDesc = 'Penyedia Layanan Akses Bitstream FTTH Wholesale';
         pricingModel = 'Bitstream Wholesale (Zona-2 Sumatera)';
@@ -28633,7 +28600,7 @@
 
       if (elPartName) elPartName.innerText = partnerName;
       if (elPartType) elPartType.innerText = partnerDesc;
-      if (elPartDesc) elPartDesc.innerText = partnerCode === 'TELKO-PYK' ? 'Wholesale Bitstream Last-Mile & Transport Infrastructure' : 'Wholesale Packet Tiering Bandwidth FTTH Last-Mile';
+      if (elPartDesc) elPartDesc.innerText = (partnerCode === 'TELKO-PYK' || partnerCode === 'TELKO-HQ' || (partnerCode && partnerCode.startsWith('TELKO'))) ? 'Wholesale Bitstream Last-Mile & Transport Infrastructure' : 'Wholesale Packet Tiering Bandwidth FTTH Last-Mile';
       if (elDateIssued) elDateIssued.innerText = `Tanggal: ${dateFull}`;
       if (elInvNo) elInvNo.innerText = docNo;
       if (elInvPeriod) elInvPeriod.innerText = periodStr;
@@ -28655,7 +28622,7 @@
       if (elLampPartName) elLampPartName.innerText = partnerName;
       if (elLampParaf) elLampParaf.innerText = `Paraf ${partnerName}`;
 
-      const isBitstream = (partnerCode === 'TELKO-PYK' || partnerCode === 'TELKOM');
+      const isBitstream = (partnerCode === 'TELKO-PYK' || partnerCode === 'TELKO-HQ' || partnerCode === 'TELKOM' || (partnerCode && partnerCode.startsWith('TELKO')));
       const defaultRate = isBitstream ? 154000 : r50;
 
       // Siapkan data 25 wholesale ports (menggunakan portsData dari database, atau fallback realistic Packet Tiers)
@@ -28775,7 +28742,7 @@
         if (found && found.suspension_policy) {
           suspensionPolicy = found.suspension_policy;
         }
-      } else if (partnerCode === 'TELKO-PYK' || partnerCode === 'TELKOM') {
+      } else if (partnerCode === 'TELKO-PYK' || partnerCode === 'TELKO-HQ' || partnerCode === 'TELKOM' || (partnerCode && partnerCode.startsWith('TELKO'))) {
         suspensionPolicy = 'DISALLOWED';
       }
       if (billingData.suspension_policy) {
@@ -28961,8 +28928,8 @@
           const isWaived = isSusp && (suspensionPolicy === 'ALLOWED_WITH_WAIVER');
           const fee = (p.prorated_fee !== undefined && p.prorated_fee !== null) ? Number(p.prorated_fee) : (isWaived ? 0 : Number(p.monthly_rental || defaultRate));
           const svc = p.tier_name || p.service_name || (isBitstream ? 'Bitstream 50M' : 'Paket Tier 50M');
-          const cktId = p.circuit_id || (p.odp_code && p.port_number ? `CKT-${p.odp_code}-P${String(p.port_number).padStart(2, '0')}` : `CKT-BIA-${String(idx + 1).padStart(4, '0')}`);
-          const odpCode = p.odp_code || `ODP-BIA-${String(Math.floor(idx / 8) + 1).padStart(2, '0')}`;
+          const cktId = p.circuit_id || (p.odp_code && p.port_number ? `CKT-${p.odp_code}-P${String(p.port_number).padStart(2, '0')}` : `CKT-PORT-${String(idx + 1).padStart(4, '0')}`);
+          const odpCode = p.odp_code || `ODP-HQ-${String(Math.floor(idx / 8) + 1).padStart(2, '0')}`;
           const odpName = p.odp_name || odpCode;
           const portNum = p.port_number || ((idx % 8) + 1);
           const actDays = p.active_days !== undefined ? p.active_days : (isSusp ? 0 : 30);
@@ -29023,7 +28990,7 @@
       }
 
       // Tentukan target partner
-      let targetPartnerCode = forcedPartnerCode || (isPartnerPortal ? (partnerAuth.code || 'GNET-BIARO') : (currentRekonPartnerMode || 'GNET-BIARO'));
+      let targetPartnerCode = forcedPartnerCode || (isPartnerPortal ? (partnerAuth.code || 'MITRA-1') : (currentRekonPartnerMode || 'MITRA-1'));
       currentRekonPartnerMode = targetPartnerCode;
 
       // Sinkronkan UI Switcher / Badge
@@ -29063,7 +29030,7 @@
         let pKey = 'jartaplok2026';
         if (partnerAuth && partnerAuth.api_key) {
           pKey = partnerAuth.api_key;
-        } else if (targetPartnerCode === 'TELKO-PYK') {
+        } else if (targetPartnerCode === 'TELKO-PYK' || targetPartnerCode === 'TELKO-HQ' || (targetPartnerCode && targetPartnerCode.startsWith('TELKO'))) {
           pKey = 'jartap_telko_pyk_260922';
         }
         headers['X-Partner-Key'] = pKey;

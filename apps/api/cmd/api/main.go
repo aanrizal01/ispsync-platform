@@ -674,10 +674,9 @@ func main() {
 			authHandler.UserRoutes(r, authMiddleware)
 		})
 
-		// Available Roles
+		// Available Roles & RBAC Manager
 		r.Route("/roles", func(r chi.Router) {
-			r.Use(authMiddleware.Authenticate)
-			r.With(authMiddleware.RequirePermission("admin:users")).Get("/", authHandler.ListRoles)
+			authHandler.RoleRoutes(r, authMiddleware)
 		})
 	})
 

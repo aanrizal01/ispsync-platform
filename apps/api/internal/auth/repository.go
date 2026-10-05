@@ -364,12 +364,13 @@ func (r *Repository) DeleteUser(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-// ListRoles returns all system roles available for assignment.
+// ListRoles returns all roles with their assigned permissions and active user count.
 func (r *Repository) ListRoles(ctx context.Context) ([]Role, error) {
 	const q = `
-		SELECT id, name, slug, COALESCE(description, '')
-		FROM roles
-		ORDER BY name ASC
+		SELECT r.id, r.name, r.slug, COALESCE(r.description, ''), r.is_system,
+		       (SELECT COUNT(*) FROM user_roles ur WHERE ur.role_id = r.id) as user_count
+		FROM roles r
+		ORDER BY r.is_system DESC, r.name ASC
 	`
 	rows, err := r.db.Query(ctx, q)
 	if err != nil {
@@ -378,12 +379,163 @@ func (r *Repository) ListRoles(ctx context.Context) ([]Role, error) {
 	defer rows.Close()
 
 	var roles []Role
+	roleMap := make(map[uuid.UUID]int)
 	for rows.Next() {
 		var role Role
-		if err := rows.Scan(&role.ID, &role.Name, &role.Slug, &role.Description); err != nil {
+		if err := rows.Scan(&role.ID, &role.Name, &role.Slug, &role.Description, &role.IsSystem, &role.UserCount); err != nil {
 			return nil, fmt.Errorf("scan role: %w", err)
 		}
+		role.Permissions = []Permission{}
+		roleMap[role.ID] = len(roles)
 		roles = append(roles, role)
 	}
-	return roles, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Load permissions for roles
+	const pq = `
+		SELECT rp.role_id, p.id, p.name, p.slug, p.module, p.action
+		FROM role_permissions rp
+		JOIN permissions p ON p.id = rp.permission_id
+		ORDER BY p.module ASC, p.name ASC
+	`
+	pRows, err := r.db.Query(ctx, pq)
+	if err == nil {
+		defer pRows.Close()
+		for pRows.Next() {
+			var roleID uuid.UUID
+			var p Permission
+			if err := pRows.Scan(&roleID, &p.ID, &p.Name, &p.Slug, &p.Module, &p.Action); err == nil {
+				if idx, ok := roleMap[roleID]; ok {
+					roles[idx].Permissions = append(roles[idx].Permissions, p)
+				}
+			}
+		}
+	}
+
+	return roles, nil
+}
+
+// ListPermissions returns all available system permissions grouped by module.
+func (r *Repository) ListPermissions(ctx context.Context) ([]Permission, error) {
+	const q = `
+		SELECT id, name, slug, module, action
+		FROM permissions
+		ORDER BY module ASC, name ASC
+	`
+	rows, err := r.db.Query(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("list permissions: %w", err)
+	}
+	defer rows.Close()
+
+	var perms []Permission
+	for rows.Next() {
+		var p Permission
+		if err := rows.Scan(&p.ID, &p.Name, &p.Slug, &p.Module, &p.Action); err != nil {
+			return nil, fmt.Errorf("scan permission: %w", err)
+		}
+		perms = append(perms, p)
+	}
+	return perms, rows.Err()
+}
+
+// CreateRole creates a new custom role with associated permissions.
+func (r *Repository) CreateRole(ctx context.Context, name, slug, description string, permIDs []uuid.UUID) (*Role, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	var role Role
+	role.Name = name
+	role.Slug = slug
+	role.Description = description
+	role.IsSystem = false
+	role.Permissions = []Permission{}
+
+	const insertRole = `
+		INSERT INTO roles (name, slug, description, is_system, created_at, updated_at)
+		VALUES ($1, $2, $3, FALSE, NOW(), NOW())
+		RETURNING id
+	`
+	if err := tx.QueryRow(ctx, insertRole, name, slug, description).Scan(&role.ID); err != nil {
+		return nil, fmt.Errorf("insert role: %w", err)
+	}
+
+	for _, pid := range permIDs {
+		const insertPerm = `
+			INSERT INTO role_permissions (role_id, permission_id)
+			VALUES ($1, $2)
+			ON CONFLICT DO NOTHING
+		`
+		if _, err := tx.Exec(ctx, insertPerm, role.ID, pid); err != nil {
+			return nil, fmt.Errorf("insert role permission: %w", err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("commit tx: %w", err)
+	}
+	return &role, nil
+}
+
+// UpdateRole updates role name, description, and permissions.
+func (r *Repository) UpdateRole(ctx context.Context, id uuid.UUID, name, description string, permIDs []uuid.UUID) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	const updateRole = `
+		UPDATE roles
+		SET name = $1, description = $2, updated_at = NOW()
+		WHERE id = $3
+	`
+	if _, err := tx.Exec(ctx, updateRole, name, description, id); err != nil {
+		return fmt.Errorf("update role: %w", err)
+	}
+
+	// Replace permissions
+	if _, err := tx.Exec(ctx, `DELETE FROM role_permissions WHERE role_id = $1`, id); err != nil {
+		return fmt.Errorf("delete role permissions: %w", err)
+	}
+
+	for _, pid := range permIDs {
+		const insertPerm = `
+			INSERT INTO role_permissions (role_id, permission_id)
+			VALUES ($1, $2)
+			ON CONFLICT DO NOTHING
+		`
+		if _, err := tx.Exec(ctx, insertPerm, id, pid); err != nil {
+			return fmt.Errorf("insert role permission: %w", err)
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
+// DeleteRole deletes a custom role if not system and not assigned to users.
+func (r *Repository) DeleteRole(ctx context.Context, id uuid.UUID) error {
+	var isSystem bool
+	var userCount int
+	err := r.db.QueryRow(ctx, `
+		SELECT is_system, (SELECT COUNT(*) FROM user_roles WHERE role_id = $1)
+		FROM roles WHERE id = $1
+	`, id).Scan(&isSystem, &userCount)
+	if err != nil {
+		return fmt.Errorf("peran tidak ditemukan")
+	}
+	if isSystem {
+		return fmt.Errorf("peran sistem bawaan (system role) tidak dapat dihapus")
+	}
+	if userCount > 0 {
+		return fmt.Errorf("peran ini masih digunakan oleh %d pengguna aktif. Pindahkan pengguna ke peran lain terlebih dahulu", userCount)
+	}
+
+	_, err = r.db.Exec(ctx, `DELETE FROM roles WHERE id = $1`, id)
+	return err
 }

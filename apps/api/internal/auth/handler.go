@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"encoding/json"
 	"log/slog"
 	"net/http"
 
@@ -304,6 +305,18 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	middleware.JSON(w, http.StatusOK, map[string]string{"message": "User deleted successfully"})
 }
 
+// RoleRoutes registers role management routes.
+func (h *Handler) RoleRoutes(r chi.Router, authMW *Middleware) {
+	r.Group(func(r chi.Router) {
+		r.Use(authMW.Authenticate)
+		r.With(authMW.RequirePermission("admin:users")).Get("/", h.ListRoles)
+		r.With(authMW.RequirePermission("admin:users")).Get("/permissions", h.ListPermissions)
+		r.With(authMW.RequirePermission("admin:users")).Post("/", h.CreateRole)
+		r.With(authMW.RequirePermission("admin:users")).Put("/{id}", h.UpdateRole)
+		r.With(authMW.RequirePermission("admin:users")).Delete("/{id}", h.DeleteRole)
+	})
+}
+
 // ListRoles handles GET /api/v1/users/roles or GET /api/v1/roles
 func (h *Handler) ListRoles(w http.ResponseWriter, r *http.Request) {
 	roles, err := h.service.ListRoles(r.Context())
@@ -314,5 +327,81 @@ func (h *Handler) ListRoles(w http.ResponseWriter, r *http.Request) {
 
 	middleware.JSON(w, http.StatusOK, map[string]interface{}{
 		"roles": roles,
+	})
+}
+
+// ListPermissions handles GET /api/v1/roles/permissions
+func (h *Handler) ListPermissions(w http.ResponseWriter, r *http.Request) {
+	perms, err := h.service.ListPermissions(r.Context())
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusOK, map[string]interface{}{
+		"permissions": perms,
+	})
+}
+
+// CreateRole handles POST /api/v1/roles
+func (h *Handler) CreateRole(w http.ResponseWriter, r *http.Request) {
+	var req CreateRoleRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		middleware.JSONError(w, h.logger, apperrors.BadRequest("Format payload peran tidak valid"))
+		return
+	}
+
+	role, err := h.service.CreateRole(r.Context(), req)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusCreated, role)
+}
+
+// UpdateRole handles PUT /api/v1/roles/{id}
+func (h *Handler) UpdateRole(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		middleware.JSONError(w, h.logger, apperrors.BadRequest("ID peran tidak valid"))
+		return
+	}
+
+	var req UpdateRoleRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		middleware.JSONError(w, h.logger, apperrors.BadRequest("Format payload peran tidak valid"))
+		return
+	}
+
+	if err := h.service.UpdateRole(r.Context(), id, req); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Peran berhasil diperbarui",
+	})
+}
+
+// DeleteRole handles DELETE /api/v1/roles/{id}
+func (h *Handler) DeleteRole(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		middleware.JSONError(w, h.logger, apperrors.BadRequest("ID peran tidak valid"))
+		return
+	}
+
+	if err := h.service.DeleteRole(r.Context(), id); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Peran berhasil dihapus",
 	})
 }

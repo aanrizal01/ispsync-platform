@@ -813,7 +813,7 @@ export default function AdminSettingsPage() {
                 type="text"
                 value={settings.brandName}
                 onChange={(e) => setSettings({ ...settings, brandName: e.target.value })}
-                placeholder="Contoh: ISPMU FIBER"
+                placeholder="Contoh: NUSANET FIBER"
                 className="w-full px-3.5 py-2 text-xs font-bold border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
               />
             </div>
@@ -4199,7 +4199,7 @@ add dst-host=tripay.co.id action=allow comment="Tripay Payment Gateway"`}
                   type="text"
                   value={fibergridSettings.tenant_code || ""}
                   onChange={(e) => setFibergridSettings({ ...fibergridSettings, tenant_code: e.target.value })}
-                  placeholder="Contoh: ispku, ispmu, dev (kosongkan bila mengkoneksikan server mandiri)"
+                  placeholder="Contoh: tenant-01, mitra-corp, dev (kosongkan bila mengkoneksikan server mandiri)"
                   className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition"
                 />
                 <p className="text-[11px] text-slate-400">

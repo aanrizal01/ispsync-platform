@@ -27,11 +27,7 @@ CREATE INDEX IF NOT EXISTS idx_plans_package_group ON plans (package_group);
 -- Seed initial standard cluster groups
 INSERT INTO plan_groups (id, name, code, description, cluster_code, cluster_area, is_active)
 VALUES 
-    ('b0000001-0000-0000-0000-000000000000', 'Group Standar / Umum', 'GRP-DEFAULT', 'Paket standar ritel nasional GoGiga', '000', 'Umum', true),
-    ('b0000002-0000-0000-0000-000000000001', 'Cluster 001 - Biaro & Agam', 'GRP-001', 'Paket khusus wilayah coverage Cluster 001 Golden Net Biaro', '001', 'Golden Net Biaro', true),
-    ('b0000003-0000-0000-0000-000000000002', 'Cluster 002 - Payakumbuh', 'GRP-002', 'Paket khusus wilayah coverage Cluster 002 Payakumbuh', '002', 'Golden Payakumbuh', true),
-    ('b0000004-0000-0000-0000-000000000003', 'Cluster 003 - Sungai Geringging', 'GRP-003', 'Paket khusus wilayah coverage Cluster 003 Sungai Geringging', '003', 'Golden Sungai Geringging', true),
-    ('b0000005-0000-0000-0000-000000000004', 'Cluster 004 - Harau (Koto Tuo)', 'GRP-004', 'Paket khusus wilayah coverage Cluster 004 Harau / Kantor Pusat', '004', 'Harau', true)
+    ('b0000001-0000-0000-0000-000000000000', 'Group Standar / Umum', 'GRP-DEFAULT', 'Paket standar retail nasional', '000', 'Nasional', true)
 ON CONFLICT (code) DO NOTHING;
 
 -- Default all existing plans to GRP-DEFAULT

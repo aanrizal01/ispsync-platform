@@ -29,7 +29,9 @@ type Role struct {
 	Name        string       `json:"name"`
 	Slug        string       `json:"slug"`
 	Description string       `json:"description"`
-	Permissions []Permission `json:"permissions,omitempty"`
+	IsSystem    bool         `json:"is_system"`
+	UserCount   int          `json:"user_count"`
+	Permissions []Permission `json:"permissions"`
 }
 
 // Permission represents a granular system permission.
@@ -133,4 +135,19 @@ type UpdateUserRequest struct {
 // AdminResetPasswordRequest is the payload for PUT /users/{id}/password.
 type AdminResetPasswordRequest struct {
 	NewPassword string `json:"new_password" validate:"required,min=8"`
+}
+
+// CreateRoleRequest is the payload for POST /roles.
+type CreateRoleRequest struct {
+	Name          string      `json:"name" validate:"required,min=2,max=100"`
+	Slug          string      `json:"slug" validate:"omitempty,max=50"`
+	Description   string      `json:"description"`
+	PermissionIDs []uuid.UUID `json:"permission_ids"`
+}
+
+// UpdateRoleRequest is the payload for PUT /roles/{id}.
+type UpdateRoleRequest struct {
+	Name          string      `json:"name" validate:"required,min=2,max=100"`
+	Description   string      `json:"description"`
+	PermissionIDs []uuid.UUID `json:"permission_ids"`
 }

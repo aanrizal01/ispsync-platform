@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { paymentApi, type Payment, type CreateManualPaymentInput } from "@/lib/api/payments";
 import { billingApi, type Invoice } from "@/lib/api/billing";
 import { customerApi, type Customer } from "@/lib/api/customers";
@@ -171,15 +172,23 @@ export default function PaymentsPage() {
             Catatan transaksi pembayaran tunai, transfer, dan gateway (Midtrans / QRIS)
           </p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm transition-colors shadow-sm"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Catat Pembayaran Manual
-        </button>
+        <div className="flex items-center gap-2.5">
+          <Link
+            href="/admin/pos"
+            className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-cyan-400 font-bold px-4 py-2.5 rounded-lg text-sm transition shadow-sm border border-slate-700"
+          >
+            <span>🧾 Buka Loket Kasir POS</span>
+          </Link>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm transition-colors shadow-sm"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Catat Pembayaran Manual
+          </button>
+        </div>
       </div>
 
       {/* Metrics */}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -391,4 +392,38 @@ func (s *Service) DeleteUser(ctx context.Context, id uuid.UUID, callerEmail stri
 // ListRoles returns available system roles.
 func (s *Service) ListRoles(ctx context.Context) ([]Role, error) {
 	return s.repo.ListRoles(ctx)
+}
+
+// ListPermissions returns all available system permissions.
+func (s *Service) ListPermissions(ctx context.Context) ([]Permission, error) {
+	return s.repo.ListPermissions(ctx)
+}
+
+// CreateRole creates a new custom role.
+func (s *Service) CreateRole(ctx context.Context, req CreateRoleRequest) (*Role, error) {
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		return nil, apperrors.BadRequest("Nama peran wajib diisi")
+	}
+	slug := strings.TrimSpace(req.Slug)
+	if slug == "" {
+		slug = strings.ToLower(strings.ReplaceAll(name, " ", "_"))
+	}
+	slug = strings.ToLower(regexp.MustCompile(`[^a-zA-Z0-9_-]`).ReplaceAllString(slug, "_"))
+
+	return s.repo.CreateRole(ctx, name, slug, strings.TrimSpace(req.Description), req.PermissionIDs)
+}
+
+// UpdateRole updates an existing role.
+func (s *Service) UpdateRole(ctx context.Context, id uuid.UUID, req UpdateRoleRequest) error {
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		return apperrors.BadRequest("Nama peran wajib diisi")
+	}
+	return s.repo.UpdateRole(ctx, id, name, strings.TrimSpace(req.Description), req.PermissionIDs)
+}
+
+// DeleteRole deletes a role.
+func (s *Service) DeleteRole(ctx context.Context, id uuid.UUID) error {
+	return s.repo.DeleteRole(ctx, id)
 }

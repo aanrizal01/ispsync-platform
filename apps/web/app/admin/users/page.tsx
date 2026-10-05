@@ -264,6 +264,29 @@ export default function UsersManagementPage() {
         </div>
       </div>
 
+      {/* Navigation Sub-Tabs */}
+      <div className="flex items-center border-b border-slate-200 gap-2">
+        <button
+          className="px-4 py-2.5 text-xs font-bold text-blue-600 border-b-2 border-blue-600 transition flex items-center gap-2"
+        >
+          <Users className="w-4 h-4" />
+          Daftar Pengguna &amp; Staf
+          <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-blue-100 text-blue-700 font-mono font-bold">
+            {displayedUsers.length}
+          </span>
+        </button>
+        <Link
+          href="/admin/roles"
+          className="px-4 py-2.5 text-xs font-semibold text-slate-500 hover:text-slate-800 border-b-2 border-transparent transition flex items-center gap-2"
+        >
+          <Shield className="w-4 h-4" />
+          Tingkatan Peran (Role Manager)
+          <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-600 font-mono font-bold">
+            {roles.length}
+          </span>
+        </Link>
+      </div>
+
       {/* Notifications */}
       {actionSuccess && (
         <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-emerald-800 text-sm">
@@ -315,7 +338,7 @@ export default function UsersManagementPage() {
           </div>
         </div>
 
-        <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-2xs">
+        <div className="p-5 bg-white border border-slate-200 rounded-2xl shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tingkatan Peran (Roles)</p>
@@ -324,6 +347,14 @@ export default function UsersManagementPage() {
             <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
               <Shield className="w-5 h-5" />
             </div>
+          </div>
+          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-end">
+            <Link
+              href="/admin/roles"
+              className="text-[11px] font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1 transition"
+            >
+              <span>Kelola Hak Akses &rarr;</span>
+            </Link>
           </div>
         </div>
       </div>

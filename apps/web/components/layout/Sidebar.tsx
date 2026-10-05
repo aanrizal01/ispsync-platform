@@ -12,6 +12,7 @@ import {
   Package,
   FileText,
   CreditCard,
+  Receipt,
   TrendingDown,
   BarChart3,
   Ticket,
@@ -22,6 +23,7 @@ import {
   Handshake,
   Bell,
   UserCog,
+  ShieldCheck,
   ClipboardList,
   Settings,
   ChevronLeft,
@@ -96,6 +98,14 @@ const navSections: NavSection[] = [
         href: "/admin/payments",
         icon: CreditCard,
         permission: "payments:read",
+      },
+      {
+        label: "Loket Kasir POS",
+        href: "/admin/pos",
+        icon: Receipt,
+        permission: "payments:write",
+        badge: "POS",
+        badgeColor: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",
       },
       {
         label: "Pengeluaran",
@@ -176,6 +186,12 @@ const navSections: NavSection[] = [
         label: "Pengguna / Staf",
         href: "/admin/users",
         icon: UserCog,
+        permission: "admin:users",
+      },
+      {
+        label: "Peran & Hak Akses",
+        href: "/admin/roles",
+        icon: ShieldCheck,
         permission: "admin:users",
       },
       {

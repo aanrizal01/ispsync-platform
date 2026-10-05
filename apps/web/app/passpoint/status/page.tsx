@@ -29,7 +29,7 @@ export default function PasspointStatusPage() {
   const [statusData, setStatusData] = useState<PasspointCustomerStatus | null>(null);
   const [showAndroidInfo, setShowAndroidInfo] = useState(false);
   const [tenantName, setTenantName] = useState("ISPSYNC");
-  const [tenantLegalName, setTenantLegalName] = useState("PT. ISP Kita Nusantara");
+  const [tenantLegalName, setTenantLegalName] = useState("ISPSYNC Carrier System");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -293,7 +293,7 @@ export default function PasspointStatusPage() {
 
       {/* Footer */}
       <footer className="border-t border-slate-800/80 bg-slate-950 py-6 text-center text-xs text-slate-500">
-        <p>&copy; {new Date().getFullYear()} {tenantLegalName}. Seluruh hak cipta dilindungi.</p>
+        <p>&copy; {new Date().getFullYear()} {tenantLegalName || (tenantName ? `PT. ${tenantName} Data Nusantara` : "ISPSYNC Carrier System")}. Seluruh hak cipta dilindungi.</p>
       </footer>
     </div>
   );

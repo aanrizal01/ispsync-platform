@@ -168,7 +168,7 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
 
           {/* Bottom: Footer Info */}
           <div className="relative z-10 pt-6 border-t border-slate-800/80 text-xs text-slate-500">
-            <p>&copy; {new Date().getFullYear()} {tenantLegalName || (tenantName === "ISPMU" ? "PT. Mitra Usaha Data" : (tenantName === "ISPKU" ? "PT. ISP Kita Nusantara" : "PT. Mitra Usaha Data"))}. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} {tenantLegalName || (tenantName ? `PT. ${tenantName} Data Nusantara` : "ISPSYNC Platform")}. All rights reserved.</p>
           </div>
         </div>
 

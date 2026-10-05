@@ -46,10 +46,10 @@ export default function PasspointOnboardingPage() {
   const [pageMode, setPageMode] = useState<"BUY" | "RENEW" | "LOOKUP">("BUY");
 
   // Dynamic tenant state
-  const [tenantSlug, setTenantSlug] = useState("ispku");
-  const [tenantName, setTenantName] = useState("ISPKU");
-  const [tenantLegalName, setTenantLegalName] = useState("PT. ISP Kita Nusantara");
-  const [tenantLogo, setTenantLogo] = useState("/web/ispku_logo.svg");
+  const [tenantSlug, setTenantSlug] = useState("");
+  const [tenantName, setTenantName] = useState("ISPSYNC");
+  const [tenantLegalName, setTenantLegalName] = useState("ISPSYNC Carrier System");
+  const [tenantLogo, setTenantLogo] = useState("");
 
   // Lookup state
   const [credentialId, setCredentialId] = useState("");
@@ -1595,7 +1595,7 @@ export default function PasspointOnboardingPage() {
 
         {/* Global Footer */}
         <footer className="pt-10 border-t border-slate-800/80 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-3">
-          <p>&copy; {new Date().getFullYear()} {tenantLegalName}. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} {tenantLegalName || (tenantName ? `PT. ${tenantName} Data Nusantara` : "ISPSYNC Carrier System")}. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <Link
               href="/passpoint/status"
