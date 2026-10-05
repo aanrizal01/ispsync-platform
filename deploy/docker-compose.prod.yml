@@ -124,6 +124,7 @@ services:
       SMTP_FROM: ${SMTP_FROM}
       ISP_BASE_URL: http://nexus:8081
       FTTX_BASE_URL: http://fibergrid:8082
+      FTTX_ADMIN_KEY: ${FTTX_ADMIN_KEY:-gogiga-noc-admin-99a8f27c3d14}
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
