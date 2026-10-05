@@ -26,8 +26,15 @@ export function formatRupiah(amount: number): string {
 /**
  * Format a date string to human-readable format.
  */
-export function formatDate(date: string | Date, fmt = "dd MMM yyyy"): string {
-  return format(new Date(date), fmt, { locale: localeId });
+export function formatDate(date?: string | Date | null, fmt = "dd MMM yyyy"): string {
+  if (!date) return "-";
+  try {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return "-";
+    return format(d, fmt, { locale: localeId });
+  } catch {
+    return "-";
+  }
 }
 
 /**

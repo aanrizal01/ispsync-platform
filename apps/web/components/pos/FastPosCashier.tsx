@@ -495,7 +495,9 @@ export function FastPosCashier({ onViewHistory, hideHeaderBack = false }: FastPo
                 <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100">
                   <span className="text-slate-500">Periode Tagihan:</span>
                   <span className="font-medium text-slate-800">
-                    {formatDate(selectedInvoice.billing_period_start)} s/d {formatDate(selectedInvoice.billing_period_end)}
+                    {selectedInvoice.billing_period_start && selectedInvoice.billing_period_end
+                      ? `${formatDate(selectedInvoice.billing_period_start)} s/d ${formatDate(selectedInvoice.billing_period_end)}`
+                      : formatDate(selectedInvoice.issue_date || selectedInvoice.created_at)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100">
