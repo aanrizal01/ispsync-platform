@@ -71,6 +71,20 @@ async function request<T>(
     ...((options.headers as Record<string, string>) || {}),
   };
 
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname.toLowerCase();
+    const parts = host.split(".");
+    let slug = "";
+    if (parts.length >= 4) {
+      slug = parts[1];
+    } else if (parts.length === 3 && parts[1] === "ispsync") {
+      slug = parts[0];
+    }
+    if (slug) {
+      headers["X-Tenant-Slug"] = slug;
+    }
+  }
+
   const token = getAccessToken();
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;

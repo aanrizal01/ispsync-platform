@@ -84,28 +84,39 @@ type nexusODPItem struct {
 	OwnerTenantName   string  `json:"owner_tenant_name"`
 }
 
-func (r *Repository) fetchFromNexus(ctx context.Context) []ODPNode {
+type tenantCtxKey struct{}
+
+// WithTenantSlug attaches tenant slug to context
+func WithTenantSlug(ctx context.Context, slug string) context.Context {
+	return context.WithValue(ctx, tenantCtxKey{}, slug)
+}
+
+func (r *Repository) fetchFromNexus(ctx context.Context) ([]ODPNode, bool) {
 	baseURL := os.Getenv("NEXUS_API_URL")
 	if baseURL == "" {
 		baseURL = "http://172.18.0.1:8081"
 	}
 	req, err := http.NewRequestWithContext(ctx, "GET", baseURL+"/api/v1/odps", nil)
 	if err != nil {
-		return nil
+		return nil, false
 	}
-	// Query current tenant ODPs and Jartaplok shared ODPs
-	req.Header.Set("Host", "nexus.ispku.ispsync.id")
+
+	tenantSlug, _ := ctx.Value(tenantCtxKey{}).(string)
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
+	req.Header.Set("Host", fmt.Sprintf("nexus.%s.ispsync.id", tenantSlug))
 
 	client := &http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != http.StatusOK {
-		return nil
+		return nil, false
 	}
 	defer resp.Body.Close()
 
 	var rawItems []nexusODPItem
 	if err := json.NewDecoder(resp.Body).Decode(&rawItems); err != nil {
-		return nil
+		return nil, false
 	}
 
 	result := make([]ODPNode, 0, len(rawItems))
@@ -147,13 +158,13 @@ func (r *Repository) fetchFromNexus(ctx context.Context) []ODPNode {
 			UpdatedAt:       time.Now(),
 		})
 	}
-	return result
+	return result, true
 }
 
 func (r *Repository) ListODPNodes(ctx context.Context, cluster string) ([]ODPNode, error) {
 	// 1. First attempt to fetch from EngineNexus (which aggregates own ODPs + Jartaplok partner ODPs)
-	nexusNodes := r.fetchFromNexus(ctx)
-	if len(nexusNodes) > 0 {
+	nexusNodes, ok := r.fetchFromNexus(ctx)
+	if ok {
 		if cluster != "" {
 			filtered := make([]ODPNode, 0)
 			for _, n := range nexusNodes {
@@ -322,8 +333,8 @@ func (r *Repository) ListFiberRoutes(ctx context.Context) ([]FiberRoute, error) 
 }
 
 func (r *Repository) GetFTTXStats(ctx context.Context) (*FTTXStats, error) {
-	nexusNodes := r.fetchFromNexus(ctx)
-	if len(nexusNodes) > 0 {
+	nexusNodes, ok := r.fetchFromNexus(ctx)
+	if ok {
 		var totalPorts, usedPorts int
 		for _, n := range nexusNodes {
 			totalPorts += n.TotalPorts
@@ -343,8 +354,8 @@ func (r *Repository) GetFTTXStats(ctx context.Context) (*FTTXStats, error) {
 			UsedPorts:       usedPorts,
 			AvailablePorts:  avail,
 			UtilizationRate: rate,
-			TotalRoutes:     3,
-			TotalCableKm:    18.4,
+			TotalRoutes:     0,
+			TotalCableKm:    0.0,
 		}, nil
 	}
 
@@ -376,62 +387,12 @@ func (r *Repository) GetFTTXStats(ctx context.Context) (*FTTXStats, error) {
 		UsedPorts:       usedPorts,
 		AvailablePorts:  avail,
 		UtilizationRate: rate,
-		TotalRoutes:     3,
-		TotalCableKm:    18.4,
+		TotalRoutes:     0,
+		TotalCableKm:    0.0,
 	}, nil
 }
 
 func (r *Repository) SeedDefaultODPsIfEmpty(ctx context.Context) error {
-	var count int
-	err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM odp_nodes`).Scan(&count)
-	if err != nil || count > 0 {
-		return err
-	}
-
-	defaultODPs := []ODPNode{
-		{
-			ID: "odp_hru_01", Code: "ODP-HRU-01", Name: "Tiang ODC Simpang Tiga Harau",
-			Latitude: -0.2180, Longitude: 100.6450, TotalPorts: 8, UsedPorts: 6,
-			Status: "AVAILABLE", ClusterArea: "Cluster Harau", SplitterSpec: "1:8 PLC",
-		},
-		{
-			ID: "odp_hru_02", Code: "ODP-HRU-02", Name: "Depan Masjid Raya Harau",
-			Latitude: -0.2150, Longitude: 100.6480, TotalPorts: 8, UsedPorts: 8,
-			Status: "FULL", ClusterArea: "Cluster Harau", SplitterSpec: "1:8 PLC",
-		},
-		{
-			ID: "odp_hru_03", Code: "ODP-HRU-03", Name: "Gerbang Wisata Lembah Harau",
-			Latitude: -0.2120, Longitude: 100.6510, TotalPorts: 16, UsedPorts: 9,
-			Status: "AVAILABLE", ClusterArea: "Cluster Harau", SplitterSpec: "1:16 PLC",
-		},
-		{
-			ID: "odp_srl_01", Code: "ODP-SRL-01", Name: "Simpang Sarilamak Kompleks Pemda",
-			Latitude: -0.2350, Longitude: 100.6250, TotalPorts: 16, UsedPorts: 11,
-			Status: "AVAILABLE", ClusterArea: "Cluster Sarilamak", SplitterSpec: "1:16 PLC",
-		},
-		{
-			ID: "odp_srl_02", Code: "ODP-SRL-02", Name: "Jl. Raya Negara Tanjung Pati",
-			Latitude: -0.2400, Longitude: 100.6200, TotalPorts: 8, UsedPorts: 5,
-			Status: "AVAILABLE", ClusterArea: "Cluster Sarilamak", SplitterSpec: "1:8 PLC",
-		},
-		{
-			ID: "odp_pyk_01", Code: "ODP-PYK-01", Name: "Koto Nan Ampek Payakumbuh",
-			Latitude: -0.2298, Longitude: 100.6300, TotalPorts: 16, UsedPorts: 14,
-			Status: "AVAILABLE", ClusterArea: "Cluster Payakumbuh", SplitterSpec: "1:16 PLC",
-		},
-	}
-
-	for _, o := range defaultODPs {
-		_, _ = r.db.Exec(ctx, `
-			INSERT INTO odp_nodes (
-				id, code, name, latitude, longitude, total_ports, used_ports,
-				status, cluster_area, provider_id, provider_name, is_cluster_active,
-				splitter_spec, created_at, updated_at
-			) VALUES (
-				$1, $2, $3, $4, $5, $6, $7, $8, $9, 'ISPSYNC-CORE', 'PT Inovasi Sistem Pintar', TRUE, $10, NOW(), NOW()
-			) ON CONFLICT (code) DO NOTHING
-		`, o.ID, o.Code, o.Name, o.Latitude, o.Longitude, o.TotalPorts, o.UsedPorts, o.Status, o.ClusterArea, o.SplitterSpec)
-	}
-
+	// Disabled: Tenants should only see real ODPs owned or shared via Jartaplok wholesale agreement.
 	return nil
 }

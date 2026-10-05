@@ -3,7 +3,9 @@ package network
 import (
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -212,9 +214,44 @@ func (h *Handler) SetSimpleQueue(w http.ResponseWriter, r *http.Request) {
 	middleware.JSON(w, http.StatusOK, map[string]string{"message": "Simple Queue berhasil dikonfigurasi pada router"})
 }
 
+func extractTenantSlug(r *http.Request) string {
+	if s := r.Header.Get("X-Tenant-Slug"); s != "" {
+		return s
+	}
+	host := r.Header.Get("X-Forwarded-Host")
+	if host == "" {
+		host = r.Host
+	}
+	if host == "" {
+		if ref := r.Header.Get("Referer"); ref != "" {
+			if u, err := url.Parse(ref); err == nil {
+				host = u.Host
+			}
+		}
+	}
+	if host == "" {
+		if orig := r.Header.Get("Origin"); orig != "" {
+			if u, err := url.Parse(orig); err == nil {
+				host = u.Host
+			}
+		}
+	}
+	if idx := strings.Index(host, ":"); idx != -1 {
+		host = host[:idx]
+	}
+	parts := strings.Split(host, ".")
+	if len(parts) >= 4 {
+		return parts[1] // e.g. ledger.ispku.ispsync.id -> ispku
+	} else if len(parts) == 3 && parts[1] == "ispsync" {
+		return parts[0] // e.g. ispku.ispsync.id -> ispku
+	}
+	return "dev"
+}
+
 func (h *Handler) ListODPs(w http.ResponseWriter, r *http.Request) {
 	cluster := r.URL.Query().Get("cluster")
-	nodes, err := h.service.ListODPs(r.Context(), cluster)
+	ctx := WithTenantSlug(r.Context(), extractTenantSlug(r))
+	nodes, err := h.service.ListODPs(ctx, cluster)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -263,7 +300,8 @@ func (h *Handler) ListFiberRoutes(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetFTTXStats(w http.ResponseWriter, r *http.Request) {
-	stats, err := h.service.GetFTTXStats(r.Context())
+	ctx := WithTenantSlug(r.Context(), extractTenantSlug(r))
+	stats, err := h.service.GetFTTXStats(ctx)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
