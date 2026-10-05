@@ -31,7 +31,7 @@ import { paymentApi, type Payment } from "@/lib/api/payments";
 import { customerApi, type Customer } from "@/lib/api/customers";
 import { settingsApi, type InvoiceTemplateSettings, defaultInvoiceTemplateSettings } from "@/lib/api/settings";
 import { ReceiptPrintDocument, type PaymentReceiptData, type ReceiptCustomerData } from "@/components/receipt/ReceiptPrintDocument";
-import { formatRupiah, formatDate } from "@/lib/utils";
+import { formatRupiah, formatDate, cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/context";
 
 interface FastPosCashierProps {
