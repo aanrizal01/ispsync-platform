@@ -75,7 +75,29 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 	// Determine active UI mode from subdomain / appType or URL path
 	mode := "unified"
 	path := strings.ToLower(r.URL.Path)
-	isTrack := path == "/track" || strings.HasPrefix(path, "/track/") || path == "/lacak" || strings.HasPrefix(path, "/lacak/") || r.URL.Query().Get("track") != ""
+
+	// Clean URL normalizer: redirect ?login=1, /login=1, ?masuk=1 to /login
+	if path == "/login=1" || strings.HasPrefix(path, "/login=1") {
+		http.Redirect(w, r, "/login", http.StatusMovedPermanently)
+		return
+	}
+	if path == "/" {
+		if r.URL.Query().Get("login") != "" || r.URL.Query().Get("masuk") != "" {
+			http.Redirect(w, r, "/login", http.StatusMovedPermanently)
+			return
+		}
+		if tr := r.URL.Query().Get("track"); tr != "" {
+			if tr == "1" || tr == "true" {
+				http.Redirect(w, r, "/track", http.StatusMovedPermanently)
+			} else {
+				http.Redirect(w, r, "/track/"+tr, http.StatusMovedPermanently)
+			}
+			return
+		}
+	}
+
+	isLogin := path == "/login" || strings.HasPrefix(path, "/login/") || path == "/masuk" || strings.HasPrefix(path, "/masuk/")
+	isTrack := isLogin || path == "/track" || strings.HasPrefix(path, "/track/") || path == "/lacak" || strings.HasPrefix(path, "/lacak/") || r.URL.Query().Get("track") != ""
 	if isTrack {
 		mode = "portal"
 	} else if path == "/rekan" || strings.HasPrefix(path, "/rekan/") || r.URL.Query().Get("app") == "rekan" {
@@ -121,7 +143,9 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 	case "technician":
 		pageTitle = fmt.Sprintf("Masuk | %s Portal Teknisi", brandShort)
 	case "portal":
-		if isTrack {
+		if isLogin {
+			pageTitle = fmt.Sprintf("Masuk | Portal Pelanggan %s", brandShort)
+		} else if isTrack {
 			pageTitle = fmt.Sprintf("Lacak Status Permohonan | %s", brandShort)
 		} else {
 			pageTitle = fmt.Sprintf("%s • Portal Pelanggan & Jangkauan Fiber", brandShort)
