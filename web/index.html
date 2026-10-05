@@ -4584,6 +4584,7 @@
               </div>
               <div class="flex items-center gap-2">
                 <select id="select-pppoe-preset-template" onchange="applyPPPoEPresetTemplate(this.value)" class="text-xs font-mono px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-md text-slate-800 focus:ring-cyan-500 focus:border-cyan-500 cursor-pointer">
+                  <option value="area-seq">Kode Area + No. Urut (999000001@[slug])</option>
                   <option value="default">Default ISPSYNC (sub-[NoReg]@[slug])</option>
                   <option value="phone">Telco Standard ([NoHP]@[slug])</option>
                   <option value="cust-reg">Client Code (c-[NoReg])</option>
@@ -4603,14 +4604,17 @@
                 </div>
 
                 <div class="space-y-1.5">
-                  <label class="block text-xs font-semibold text-slate-700 font-mono">Prefix Awalan</label>
-                  <input type="text" id="input-setting-pppoe-prefix" oninput="updatePPPoELivePreview()" placeholder="sub-" value="sub-" class="w-full text-xs font-mono px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 shadow-2xs" />
-                  <p class="text-[10px] text-slate-400">Contoh: <code class="font-mono text-slate-600">sub-</code>, <code class="font-mono text-slate-600">c-</code>, <code class="font-mono text-slate-600">user-</code>, atau kosongkan jika tanpa awalan.</p>
+                  <label class="block text-xs font-semibold text-slate-700 font-mono">Prefix Awalan / Kode Area</label>
+                  <input type="text" id="input-setting-pppoe-prefix" oninput="updatePPPoELivePreview()" placeholder="999 atau sub-" value="999" class="w-full text-xs font-mono px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 shadow-2xs" />
+                  <p class="text-[10px] text-slate-400">Contoh: Kode Area <code class="font-mono text-slate-600">999</code>, prefix <code class="font-mono text-slate-600">sub-</code>, <code class="font-mono text-slate-600">c-</code>, atau kosongkan.</p>
                 </div>
 
                 <div class="space-y-1.5">
                   <label class="block text-xs font-semibold text-slate-700 font-mono">Sumber ID Utama Pelanggan</label>
                   <select id="select-setting-pppoe-id-source" onchange="updatePPPoELivePreview()" class="w-full text-xs font-mono px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 shadow-2xs cursor-pointer">
+                    <option value="SEQ_NO6">Nomor Urut Pendaftaran 6 Digit (misal: 000001)</option>
+                    <option value="SEQ_NO5">Nomor Urut Pendaftaran 5 Digit (misal: 00001)</option>
+                    <option value="SEQ_NO4">Nomor Urut Pendaftaran 4 Digit (misal: 0001)</option>
                     <option value="REG_NO">Nomor Registrasi Bersih (misal: reg20269172)</option>
                     <option value="PHONE">Nomor Handphone Pelanggan (misal: 081288889999)</option>
                     <option value="PHONE_LAST4">4 Digit Terakhir No. HP Pelanggan (misal: 9999)</option>
@@ -15798,9 +15802,40 @@
       const rawPhone = (reg?.phone || reg?.whatsapp || '081288889999').replace(/[^0-9]/g, '');
       const cleanName = (reg?.full_name || reg?.name || 'budi-santoso').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'pelanggan';
 
+      // Helper to compute sequential registration number (e.g. 000001)
+      let seqNum = 1;
+      if (reg) {
+        if (typeof reg._seq === 'number' && reg._seq > 0) {
+          seqNum = reg._seq;
+        } else if (typeof reg.queue_number === 'number' && reg.queue_number > 0) {
+          seqNum = reg.queue_number;
+        } else if (typeof adminRegistrationsList !== 'undefined' && Array.isArray(adminRegistrationsList)) {
+          const foundIdx = adminRegistrationsList.findIndex(item => item && (item.id === reg.id || (item.registration_no && item.registration_no === reg.registration_no)));
+          if (foundIdx !== -1) {
+            seqNum = adminRegistrationsList.length - foundIdx;
+          }
+        }
+        if (seqNum === 1 && reg.registration_no) {
+          const match = reg.registration_no.match(/(\d+)$/);
+          if (match) {
+            const parsed = parseInt(match[1], 10);
+            if (!isNaN(parsed) && parsed > 0) seqNum = parsed % 1000000;
+          }
+        }
+      }
+
       // 1. Determine ID part
       let idPart = cleanReg;
       switch (cfg.idSource) {
+        case 'SEQ_NO6':
+          idPart = String(seqNum).padStart(6, '0');
+          break;
+        case 'SEQ_NO5':
+          idPart = String(seqNum).padStart(5, '0');
+          break;
+        case 'SEQ_NO4':
+          idPart = String(seqNum).padStart(4, '0');
+          break;
         case 'PHONE':
           idPart = rawPhone || cleanReg;
           break;
@@ -21282,7 +21317,13 @@
       const passStaticInput = document.getElementById('input-setting-pppoe-pass-static');
       const slug = (window.__ISPSYNC_TENANT__ && window.__ISPSYNC_TENANT__.slug) || window.__EARLY_TENANT_SLUG__ || 'isp';
 
-      if (preset === 'default') {
+      if (preset === 'area-seq') {
+        if (prefixInput) prefixInput.value = '999';
+        if (idSourceSelect) idSourceSelect.value = 'SEQ_NO6';
+        if (realmInput) realmInput.value = '@' + slug;
+        if (passFormatSelect) passFormatSelect.value = 'PREFIX_RANDOM';
+        if (passStaticInput) passStaticInput.value = 'isp';
+      } else if (preset === 'default') {
         if (prefixInput) prefixInput.value = 'sub-';
         if (idSourceSelect) idSourceSelect.value = 'REG_NO';
         if (realmInput) realmInput.value = '@' + slug;
@@ -21310,9 +21351,9 @@
 
     let pppoePreviewSampleIndex = 0;
     const pppoeSampleData = [
-      { registration_no: 'REG20269172', phone: '081288889999', full_name: 'Budi Santoso' },
-      { registration_no: 'REG20269173', phone: '085277112233', full_name: 'Siti Rahmawati' },
-      { registration_no: 'REG20269174', phone: '081399008877', full_name: 'Ahmad Fauzi' }
+      { _seq: 1, registration_no: 'REG20260001', phone: '081288889999', full_name: 'Budi Santoso' },
+      { _seq: 2, registration_no: 'REG20260002', phone: '085277112233', full_name: 'Siti Rahmawati' },
+      { _seq: 3, registration_no: 'REG20260003', phone: '081399008877', full_name: 'Ahmad Fauzi' }
     ];
 
     function updatePPPoELivePreview(nextSample = false) {
