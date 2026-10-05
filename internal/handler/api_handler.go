@@ -1760,11 +1760,76 @@ func (h *APIHandler) AdminNOCApproval(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = json.NewDecoder(r.Body).Decode(&req)
 
-	status := "APPROVED_BY_NOC"
-	msg := "Permohonan berhasil disetujui oleh NOC"
+	sub, _ := h.store.GetSubscriberByID(r.Context(), t.ID, id)
+	if sub == nil {
+		sub, _ = h.store.GetSubscriberByNo(r.Context(), t.ID, id)
+	}
+
+	status := "INSTALLATION_SCHEDULED"
+	msg := "Persetujuan teknis berhasil. Jadwal instalasi aktif."
 	if strings.ToUpper(req.Action) == "REJECT" {
 		status = "REJECTED_BY_NOC"
-		msg = "Permohonan ditolak oleh NOC"
+		msg = "Permohonan ditolak karena kendala teknis jaringan"
+	} else if sub != nil {
+		planLower := strings.ToLower(sub.SelectedPlanName + " " + sub.SelectedPlanID)
+		isCorporate := strings.Contains(planLower, "custom") || strings.Contains(planLower, "enterprise") || strings.Contains(planLower, "dedicated")
+		
+		claims := middleware.GetClaims(r)
+		isOwner := claims != nil && (strings.ToUpper(claims.Role) == "OWNER" || strings.ToUpper(claims.Role) == "SUPERUSER")
+
+		if isCorporate && !isOwner {
+			// Segregation of Duties: NOC hanya berwenang memeriksa kelayakan teknis ODP/kabel.
+			// Kesepakatan harga & kontrak B2B wajib di-ACC oleh Owner / Direktur.
+			status = "WAITING_DIRECTOR_APPROVAL"
+			msg = "Kelayakan teknis ODP & jalur optik berhasil diverifikasi oleh NOC. Permohonan kini menunggu persetujuan (ACC) komersial dari Owner / Direktur Utama."
+		} else if isCorporate && isOwner {
+			status = "INSTALLATION_SCHEDULED"
+			msg = "Kesepakatan kontrak B2B resmi di-ACC oleh Direktur Utama. SPK Instalasi aktif."
+		}
+	}
+
+	if err := h.store.UpdateSubscriberStatus(r.Context(), t.ID, id, status); err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal memperbarui status: "+err.Error())
+		return
+	}
+
+	h.successResponse(w, msg, map[string]interface{}{
+		"id":     id,
+		"status": status,
+	})
+}
+
+// AdminDirectorApproval mengesahkan kesepakatan komersial B2B oleh Owner/Direktur Utama
+func (h *APIHandler) AdminDirectorApproval(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		h.failResponse(w, http.StatusBadRequest, "ID wajib diisi")
+		return
+	}
+
+	claims := middleware.GetClaims(r)
+	if claims != nil {
+		role := strings.ToUpper(strings.TrimSpace(claims.Role))
+		if role != "OWNER" && role != "SUPERUSER" {
+			h.failResponse(w, http.StatusForbidden, "Khusus wewenang Owner / Direktur Utama untuk meng-ACC kesepakatan kontrak B2B.")
+			return
+		}
+	}
+
+	var req struct {
+		Action       string  `json:"action"` // APPROVE / REJECT
+		DirectorName string  `json:"director_name"`
+		FinalPrice   float64 `json:"final_price"`
+		Notes        string  `json:"notes"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&req)
+
+	status := "INSTALLATION_SCHEDULED"
+	msg := "Kesepakatan kontrak B2B resmi di-ACC oleh Direktur Utama. SPK Instalasi diterbitkan."
+	if strings.ToUpper(req.Action) == "REJECT" {
+		status = "REJECTED_BY_DIRECTOR"
+		msg = "Permohonan komersial ditolak oleh Direktur Utama"
 	}
 
 	if err := h.store.UpdateSubscriberStatus(r.Context(), t.ID, id, status); err != nil {
@@ -1893,6 +1958,19 @@ func (h *APIHandler) AdminUpdateRegistrationPricing(w http.ResponseWriter, r *ht
 	if err != nil || sub == nil {
 		h.failResponse(w, http.StatusNotFound, "Data registrasi pelanggan tidak ditemukan")
 		return
+	}
+
+	// Segregation of Duties: Mengubah tarif bulanan (MRC) atau biaya instalasi (OTC)
+	// merupakan kewenangan OWNER / Direktur Utama atau FINANCE. Staf NOC tidak boleh mengubah nominal harga sepihak.
+	if req.MonthlyPrice > 0 || req.OTCFee > 0 {
+		claims := middleware.GetClaims(r)
+		if claims != nil {
+			role := strings.ToUpper(strings.TrimSpace(claims.Role))
+			if role != "OWNER" && role != "FINANCE" && role != "SUPERUSER" {
+				h.failResponse(w, http.StatusForbidden, "Penetapan dan perubahan tarif harga kesepakatan (MRC/OTC) merupakan kewenangan Owner/Direktur Utama atau Finance.")
+				return
+			}
+		}
 	}
 
 	// Segregation of Duties: Jika pelanggan sudah berstatus AKTIF dan mencoba mengubah skema tagihan,

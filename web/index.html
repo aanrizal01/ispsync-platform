@@ -3310,6 +3310,10 @@
               <span>Approval NOC</span>
               <span id="badge-count-waiting-noc" class="px-1.5 py-0.5 rounded text-[10px] bg-amber-50 text-amber-700 border border-amber-200 font-bold font-mono">0</span>
             </button>
+            <button id="reg-filter-btn-WAITING_DIRECTOR" type="button" onclick="setAdminRegFilter('WAITING_DIRECTOR')" class="px-3 py-1.5 rounded-md text-xs font-mono font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
+              <span>👑 ACC Direktur</span>
+              <span id="badge-count-waiting-director" class="px-1.5 py-0.5 rounded text-[10px] bg-amber-100 text-amber-900 border border-amber-300 font-bold font-mono">0</span>
+            </button>
             <button id="reg-filter-btn-ACTIVE" type="button" onclick="setAdminRegFilter('ACTIVE')" class="px-3 py-1.5 rounded-md text-xs font-mono font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
               <span>Pelanggan Aktif</span>
               <span id="badge-count-active" class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">0</span>
@@ -6893,29 +6897,59 @@
             </label>
           </div>
 
-          <!-- Panel Khusus Verifikasi & Approval NOC (Admin/NOC) -->
+          <!-- Panel Khusus Verifikasi Teknis NOC -->
           <div id="detail-pricing-noc-panel" class="p-4 rounded-md bg-amber-50 border border-amber-200 space-y-3 hidden">
             <div class="flex items-center justify-between">
               <span class="text-xs font-mono font-bold uppercase text-amber-900 flex items-center gap-1.5">
-                <i data-lucide="shield-alert" class="w-4 h-4 text-amber-600"></i>
-                <span>Verifikasi Teknis &amp; Persetujuan NOC</span>
+                <i data-lucide="shield-check" class="w-4 h-4 text-amber-600"></i>
+                <span id="detail-pricing-noc-title">Verifikasi Teknis Jaringan (NOC)</span>
               </span>
-              <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                Otoritas NOC / Atasan
+              <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-300">
+                Divisi NOC &amp; Jaringan
               </span>
             </div>
-            <p class="text-xs text-amber-950 leading-relaxed font-sans">
-              Pengajuan penarikan kabel di luar batas standar (&gt;250m). Pastikan link budget redaman optik aman dan jalur tiang memenuhi standar keselamatan jaringan.
+            <p id="detail-pricing-noc-desc" class="text-xs text-amber-950 leading-relaxed font-sans">
+              Pastikan link budget redaman optik aman, port ODP mencukupi, dan jalur kabel dropcore memenuhi standar instalasi.
             </p>
             <div class="flex flex-wrap items-center gap-2 pt-1">
               <button type="button" onclick="submitAdminNOCApproval('APPROVE')" id="btn-noc-approve" class="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-md text-xs font-mono font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer">
                 <i data-lucide="check" class="w-4 h-4"></i>
-                <span>Setujui Penarikan &amp; Terbitkan Tagihan</span>
+                <span id="btn-noc-approve-text">Verifikasi Teknis OK (Lolos Survei)</span>
               </button>
               <button type="button" onclick="submitAdminNOCApproval('REJECT')" id="btn-noc-reject" class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-md text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer">
                 <i data-lucide="x" class="w-4 h-4"></i>
-                <span>Minta Revisi / Tolak</span>
+                <span>Minta Revisi / Kendala Teknis</span>
               </button>
+            </div>
+          </div>
+
+          <!-- Panel Khusus Otorisasi Komersial & Kontrak (Khusus Owner / Direktur) -->
+          <div id="detail-pricing-director-panel" class="p-4 rounded-md bg-slate-900 text-white border border-slate-800 space-y-3.5 hidden shadow-xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+              <span class="text-xs font-mono font-bold uppercase text-amber-400 flex items-center gap-1.5">
+                <i data-lucide="crown" class="w-4 h-4 text-amber-400"></i>
+                <span>Otorisasi Komersial &amp; Kontrak (Owner / Direktur)</span>
+              </span>
+              <span class="text-[9.5px] font-mono font-bold px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800 uppercase">
+                Otoritas Tertinggi
+              </span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed font-sans">
+              Uji kelayakan teknis ODP &amp; optik telah diverifikasi lolos oleh NOC. Silakan tinjau kesepakatan harga bulanan (MRC), biaya pasang (OTC), dan syarat SLA sebelum menyetujui penerbitan SPK pemasangan teknisi.
+            </p>
+            <div id="director-approval-actions" class="flex flex-wrap items-center gap-2 pt-1">
+              <button type="button" onclick="submitDirectorApproval('APPROVE')" id="btn-director-approve" class="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-md text-xs font-mono font-extrabold transition flex items-center gap-1.5 shadow-md cursor-pointer">
+                <i data-lucide="check-check" class="w-4 h-4"></i>
+                <span>👑 ACC KONTRAK B2B &amp; TERBITKAN SPK</span>
+              </button>
+              <button type="button" onclick="submitDirectorApproval('REJECT')" id="btn-director-reject" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-rose-400 border border-rose-900/60 rounded-md text-xs font-mono font-bold transition flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="x" class="w-4 h-4"></i>
+                <span>Tolak / Batalkan Deal</span>
+              </button>
+            </div>
+            <div id="director-approval-notice-non-owner" class="hidden text-xs text-amber-300 bg-amber-950/60 border border-amber-800/80 p-2.5 rounded font-sans flex items-center gap-2">
+              <i data-lucide="lock" class="w-4 h-4 shrink-0 text-amber-400"></i>
+              <span>Anda login sebagai Staf Teknis / NOC. Penerbitan SPK pelanggan korporat ini memerlukan persetujuan resmi (ACC) dari Owner / Direktur Utama.</span>
             </div>
           </div>
 
@@ -14843,6 +14877,7 @@
       const filterBtns = [
         { id: 'PENDING', badge: 'badge-count-pending', inactiveBadgeClass: 'bg-slate-100 text-slate-700 border border-slate-200' },
         { id: 'WAITING_NOC', badge: 'badge-count-waiting-noc', inactiveBadgeClass: 'bg-amber-50 text-amber-700 border border-amber-200' },
+        { id: 'WAITING_DIRECTOR', badge: 'badge-count-waiting-director', inactiveBadgeClass: 'bg-amber-100 text-amber-900 border border-amber-300' },
         { id: 'ACTIVE', badge: 'badge-count-active', inactiveBadgeClass: 'bg-emerald-50 text-emerald-700 border border-emerald-200' },
         { id: 'SUSPENDED', badge: 'badge-count-suspended', inactiveBadgeClass: 'bg-slate-100 text-slate-700 border border-slate-200' },
         { id: 'UNCOVERED', badge: 'badge-count-uncovered', inactiveBadgeClass: 'bg-indigo-50 text-indigo-700 border border-indigo-200' },
@@ -14889,9 +14924,10 @@
       }
 
       // 2. Hitung badge counter berdasarkan data wilayah yang dipilih
-      const pendingStatuses = ['SUBMITTED', 'SURVEY_SCHEDULED', 'INSTALLATION_SCHEDULED', 'PENDING_SURVEY_OVERDISTANCE', 'WAITING_APPROVAL_NOC'];
+      const pendingStatuses = ['SUBMITTED', 'SURVEY_SCHEDULED', 'INSTALLATION_SCHEDULED', 'PENDING_SURVEY_OVERDISTANCE', 'WAITING_APPROVAL_NOC', 'WAITING_DIRECTOR_APPROVAL'];
       const pendingCount = data.filter(r => pendingStatuses.includes(r.status)).length;
       const waitingNocCount = data.filter(r => r.status === 'WAITING_APPROVAL_NOC').length;
+      const waitingDirectorCount = data.filter(r => r.status === 'WAITING_DIRECTOR_APPROVAL').length;
       const activeCount = data.filter(r => r.status === 'ACTIVE').length;
       const suspendedCount = data.filter(r => r.status === 'SUSPENDED').length;
       const uncoveredCount = data.filter(r => r.status === 'UNCOVERED_WISHLIST' || r.status === 'CANCELLED_NO_COVERAGE').length;
@@ -14900,6 +14936,7 @@
       // Update filter badge counters in registration tab
       const elP = document.getElementById('badge-count-pending'); if (elP) elP.innerText = pendingCount;
       const elNoc = document.getElementById('badge-count-waiting-noc'); if (elNoc) elNoc.innerText = waitingNocCount;
+      const elDir = document.getElementById('badge-count-waiting-director'); if (elDir) elDir.innerText = waitingDirectorCount;
       const elA = document.getElementById('badge-count-active'); if (elA) elA.innerText = activeCount;
       const elS = document.getElementById('badge-count-suspended'); if (elS) elS.innerText = suspendedCount;
       const elU = document.getElementById('badge-count-uncovered'); if (elU) elU.innerText = uncoveredCount;
@@ -14921,6 +14958,8 @@
         filtered = filtered.filter(r => pendingStatuses.includes(r.status));
       } else if (currentAdminRegFilter === 'WAITING_NOC') {
         filtered = filtered.filter(r => r.status === 'WAITING_APPROVAL_NOC');
+      } else if (currentAdminRegFilter === 'WAITING_DIRECTOR') {
+        filtered = filtered.filter(r => r.status === 'WAITING_DIRECTOR_APPROVAL');
       } else if (currentAdminRegFilter === 'ACTIVE') {
         filtered = filtered.filter(r => r.status === 'ACTIVE');
       } else if (currentAdminRegFilter === 'SUSPENDED') {
@@ -14950,6 +14989,7 @@
         const filterNames = {
           'PENDING': 'antrean pasang baru',
           'WAITING_NOC': 'approval NOC',
+          'WAITING_DIRECTOR': 'ACC Direktur / Owner',
           'ACTIVE': 'pelanggan aktif',
           'SUSPENDED': 'jeda layanan',
           'UNCOVERED': 'wishlist / luar jangkauan',
@@ -14982,6 +15022,9 @@
         } else if (r.status === 'SUSPENDED') {
           statusBadgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
           statusLabel = 'JEDA / ISOLIR';
+        } else if (r.status === 'WAITING_DIRECTOR_APPROVAL') {
+          statusBadgeClass = 'bg-amber-100 text-amber-900 border-amber-300 font-bold';
+          statusLabel = '👑 ACC DIREKTUR';
         } else if (r.status === 'WAITING_APPROVAL_NOC') {
           statusBadgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
           statusLabel = 'APPROVAL NOC';
@@ -14991,6 +15034,9 @@
         } else if (r.status === 'INSTALLATION_SCHEDULED' || r.status === 'SUBMITTED' || r.status === 'SURVEY_SCHEDULED') {
           statusBadgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
           statusLabel = r.status === 'INSTALLATION_SCHEDULED' ? 'JADWAL PASANG' : (r.status === 'SURVEY_SCHEDULED' ? 'JADWAL SURVEI' : 'MENUNGGU SPK');
+        } else if (r.status === 'REJECTED_BY_DIRECTOR') {
+          statusBadgeClass = 'bg-rose-50 text-rose-700 border-rose-200';
+          statusLabel = 'DITOLAK DIREKTUR';
         } else if (r.status === 'UNCOVERED_WISHLIST') {
           statusBadgeClass = 'bg-indigo-50 text-indigo-700 border-indigo-200';
           statusLabel = 'WISHLIST';
@@ -16629,14 +16675,30 @@
       document.getElementById('admin-detail-wa-link').href = `https://wa.me/${waNumber}?text=${encodeURIComponent('Halo Bapak/Ibu ' + r.full_name + ', kami dari GOGIGA ISP terkait permohonan pasang baru internet ' + r.registration_no + '...')}`;
 
       const statusBadge = document.getElementById('admin-detail-status-badge');
-      statusBadge.innerText = r.status === 'WAITING_APPROVAL_NOC' ? 'MENUNGGU APPROVAL NOC' : r.status;
-      statusBadge.className = "mt-0.5 inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase " + (
-        r.status === 'ACTIVE' 
-          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-          : (r.status === 'WAITING_APPROVAL_NOC'
-              ? 'bg-amber-50 text-amber-700 border border-amber-200 font-bold'
-              : (r.status === 'PENDING_SURVEY_OVERDISTANCE' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-blue-50 text-blue-700 border border-blue-200'))
-      );
+      if (statusBadge) {
+        if (r.status === 'ACTIVE') {
+          statusBadge.innerText = 'AKTIF ONLINE';
+          statusBadge.className = "mt-0.5 inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200";
+        } else if (r.status === 'WAITING_DIRECTOR_APPROVAL') {
+          statusBadge.innerText = '👑 MENUNGGU ACC DIREKTUR UTAMA';
+          statusBadge.className = "mt-0.5 inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-amber-100 text-amber-900 border border-amber-300";
+        } else if (r.status === 'WAITING_APPROVAL_NOC') {
+          statusBadge.innerText = 'MENUNGGU APPROVAL NOC';
+          statusBadge.className = "mt-0.5 inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-amber-50 text-amber-700 border border-amber-200";
+        } else if (r.status === 'PENDING_SURVEY_OVERDISTANCE') {
+          statusBadge.innerText = 'PERLU SURVEI JARAK';
+          statusBadge.className = "mt-0.5 inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-amber-50 text-amber-700 border border-amber-200";
+        } else if (r.status === 'INSTALLATION_SCHEDULED') {
+          statusBadge.innerText = 'SIAP PASANG (SPK AKTIF)';
+          statusBadge.className = "mt-0.5 inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-blue-50 text-blue-700 border border-blue-200";
+        } else if (r.status === 'REJECTED_BY_DIRECTOR') {
+          statusBadge.innerText = 'DITOLAK DIREKTUR UTAMA';
+          statusBadge.className = "mt-0.5 inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-rose-50 text-rose-700 border border-rose-200";
+        } else {
+          statusBadge.innerText = r.status || '-';
+          statusBadge.className = "mt-0.5 inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-slate-50 text-slate-700 border border-slate-200";
+        }
+      }
 
       // Render Skema Tagihan (Billing Type: PREPAID / POSTPAID)
       updateDetailBillingTypeUI(r.billing_type || 'PREPAID', r.status);
@@ -16691,18 +16753,64 @@
       }
 
       const activeRole = localStorage.getItem('active_portal_role');
+      const adminUser = localStorage.getItem('admin_user') ? JSON.parse(localStorage.getItem('admin_user')) : null;
+      const userRole = (adminUser && adminUser.role ? adminUser.role : (activeRole || '')).toUpperCase();
+      const isOwner = userRole === 'OWNER' || userRole === 'SUPERUSER';
+      const isFinance = userRole === 'FINANCE';
+      const canEditPricing = isOwner || isFinance;
+
       const salesAuth = localStorage.getItem('sales_auth');
       const curMode = currentSubdomainMode || (typeof detectActiveSubdomain === 'function' ? detectActiveSubdomain() : '');
       const isSales = (activeRole === 'sales' || curMode === 'sales') && !['superuser', 'admin', 'noc-fo'].includes(curMode) && !['superuser', 'admin'].includes(activeRole);
 
+      // Segregation of Duties: Kunci input harga (MRC & OTC) bagi peran non-Owner / non-Finance
+      if (otcInput) {
+        otcInput.readOnly = !canEditPricing;
+        if (!canEditPricing) {
+          otcInput.classList.add('bg-slate-100', 'cursor-not-allowed');
+          otcInput.title = 'Wewenang khusus Owner / Direktur Utama & Finance';
+        } else {
+          otcInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
+          otcInput.title = '';
+        }
+      }
+      if (monthlyInput) {
+        monthlyInput.readOnly = !canEditPricing;
+        if (!canEditPricing) {
+          monthlyInput.classList.add('bg-slate-100', 'cursor-not-allowed');
+          monthlyInput.title = 'Wewenang khusus Owner / Direktur Utama & Finance';
+        } else {
+          monthlyInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
+          monthlyInput.title = '';
+        }
+      }
+
       const salesBox = document.getElementById('detail-pricing-sales-box');
       const nocPanel = document.getElementById('detail-pricing-noc-panel');
+      const directorPanel = document.getElementById('detail-pricing-director-panel');
+      const dirActions = document.getElementById('director-approval-actions');
+      const dirNotice = document.getElementById('director-approval-notice-non-owner');
       const btnSavePricing = document.getElementById('btn-save-pricing');
       const btnSavePricingText = document.getElementById('btn-save-pricing-text');
       const promoteTitle = document.getElementById('detail-pricing-promote-title');
       const promoteDesc = document.getElementById('detail-pricing-promote-desc');
 
-      if (r.status === 'WAITING_APPROVAL_NOC') {
+      if (r.status === 'WAITING_DIRECTOR_APPROVAL') {
+        if (salesBox) salesBox.classList.add('hidden');
+        if (btnSavePricing) btnSavePricing.classList.add('hidden');
+        if (nocPanel) nocPanel.classList.add('hidden');
+        if (directorPanel) {
+          directorPanel.classList.remove('hidden');
+          if (isOwner) {
+            if (dirActions) dirActions.classList.remove('hidden');
+            if (dirNotice) dirNotice.classList.add('hidden');
+          } else {
+            if (dirActions) dirActions.classList.add('hidden');
+            if (dirNotice) dirNotice.classList.remove('hidden');
+          }
+        }
+      } else if (r.status === 'WAITING_APPROVAL_NOC') {
+        if (directorPanel) directorPanel.classList.add('hidden');
         if (salesBox) salesBox.classList.add('hidden');
         if (btnSavePricing) btnSavePricing.classList.add('hidden');
         if (nocPanel) {
@@ -16713,6 +16821,7 @@
           }
         }
       } else if (r.status === 'INSTALLATION_SCHEDULED' || r.status === 'ACTIVE' || r.status === 'COMPLETED') {
+        if (directorPanel) directorPanel.classList.add('hidden');
         if (salesBox) salesBox.classList.add('hidden');
         if (nocPanel) nocPanel.classList.add('hidden');
         if (btnSavePricing) {
@@ -16720,6 +16829,7 @@
           if (btnSavePricingText) btnSavePricingText.innerText = "Simpan Perubahan Paket / Biaya";
         }
       } else {
+        if (directorPanel) directorPanel.classList.add('hidden');
         if (nocPanel) nocPanel.classList.add('hidden');
         if (salesBox) salesBox.classList.remove('hidden');
         if (btnSavePricing) {
@@ -17842,9 +17952,10 @@
           throw new Error(resData.error || resData.message || 'Gagal memproses approval NOC');
         }
 
-        alert(action === 'APPROVE' 
-          ? 'Persetujuan NOC berhasil disimpan. Status telah ditingkatkan ke SIAP PASANG dan invoice resmi telah diterbitkan.'
-          : 'Catatan revisi berhasil disimpan. Status dikembalikan ke tim survei/sales.');
+        const successMsg = resData.message || (action === 'APPROVE' 
+          ? 'Persetujuan teknis NOC berhasil diverifikasi.' 
+          : 'Catatan kendala teknis / revisi berhasil disimpan.');
+        alert(successMsg);
 
         if (resData.data) {
           Object.assign(reg, resData.data);
@@ -17871,6 +17982,93 @@
         closeAdminDetailModal();
       } catch (err) {
         alert('Gagal memproses approval NOC: ' + err.message);
+      } finally {
+        if (btnApprove) btnApprove.disabled = false;
+        if (btnReject) btnReject.disabled = false;
+      }
+    }
+
+    async function submitDirectorApproval(action) {
+      if (!currentDetailRegistration) return;
+      const reg = currentDetailRegistration;
+
+      let notes = '';
+      if (action === 'REJECT') {
+        const reason = prompt('Masukkan alasan pembatalan / penolakan kesepakatan komersial B2B:');
+        if (reason === null) return;
+        notes = reason.trim();
+      } else {
+        const mrcFormatted = (reg.monthly_price || 0).toLocaleString('id-ID');
+        const otcFormatted = (reg.otc_fee || 0).toLocaleString('id-ID');
+        const confirmApprove = confirm(
+          `ACC & SAHKAN KONTRAK B2B RESMI?\n\n` +
+          `Pelanggan: ${reg.full_name} (${reg.registration_no})\n` +
+          `Paket: ${reg.selected_plan_name}\n` +
+          `Tarif Bulanan (MRC): Rp ${mrcFormatted}\n` +
+          `Biaya Pasang (OTC): Rp ${otcFormatted}\n\n` +
+          `Setelah di-ACC Direktur Utama, SPK Instalasi Teknisi dan Faktur Tagihan resmi akan diterbitkan.`
+        );
+        if (!confirmApprove) return;
+      }
+
+      const btnApprove = document.getElementById('btn-director-approve');
+      const btnReject = document.getElementById('btn-director-reject');
+      if (btnApprove) btnApprove.disabled = true;
+      if (btnReject) btnReject.disabled = true;
+
+      try {
+        const token = localStorage.getItem('auth_session_token') || sessionStorage.getItem('auth_session_token') || '';
+        const adminUser = localStorage.getItem('admin_user') ? JSON.parse(localStorage.getItem('admin_user')) : null;
+        const directorName = adminUser && (adminUser.name || adminUser.username) ? (adminUser.name || adminUser.username) : 'Direktur Utama';
+
+        const resp = await fetch(`/api/v1/admin/registrations/${reg.id}/director-approval`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({
+            action: action,
+            director_name: directorName,
+            notes: notes
+          })
+        });
+
+        const resData = await resp.json();
+        if (!resp.ok || !resData.success) {
+          throw new Error(resData.error || resData.message || 'Gagal memproses persetujuan Direktur Utama');
+        }
+
+        const successMsg = resData.message || (action === 'APPROVE'
+          ? 'Kesepakatan kontrak B2B resmi di-ACC oleh Direktur Utama. SPK Instalasi dan Faktur Tagihan telah diterbitkan.'
+          : 'Kesepakatan komersial B2B berhasil ditolak/dibatalkan.');
+        alert(successMsg);
+
+        if (resData.data) {
+          Object.assign(reg, resData.data);
+        } else {
+          reg.status = action === 'APPROVE' ? 'INSTALLATION_SCHEDULED' : 'REJECTED_BY_DIRECTOR';
+        }
+
+        // Update in lists
+        if (typeof adminRegistrationsList !== 'undefined' && Array.isArray(adminRegistrationsList)) {
+          const idx = adminRegistrationsList.findIndex(item => item.id === reg.id);
+          if (idx !== -1) adminRegistrationsList[idx] = reg;
+        }
+
+        if (typeof loadAdminRegistrations === 'function') {
+          loadAdminRegistrations();
+        }
+        if (typeof renderAdminRegistrationsTable === 'function') {
+          renderAdminRegistrationsTable();
+        }
+        if (typeof renderSalesTable === 'function') {
+          renderSalesTable();
+        }
+
+        closeAdminDetailModal();
+      } catch (err) {
+        alert('Gagal memproses persetujuan Direktur Utama: ' + err.message);
       } finally {
         if (btnApprove) btnApprove.disabled = false;
         if (btnReject) btnReject.disabled = false;

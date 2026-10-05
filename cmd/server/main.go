@@ -232,6 +232,7 @@ func main() {
 			adm.Delete("/registrations/{id}", apiH.AdminDeleteRegistration)
 			adm.Post("/registrations/{id}/delete", apiH.AdminDeleteRegistration)
 			adm.Post("/registrations/{id}/noc-approval", apiH.AdminNOCApproval)
+			adm.Post("/registrations/{id}/director-approval", apiH.AdminDirectorApproval)
 			adm.Post("/registrations/{id}/suspend", apiH.AdminSuspendSubscriber)
 			adm.Post("/registrations/{id}/resume", apiH.AdminResumeSubscriber)
 			adm.Post("/registrations/{id}/reassign-odp", apiH.AdminReassignODP)
