@@ -1248,7 +1248,7 @@ func (s *PostgresStorage) ValidateDomainForTLS(ctx context.Context, domainName s
 		return true
 	}
 	var count int
-	_ = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM tenants WHERE LOWER(custom_domain) = $1 AND status = 'ACTIVE'", d).Scan(&count)
+	_ = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM tenants WHERE (LOWER(custom_domain) = $1 OR $1 LIKE '%.' || LOWER(custom_domain)) AND status = 'ACTIVE'", d).Scan(&count)
 	return count > 0
 }
 

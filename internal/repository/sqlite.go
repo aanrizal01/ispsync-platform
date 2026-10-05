@@ -1317,7 +1317,7 @@ func (s *SQLiteStorage) ValidateDomainForTLS(ctx context.Context, domainName str
 		return true
 	}
 	var count int
-	_ = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM tenants WHERE custom_domain = ? AND status = 'ACTIVE'", d).Scan(&count)
+	_ = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM tenants WHERE (LOWER(custom_domain) = ? OR ? LIKE '%.' || LOWER(custom_domain)) AND status = 'ACTIVE'", d, d).Scan(&count)
 	return count > 0
 }
 

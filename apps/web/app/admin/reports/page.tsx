@@ -68,12 +68,18 @@ export default function ReportsPage() {
     if (typeof window !== "undefined") {
       const host = window.location.hostname;
       const proto = window.location.protocol;
-      const base = host.replace(/^(ledger|billing|admin)\./, "");
-      if (base.includes("localhost") || /^[0-9.]+$/.test(base)) {
-        setPortalRekanUrl(`http://${base}:8081/rekan/`);
-      } else {
-        setPortalRekanUrl(`${proto}//portal.${base}/rekan/`);
+      if (host.includes("localhost") || /^[0-9.]+$/.test(host)) {
+        setPortalRekanUrl(`http://${host}:8081/rekan/`);
+        return;
       }
+      // If already on member.*, portal.*, or nexus.*, keep the current hostname with /rekan/
+      if (host.startsWith("member.") || host.startsWith("portal.") || host.startsWith("nexus.") || host.startsWith("rekan.")) {
+        setPortalRekanUrl(`${proto}//${host}/rekan/`);
+        return;
+      }
+      // Otherwise replace ledger/billing/admin prefix with portal
+      const base = host.replace(/^(ledger|billing|admin|fttx|fibergrid)\./, "");
+      setPortalRekanUrl(`${proto}//portal.${base}/rekan/`);
     }
   }, []);
 
