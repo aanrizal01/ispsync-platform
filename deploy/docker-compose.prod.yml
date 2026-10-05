@@ -238,10 +238,21 @@ services:
     restart: always
     environment:
       PORT: 8081
-      DATABASE_URL: postgres://${POSTGRES_USER:-isp_admin}:${POSTGRES_PASSWORD}@postgres:5432/ispsync?sslmode=disable
+      DB_DRIVER: postgres
+      DATABASE_URL: postgres://${POSTGRES_USER:-isp_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-isp_billing}?sslmode=disable
       BILLING_DATABASE_URL: postgres://${POSTGRES_USER:-isp_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-isp_billing}?sslmode=disable
+      GIGABILL_BASE_URL: http://api:8080
+      GIGABILL_API_TOKEN: ${GIGABILL_API_TOKEN:-supersecret-admin-token}
+      ADMIN_API_KEY: ${ISP_ADMIN_KEY:-isp-onboarding-admin-key}
       FTTX_BASE_URL: http://fibergrid:8082
       FTTX_INTERNAL_KEY: ${FTTX_INTERNAL_KEY:-gogiga-internal-sync-42c8d71e9a55}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA}
+      SMARTOLT_ENABLED: "true"
+      SMARTOLT_BASE_URL: https://gnet-biaro.smartolt.com
+      SMARTOLT_API_KEY: b71455fab579457d98d8f4b6d28cfdff
+      SMARTOLT_ZONE_ID: "122"
+      SMARTOLT_ZONE_NAME: GOGIGA
+      MAX_COVERAGE_METERS: "250.0"
       BASE_DOMAIN: ${DOMAIN:-ispsync.id}
     ports:
       - "127.0.0.1:8081:8081"
