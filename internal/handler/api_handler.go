@@ -1826,6 +1826,19 @@ func (h *APIHandler) AdminUpdateRegistrationPricing(w http.ResponseWriter, r *ht
 		return
 	}
 
+	// Segregation of Duties: Jika pelanggan sudah berstatus AKTIF dan mencoba mengubah skema tagihan,
+	// wajib memiliki otorisasi OWNER atau FINANCE.
+	if strings.ToUpper(sub.Status) == "ACTIVE" && req.BillingType != "" && strings.ToUpper(req.BillingType) != strings.ToUpper(sub.BillingType) {
+		claims := middleware.GetClaims(r)
+		if claims != nil {
+			role := strings.ToUpper(strings.TrimSpace(claims.Role))
+			if role != "OWNER" && role != "FINANCE" && role != "SUPERUSER" {
+				h.failResponse(w, http.StatusForbidden, "Pelanggan sudah berstatus AKTIF. Pengalihan skema tagihan merupakan kewenangan Owner atau Divisi Billing/Keuangan.")
+				return
+			}
+		}
+	}
+
 	if err := h.store.UpdateSubscriberPricingAndODP(r.Context(), t.ID, sub.ID, req.SelectedPlanID, req.SelectedPlanName, req.ODPCode, req.PPPoEUsername, req.PPPoEPassword, req.BillingType, req.PromoteToInstall); err != nil {
 		h.failResponse(w, http.StatusInternalServerError, "Gagal mengupdate data registrasi: "+err.Error())
 		return
@@ -1925,7 +1938,29 @@ func (h *APIHandler) AdminUpdateBillingType(w http.ResponseWriter, r *http.Reque
 		bt = "PREPAID"
 	}
 
-	if err := h.store.UpdateSubscriberBillingType(r.Context(), t.ID, id, bt); err != nil {
+	sub, err := h.store.GetSubscriberByID(r.Context(), t.ID, id)
+	if err != nil || sub == nil {
+		sub, err = h.store.GetSubscriberByNo(r.Context(), t.ID, id)
+	}
+	if err != nil || sub == nil {
+		h.failResponse(w, http.StatusNotFound, "Data pelanggan tidak ditemukan")
+		return
+	}
+
+	// Segregation of Duties: Jika pelanggan sudah berstatus AKTIF,
+	// pengalihan skema kredit/tagihan wajib memiliki otorisasi OWNER atau FINANCE.
+	if strings.ToUpper(sub.Status) == "ACTIVE" {
+		claims := middleware.GetClaims(r)
+		if claims != nil {
+			role := strings.ToUpper(strings.TrimSpace(claims.Role))
+			if role != "OWNER" && role != "FINANCE" && role != "SUPERUSER" {
+				h.failResponse(w, http.StatusForbidden, "Pelanggan sudah berstatus AKTIF. Pengalihan skema tagihan merupakan kewenangan Owner atau Divisi Billing/Keuangan.")
+				return
+			}
+		}
+	}
+
+	if err := h.store.UpdateSubscriberBillingType(r.Context(), t.ID, sub.ID, bt); err != nil {
 		h.failResponse(w, http.StatusInternalServerError, "Gagal mengubah skema penagihan: "+err.Error())
 		return
 	}

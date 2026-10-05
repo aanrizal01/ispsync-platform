@@ -6566,7 +6566,7 @@
             <span class="text-[10px] uppercase font-mono text-slate-500 font-bold block mb-0.5">Skema Tagihan</span>
             <div class="flex items-center gap-1.5 mt-0.5">
               <span id="admin-detail-billing-type-badge" class="inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-cyan-50 text-cyan-700 border border-cyan-200">PRABAYAR</span>
-              <button type="button" onclick="quickToggleBillingType()" class="text-[9.5px] font-mono font-bold text-slate-600 hover:text-slate-900 underline cursor-pointer" title="Klik untuk beralih antara Pra/Pascabayar">Ubah</button>
+              <button type="button" id="admin-detail-billing-type-toggle-btn" onclick="quickToggleBillingType()" class="text-[9.5px] font-mono font-bold text-slate-600 hover:text-slate-900 underline cursor-pointer" title="Klik untuk beralih antara Pra/Pascabayar">Ubah</button>
             </div>
           </div>
         </div>
@@ -6866,7 +6866,11 @@
                 <option value="PREPAID">PRABAYAR (PREPAID - Bayar di Awal)</option>
                 <option value="POSTPAID">PASCABAYAR (POSTPAID - Bayar di Akhir Periode)</option>
               </select>
-              <span class="text-[9.5px] text-slate-500 block mt-1">Mengatur klausul perjanjian kontrak &amp; siklus faktur tagihan</span>
+              <span id="detail-pricing-billing-hint" class="text-[9.5px] text-slate-500 block mt-1">Mengatur klausul perjanjian kontrak &amp; siklus faktur tagihan</span>
+              <div id="detail-pricing-billing-notice" class="text-[9.5px] text-amber-700 font-mono mt-1 hidden flex items-center gap-1 bg-amber-50 border border-amber-200 px-2 py-1 rounded">
+                <i data-lucide="lock" class="w-3 h-3 text-amber-600 shrink-0"></i>
+                <span>Terkunci (Pelanggan Aktif): Wewenang Khusus Owner / Divisi Billing</span>
+              </div>
             </div>
             <div>
               <label class="block text-[11px] font-mono font-bold uppercase text-slate-800 mb-1">
@@ -16593,7 +16597,7 @@
       );
 
       // Render Skema Tagihan (Billing Type: PREPAID / POSTPAID)
-      updateDetailBillingTypeUI(r.billing_type || 'PREPAID');
+      updateDetailBillingTypeUI(r.billing_type || 'PREPAID', r.status);
 
       // 1. Render Custom Enterprise Quotation Box (jika ada catatan custom)
       const customCard = document.getElementById('admin-detail-custom-card');
@@ -17176,10 +17180,34 @@
       document.getElementById('modal-admin-detail').classList.add('hidden');
     }
 
-    function updateDetailBillingTypeUI(type) {
+    function canModifyActiveBilling() {
+      const activeRole = (localStorage.getItem('active_portal_role') || '').toLowerCase();
+      if (['superuser', 'finance', 'branch_manager'].includes(activeRole)) return true;
+      const token = localStorage.getItem('auth_session_token') || sessionStorage.getItem('auth_session_token');
+      if (token && token.startsWith('v1.')) {
+        try {
+          const parts = token.split('.');
+          if (parts.length >= 2) {
+            const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+            const r = (payload.rol || '').toUpperCase();
+            if (r === 'OWNER' || r === 'FINANCE' || r === 'SUPERUSER') return true;
+          }
+        } catch (e) {}
+      }
+      return false;
+    }
+
+    function updateDetailBillingTypeUI(type, status) {
       const isPostpaid = (type || '').toUpperCase() === 'POSTPAID';
       const badge = document.getElementById('admin-detail-billing-type-badge');
       const select = document.getElementById('detail-pricing-billing-type');
+      const notice = document.getElementById('detail-pricing-billing-notice');
+      const hint = document.getElementById('detail-pricing-billing-hint');
+      const toggleBtn = document.getElementById('admin-detail-billing-type-toggle-btn');
+      
+      const isCustActive = (status || (currentDetailRegistration ? currentDetailRegistration.status : '')).toUpperCase() === 'ACTIVE';
+      const isAllowed = !isCustActive || canModifyActiveBilling();
+
       if (badge) {
         if (isPostpaid) {
           badge.innerText = 'PASCABAYAR';
@@ -17189,14 +17217,52 @@
           badge.className = 'inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-cyan-50 text-cyan-700 border border-cyan-200';
         }
       }
-      if (select && select.value !== (isPostpaid ? 'POSTPAID' : 'PREPAID')) {
-        select.value = isPostpaid ? 'POSTPAID' : 'PREPAID';
+
+      if (toggleBtn) {
+        if (isCustActive && !canModifyActiveBilling()) {
+          toggleBtn.title = "Kewenangan khusus Owner / Divisi Billing (Pelanggan telah AKTIF)";
+          toggleBtn.classList.add('opacity-40');
+        } else {
+          toggleBtn.title = "Klik untuk beralih antara Pra/Pascabayar";
+          toggleBtn.classList.remove('opacity-40');
+        }
       }
+
+      if (select) {
+        if (select.value !== (isPostpaid ? 'POSTPAID' : 'PREPAID')) {
+          select.value = isPostpaid ? 'POSTPAID' : 'PREPAID';
+        }
+        select.disabled = !isAllowed;
+        if (!isAllowed) {
+          select.classList.add('bg-slate-100', 'cursor-not-allowed');
+        } else {
+          select.classList.remove('bg-slate-100', 'cursor-not-allowed');
+        }
+      }
+
+      if (notice) {
+        if (isCustActive && !canModifyActiveBilling()) {
+          notice.classList.remove('hidden');
+          if (hint) hint.classList.add('hidden');
+        } else {
+          notice.classList.add('hidden');
+          if (hint) hint.classList.remove('hidden');
+        }
+      }
+      if (window.lucide) lucide.createIcons();
     }
 
     async function quickToggleBillingType() {
       if (!currentDetailRegistration) return;
       const reg = currentDetailRegistration;
+      const isCustActive = (reg.status || '').toUpperCase() === 'ACTIVE';
+
+      // Validasi kewenangan Segregation of Duties
+      if (isCustActive && !canModifyActiveBilling()) {
+        alert('Akses Terbatas: Pelanggan sudah berstatus AKTIF.\n\nPengalihan skema kredit/tagihan (Prabayar/Pascabayar) berdampak langsung pada pencatatan piutang dan merupakan wewenang khusus Owner atau Divisi Billing/Keuangan.');
+        return;
+      }
+
       const currentType = (reg.billing_type || 'PREPAID').toUpperCase();
       const newType = currentType === 'POSTPAID' ? 'PREPAID' : 'POSTPAID';
       const typeLabel = newType === 'POSTPAID' ? 'PASCABAYAR (Bayar di Belakang)' : 'PRABAYAR (Bayar di Depan)';
@@ -17222,7 +17288,7 @@
         }
 
         reg.billing_type = newType;
-        updateDetailBillingTypeUI(newType);
+        updateDetailBillingTypeUI(newType, reg.status);
 
         // Update in memory registration lists
         if (typeof adminRegistrationsList !== 'undefined' && Array.isArray(adminRegistrationsList)) {
