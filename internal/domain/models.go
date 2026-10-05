@@ -79,6 +79,7 @@ type User struct {
 	Email        string    `json:"email"`
 	Phone        string    `json:"phone"`
 	Role         string    `json:"role"` // "OWNER", "NOC", "SALES", "TECHNICIAN", "FINANCE"
+	BranchCode   string    `json:"branch_code"`
 	Status       string    `json:"status"`
 	CreatedAt    time.Time `json:"created_at"`
 }

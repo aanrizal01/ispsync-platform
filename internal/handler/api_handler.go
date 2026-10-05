@@ -2228,9 +2228,34 @@ func (h *APIHandler) AdminStaffKPI(w http.ResponseWriter, r *http.Request) {
 	technicians := make([]techMetric, 0)
 	sales := make([]salesMetric, 0)
 
+	reqBranch := strings.ToUpper(strings.TrimSpace(r.URL.Query().Get("branch")))
+
 	for _, u := range users {
 		roleUpper := strings.ToUpper(u.Role)
+		bCode := strings.ToUpper(strings.TrimSpace(u.BranchCode))
+		if bCode == "" {
+			bCode = "ALL"
+		}
 		branch := "Nasional (Pusat)"
+		switch bCode {
+		case "PYK":
+			branch = "Cabang Payakumbuh"
+		case "PAPUA":
+			branch = "Cabang Papua"
+		case "GNET-BIARO":
+			branch = "Mitra GNET Biaro"
+		default:
+			if bCode != "ALL" {
+				branch = "Cabang " + bCode
+			}
+		}
+
+		// Filter branch if specified and not ALL
+		if reqBranch != "" && reqBranch != "ALL" {
+			if bCode != reqBranch && bCode != "ALL" && roleUpper != "SUPER_ADMIN" && roleUpper != "OWNER" {
+				continue
+			}
+		}
 
 		completed := 0
 		pending := 0
@@ -2373,8 +2398,19 @@ func (h *APIHandler) AdminStaffKPI(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	branchName := "Nasional"
+	if reqBranch == "PYK" {
+		branchName = "Cabang Payakumbuh"
+	} else if reqBranch == "PAPUA" {
+		branchName = "Cabang Papua"
+	} else if reqBranch == "GNET-BIARO" {
+		branchName = "Mitra GNET Biaro"
+	} else if reqBranch != "" && reqBranch != "ALL" {
+		branchName = "Cabang " + reqBranch
+	}
+
 	h.successResponse(w, "Staff KPI retrieved", map[string]interface{}{
-		"branch_name":          "Nasional",
+		"branch_name":          branchName,
 		"total_spk_done":       spkDone,
 		"avg_team_optical_dbm": avgOptical,
 		"total_active_subs":    activeCount,
@@ -2632,6 +2668,10 @@ func (h *APIHandler) SuperuserListStaff(w http.ResponseWriter, r *http.Request) 
 
 	sanitized := make([]staffItem, 0)
 	for _, u := range users {
+		bCode := u.BranchCode
+		if bCode == "" {
+			bCode = "ALL"
+		}
 		sanitized = append(sanitized, staffItem{
 			ID:         u.ID,
 			Username:   u.Username,
@@ -2640,7 +2680,7 @@ func (h *APIHandler) SuperuserListStaff(w http.ResponseWriter, r *http.Request) 
 			Phone:      u.Phone,
 			Role:       u.Role,
 			Status:     u.Status,
-			BranchCode: "ALL",
+			BranchCode: bCode,
 		})
 	}
 

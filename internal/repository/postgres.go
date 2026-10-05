@@ -331,6 +331,8 @@ func (s *PostgresStorage) migrate() error {
 	ALTER TABLE tenant_integration_settings ADD COLUMN IF NOT EXISTS tax_rate_ppn DOUBLE PRECISION DEFAULT 11.0;
 	ALTER TABLE tenant_integration_settings ADD COLUMN IF NOT EXISTS npwp TEXT DEFAULT '';
 	ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS billing_type TEXT DEFAULT 'PREPAID';
+	ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS branch_code TEXT DEFAULT 'PYK';
+	ALTER TABLE users ADD COLUMN IF NOT EXISTS branch_code TEXT DEFAULT 'ALL';
 	`
 	_, err := s.db.Exec(schema)
 	return err
@@ -605,12 +607,12 @@ func (s *PostgresStorage) CreateTenant(ctx context.Context, tenant *domain.Tenan
 
 func (s *PostgresStorage) GetUserByUsername(ctx context.Context, tenantID, username string) (*domain.User, error) {
 	row := s.db.QueryRowContext(ctx, `
-		SELECT id, tenant_id, username, password_hash, full_name, email, phone, role, status, created_at
+		SELECT id, tenant_id, username, password_hash, full_name, email, phone, role, COALESCE(branch_code, 'ALL'), status, created_at
 		FROM users WHERE tenant_id = $1 AND username = $2
 	`, tenantID, username)
 
 	var u domain.User
-	err := row.Scan(&u.ID, &u.TenantID, &u.Username, &u.PasswordHash, &u.FullName, &u.Email, &u.Phone, &u.Role, &u.Status, &u.CreatedAt)
+	err := row.Scan(&u.ID, &u.TenantID, &u.Username, &u.PasswordHash, &u.FullName, &u.Email, &u.Phone, &u.Role, &u.BranchCode, &u.Status, &u.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -619,7 +621,7 @@ func (s *PostgresStorage) GetUserByUsername(ctx context.Context, tenantID, usern
 
 func (s *PostgresStorage) ListUsersByTenant(ctx context.Context, tenantID string) ([]domain.User, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, tenant_id, username, password_hash, full_name, email, phone, role, status, created_at
+		SELECT id, tenant_id, username, password_hash, full_name, email, phone, role, COALESCE(branch_code, 'ALL'), status, created_at
 		FROM users WHERE tenant_id = $1 ORDER BY created_at ASC
 	`, tenantID)
 	if err != nil {
@@ -630,7 +632,7 @@ func (s *PostgresStorage) ListUsersByTenant(ctx context.Context, tenantID string
 	var list []domain.User
 	for rows.Next() {
 		var u domain.User
-		if err := rows.Scan(&u.ID, &u.TenantID, &u.Username, &u.PasswordHash, &u.FullName, &u.Email, &u.Phone, &u.Role, &u.Status, &u.CreatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.TenantID, &u.Username, &u.PasswordHash, &u.FullName, &u.Email, &u.Phone, &u.Role, &u.BranchCode, &u.Status, &u.CreatedAt); err != nil {
 			return nil, err
 		}
 		list = append(list, u)
@@ -662,11 +664,14 @@ func (s *PostgresStorage) CreateUser(ctx context.Context, user *domain.User, raw
 	if user.Status == "" {
 		user.Status = "ACTIVE"
 	}
+	if user.BranchCode == "" {
+		user.BranchCode = "ALL"
+	}
 
 	_, err = s.db.ExecContext(ctx, `
-		INSERT INTO users (id, tenant_id, username, password_hash, full_name, email, phone, role, status, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-	`, user.ID, user.TenantID, user.Username, user.PasswordHash, user.FullName, user.Email, user.Phone, strings.ToUpper(user.Role), user.Status, user.CreatedAt)
+		INSERT INTO users (id, tenant_id, username, password_hash, full_name, email, phone, role, branch_code, status, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+	`, user.ID, user.TenantID, user.Username, user.PasswordHash, user.FullName, user.Email, user.Phone, strings.ToUpper(user.Role), user.BranchCode, user.Status, user.CreatedAt)
 	return err
 }
 

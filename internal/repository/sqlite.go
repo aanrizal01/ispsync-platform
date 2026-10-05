@@ -347,6 +347,8 @@ func (s *SQLiteStorage) migrate() error {
 	_, _ = s.db.Exec("ALTER TABLE tenant_integration_settings ADD COLUMN tax_rate_ppn REAL DEFAULT 11.0")
 	_, _ = s.db.Exec("ALTER TABLE tenant_integration_settings ADD COLUMN npwp TEXT DEFAULT ''")
 	_, _ = s.db.Exec("ALTER TABLE subscribers ADD COLUMN billing_type TEXT DEFAULT 'PREPAID'")
+	_, _ = s.db.Exec("ALTER TABLE subscribers ADD COLUMN branch_code TEXT DEFAULT 'PYK'")
+	_, _ = s.db.Exec("ALTER TABLE users ADD COLUMN branch_code TEXT DEFAULT 'ALL'")
 	return err
 }
 
@@ -653,12 +655,12 @@ func (s *SQLiteStorage) CreateTenant(ctx context.Context, tenant *domain.Tenant)
 
 func (s *SQLiteStorage) GetUserByUsername(ctx context.Context, tenantID, username string) (*domain.User, error) {
 	row := s.db.QueryRowContext(ctx, `
-		SELECT id, tenant_id, username, password_hash, full_name, email, phone, role, status, created_at
+		SELECT id, tenant_id, username, password_hash, full_name, email, phone, role, COALESCE(branch_code, 'ALL'), status, created_at
 		FROM users WHERE tenant_id = ? AND username = ?
 	`, tenantID, username)
 
 	var u domain.User
-	err := row.Scan(&u.ID, &u.TenantID, &u.Username, &u.PasswordHash, &u.FullName, &u.Email, &u.Phone, &u.Role, &u.Status, &u.CreatedAt)
+	err := row.Scan(&u.ID, &u.TenantID, &u.Username, &u.PasswordHash, &u.FullName, &u.Email, &u.Phone, &u.Role, &u.BranchCode, &u.Status, &u.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -667,7 +669,7 @@ func (s *SQLiteStorage) GetUserByUsername(ctx context.Context, tenantID, usernam
 
 func (s *SQLiteStorage) ListUsersByTenant(ctx context.Context, tenantID string) ([]domain.User, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, tenant_id, username, password_hash, full_name, email, phone, role, status, created_at
+		SELECT id, tenant_id, username, password_hash, full_name, email, phone, role, COALESCE(branch_code, 'ALL'), status, created_at
 		FROM users WHERE tenant_id = ? ORDER BY created_at ASC
 	`, tenantID)
 	if err != nil {
@@ -678,7 +680,7 @@ func (s *SQLiteStorage) ListUsersByTenant(ctx context.Context, tenantID string) 
 	var list []domain.User
 	for rows.Next() {
 		var u domain.User
-		if err := rows.Scan(&u.ID, &u.TenantID, &u.Username, &u.PasswordHash, &u.FullName, &u.Email, &u.Phone, &u.Role, &u.Status, &u.CreatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.TenantID, &u.Username, &u.PasswordHash, &u.FullName, &u.Email, &u.Phone, &u.Role, &u.BranchCode, &u.Status, &u.CreatedAt); err != nil {
 			return nil, err
 		}
 		list = append(list, u)
@@ -710,11 +712,14 @@ func (s *SQLiteStorage) CreateUser(ctx context.Context, user *domain.User, rawPa
 	if user.Status == "" {
 		user.Status = "ACTIVE"
 	}
+	if user.BranchCode == "" {
+		user.BranchCode = "ALL"
+	}
 
 	_, err = s.db.ExecContext(ctx, `
-		INSERT INTO users (id, tenant_id, username, password_hash, full_name, email, phone, role, status, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, user.ID, user.TenantID, user.Username, user.PasswordHash, user.FullName, user.Email, user.Phone, strings.ToUpper(user.Role), user.Status, user.CreatedAt)
+		INSERT INTO users (id, tenant_id, username, password_hash, full_name, email, phone, role, branch_code, status, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, user.ID, user.TenantID, user.Username, user.PasswordHash, user.FullName, user.Email, user.Phone, strings.ToUpper(user.Role), user.BranchCode, user.Status, user.CreatedAt)
 	return err
 }
 
