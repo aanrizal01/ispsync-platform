@@ -1419,13 +1419,17 @@
 
               <!-- Auth Method Selector Tabs -->
               <div class="flex items-center p-1 bg-slate-100/90 rounded-xl border border-slate-200/80 mb-6">
-                <button type="button" id="tab-cust-auth-password" onclick="switchCustomerAuthMethod('password')" class="flex-1 py-2.5 text-xs font-mono font-bold rounded-lg transition text-blue-700 bg-white shadow-xs flex items-center justify-center gap-2 cursor-pointer">
-                  <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                <button type="button" id="tab-cust-auth-password" onclick="switchCustomerAuthMethod('password')" class="flex-1 py-2.5 text-xs font-mono font-bold rounded-lg transition text-blue-700 bg-white shadow-xs flex items-center justify-center gap-1.5 cursor-pointer">
+                  <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
                   <span>KATA SANDI</span>
                 </button>
-                <button type="button" id="tab-cust-auth-otp" onclick="switchCustomerAuthMethod('otp')" class="flex-1 py-2.5 text-xs font-mono font-bold rounded-lg transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-2 cursor-pointer">
-                  <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                  <span>OTP WHATSAPP</span>
+                <button type="button" id="tab-cust-auth-otp" onclick="switchCustomerAuthMethod('otp')" class="flex-1 py-2.5 text-xs font-mono font-bold rounded-lg transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5 cursor-pointer">
+                  <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                  <span>OTP WA</span>
+                </button>
+                <button type="button" id="tab-cust-auth-track" onclick="switchCustomerAuthMethod('track')" class="flex-1 py-2.5 text-xs font-mono font-bold rounded-lg transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5 cursor-pointer">
+                  <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                  <span>LACAK REG</span>
                 </button>
               </div>
 
@@ -1514,6 +1518,30 @@
                 </button>
               </form>
 
+              <!-- Method 3: Track Registration Form -->
+              <form id="form-cust-login-track" onsubmit="handleCustomerTrackFormSubmit(event)" class="hidden space-y-5">
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <label for="customer-login-track-no" class="block text-xs font-bold uppercase tracking-wider text-slate-700">Nomor Registrasi Pasang Baru</label>
+                    <span class="text-[10px] text-slate-400 font-sans font-normal">Format: REG-2026-xxxx</span>
+                  </div>
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    </div>
+                    <input type="text" id="customer-login-track-no" placeholder="Contoh: REG-2026-9172" class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 placeholder:text-slate-400 font-mono tracking-wider focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 text-sm transition-all shadow-xs uppercase" required />
+                  </div>
+                  <p class="text-[11px] text-slate-500 mt-1.5 font-sans leading-relaxed">
+                    Masukkan nomor pendaftaran yang Anda terima di WhatsApp saat mendaftar pasang baru untuk memantau status survei teknisi dan instalasi secara instan tanpa perlu kata sandi.
+                  </p>
+                </div>
+
+                <button type="submit" id="btn-customer-track-submit" class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 px-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-md shadow-blue-600/20 active:scale-[0.99] cursor-pointer">
+                  <span>PANTAU PROGRES PEMASANGAN</span>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </button>
+              </form>
+
               <!-- Bottom Action & Inquiries -->
               <div class="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between gap-3 text-xs">
                 <button type="button" onclick="switchTab('register')" class="text-slate-600 hover:text-blue-600 font-medium inline-flex items-center gap-1.5 transition cursor-pointer">
@@ -1543,8 +1571,30 @@
         </div>
       </div>
 
-      <!-- 2. DASHBOARD CONTAINER (Shown when logged in) -->
+      <!-- 2. DASHBOARD CONTAINER (Shown when logged in or in public tracking mode) -->
       <div id="customer-dashboard-container" class="hidden space-y-4 sm:space-y-6 pb-28 sm:pb-16">
+
+        <!-- Public Tracking Mode Banner (Shown only when viewing via ?track=REG-xxx) -->
+        <div id="cust-tracking-mode-banner" class="hidden bg-gradient-to-r from-cyan-950 via-slate-900 to-blue-950 border border-cyan-500/40 rounded-2xl p-4 text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-3.5">
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 flex items-center justify-center shrink-0">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-white uppercase tracking-wider">PELACAKAN PROGRES PASANG BARU</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">MODE PUBLIK</span>
+              </div>
+              <p class="text-xs text-slate-300 mt-0.5">Memantau status permohonan pasang baru nomor <strong id="cust-tracking-regno-text" class="text-cyan-400 font-mono font-bold"></strong></p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button type="button" onclick="exitTrackingMode()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5 active:scale-95 cursor-pointer">
+              <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+              <span>Form Login / Masuk Akun</span>
+            </button>
+          </div>
+        </div>
 
         <!-- App-like Customer Header (Clean Native Card) -->
         <div class="bg-white rounded-lg border border-slate-200/90 p-3.5 sm:p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1556,7 +1606,7 @@
               <h2 id="cust-dash-name" class="text-base sm:text-lg font-bold text-slate-900 truncate leading-tight">Pelanggan GOGIGANET</h2>
               <div class="flex flex-wrap items-center gap-2 mt-1">
                 <p class="text-xs text-slate-500 font-mono flex items-center gap-1.5 truncate">
-                  <span class="text-blue-600 font-bold">GOGIGANET</span>
+                  <span class="text-blue-600 font-bold cust-brand-name-dynamic">ISP</span>
                   <span>&bull;</span>
                   <span id="cust-dash-regno" class="text-slate-600 font-medium">-</span>
                 </p>
@@ -1571,11 +1621,11 @@
 
           <!-- Quick Action Buttons: Ubah Sandi & Keluar -->
           <div class="flex items-center gap-1.5 shrink-0">
-            <button type="button" onclick="openCustomerChangePasswordModal()" class="p-2 sm:px-3 sm:py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold border border-slate-200 transition flex items-center gap-1.5 active:scale-95" title="Ubah Kata Sandi Portal">
+            <button type="button" id="btn-cust-dash-change-pw" onclick="openCustomerChangePasswordModal()" class="p-2 sm:px-3 sm:py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold border border-slate-200 transition flex items-center gap-1.5 active:scale-95" title="Ubah Kata Sandi Portal">
               <i data-lucide="key" class="w-4 h-4 text-slate-600"></i>
               <span class="hidden sm:inline">Ubah Sandi</span>
             </button>
-            <button type="button" onclick="logoutCustomer()" class="p-2 sm:px-3 sm:py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-semibold border border-rose-200 transition flex items-center gap-1.5 active:scale-95" title="Keluar dari Portal Pelanggan">
+            <button type="button" id="btn-cust-dash-logout" onclick="logoutCustomer()" class="p-2 sm:px-3 sm:py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-semibold border border-rose-200 transition flex items-center gap-1.5 active:scale-95" title="Keluar dari Portal Pelanggan">
               <i data-lucide="log-out" class="w-4 h-4 text-rose-600"></i>
               <span class="hidden sm:inline">Keluar</span>
             </button>
@@ -11457,32 +11507,128 @@
       authenticateCustomer(email);
     }
 
+    let isCustomerTrackingMode = false;
+
     function switchCustomerAuthMethod(method) {
       const tabPass = document.getElementById('tab-cust-auth-password');
       const tabOtp = document.getElementById('tab-cust-auth-otp');
+      const tabTrack = document.getElementById('tab-cust-auth-track');
       const formPass = document.getElementById('form-cust-login-password');
       const formOtp = document.getElementById('form-cust-login-otp');
+      const formTrack = document.getElementById('form-cust-login-track');
 
-      if (method === 'otp') {
-        if (tabOtp) {
-          tabOtp.className = 'flex-1 py-2.5 text-xs font-mono font-bold rounded-xl transition text-emerald-700 bg-white shadow-xs flex items-center justify-center gap-2';
-        }
-        if (tabPass) {
-          tabPass.className = 'flex-1 py-2.5 text-xs font-mono font-bold rounded-xl transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-2';
-        }
-        if (formPass) formPass.classList.add('hidden');
-        if (formOtp) formOtp.classList.remove('hidden');
-      } else {
-        if (tabPass) {
-          tabPass.className = 'flex-1 py-2.5 text-xs font-mono font-bold rounded-xl transition text-blue-700 bg-white shadow-xs flex items-center justify-center gap-2';
-        }
-        if (tabOtp) {
-          tabOtp.className = 'flex-1 py-2.5 text-xs font-mono font-bold rounded-xl transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-2';
-        }
-        if (formOtp) formOtp.classList.add('hidden');
-        if (formPass) formPass.classList.remove('hidden');
+      const activeClass = 'flex-1 py-2.5 text-xs font-mono font-bold rounded-lg transition text-blue-700 bg-white shadow-xs flex items-center justify-center gap-1.5 cursor-pointer';
+      const inactiveClass = 'flex-1 py-2.5 text-xs font-mono font-bold rounded-lg transition text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5 cursor-pointer';
+
+      if (tabPass) tabPass.className = (method === 'password') ? activeClass : inactiveClass;
+      if (tabOtp) tabOtp.className = (method === 'otp') ? (activeClass.replace('text-blue-700', 'text-emerald-700')) : inactiveClass;
+      if (tabTrack) tabTrack.className = (method === 'track') ? activeClass : inactiveClass;
+
+      if (formPass) formPass.classList.toggle('hidden', method !== 'password');
+      if (formOtp) formOtp.classList.toggle('hidden', method !== 'otp');
+      if (formTrack) formTrack.classList.toggle('hidden', method !== 'track');
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    async function trackRegistration(regNo) {
+      if (!regNo) return;
+      regNo = regNo.trim().toUpperCase();
+
+      const btn = document.getElementById('btn-customer-track-submit');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Memuat Status...';
       }
-      lucide.createIcons();
+
+      try {
+        const res = await fetch(`/api/v1/public/track/${encodeURIComponent(regNo)}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          const d = json.data;
+          isCustomerTrackingMode = true;
+
+          const payload = {
+            is_tracking_mode: true,
+            registration: d,
+            work_order: {
+              order_no: d.work_order_no,
+              status: d.work_order_status
+            }
+          };
+
+          renderCustomerDashboard(payload);
+
+          // Tampilkan banner mode pelacakan
+          const banner = document.getElementById('cust-tracking-mode-banner');
+          if (banner) {
+            banner.classList.remove('hidden');
+            const numEl = document.getElementById('cust-tracking-regno-text');
+            if (numEl) numEl.innerText = d.registration_no || regNo;
+          }
+
+          // Sembunyikan tombol ganti sandi di mode pelacakan publik
+          const btnChangePw = document.getElementById('btn-cust-dash-change-pw');
+          if (btnChangePw) btnChangePw.classList.add('hidden');
+
+          // Ubah tombol keluar menjadi "Form Login"
+          const btnLogout = document.getElementById('btn-cust-dash-logout');
+          if (btnLogout) {
+            btnLogout.innerHTML = '<i data-lucide="log-in" class="w-4 h-4 text-blue-600"></i><span class="hidden sm:inline">Form Login</span>';
+            btnLogout.onclick = exitTrackingMode;
+          }
+
+          // Sembunyikan bar multi lokasi & wifi box jika belum aktif
+          const locBar = document.getElementById('cust-dash-location-bar');
+          if (locBar) locBar.classList.add('hidden');
+          const wifiBox = document.getElementById('cust-dash-wifi-section');
+          if (wifiBox && d.status !== 'ACTIVE') wifiBox.classList.add('hidden');
+
+          const loginBox = document.getElementById('customer-login-container');
+          const dashBox = document.getElementById('customer-dashboard-container');
+          if (loginBox) loginBox.classList.add('hidden');
+          if (dashBox) dashBox.classList.remove('hidden');
+
+          if (window.lucide) lucide.createIcons();
+        } else {
+          alert('Nomor registrasi ' + regNo + ' tidak ditemukan di database.');
+        }
+      } catch (err) {
+        console.error('Track error:', err);
+        alert('Gagal memuat status pendaftaran: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<span>PANTAU PROGRES PEMASANGAN</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>';
+        }
+      }
+    }
+
+    function exitTrackingMode() {
+      isCustomerTrackingMode = false;
+      const banner = document.getElementById('cust-tracking-mode-banner');
+      if (banner) banner.classList.add('hidden');
+
+      const loginBox = document.getElementById('customer-login-container');
+      const dashBox = document.getElementById('customer-dashboard-container');
+      if (dashBox) dashBox.classList.add('hidden');
+      if (loginBox) loginBox.classList.remove('hidden');
+
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('track');
+        window.history.replaceState({}, '', url.pathname + (url.search ? url.search : ''));
+      } catch (e) {}
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function handleCustomerTrackFormSubmit(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('customer-login-track-no');
+      const regNo = input ? input.value.trim() : '';
+      if (!regNo) return alert('Silakan masukkan nomor registrasi Anda (contoh: REG-2026-9172)');
+      trackRegistration(regNo);
     }
 
     function toggleCustLoginPassVisibility() {
@@ -11915,6 +12061,25 @@
 
     function initCustomerPortal() {
       applyCustomerDynamicBranding();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const path = window.location.pathname.toLowerCase();
+      let targetReg = urlParams.get('track');
+      if (!targetReg && (path === '/track' || path.startsWith('/track/') || path === '/lacak' || path.startsWith('/lacak/'))) {
+        const rawParts = window.location.pathname.split('/');
+        if (rawParts.length >= 3 && rawParts[2].trim()) {
+          targetReg = decodeURIComponent(rawParts[2].trim());
+        }
+      }
+
+      // Jika ada nomor registrasi di URL (?track=REG-xxx atau /track/REG-xxx), langsung buka mode pelacakan!
+      if (targetReg && targetReg !== '1' && targetReg !== 'true') {
+        const trackInput = document.getElementById('customer-login-track-no');
+        if (trackInput) trackInput.value = targetReg;
+        trackRegistration(targetReg);
+        return;
+      }
+
       const authRaw = localStorage.getItem('customer_auth_data');
       const loginBox = document.getElementById('customer-login-container');
       const dashBox = document.getElementById('customer-dashboard-container');
@@ -11998,8 +12163,42 @@
       if (dashBox) dashBox.classList.remove('hidden');
       if (typeof updatePortalAuthChromeVisibility === 'function') updatePortalAuthChromeVisibility();
 
-      // Render Multi-Location Switcher Bar
-      renderCustomerLocationBar();
+      if (data.is_tracking_mode) {
+        document.title = 'Lacak Permohonan (' + (reg.registration_no || '') + ') • ' + (window.__EARLY_BRAND_NAME__ || 'ISP');
+        const banner = document.getElementById('cust-tracking-mode-banner');
+        if (banner) banner.classList.remove('hidden');
+        const numEl = document.getElementById('cust-tracking-regno-text');
+        if (numEl) numEl.innerText = reg.registration_no || '-';
+
+        const btnChangePw = document.getElementById('btn-cust-dash-change-pw');
+        if (btnChangePw) btnChangePw.classList.add('hidden');
+
+        const btnLogout = document.getElementById('btn-cust-dash-logout');
+        if (btnLogout) {
+          btnLogout.innerHTML = '<i data-lucide="log-in" class="w-4 h-4 text-blue-600"></i><span class="hidden sm:inline">Form Login</span>';
+          btnLogout.onclick = exitTrackingMode;
+        }
+
+        const locBar = document.getElementById('cust-dash-location-bar');
+        if (locBar) locBar.classList.add('hidden');
+      } else {
+        const banner = document.getElementById('cust-tracking-mode-banner');
+        if (banner) banner.classList.add('hidden');
+
+        const btnChangePw = document.getElementById('btn-cust-dash-change-pw');
+        if (btnChangePw) btnChangePw.classList.remove('hidden');
+
+        const btnLogout = document.getElementById('btn-cust-dash-logout');
+        if (btnLogout) {
+          btnLogout.innerHTML = '<i data-lucide="log-out" class="w-4 h-4 text-rose-600"></i><span class="hidden sm:inline">Keluar</span>';
+          btnLogout.onclick = logoutCustomer;
+        }
+      }
+
+      // Render Multi-Location Switcher Bar (only when logged in)
+      if (!data.is_tracking_mode) {
+        renderCustomerLocationBar();
+      }
 
       // Profile Header
       const nameEl = document.getElementById('cust-dash-name');
@@ -25865,8 +26064,13 @@
           document.documentElement.classList.add('is-portal-track');
           try {
             const p = window.location.pathname.toLowerCase();
+            const sp = new URLSearchParams(window.location.search);
+            const trk = sp.get('track');
             if (p === '/track' || p.startsWith('/track/') || p === '/lacak' || p.startsWith('/lacak/')) {
               // keep clean tracking path
+            } else if (trk && trk !== '1' && trk !== 'true') {
+              // keep clean tracking route with reg number
+              window.history.replaceState({}, '', '/track/' + encodeURIComponent(trk));
             } else {
               window.history.replaceState({}, '', '/login');
             }
@@ -27635,12 +27839,10 @@
           }
           if (targetReg && targetReg !== '1' && targetReg !== 'true') {
             setTimeout(function() {
-              const inp = document.getElementById('input-track-no');
-              if (inp) {
-                inp.value = targetReg;
-                if (typeof handleTrackSubmit === 'function') handleTrackSubmit();
+              if (typeof trackRegistration === 'function') {
+                trackRegistration(targetReg);
               }
-            }, 300);
+            }, 100);
           }
         } else {
           switchTab('register');
