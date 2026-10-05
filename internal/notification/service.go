@@ -443,3 +443,77 @@ func (s *NotificationService) SendCustomerOTP(ctx context.Context, tenantName, p
 	return sendErr
 }
 
+// BillingCustomer merepresentasikan entitas pelanggan dari database billing Ledger
+type BillingCustomer struct {
+	ID             string
+	CustomerNumber string
+	FullName       string
+	Phone          string
+	Email          string
+	Status         string
+}
+
+// FindBillingCustomerByPhone mencari data pelanggan dari tabel customers di Ledger berdasarkan nomor HP
+func (s *NotificationService) FindBillingCustomerByPhone(ctx context.Context, phone string) (*BillingCustomer, error) {
+	if s.db == nil {
+		return nil, fmt.Errorf("billing db not connected")
+	}
+	cleanPhone := NormalizePhone(phone)
+	if cleanPhone == "" {
+		return nil, fmt.Errorf("invalid phone")
+	}
+
+	pNo62 := strings.TrimPrefix(cleanPhone, "62")
+	p0 := "0" + pNo62
+
+	row := s.db.QueryRowContext(ctx, `
+		SELECT id::text, customer_number, full_name, phone, COALESCE(email, ''), status
+		FROM customers
+		WHERE deleted_at IS NULL
+		  AND (regexp_replace(phone, '[^0-9]', '', 'g') = $1
+		       OR regexp_replace(phone, '[^0-9]', '', 'g') = $2
+		       OR regexp_replace(phone, '[^0-9]', '', 'g') = $3)
+		LIMIT 1
+	`, cleanPhone, pNo62, p0)
+
+	var bc BillingCustomer
+	if err := row.Scan(&bc.ID, &bc.CustomerNumber, &bc.FullName, &bc.Phone, &bc.Email, &bc.Status); err != nil {
+		return nil, err
+	}
+	return &bc, nil
+}
+
+// FindBillingCustomerByIdentifier mencari data pelanggan dari tabel customers di Ledger berdasarkan No Pelanggan, Email, atau HP
+func (s *NotificationService) FindBillingCustomerByIdentifier(ctx context.Context, ident string) (*BillingCustomer, error) {
+	if s.db == nil {
+		return nil, fmt.Errorf("billing db not connected")
+	}
+	ident = strings.TrimSpace(ident)
+	cleanPhone := NormalizePhone(ident)
+	pNo62 := strings.TrimPrefix(cleanPhone, "62")
+	p0 := "0" + pNo62
+
+	row := s.db.QueryRowContext(ctx, `
+		SELECT id::text, customer_number, full_name, phone, COALESCE(email, ''), status
+		FROM customers
+		WHERE deleted_at IS NULL
+		  AND (
+		       LOWER(customer_number) = LOWER($1)
+		       OR LOWER(email) = LOWER($1)
+		       OR ($2 != '' AND (
+		           regexp_replace(phone, '[^0-9]', '', 'g') = $2
+		           OR regexp_replace(phone, '[^0-9]', '', 'g') = $3
+		           OR regexp_replace(phone, '[^0-9]', '', 'g') = $4
+		       ))
+		  )
+		LIMIT 1
+	`, ident, cleanPhone, pNo62, p0)
+
+	var bc BillingCustomer
+	if err := row.Scan(&bc.ID, &bc.CustomerNumber, &bc.FullName, &bc.Phone, &bc.Email, &bc.Status); err != nil {
+		return nil, err
+	}
+	return &bc, nil
+}
+
+

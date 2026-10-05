@@ -1167,6 +1167,20 @@ func (h *APIHandler) PublicCustomerRequestOTP(w http.ResponseWriter, r *http.Req
 		}
 	}
 
+	if foundSub == nil && h.notif != nil {
+		if bc, err := h.notif.FindBillingCustomerByPhone(r.Context(), cleanedPhone); err == nil && bc != nil {
+			foundSub = &domain.Subscriber{
+				ID:           bc.ID,
+				TenantID:     t.ID,
+				SubscriberNo: bc.CustomerNumber,
+				FullName:     bc.FullName,
+				Phone:        bc.Phone,
+				Email:        bc.Email,
+				Status:       bc.Status,
+			}
+		}
+	}
+
 	if foundSub == nil {
 		h.failResponse(w, http.StatusNotFound, "Nomor WhatsApp belum terdaftar sebagai pelanggan kami. Silakan hubungi admin atau daftar baru.")
 		return
@@ -1283,6 +1297,20 @@ func (h *APIHandler) PublicCustomerLogin(w http.ResponseWriter, r *http.Request)
 			}
 		}
 
+		if len(matchingSubs) == 0 && h.notif != nil {
+			if bc, err := h.notif.FindBillingCustomerByPhone(r.Context(), cleanedPhone); err == nil && bc != nil {
+				matchingSubs = append(matchingSubs, domain.Subscriber{
+					ID:           bc.ID,
+					TenantID:     t.ID,
+					SubscriberNo: bc.CustomerNumber,
+					FullName:     bc.FullName,
+					Phone:        bc.Phone,
+					Email:        bc.Email,
+					Status:       bc.Status,
+				})
+			}
+		}
+
 	case "session":
 		token := strings.TrimSpace(req.SessionToken)
 		if token == "" {
@@ -1297,6 +1325,19 @@ func (h *APIHandler) PublicCustomerLogin(w http.ResponseWriter, r *http.Request)
 		for _, s := range subs {
 			if s.ID == claims.UserID || s.SubscriberNo == claims.Username {
 				matchingSubs = append(matchingSubs, s)
+			}
+		}
+		if len(matchingSubs) == 0 && h.notif != nil {
+			if bc, err := h.notif.FindBillingCustomerByIdentifier(r.Context(), claims.Username); err == nil && bc != nil {
+				matchingSubs = append(matchingSubs, domain.Subscriber{
+					ID:           bc.ID,
+					TenantID:     t.ID,
+					SubscriberNo: bc.CustomerNumber,
+					FullName:     bc.FullName,
+					Phone:        bc.Phone,
+					Email:        bc.Email,
+					Status:       bc.Status,
+				})
 			}
 		}
 		if len(matchingSubs) > 0 {
@@ -1326,6 +1367,20 @@ func (h *APIHandler) PublicCustomerLogin(w http.ResponseWriter, r *http.Request)
 				strings.EqualFold(s.Email, ident) ||
 				strings.EqualFold(s.SubscriberNo, ident) {
 				matchingSubs = append(matchingSubs, s)
+			}
+		}
+
+		if len(matchingSubs) == 0 && h.notif != nil {
+			if bc, err := h.notif.FindBillingCustomerByIdentifier(r.Context(), ident); err == nil && bc != nil {
+				matchingSubs = append(matchingSubs, domain.Subscriber{
+					ID:           bc.ID,
+					TenantID:     t.ID,
+					SubscriberNo: bc.CustomerNumber,
+					FullName:     bc.FullName,
+					Phone:        bc.Phone,
+					Email:        bc.Email,
+					Status:       bc.Status,
+				})
 			}
 		}
 
