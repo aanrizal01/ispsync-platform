@@ -12,9 +12,15 @@ import {
 } from "@/lib/api/settings";
 import { ReceiptPrintDocument } from "@/components/receipt/ReceiptPrintDocument";
 import { InvoicePrintDocument } from "@/components/invoice/InvoicePrintDocument";
+import { FastPosCashier } from "@/components/pos/FastPosCashier";
+import { useAuth } from "@/lib/auth/context";
+import { Banknote, CreditCard, Plus, RefreshCw, ShieldCheck, Receipt } from "lucide-react";
 import { formatDate, formatRupiah, cn } from "@/lib/utils";
 
 export default function PaymentsPage() {
+  const { hasPermission, isLoading: isAuthLoading } = useAuth();
+  const [activeTab, setActiveTab] = useState<"pos" | "history">("pos");
+
   const [payments, setPayments] = useState<Payment[]>([]);
   const [unpaidInvoices, setUnpaidInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,6 +28,27 @@ export default function PaymentsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (tabParam === "history") {
+        setActiveTab("history");
+      } else if (tabParam === "pos") {
+        setActiveTab("pos");
+      }
+    }
+  }, []);
+
+  const switchTab = (tab: "pos" | "history") => {
+    setActiveTab(tab);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", tab);
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
 
   // Printing & Document States
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
@@ -162,34 +189,121 @@ export default function PaymentsPage() {
     .filter((p) => p.status === "COMPLETED")
     .reduce((sum, p) => sum + p.amount, 0);
 
-  return (
-    <div>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Riwayat Pembayaran</h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Catatan transaksi pembayaran tunai, transfer, dan gateway (Midtrans / QRIS)
+  if (isAuthLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3 text-slate-400">
+          <RefreshCw className="w-8 h-8 animate-spin text-cyan-500" />
+          <p className="text-sm font-medium">Memverifikasi hak akses...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasPermission("payments:read") && !hasPermission("payments:write")) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-8 text-center backdrop-blur-sm">
+          <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-4">
+            <ShieldCheck className="w-6 h-6" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-900 mb-2">Akses Ditolak</h2>
+          <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">
+            Anda tidak memiliki izin (hak akses) untuk mengelola atau melihat Pembayaran. Hubungi Administrator ISP Anda.
           </p>
         </div>
-        <div className="flex items-center gap-2.5">
-          <Link
-            href="/admin/pos"
-            className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-cyan-400 font-bold px-4 py-2.5 rounded-lg text-sm transition shadow-sm border border-slate-700"
-          >
-            <span>🧾 Buka Loket Kasir POS</span>
-          </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header with Segmented Navigation Tab */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            Kasir &amp; Pembayaran
+          </h1>
+          <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
+            Layanan loket checkout kasir cepat, struk thermal, dan histori transaksi pembayaran.
+          </p>
+        </div>
+
+        {/* Tab Switcher Pills */}
+        <div className="p-1 bg-slate-100 rounded-2xl flex items-center border border-slate-200/80 shadow-2xs self-start sm:self-auto">
           <button
-            onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-lg text-sm transition-colors shadow-sm"
+            type="button"
+            onClick={() => switchTab("pos")}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
+              activeTab === "pos"
+                ? "bg-white text-slate-900 shadow-sm border border-slate-200/80 font-black"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+            )}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Catat Pembayaran Manual
+            <Banknote className={cn("w-4 h-4", activeTab === "pos" ? "text-emerald-600" : "text-slate-400")} />
+            <span>Loket Kasir POS</span>
+            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800">
+              Kasir
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => switchTab("history")}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer select-none",
+              activeTab === "history"
+                ? "bg-white text-slate-900 shadow-sm border border-slate-200/80 font-black"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+            )}
+          >
+            <CreditCard className={cn("w-4 h-4", activeTab === "history" ? "text-blue-600" : "text-slate-400")} />
+            <span>Riwayat Transaksi</span>
+            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-slate-200 text-slate-700">
+              {payments.length}
+            </span>
           </button>
         </div>
       </div>
+
+      {/* Tab 1: Fast POS Cashier Counter */}
+      {activeTab === "pos" && (
+        <FastPosCashier
+          onViewHistory={() => switchTab("history")}
+          hideHeaderBack
+        />
+      )}
+
+      {/* Tab 2: Payments History & Transactions */}
+      {activeTab === "history" && (
+        <div className="space-y-6">
+          {/* Action Header for History */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">Histori Mutasi &amp; Catatan Pelunasan</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Daftar transaksi pembayaran tagihan internet melalui kasir, QRIS, dan transfer bank.
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => switchTab("pos")}
+                className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-cyan-400 font-bold px-3.5 py-2 rounded-xl text-xs transition shadow-sm border border-slate-700 cursor-pointer"
+              >
+                <Banknote className="w-4 h-4 text-emerald-400" />
+                <span>Buka Loket Kasir POS</span>
+              </button>
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition-colors shadow-sm cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Catat Pembayaran Manual</span>
+              </button>
+            </div>
+          </div>
 
       {/* Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
@@ -308,6 +422,8 @@ export default function PaymentsPage() {
           </table>
         </div>
       </div>
+    </div>
+    )}
 
       {/* Modal Catat Pembayaran Manual */}
       {isModalOpen && (

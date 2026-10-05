@@ -27,12 +27,17 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/pos",
-        destination: "/admin/pos",
+        destination: "/admin/payments?tab=pos",
         permanent: false,
       },
       {
         source: "/login/pos",
-        destination: "/admin/pos",
+        destination: "/admin/payments?tab=pos",
+        permanent: false,
+      },
+      {
+        source: "/admin/pos",
+        destination: "/admin/payments?tab=pos",
         permanent: false,
       },
     ];

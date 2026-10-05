@@ -112,8 +112,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           !user.permissions.includes("reports:read") &&
           (user.permissions.includes("payments:read") || user.permissions.includes("payments:write"))
         ) {
-          // Dedicated Kasir / POS landing
-          router.push("/admin/pos");
+          // Dedicated Kasir / POS landing in Pembayaran
+          router.push("/admin/payments?tab=pos");
         } else {
           router.push("/admin/dashboard");
         }

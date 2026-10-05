@@ -100,14 +100,6 @@ const navSections: NavSection[] = [
         permission: "payments:read",
       },
       {
-        label: "Loket Kasir POS",
-        href: "/admin/pos",
-        icon: Receipt,
-        permission: "payments:write",
-        badge: "POS",
-        badgeColor: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",
-      },
-      {
         label: "Pengeluaran",
         href: "/admin/expenses",
         icon: TrendingDown,

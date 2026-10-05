@@ -105,13 +105,13 @@ export default function DashboardPage() {
     if (isAuthLoading || !user) return;
     if (!hasPermission("reports:read")) {
       if (hasPermission("payments:read") || hasPermission("payments:write")) {
-        router.replace("/admin/pos");
+        router.replace("/admin/payments?tab=pos");
       } else if (hasPermission("customers:read")) {
         router.replace("/admin/customers");
       } else if (hasPermission("vouchers:read")) {
         router.replace("/admin/vouchers");
       } else {
-        router.replace("/admin/pos");
+        router.replace("/admin/payments?tab=pos");
       }
       return;
     }
