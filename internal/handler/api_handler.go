@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -93,12 +94,17 @@ func (h *APIHandler) GetContext(w http.ResponseWriter, r *http.Request) {
 		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
 		return
 	}
+	gmapsKey := "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA"
+	if st, err := h.store.GetTenantSettings(r.Context(), tCtx.Tenant.ID); err == nil && st != nil && st.GoogleMapsAPIKey != "" {
+		gmapsKey = st.GoogleMapsAPIKey
+	}
 	h.jsonResponse(w, http.StatusOK, map[string]interface{}{
-		"tenant":    tCtx.Tenant,
-		"app_type":  tCtx.AppType,
-		"subdomain": tCtx.Subdomain,
-		"host":      tCtx.Host,
-		"capabilities": h.tenantCapsFor(r),
+		"tenant":              tCtx.Tenant,
+		"app_type":            tCtx.AppType,
+		"subdomain":           tCtx.Subdomain,
+		"host":                tCtx.Host,
+		"capabilities":        h.tenantCapsFor(r),
+		"google_maps_api_key": gmapsKey,
 	})
 }
 
@@ -885,6 +891,27 @@ func (h *APIHandler) PublicRegister(w http.ResponseWriter, r *http.Request) {
 			})
 		}(t.Name, t.Slug, sub.FullName, sub.Phone, sub.Address, sub.SubscriberNo, planName, odpCode, dist)
 	}
+
+	// Kirim Alert Notifikasi Telegram Bot NOC
+	go func(tenantID, tName, cName, cPhone, cAddr, rNo, pName, oCode string, dDist float64, woNo string) {
+		st, err := h.store.GetTenantSettings(context.Background(), tenantID)
+		if err == nil && st != nil && st.TelegramBotToken != "" && st.TelegramChatID != "" && st.NotifyNewRegistration {
+			text := fmt.Sprintf(
+				"🌐 <b>PENDAFTARAN BARU (NOC ALERT)</b>\n\n"+
+					"🏢 Provider: <b>%s</b>\n"+
+					"📋 No. Registrasi: <code>%s</code>\n"+
+					"👤 Pelanggan: <b>%s</b>\n"+
+					"📞 WhatsApp: <code>%s</code>\n"+
+					"📦 Paket: <b>%s</b>\n"+
+					"🏠 Alamat: %s\n"+
+					"🎯 ODP Terdekat: <code>%s</code> (Jarak: %.1f m)\n"+
+					"📄 SPK Otomatis: <code>%s</code>\n\n"+
+					"⚡ <i>Segera tindak lanjuti survei di Panel NOC.</i>",
+				tName, rNo, cName, cPhone, pName, cAddr, oCode, dDist, woNo,
+			)
+			_ = sendTelegramMessage(st.TelegramBotToken, st.TelegramChatID, text)
+		}
+	}(t.ID, t.Name, sub.FullName, sub.Phone, sub.Address, sub.SubscriberNo, planName, odpCode, dist, wo.OrderNo)
 
 	h.successResponse(w, "Pendaftaran berhasil dikirim. Tim kami akan segera memproses verifikasi dan survei lokasi.", map[string]interface{}{
 		"id":                     sub.ID,
@@ -2439,4 +2466,123 @@ func (h *APIHandler) AdminUpdatePartner(w http.ResponseWriter, r *http.Request) 
 	}
 
 	h.successResponse(w, "Sales berhasil diperbarui", nil)
+}
+
+// sendTelegramMessage utilitas pengiriman pesan via Telegram Bot API
+func sendTelegramMessage(botToken, chatID, text string) error {
+	if botToken == "" || chatID == "" {
+		return fmt.Errorf("bot token dan chat id wajib diisi")
+	}
+	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", botToken)
+	payload := map[string]string{
+		"chat_id":    chatID,
+		"text":       text,
+		"parse_mode": "HTML",
+	}
+	b, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Post(url, "application/json", bytes.NewBuffer(b))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		var errResp struct {
+			Description string `json:"description"`
+		}
+		_ = json.NewDecoder(resp.Body).Decode(&errResp)
+		if errResp.Description != "" {
+			return fmt.Errorf("telegram API error (%d): %s", resp.StatusCode, errResp.Description)
+		}
+		return fmt.Errorf("telegram API error (%d)", resp.StatusCode)
+	}
+	return nil
+}
+
+// GetTenantSettings mengambil pengaturan integrasi (Maps & Telegram)
+func (h *APIHandler) GetTenantSettings(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	if t == nil {
+		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
+		return
+	}
+	st, err := h.store.GetTenantSettings(r.Context(), t.ID)
+	if err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal mengambil pengaturan: "+err.Error())
+		return
+	}
+	h.successResponse(w, "Pengaturan integrasi berhasil dimuat", st)
+}
+
+// UpdateTenantSettings memperbarui pengaturan integrasi tenant
+func (h *APIHandler) UpdateTenantSettings(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	if t == nil {
+		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
+		return
+	}
+	var req domain.TenantIntegrationSettings
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.failResponse(w, http.StatusBadRequest, "Invalid JSON input")
+		return
+	}
+	req.TenantID = t.ID
+	if err := h.store.UpdateTenantSettings(r.Context(), t.ID, &req); err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal menyimpan pengaturan: "+err.Error())
+		return
+	}
+	h.successResponse(w, "Pengaturan integrasi Google Maps & Telegram Bot berhasil disimpan!", req)
+}
+
+// TestTelegram mengirim pesan uji coba ke Telegram Bot
+func (h *APIHandler) TestTelegram(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	if t == nil {
+		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
+		return
+	}
+	var req struct {
+		BotToken string `json:"bot_token"`
+		ChatID   string `json:"chat_id"`
+		Message  string `json:"message"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&req)
+
+	token := strings.TrimSpace(req.BotToken)
+	chatID := strings.TrimSpace(req.ChatID)
+
+	if token == "" || chatID == "" {
+		st, _ := h.store.GetTenantSettings(r.Context(), t.ID)
+		if st != nil {
+			if token == "" {
+				token = st.TelegramBotToken
+			}
+			if chatID == "" {
+				chatID = st.TelegramChatID
+			}
+		}
+	}
+
+	if token == "" || chatID == "" {
+		h.failResponse(w, http.StatusBadRequest, "Telegram Bot Token dan Chat ID wajib diisi!")
+		return
+	}
+
+	msg := req.Message
+	if msg == "" {
+		msg = fmt.Sprintf("✅ <b>TEST NOTIFIKASI TELEGRAM BERHASIL!</b>\n\nSistem <b>%s</b> (NOC Nexus) berhasil terhubung ke Bot Telegram ini.\n⏰ Waktu: %s", t.Name, time.Now().Format("02 Jan 2006 15:04:05 WIB"))
+	}
+
+	if err := sendTelegramMessage(token, chatID, msg); err != nil {
+		h.failResponse(w, http.StatusBadRequest, "Gagal mengirim ke Telegram: "+err.Error())
+		return
+	}
+
+	h.successResponse(w, "Pesan uji coba berhasil terkirim ke Telegram!", map[string]string{
+		"chat_id": chatID,
+		"status":  "DELIVERED",
+	})
 }

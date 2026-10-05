@@ -297,6 +297,17 @@ func (s *PostgresStorage) migrate() error {
 
 	CREATE INDEX IF NOT EXISTS idx_tenant_addons_tenant ON tenant_addons(tenant_id, status);
 	ALTER TABLE tenants ADD COLUMN IF NOT EXISTS base_staff_quota INTEGER DEFAULT 3;
+
+	CREATE TABLE IF NOT EXISTS tenant_integration_settings (
+		tenant_id TEXT PRIMARY KEY REFERENCES tenants(id) ON DELETE CASCADE,
+		google_maps_api_key TEXT DEFAULT '',
+		telegram_bot_token TEXT DEFAULT '',
+		telegram_chat_id TEXT DEFAULT '',
+		notify_new_registration BOOLEAN DEFAULT TRUE,
+		notify_odp_full BOOLEAN DEFAULT TRUE,
+		notify_router_down BOOLEAN DEFAULT TRUE,
+		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);
 	`
 	_, err := s.db.Exec(schema)
 	return err
@@ -1397,5 +1408,53 @@ func (s *PostgresStorage) ResetUserPassword(ctx context.Context, tenantID, usern
 		return err
 	}
 	_, err = s.db.ExecContext(ctx, "UPDATE users SET password_hash = $1 WHERE tenant_id = $2 AND LOWER(username) = LOWER($3)", string(pwHash), tenantID, username)
+	return err
+}
+
+func (s *PostgresStorage) GetTenantSettings(ctx context.Context, tenantID string) (*domain.TenantIntegrationSettings, error) {
+	row := s.db.QueryRowContext(ctx, `
+		SELECT tenant_id, COALESCE(google_maps_api_key, ''), COALESCE(telegram_bot_token, ''), COALESCE(telegram_chat_id, ''),
+		       COALESCE(notify_new_registration, TRUE), COALESCE(notify_odp_full, TRUE), COALESCE(notify_router_down, TRUE),
+		       COALESCE(updated_at, CURRENT_TIMESTAMP)
+		FROM tenant_integration_settings
+		WHERE tenant_id = $1
+	`, tenantID)
+
+	var st domain.TenantIntegrationSettings
+	err := row.Scan(&st.TenantID, &st.GoogleMapsAPIKey, &st.TelegramBotToken, &st.TelegramChatID, &st.NotifyNewRegistration, &st.NotifyODPFull, &st.NotifyRouterDown, &st.UpdatedAt)
+	if err == sql.ErrNoRows {
+		return &domain.TenantIntegrationSettings{
+			TenantID:              tenantID,
+			GoogleMapsAPIKey:      "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA",
+			TelegramBotToken:      "",
+			TelegramChatID:        "",
+			NotifyNewRegistration: true,
+			NotifyODPFull:         true,
+			NotifyRouterDown:      true,
+			UpdatedAt:             time.Now(),
+		}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if st.GoogleMapsAPIKey == "" {
+		st.GoogleMapsAPIKey = "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA"
+	}
+	return &st, nil
+}
+
+func (s *PostgresStorage) UpdateTenantSettings(ctx context.Context, tenantID string, settings *domain.TenantIntegrationSettings) error {
+	_, err := s.db.ExecContext(ctx, `
+		INSERT INTO tenant_integration_settings (tenant_id, google_maps_api_key, telegram_bot_token, telegram_chat_id, notify_new_registration, notify_odp_full, notify_router_down, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+		ON CONFLICT (tenant_id) DO UPDATE SET
+			google_maps_api_key = EXCLUDED.google_maps_api_key,
+			telegram_bot_token = EXCLUDED.telegram_bot_token,
+			telegram_chat_id = EXCLUDED.telegram_chat_id,
+			notify_new_registration = EXCLUDED.notify_new_registration,
+			notify_odp_full = EXCLUDED.notify_odp_full,
+			notify_router_down = EXCLUDED.notify_router_down,
+			updated_at = CURRENT_TIMESTAMP
+	`, tenantID, settings.GoogleMapsAPIKey, settings.TelegramBotToken, settings.TelegramChatID, settings.NotifyNewRegistration, settings.NotifyODPFull, settings.NotifyRouterDown)
 	return err
 }

@@ -3063,6 +3063,11 @@
               <i data-lucide="award" class="w-4 h-4 text-slate-400 group-hover:text-slate-700 shrink-0"></i>
               <span id="admin-subtab-kpi-btn-label" class="truncate">KPI &amp; Evaluasi Staf</span>
             </button>
+
+            <button id="admin-subtab-settings-btn" type="button" onclick="switchAdminSubTab('settings')" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium text-slate-700 hover:text-slate-950 hover:bg-slate-100 transition text-left group">
+              <i data-lucide="settings" class="w-4 h-4 text-slate-400 group-hover:text-slate-700 shrink-0"></i>
+              <span class="truncate">Integrasi &amp; Pengaturan</span>
+            </button>
           </div>
 
           <!-- Switch Portal Shortcut -->
@@ -4165,6 +4170,226 @@
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+
+      <!-- Integration & Settings Sub-Tab (Super User / Owner) -->
+      <div id="admin-subtab-settings" class="hidden space-y-6 font-sans">
+        <div class="bg-white border border-slate-200 rounded-xl p-6 sm:p-7 shadow-xs space-y-6">
+          
+          <!-- Header Bar -->
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-5 border-b border-slate-200/80">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-900 text-cyan-400 border border-slate-800">
+                  TENANT INTEGRATION
+                </span>
+                <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  CARRIER GRADE
+                </span>
+              </div>
+              <h2 class="text-lg font-bold text-slate-900 font-mono tracking-tight flex items-center gap-2">
+                <i data-lucide="sliders" class="w-5 h-5 text-blue-600"></i>
+                PENGATURAN INTEGRASI &amp; API
+              </h2>
+              <p class="text-xs text-slate-500 mt-0.5">Kelola kredensial API Google Maps Platform, integrasi Telegram Bot Notifikasi Dispatch NOC, dan event alert tenant.</p>
+            </div>
+            
+            <div class="flex items-center gap-2.5 shrink-0">
+              <button type="button" onclick="loadNexusSettings()" class="px-3 py-2 text-xs font-mono font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition flex items-center gap-1.5 shadow-2xs cursor-pointer">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span>Muat Ulang</span>
+              </button>
+              <button type="button" id="btn-save-nexus-settings" onclick="saveNexusSettings()" class="px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 rounded-lg shadow-sm transition flex items-center gap-2 active:scale-98 cursor-pointer">
+                <i data-lucide="save" class="w-4 h-4"></i>
+                <span>Simpan Perubahan</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Alert / Feedback Banner -->
+          <div id="nexus-settings-banner" class="hidden p-3.5 rounded-lg text-xs font-medium border flex items-center gap-3">
+            <i id="nexus-settings-banner-icon" data-lucide="info" class="w-4 h-4 shrink-0"></i>
+            <span id="nexus-settings-banner-text" class="flex-1"></span>
+          </div>
+
+          <!-- Grid: 2 Columns (Google Maps & Telegram Bot) -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- 1. GOOGLE MAPS PLATFORM INTEGRATION -->
+            <div class="bg-slate-50/70 border border-slate-200/90 rounded-xl p-5 sm:p-6 flex flex-col justify-between space-y-5">
+              <div class="space-y-4">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 flex items-center justify-center shrink-0">
+                      <i data-lucide="map-pin" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                      <h3 class="text-sm font-bold text-slate-900 font-mono flex items-center gap-2">
+                        GOOGLE MAPS PLATFORM
+                      </h3>
+                      <p class="text-[11px] text-slate-500">Maps JavaScript API &amp; Geocoding API</p>
+                    </div>
+                  </div>
+                  <span id="badge-maps-key-status" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-200 text-slate-700">
+                    MEMUAT...
+                  </span>
+                </div>
+
+                <p class="text-xs text-slate-600 leading-relaxed">
+                  Digunakan untuk modul peta GIS, visualisasi titik ODP (Optical Distribution Point), penandaan koordinat calon pelanggan pendaftaran baru, dan peta navigasi teknisi.
+                </p>
+
+                <!-- Input API Key -->
+                <div class="space-y-1.5">
+                  <label class="block text-xs font-semibold text-slate-700 font-mono">
+                    Google Maps API Key
+                  </label>
+                  <div class="relative">
+                    <input type="password" id="input-setting-maps-key" placeholder="AIzaSy..." class="w-full text-xs font-mono px-3.5 py-2.5 pr-20 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition shadow-2xs">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-1.5 gap-1">
+                      <button type="button" onclick="togglePasswordVisibility('input-setting-maps-key', this)" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-md transition cursor-pointer" title="Lihat / Sembunyikan">
+                        <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <p class="text-[11px] text-slate-400">
+                    Kosongkan jika ingin memakai kunci default platform ISPSYNC. Pastikan API <span class="font-mono text-slate-600">Maps JavaScript API</span> dan <span class="font-mono text-slate-600">Geocoding API</span> diaktifkan di Google Cloud Console.
+                  </p>
+                </div>
+
+                <!-- Live Test Result Box -->
+                <div id="maps-test-result" class="hidden p-3 rounded-lg border text-xs font-mono space-y-1"></div>
+              </div>
+
+              <!-- Action Bar Maps -->
+              <div class="pt-3 border-t border-slate-200/80 flex items-center justify-between gap-3">
+                <a href="https://console.cloud.google.com/google/maps-apis/credentials" target="_blank" rel="noopener noreferrer" class="text-xs text-cyan-600 hover:text-cyan-700 font-medium inline-flex items-center gap-1">
+                  <span>Google Cloud Console</span>
+                  <i data-lucide="external-link" class="w-3 h-3"></i>
+                </a>
+                <button type="button" id="btn-test-maps-key" onclick="testNexusGoogleMapsKey()" class="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition flex items-center gap-1.5 shadow-2xs active:scale-98 cursor-pointer">
+                  <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
+                  <span>Validasi API Key</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. TELEGRAM BOT NOTIFICATION ENGINE -->
+            <div class="bg-slate-50/70 border border-slate-200/90 rounded-xl p-5 sm:p-6 flex flex-col justify-between space-y-5">
+              <div class="space-y-4">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-600 flex items-center justify-center shrink-0">
+                      <i data-lucide="send" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                      <h3 class="text-sm font-bold text-slate-900 font-mono flex items-center gap-2">
+                        TELEGRAM BOT ALERT
+                      </h3>
+                      <p class="text-[11px] text-slate-500">Notifikasi Otomatis Dispatch NOC &amp; Helpdesk</p>
+                    </div>
+                  </div>
+                  <span id="badge-telegram-status" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-200 text-slate-700">
+                    MEMUAT...
+                  </span>
+                </div>
+
+                <p class="text-xs text-slate-600 leading-relaxed">
+                  Bot mengirimkan notifikasi instan secara real-time ke Grup Telegram internal NOC atau Helpdesk ketika terjadi pendaftaran pelanggan baru atau anomali jaringan.
+                </p>
+
+                <!-- Input Bot Token -->
+                <div class="space-y-1.5">
+                  <label class="block text-xs font-semibold text-slate-700 font-mono">
+                    Telegram Bot Token
+                  </label>
+                  <div class="relative">
+                    <input type="password" id="input-setting-telegram-token" placeholder="7123456789:AAH..." class="w-full text-xs font-mono px-3.5 py-2.5 pr-20 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-2xs">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-1.5 gap-1">
+                      <button type="button" onclick="togglePasswordVisibility('input-setting-telegram-token', this)" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-md transition cursor-pointer" title="Lihat / Sembunyikan">
+                        <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <p class="text-[11px] text-slate-400">
+                    Token bot Telegram diperoleh via <a href="https://t.me/BotFather" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">@BotFather</a>.
+                  </p>
+                </div>
+
+                <!-- Input Chat ID -->
+                <div class="space-y-1.5">
+                  <label class="block text-xs font-semibold text-slate-700 font-mono">
+                    Telegram Chat ID / Group ID
+                  </label>
+                  <input type="text" id="input-setting-telegram-chat-id" placeholder="-1001234567890 atau 12345678" class="w-full text-xs font-mono px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-2xs">
+                  <p class="text-[11px] text-slate-400">
+                    Chat ID untuk grup / supergroup biasanya diawali minus (<code class="text-slate-600 font-mono">-100...</code>). Tambahkan bot ke grup terlebih dahulu.
+                  </p>
+                </div>
+
+                <!-- Notification Triggers / Toggles -->
+                <div class="pt-2 space-y-2.5">
+                  <label class="block text-xs font-bold text-slate-700 font-mono uppercase tracking-wider">
+                    Event Notifikasi Aktif
+                  </label>
+                  
+                  <label class="flex items-center gap-2.5 p-2.5 bg-white border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition">
+                    <input type="checkbox" id="chk-setting-notify-reg" checked class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer">
+                    <div class="text-xs">
+                      <span class="font-semibold text-slate-800">Registrasi Calon Pelanggan Baru</span>
+                      <p class="text-[11px] text-slate-500">Alert instan saat pendaftaran masuk dari formulir online web/portal.</p>
+                    </div>
+                  </label>
+
+                  <label class="flex items-center gap-2.5 p-2.5 bg-white border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition">
+                    <input type="checkbox" id="chk-setting-notify-odp" checked class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer">
+                    <div class="text-xs">
+                      <span class="font-semibold text-slate-800">Peringatan Kapasitas ODP Kritis</span>
+                      <p class="text-[11px] text-slate-500">Alert otomatis ketika slot port ODP terpakai mencapai &ge; 90%.</p>
+                    </div>
+                  </label>
+
+                  <label class="flex items-center gap-2.5 p-2.5 bg-white border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition">
+                    <input type="checkbox" id="chk-setting-notify-router" checked class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer">
+                    <div class="text-xs">
+                      <span class="font-semibold text-slate-800">Alert Router / Link Backbone Terputus</span>
+                      <p class="text-[11px] text-slate-500">Peringatan outage instan jika router MikroTik / OLT kehilangan sinyal ping.</p>
+                    </div>
+                  </label>
+                </div>
+
+                <!-- Live Test Result Box -->
+                <div id="telegram-test-result" class="hidden p-3 rounded-lg border text-xs font-mono space-y-1"></div>
+              </div>
+
+              <!-- Action Bar Telegram -->
+              <div class="pt-3 border-t border-slate-200/80 flex items-center justify-between gap-3">
+                <span class="text-[11px] text-slate-400">Pastikan bot sudah diundang ke grup</span>
+                <button type="button" id="btn-test-telegram-bot" onclick="testNexusTelegramBot()" class="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition flex items-center gap-1.5 shadow-2xs active:scale-98 cursor-pointer">
+                  <i data-lucide="send" class="w-3.5 h-3.5 text-blue-600"></i>
+                  <span>Kirim Pesan Tes</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Security & Multi-Tenant Notice -->
+          <div class="p-4 rounded-xl bg-slate-900 text-slate-300 border border-slate-800 flex items-start gap-3.5">
+            <div class="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 mt-0.5">
+              <i data-lucide="shield-check" class="w-4 h-4"></i>
+            </div>
+            <div class="space-y-1">
+              <h4 class="text-xs font-bold text-slate-100 font-mono flex items-center gap-2">
+                KEAMANAN KREDENSIAL MULTI-TENANT ISPSYNC
+              </h4>
+              <p class="text-[11px] text-slate-400 leading-normal">
+                Kredensial API Key dan Token Telegram disimpan secara terisolasi per-tenant pada database PostgreSQL carrier-grade. Token tidak pernah dibagikan antar tenant dan hanya dipanggil secara aman oleh server-side worker ISPSYNC Core.
+              </p>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -18852,8 +19077,8 @@
         }
       }
 
-      if (currentRole === 'branch_manager' && (sub === 'executive' || sub === 'impersonate' || sub === 'staff')) {
-        alert('Akses Terbatas: Menu eksekutif dan konfigurasi RBAC sistem hanya diizinkan untuk level Super User (Owner).');
+      if (currentRole === 'branch_manager' && (sub === 'executive' || sub === 'impersonate' || sub === 'staff' || sub === 'settings')) {
+        alert('Akses Terbatas: Menu eksekutif, integrasi, dan konfigurasi RBAC sistem hanya diizinkan untuk level Super User (Owner).');
         return;
       }
 
@@ -18873,6 +19098,8 @@
       if (staffTab) staffTab.classList.add('hidden');
       const kpiTab = document.getElementById('admin-subtab-kpi');
       if (kpiTab) kpiTab.classList.add('hidden');
+      const settingsTab = document.getElementById('admin-subtab-settings');
+      if (settingsTab) settingsTab.classList.add('hidden');
 
       const inactive = "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium text-slate-700 hover:text-slate-950 hover:bg-slate-100 transition text-left group";
       const active = "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 shadow-2xs transition text-left group";
@@ -18891,6 +19118,7 @@
       if (document.getElementById('admin-subtab-impersonate-btn')) document.getElementById('admin-subtab-impersonate-btn').className = inactive;
       if (document.getElementById('admin-subtab-staff-btn')) document.getElementById('admin-subtab-staff-btn').className = inactive;
       if (document.getElementById('admin-subtab-kpi-btn')) document.getElementById('admin-subtab-kpi-btn').className = inactive;
+      if (document.getElementById('admin-subtab-settings-btn')) document.getElementById('admin-subtab-settings-btn').className = inactive;
 
       if (sub === 'reg') {
         document.getElementById('admin-subtab-reg').classList.remove('hidden');
@@ -18933,6 +19161,10 @@
         if (staffTab) staffTab.classList.remove('hidden');
         if (document.getElementById('admin-subtab-staff-btn')) document.getElementById('admin-subtab-staff-btn').className = activeStaff;
         loadSuperUserStaff();
+      } else if (sub === 'settings') {
+        if (settingsTab) settingsTab.classList.remove('hidden');
+        if (document.getElementById('admin-subtab-settings-btn')) document.getElementById('admin-subtab-settings-btn').className = activeStaff;
+        loadNexusSettings();
       }
 
       const subTitles = {
@@ -18945,7 +19177,8 @@
         'partners': 'Database Sales & Mitra',
         'impersonate': 'Mode Impersonasi',
         'staff': 'Kontrol Staf & RBAC',
-        'kpi': 'KPI & Evaluasi Staf'
+        'kpi': 'KPI & Evaluasi Staf',
+        'settings': 'Integrasi & Pengaturan API'
       };
       const activeTitle = subTitles[sub] || 'NOC Command Center';
       const bName = window.__EARLY_BRAND_NAME__ || 'ISPSYNC';
@@ -19886,6 +20119,268 @@
         if (btnEl) btnEl.innerHTML = '<i data-lucide="eye" class="w-4 h-4"></i>';
       }
       lucide.createIcons();
+    }
+
+    function showNexusSettingsBanner(msg, type = 'success') {
+      const banner = document.getElementById('nexus-settings-banner');
+      const text = document.getElementById('nexus-settings-banner-text');
+      const icon = document.getElementById('nexus-settings-banner-icon');
+      if (!banner || !text) return;
+
+      banner.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'bg-rose-50', 'text-rose-800', 'border-rose-200', 'bg-blue-50', 'text-blue-800', 'border-blue-200');
+
+      if (type === 'success') {
+        banner.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
+        if (icon) icon.setAttribute('data-lucide', 'check-circle');
+      } else if (type === 'error') {
+        banner.classList.add('bg-rose-50', 'text-rose-800', 'border-rose-200');
+        if (icon) icon.setAttribute('data-lucide', 'alert-circle');
+      } else {
+        banner.classList.add('bg-blue-50', 'text-blue-800', 'border-blue-200');
+        if (icon) icon.setAttribute('data-lucide', 'info');
+      }
+      text.innerText = msg;
+      lucide.createIcons();
+
+      setTimeout(() => {
+        banner.classList.add('hidden');
+      }, 6000);
+    }
+
+    async function loadNexusSettings() {
+      const mapsInput = document.getElementById('input-setting-maps-key');
+      const tgTokenInput = document.getElementById('input-setting-telegram-token');
+      const tgChatIdInput = document.getElementById('input-setting-telegram-chat-id');
+      const chkReg = document.getElementById('chk-setting-notify-reg');
+      const chkOdp = document.getElementById('chk-setting-notify-odp');
+      const chkRouter = document.getElementById('chk-setting-notify-router');
+      const mapsBadge = document.getElementById('badge-maps-key-status');
+      const tgBadge = document.getElementById('badge-telegram-status');
+
+      try {
+        const res = await fetch('/api/v1/tenant/settings', {
+          headers: {
+            'X-Admin-Key': 'isp-onboarding-admin-key',
+            'Authorization': 'Bearer ' + (localStorage.getItem('auth_session_token') || ''),
+            'X-User-Role': localStorage.getItem('active_portal_role') || 'superuser',
+            'X-Client-Platform': 'web'
+          }
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+          const d = json.data;
+          if (mapsInput) mapsInput.value = d.google_maps_api_key || '';
+          if (tgTokenInput) tgTokenInput.value = d.telegram_bot_token || '';
+          if (tgChatIdInput) tgChatIdInput.value = d.telegram_chat_id || '';
+          if (chkReg) chkReg.checked = d.notify_on_new_registration !== false;
+          if (chkOdp) chkOdp.checked = d.notify_on_odp_full !== false;
+          if (chkRouter) chkRouter.checked = d.notify_on_router_down !== false;
+
+          if (mapsBadge) {
+            if (d.google_maps_api_key) {
+              mapsBadge.className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200';
+              mapsBadge.innerText = 'CUSTOM KEY AKTIF';
+            } else {
+              mapsBadge.className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200';
+              mapsBadge.innerText = 'DEFAULT PLATFORM';
+            }
+          }
+
+          if (tgBadge) {
+            if (d.telegram_bot_token && d.telegram_chat_id) {
+              tgBadge.className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200';
+              tgBadge.innerText = 'TERHUBUNG';
+            } else {
+              tgBadge.className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200';
+              tgBadge.innerText = 'BELUM DIKONFIGURASI';
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load tenant settings:', err);
+      }
+      lucide.createIcons();
+    }
+
+    async function saveNexusSettings() {
+      const btn = document.getElementById('btn-save-nexus-settings');
+      const origHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Menyimpan...</span>';
+        lucide.createIcons();
+      }
+
+      const mapsKey = (document.getElementById('input-setting-maps-key')?.value || '').trim();
+      const tgToken = (document.getElementById('input-setting-telegram-token')?.value || '').trim();
+      const tgChatId = (document.getElementById('input-setting-telegram-chat-id')?.value || '').trim();
+      const chkReg = document.getElementById('chk-setting-notify-reg')?.checked ?? true;
+      const chkOdp = document.getElementById('chk-setting-notify-odp')?.checked ?? true;
+      const chkRouter = document.getElementById('chk-setting-notify-router')?.checked ?? true;
+
+      try {
+        const res = await fetch('/api/v1/tenant/settings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': 'isp-onboarding-admin-key',
+            'Authorization': 'Bearer ' + (localStorage.getItem('auth_session_token') || ''),
+            'X-User-Role': localStorage.getItem('active_portal_role') || 'superuser',
+            'X-Client-Platform': 'web'
+          },
+          body: JSON.stringify({
+            google_maps_api_key: mapsKey,
+            telegram_bot_token: tgToken,
+            telegram_chat_id: tgChatId,
+            notify_on_new_registration: chkReg,
+            notify_on_odp_full: chkOdp,
+            notify_on_router_down: chkRouter
+          })
+        });
+        const json = await res.json();
+        if (json.success) {
+          showNexusSettingsBanner('Pengaturan integrasi berhasil disimpan secara aman ke database!', 'success');
+          loadNexusSettings();
+        } else {
+          showNexusSettingsBanner('Gagal menyimpan pengaturan: ' + (json.error || json.message || 'Unknown error'), 'error');
+        }
+      } catch (err) {
+        showNexusSettingsBanner('Kesalahan jaringan: ' + err.message, 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+          lucide.createIcons();
+        }
+      }
+    }
+
+    async function testNexusTelegramBot() {
+      const btn = document.getElementById('btn-test-telegram-bot');
+      const box = document.getElementById('telegram-test-result');
+      const tgToken = (document.getElementById('input-setting-telegram-token')?.value || '').trim();
+      const tgChatId = (document.getElementById('input-setting-telegram-chat-id')?.value || '').trim();
+
+      if (!tgToken || !tgChatId) {
+        if (box) {
+          box.className = 'p-3 rounded-lg border bg-rose-50 border-rose-200 text-rose-800 text-xs font-mono';
+          box.innerText = 'Mohon isi Telegram Bot Token dan Chat ID terlebih dahulu sebelum melakukan uji kirim.';
+          box.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Mengirim...</span>';
+        lucide.createIcons();
+      }
+
+      if (box) {
+        box.className = 'p-3 rounded-lg border bg-blue-50 border-blue-200 text-blue-800 text-xs font-mono';
+        box.innerText = 'Mengirimkan pesan uji coba ke Telegram...';
+        box.classList.remove('hidden');
+      }
+
+      try {
+        const res = await fetch('/api/v1/tenant/settings/test-telegram', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': 'isp-onboarding-admin-key',
+            'Authorization': 'Bearer ' + (localStorage.getItem('auth_session_token') || ''),
+            'X-User-Role': localStorage.getItem('active_portal_role') || 'superuser',
+            'X-Client-Platform': 'web'
+          },
+          body: JSON.stringify({
+            bot_token: tgToken,
+            chat_id: tgChatId
+          })
+        });
+        const json = await res.json();
+        if (json.success) {
+          if (box) {
+            box.className = 'p-3 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-800 text-xs font-mono';
+            box.innerHTML = '<strong>SUKSES:</strong> Pesan tes berhasil dikirim! Silakan periksa grup/chat Telegram Anda.';
+          }
+        } else {
+          if (box) {
+            box.className = 'p-3 rounded-lg border bg-rose-50 border-rose-200 text-rose-800 text-xs font-mono';
+            box.innerHTML = '<strong>GAGAL:</strong> ' + (json.error || 'Terjadi kesalahan saat memanggil Telegram Bot API');
+          }
+        }
+      } catch (err) {
+        if (box) {
+          box.className = 'p-3 rounded-lg border bg-rose-50 border-rose-200 text-rose-800 text-xs font-mono';
+          box.innerHTML = '<strong>ERROR JARINGAN:</strong> ' + err.message;
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="send" class="w-3.5 h-3.5 text-blue-600"></i><span>Kirim Pesan Tes</span>';
+          lucide.createIcons();
+        }
+      }
+    }
+
+    async function testNexusGoogleMapsKey() {
+      const btn = document.getElementById('btn-test-maps-key');
+      const box = document.getElementById('maps-test-result');
+      const key = (document.getElementById('input-setting-maps-key')?.value || '').trim();
+
+      if (!key) {
+        if (box) {
+          box.className = 'p-3 rounded-lg border bg-amber-50 border-amber-200 text-amber-800 text-xs font-mono';
+          box.innerText = 'Input API Key kosong. Sistem akan menggunakan kunci default platform jika dikosongkan.';
+          box.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Memvalidasi...</span>';
+        lucide.createIcons();
+      }
+
+      if (box) {
+        box.className = 'p-3 rounded-lg border bg-blue-50 border-blue-200 text-blue-800 text-xs font-mono';
+        box.innerText = 'Menguji koneksi ke Google Maps API...';
+        box.classList.remove('hidden');
+      }
+
+      try {
+        const testUrl = 'https://maps.googleapis.com/maps/api/geocode/json?address=Jakarta&key=' + encodeURIComponent(key);
+        const res = await fetch(testUrl);
+        const json = await res.json();
+        if (json.status === 'OK' || json.status === 'ZERO_RESULTS') {
+          if (box) {
+            box.className = 'p-3 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-800 text-xs font-mono';
+            box.innerHTML = '<strong>VALID:</strong> Google Maps API Key terverifikasi aktif dan dapat digunakan!';
+          }
+        } else if (json.status === 'REQUEST_DENIED') {
+          if (box) {
+            box.className = 'p-3 rounded-lg border bg-rose-50 border-rose-200 text-rose-800 text-xs font-mono';
+            box.innerHTML = '<strong>REQUEST DENIED:</strong> ' + (json.error_message || 'API Key ditolak. Pastikan Geocoding API aktif dan restriksi HTTP/IP sesuai.');
+          }
+        } else {
+          if (box) {
+            box.className = 'p-3 rounded-lg border bg-amber-50 border-amber-200 text-amber-800 text-xs font-mono';
+            box.innerHTML = '<strong>STATUS GOOGLE:</strong> ' + json.status + (json.error_message ? ' - ' + json.error_message : '');
+          }
+        }
+      } catch (err) {
+        if (box) {
+          box.className = 'p-3 rounded-lg border bg-slate-100 border-slate-300 text-slate-800 text-xs font-mono';
+          box.innerHTML = 'Catatan: Permintaan langsung ke Google Maps diblokir CORS browser (normal jika restriksi API diaktifkan). Pastikan domain atau referrer Anda sudah didaftarkan di Google Cloud Console.';
+        }
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i><span>Validasi API Key</span>';
+          lucide.createIcons();
+        }
+      }
     }
 
     function openChangePasswordModal(prefillUsername) {
@@ -23979,6 +24474,7 @@
       const execBtn = document.getElementById('admin-subtab-executive-btn');
       const impBtn = document.getElementById('admin-subtab-impersonate-btn');
       const staffBtn = document.getElementById('admin-subtab-staff-btn');
+      const settingsBtn = document.getElementById('admin-subtab-settings-btn');
       const sec1Title = document.getElementById('admin-sidebar-section1-title');
       const regBtnLabel = document.getElementById('admin-subtab-reg-btn-label');
 
@@ -23987,6 +24483,7 @@
         if (execBtn) execBtn.classList.remove('hidden');
         if (impBtn) impBtn.classList.add('hidden');
         if (staffBtn) staffBtn.classList.add('hidden');
+        if (settingsBtn) settingsBtn.classList.add('hidden');
         if (odpBtn) odpBtn.classList.add('hidden');
         if (clusterBtn) clusterBtn.classList.add('hidden');
         if (jartaplokJumpBtn) jartaplokJumpBtn.classList.remove('hidden');
@@ -24014,6 +24511,7 @@
         if (execBtn) execBtn.classList.add('hidden');
         if (impBtn) impBtn.classList.add('hidden');
         if (staffBtn) staffBtn.classList.add('hidden');
+        if (settingsBtn) settingsBtn.classList.add('hidden');
         if (odpBtn) odpBtn.classList.remove('hidden');
         if (clusterBtn) clusterBtn.classList.remove('hidden');
         if (jartaplokJumpBtn) jartaplokJumpBtn.classList.add('hidden');
@@ -24052,6 +24550,7 @@
         if (execBtn) execBtn.classList.remove('hidden');
         if (impBtn) impBtn.classList.remove('hidden');
         if (staffBtn) staffBtn.classList.remove('hidden');
+        if (settingsBtn) settingsBtn.classList.remove('hidden');
         if (odpBtn) odpBtn.classList.remove('hidden');
         if (clusterBtn) clusterBtn.classList.remove('hidden');
         if (jartaplokJumpBtn) jartaplokJumpBtn.classList.remove('hidden');
@@ -24080,6 +24579,7 @@
       } else {
         // Admin NOC
         if (suSidebarSection) suSidebarSection.classList.add('hidden');
+        if (settingsBtn) settingsBtn.classList.add('hidden');
         if (odpBtn) odpBtn.classList.remove('hidden');
         if (clusterBtn) clusterBtn.classList.remove('hidden');
         if (jartaplokJumpBtn) jartaplokJumpBtn.classList.add('hidden');

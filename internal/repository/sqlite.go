@@ -308,6 +308,18 @@ func (s *SQLiteStorage) migrate() error {
 	);
 
 	CREATE INDEX IF NOT EXISTS idx_tenant_addons_tenant ON tenant_addons(tenant_id, status);
+
+	CREATE TABLE IF NOT EXISTS tenant_integration_settings (
+		tenant_id TEXT PRIMARY KEY,
+		google_maps_api_key TEXT DEFAULT '',
+		telegram_bot_token TEXT DEFAULT '',
+		telegram_chat_id TEXT DEFAULT '',
+		notify_new_registration INTEGER DEFAULT 1,
+		notify_odp_full INTEGER DEFAULT 1,
+		notify_router_down INTEGER DEFAULT 1,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+	);
 	`
 	_, err := s.db.Exec(schema)
 	_ = s.db.QueryRow("SELECT base_staff_quota FROM tenants LIMIT 1").Scan(new(interface{}))
@@ -1465,5 +1477,69 @@ func (s *SQLiteStorage) ResetUserPassword(ctx context.Context, tenantID, usernam
 		return err
 	}
 	_, err = s.db.ExecContext(ctx, "UPDATE users SET password_hash = ? WHERE tenant_id = ? AND LOWER(username) = LOWER(?)", string(pwHash), tenantID, username)
+	return err
+}
+
+func (s *SQLiteStorage) GetTenantSettings(ctx context.Context, tenantID string) (*domain.TenantIntegrationSettings, error) {
+	row := s.db.QueryRowContext(ctx, `
+		SELECT tenant_id, COALESCE(google_maps_api_key, ''), COALESCE(telegram_bot_token, ''), COALESCE(telegram_chat_id, ''),
+		       COALESCE(notify_new_registration, 1), COALESCE(notify_odp_full, 1), COALESCE(notify_router_down, 1),
+		       COALESCE(updated_at, CURRENT_TIMESTAMP)
+		FROM tenant_integration_settings
+		WHERE tenant_id = ?
+	`, tenantID)
+
+	var st domain.TenantIntegrationSettings
+	var notifReg, notifODP, notifRouter int
+	err := row.Scan(&st.TenantID, &st.GoogleMapsAPIKey, &st.TelegramBotToken, &st.TelegramChatID, &notifReg, &notifODP, &notifRouter, &st.UpdatedAt)
+	if err == sql.ErrNoRows {
+		return &domain.TenantIntegrationSettings{
+			TenantID:              tenantID,
+			GoogleMapsAPIKey:      "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA",
+			TelegramBotToken:      "",
+			TelegramChatID:        "",
+			NotifyNewRegistration: true,
+			NotifyODPFull:         true,
+			NotifyRouterDown:      true,
+			UpdatedAt:             time.Now(),
+		}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	st.NotifyNewRegistration = notifReg == 1
+	st.NotifyODPFull = notifODP == 1
+	st.NotifyRouterDown = notifRouter == 1
+	if st.GoogleMapsAPIKey == "" {
+		st.GoogleMapsAPIKey = "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA"
+	}
+	return &st, nil
+}
+
+func (s *SQLiteStorage) UpdateTenantSettings(ctx context.Context, tenantID string, settings *domain.TenantIntegrationSettings) error {
+	notifReg := 0
+	if settings.NotifyNewRegistration {
+		notifReg = 1
+	}
+	notifODP := 0
+	if settings.NotifyODPFull {
+		notifODP = 1
+	}
+	notifRouter := 0
+	if settings.NotifyRouterDown {
+		notifRouter = 1
+	}
+	_, err := s.db.ExecContext(ctx, `
+		INSERT INTO tenant_integration_settings (tenant_id, google_maps_api_key, telegram_bot_token, telegram_chat_id, notify_new_registration, notify_odp_full, notify_router_down, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		ON CONFLICT (tenant_id) DO UPDATE SET
+			google_maps_api_key = excluded.google_maps_api_key,
+			telegram_bot_token = excluded.telegram_bot_token,
+			telegram_chat_id = excluded.telegram_chat_id,
+			notify_new_registration = excluded.notify_new_registration,
+			notify_odp_full = excluded.notify_odp_full,
+			notify_router_down = excluded.notify_router_down,
+			updated_at = CURRENT_TIMESTAMP
+	`, tenantID, settings.GoogleMapsAPIKey, settings.TelegramBotToken, settings.TelegramChatID, notifReg, notifODP, notifRouter)
 	return err
 }

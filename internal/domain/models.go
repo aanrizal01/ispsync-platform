@@ -287,3 +287,15 @@ type TenantCapabilities struct {
 	UsesFiberGrid      bool   `json:"uses_fibergrid"`
 	OwnInfrastructure bool   `json:"own_infrastructure"`
 }
+
+// TenantIntegrationSettings menyimpan kunci API Maps & Telegram bot per tenant
+type TenantIntegrationSettings struct {
+	TenantID              string    `json:"tenant_id"`
+	GoogleMapsAPIKey      string    `json:"google_maps_api_key"`
+	TelegramBotToken      string    `json:"telegram_bot_token"`
+	TelegramChatID        string    `json:"telegram_chat_id"`
+	NotifyNewRegistration bool      `json:"notify_new_registration"`
+	NotifyODPFull         bool      `json:"notify_odp_full"`
+	NotifyRouterDown      bool      `json:"notify_router_down"`
+	UpdatedAt             time.Time `json:"updated_at"`
+}

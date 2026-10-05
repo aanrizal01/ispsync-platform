@@ -159,9 +159,13 @@ func main() {
 		api.Post("/register", apiH.Register)
 		api.Get("/registrations/{regNo}", apiH.PublicTrack)
 
-		// â”€â”€ PENGATURAN TENANT (OWNER/NOC) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+		// ── PENGATURAN TENANT (OWNER/NOC) ─────────────────────────────
 		api.With(adminOnly).Post("/tenant/custom-domain", apiH.UpdateCustomDomain)
 		api.With(adminOnly).Post("/tenant/profile", apiH.UpdateTenantProfile)
+		api.With(adminOnly).Get("/tenant/settings", apiH.GetTenantSettings)
+		api.With(adminOnly).Post("/tenant/settings", apiH.UpdateTenantSettings)
+		api.With(adminOnly).Put("/tenant/settings", apiH.UpdateTenantSettings)
+		api.With(adminOnly).Post("/tenant/settings/test-telegram", apiH.TestTelegram)
 		api.With(adminOnly).Post("/tenant/mikrotik/generate", apiH.GenerateMikrotikVPN)
 		api.With(adminOnly).Post("/tenant/hotspot/generate", apiH.GenerateHotspotConfig)
 		api.With(adminOnly).Post("/tenant/isolir/generate", apiH.GenerateIsolirScript)

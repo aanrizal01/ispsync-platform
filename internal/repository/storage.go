@@ -77,6 +77,10 @@ type Storage interface {
 	UpdateUserStatus(ctx context.Context, tenantID, userID, status string) error
 	ResetUserPassword(ctx context.Context, tenantID, username, newPassword string) error
 
+	// Tenant Integration Settings (Maps & Telegram)
+	GetTenantSettings(ctx context.Context, tenantID string) (*domain.TenantIntegrationSettings, error)
+	UpdateTenantSettings(ctx context.Context, tenantID string, settings *domain.TenantIntegrationSettings) error
+
 	// Close
 	Close() error
 }
