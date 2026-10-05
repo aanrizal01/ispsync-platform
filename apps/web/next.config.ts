@@ -21,6 +21,22 @@ const nextConfig: NextConfig = {
 
   // Disable x-powered-by header
   poweredByHeader: false,
+
+  // Redirect convenience shortcuts
+  async redirects() {
+    return [
+      {
+        source: "/pos",
+        destination: "/admin/pos",
+        permanent: false,
+      },
+      {
+        source: "/login/pos",
+        destination: "/admin/pos",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
