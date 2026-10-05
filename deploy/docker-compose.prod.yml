@@ -122,8 +122,8 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
       SMTP_FROM: ${SMTP_FROM}
-      ISP_BASE_URL: http://172.18.0.1:8081
-      FTTX_BASE_URL: http://172.18.0.1:8082
+      ISP_BASE_URL: http://nexus:8081
+      FTTX_BASE_URL: http://fibergrid:8082
     volumes:
       - ../keys:/app/keys:ro
     networks:
@@ -134,6 +134,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      fibergrid:
+        condition: service_started
+      nexus:
+        condition: service_started
 
   # ──────────────────────────────────────────────
   # Go Background Worker (Auto-Invoicing & Overdue)
@@ -187,6 +191,63 @@ services:
       - public_net
     depends_on:
       - api
+
+  # ──────────────────────────────────────────────
+  # ISPSYNC FiberGrid Core Engine (Port 8082)
+  # ──────────────────────────────────────────────
+  fibergrid:
+    image: isp-prod-fibergrid:latest
+    container_name: isp-prod-fibergrid
+    restart: always
+    environment:
+      PORT: 8082
+      DB_DRIVER: postgres
+      DATABASE_URL: postgres://${POSTGRES_USER:-isp_admin}:${POSTGRES_PASSWORD}@postgres:5432/isp_fibergrid?sslmode=disable
+      ADMIN_API_KEY: ${FTTX_ADMIN_KEY:-gogiga-noc-admin-99a8f27c3d14}
+      SUPERUSER_API_KEY: ${FTTX_SUPERUSER_KEY:-gogiga-super-owner-b8417c09e32f}
+      INTERNAL_API_KEY: ${FTTX_INTERNAL_KEY:-gogiga-internal-sync-42c8d71e9a55}
+      ISP_BASE_URL: http://nexus:8081
+      ISP_ADMIN_KEY: ${ISP_ADMIN_KEY:-isp-onboarding-admin-key}
+      ISP_PARTNER_KEY: ${ISP_PARTNER_KEY:-gnet2_secret2026}
+      APP_ENV: production
+      SNMP_POLL_INTERVAL_MINUTES: 5
+      ONT_WEAK_SIGNAL_THRESHOLD: -25.0
+      ONT_CRITICAL_SIGNAL_THRESHOLD: -27.0
+    ports:
+      - "127.0.0.1:8082:8082"
+    networks:
+      - internal_net
+      - public_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ──────────────────────────────────────────────
+  # ISPSYNC Nexus / Core Multi-Tenant Engine (Port 8081)
+  # ──────────────────────────────────────────────
+  nexus:
+    build:
+      context: ..
+      dockerfile: docker/nexus/Dockerfile
+    container_name: isp-prod-nexus
+    restart: always
+    environment:
+      PORT: 8081
+      DATABASE_URL: postgres://${POSTGRES_USER:-isp_admin}:${POSTGRES_PASSWORD}@postgres:5432/ispsync?sslmode=disable
+      BILLING_DATABASE_URL: postgres://${POSTGRES_USER:-isp_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-isp_billing}?sslmode=disable
+      FTTX_BASE_URL: http://fibergrid:8082
+      FTTX_INTERNAL_KEY: ${FTTX_INTERNAL_KEY:-gogiga-internal-sync-42c8d71e9a55}
+      BASE_DOMAIN: ${DOMAIN:-ispsync.id}
+    ports:
+      - "127.0.0.1:8081:8081"
+    networks:
+      - internal_net
+      - public_net
+    depends_on:
+      postgres:
+        condition: service_healthy
+      fibergrid:
+        condition: service_started
 
   # ──────────────────────────────────────────────
   # Caddy Reverse Proxy & SSL Automation

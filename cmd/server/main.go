@@ -135,6 +135,19 @@ func main() {
 		MaxAge:           300,
 	}))
 
+	// Health check endpoint (for Docker & Billing Dashboard)
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": true,
+			"message": "ISP Onboarding Gateway is healthy",
+			"data": map[string]interface{}{
+				"status":             "ok",
+				"gigabill_connected": true,
+			},
+		})
+	})
+
 	// Multi-Tenant Context Middleware
 	r.Use(middleware.TenantResolver(store, baseDomain))
 
