@@ -220,6 +220,17 @@ After running migrations and seed:
 - `audit_logs` table is append-only (no UPDATE/DELETE for app user)
 - Never commit `.env` or `keys/` to version control
 
+## Official Documentation
+
+| Document | Description |
+|---|---|
+| [**Portal Member SaaS Manual**](docs/SAAS_MANUAL.md) | Panduan lengkap pengelolaan tenant, konfigurasi 3 engine mandiri, invoice SaaS & tiket support di `/member`. |
+| [**Billing & POS Cashier Manual**](docs/BILLING_MANUAL.md) | Panduan operasional billing, siklus faktur, Loket Kasir POS (`/admin/payments?tab=pos`), dan peran Kasir. |
+| [**Master SOP Ekosistem 3 Engine**](docs/MASTER_SOP_EKOSISTEM_3_ENGINE_ISPSYNC.md) | Dokumen master SOP telekomunikasi terpadu (FiberGrid, Nexus, Ledger). |
+| [**Universal Mobile App Manual**](docs/MANUAL_APLIKASI_MOBILE_UNIVERSAL.md) | Panduan aplikasi mobile pelanggan & teknisi aliansi bersama (React Native / Expo). |
+| [**FiberGrid API Blueprint**](docs/FIBERGRID_API_BLUEPRINT.md) | Arsitektur FTTX, OLT SNMP, dan pemetaan rute kabel optik GIS. |
+| [**CMS & Landing Page Guide**](docs/CMS_AND_LANDING_PAGE_GUIDE.md) | Panduan visual landing page, branding tenant, dan konten dinamis. |
+
 ## License
 
 Proprietary — All rights reserved.
