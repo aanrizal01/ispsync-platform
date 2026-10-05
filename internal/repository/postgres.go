@@ -306,8 +306,19 @@ func (s *PostgresStorage) migrate() error {
 		notify_new_registration BOOLEAN DEFAULT TRUE,
 		notify_odp_full BOOLEAN DEFAULT TRUE,
 		notify_router_down BOOLEAN DEFAULT TRUE,
+		pppoe_prefix TEXT DEFAULT 'sub-',
+		pppoe_id_source TEXT DEFAULT 'REG_NO',
+		pppoe_realm TEXT DEFAULT '',
+		pppoe_pass_format TEXT DEFAULT 'PREFIX_RANDOM',
+		pppoe_pass_static TEXT DEFAULT 'isp',
 		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 	);
+
+	ALTER TABLE tenant_integration_settings ADD COLUMN IF NOT EXISTS pppoe_prefix TEXT DEFAULT 'sub-';
+	ALTER TABLE tenant_integration_settings ADD COLUMN IF NOT EXISTS pppoe_id_source TEXT DEFAULT 'REG_NO';
+	ALTER TABLE tenant_integration_settings ADD COLUMN IF NOT EXISTS pppoe_realm TEXT DEFAULT '';
+	ALTER TABLE tenant_integration_settings ADD COLUMN IF NOT EXISTS pppoe_pass_format TEXT DEFAULT 'PREFIX_RANDOM';
+	ALTER TABLE tenant_integration_settings ADD COLUMN IF NOT EXISTS pppoe_pass_static TEXT DEFAULT 'isp';
 	`
 	_, err := s.db.Exec(schema)
 	return err
@@ -1435,13 +1446,18 @@ func (s *PostgresStorage) GetTenantSettings(ctx context.Context, tenantID string
 	row := s.db.QueryRowContext(ctx, `
 		SELECT tenant_id, COALESCE(google_maps_api_key, ''), COALESCE(telegram_bot_token, ''), COALESCE(telegram_chat_id, ''),
 		       COALESCE(notify_new_registration, TRUE), COALESCE(notify_odp_full, TRUE), COALESCE(notify_router_down, TRUE),
+		       COALESCE(pppoe_prefix, 'sub-'), COALESCE(pppoe_id_source, 'REG_NO'), COALESCE(pppoe_realm, ''),
+		       COALESCE(pppoe_pass_format, 'PREFIX_RANDOM'), COALESCE(pppoe_pass_static, 'isp'),
 		       COALESCE(updated_at, CURRENT_TIMESTAMP)
 		FROM tenant_integration_settings
 		WHERE tenant_id = $1
 	`, tenantID)
 
 	var st domain.TenantIntegrationSettings
-	err := row.Scan(&st.TenantID, &st.GoogleMapsAPIKey, &st.TelegramBotToken, &st.TelegramChatID, &st.NotifyNewRegistration, &st.NotifyODPFull, &st.NotifyRouterDown, &st.UpdatedAt)
+	err := row.Scan(&st.TenantID, &st.GoogleMapsAPIKey, &st.TelegramBotToken, &st.TelegramChatID,
+		&st.NotifyNewRegistration, &st.NotifyODPFull, &st.NotifyRouterDown,
+		&st.PPPoEPrefix, &st.PPPoEIdSource, &st.PPPoERealm, &st.PPPoEPassFormat, &st.PPPoEPassStatic,
+		&st.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return &domain.TenantIntegrationSettings{
 			TenantID:              tenantID,
@@ -1451,6 +1467,11 @@ func (s *PostgresStorage) GetTenantSettings(ctx context.Context, tenantID string
 			NotifyNewRegistration: true,
 			NotifyODPFull:         true,
 			NotifyRouterDown:      true,
+			PPPoEPrefix:           "sub-",
+			PPPoEIdSource:         "REG_NO",
+			PPPoERealm:            "",
+			PPPoEPassFormat:       "PREFIX_RANDOM",
+			PPPoEPassStatic:       "isp",
 			UpdatedAt:             time.Now(),
 		}, nil
 	}
@@ -1460,13 +1481,30 @@ func (s *PostgresStorage) GetTenantSettings(ctx context.Context, tenantID string
 	if st.GoogleMapsAPIKey == "" {
 		st.GoogleMapsAPIKey = "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA"
 	}
+	if st.PPPoEPrefix == "" && st.PPPoEIdSource == "" {
+		st.PPPoEPrefix = "sub-"
+		st.PPPoEIdSource = "REG_NO"
+		st.PPPoEPassFormat = "PREFIX_RANDOM"
+		st.PPPoEPassStatic = "isp"
+	}
 	return &st, nil
 }
 
 func (s *PostgresStorage) UpdateTenantSettings(ctx context.Context, tenantID string, settings *domain.TenantIntegrationSettings) error {
+	if settings.PPPoEPrefix == "" && settings.PPPoEIdSource == "" {
+		settings.PPPoEPrefix = "sub-"
+		settings.PPPoEIdSource = "REG_NO"
+		settings.PPPoEPassFormat = "PREFIX_RANDOM"
+		settings.PPPoEPassStatic = "isp"
+	}
 	_, err := s.db.ExecContext(ctx, `
-		INSERT INTO tenant_integration_settings (tenant_id, google_maps_api_key, telegram_bot_token, telegram_chat_id, notify_new_registration, notify_odp_full, notify_router_down, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+		INSERT INTO tenant_integration_settings (
+			tenant_id, google_maps_api_key, telegram_bot_token, telegram_chat_id,
+			notify_new_registration, notify_odp_full, notify_router_down,
+			pppoe_prefix, pppoe_id_source, pppoe_realm, pppoe_pass_format, pppoe_pass_static,
+			updated_at
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP)
 		ON CONFLICT (tenant_id) DO UPDATE SET
 			google_maps_api_key = EXCLUDED.google_maps_api_key,
 			telegram_bot_token = EXCLUDED.telegram_bot_token,
@@ -1474,7 +1512,14 @@ func (s *PostgresStorage) UpdateTenantSettings(ctx context.Context, tenantID str
 			notify_new_registration = EXCLUDED.notify_new_registration,
 			notify_odp_full = EXCLUDED.notify_odp_full,
 			notify_router_down = EXCLUDED.notify_router_down,
+			pppoe_prefix = EXCLUDED.pppoe_prefix,
+			pppoe_id_source = EXCLUDED.pppoe_id_source,
+			pppoe_realm = EXCLUDED.pppoe_realm,
+			pppoe_pass_format = EXCLUDED.pppoe_pass_format,
+			pppoe_pass_static = EXCLUDED.pppoe_pass_static,
 			updated_at = CURRENT_TIMESTAMP
-	`, tenantID, settings.GoogleMapsAPIKey, settings.TelegramBotToken, settings.TelegramChatID, settings.NotifyNewRegistration, settings.NotifyODPFull, settings.NotifyRouterDown)
+	`, tenantID, settings.GoogleMapsAPIKey, settings.TelegramBotToken, settings.TelegramChatID,
+		settings.NotifyNewRegistration, settings.NotifyODPFull, settings.NotifyRouterDown,
+		settings.PPPoEPrefix, settings.PPPoEIdSource, settings.PPPoERealm, settings.PPPoEPassFormat, settings.PPPoEPassStatic)
 	return err
 }

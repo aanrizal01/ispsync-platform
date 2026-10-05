@@ -288,7 +288,7 @@ type TenantCapabilities struct {
 	OwnInfrastructure bool   `json:"own_infrastructure"`
 }
 
-// TenantIntegrationSettings menyimpan kunci API Maps & Telegram bot per tenant
+// TenantIntegrationSettings menyimpan kunci API Maps & Telegram bot per tenant serta format penomoran PPPoE
 type TenantIntegrationSettings struct {
 	TenantID              string    `json:"tenant_id"`
 	GoogleMapsAPIKey      string    `json:"google_maps_api_key"`
@@ -297,5 +297,10 @@ type TenantIntegrationSettings struct {
 	NotifyNewRegistration bool      `json:"notify_new_registration"`
 	NotifyODPFull         bool      `json:"notify_odp_full"`
 	NotifyRouterDown      bool      `json:"notify_router_down"`
+	PPPoEPrefix           string    `json:"pppoe_prefix"`
+	PPPoEIdSource         string    `json:"pppoe_id_source"`
+	PPPoERealm            string    `json:"pppoe_realm"`
+	PPPoEPassFormat       string    `json:"pppoe_pass_format"`
+	PPPoEPassStatic       string    `json:"pppoe_pass_static"`
 	UpdatedAt             time.Time `json:"updated_at"`
 }
