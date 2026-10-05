@@ -184,6 +184,8 @@ https:// {
             header_up X-Real-IP {remote_host}
             header_down Cache-Control "no-cache, no-store, must-revalidate"
         }
+    }
+
     # 0.9. Master Engine Showcase Subdomains (Pure technical presentation, no CTA)
     @engine_showcase {
         header_regexp Host ^(ledger|billing|nexus|portal|fibergrid|fttx)\.ispsync\.id$
@@ -192,6 +194,9 @@ https:// {
         reverse_proxy web:3000 {
             header_up Host {host}
             header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
             header_down Cache-Control "no-cache, no-store, must-revalidate"
         }
     }
@@ -215,9 +220,10 @@ https:// {
     }
     redir @wifi_root /hotspot/buy temporary
 
-    # Redirect root to /login on CMS & Billing backoffice
+    # Redirect root to /login on CMS & Billing backoffice (for tenant domains)
     @billing_root {
         header_regexp Host (^(ledger|billing)\.|\.(ledger|billing)\.)
+        not header_regexp Host ^(ledger|billing)\.ispsync\.id$
         path /
     }
     redir @billing_root /login temporary
@@ -243,6 +249,7 @@ https:// {
     # 2. FTTX & FiberGrid Core Engine (fttx.*, fibergrid.*)
     @fttx {
         header_regexp Host (^(fttx|fibergrid)\.|\.(fttx|fibergrid)\.)
+        not header_regexp Host ^(fttx|fibergrid)\.ispsync\.id$
     }
     handle @fttx {
         reverse_proxy 172.18.0.1:8082 {
@@ -256,6 +263,7 @@ https:// {
     # 3. Customer & Field Operational Portals - ISPSYNC Nexus (nexus.*, portal.*, sales.*, teknisi.*, rekan.*, noc.*, noc-fo.*, carrier.*)
     @nexus {
         header_regexp Host (^(nexus|portal|sales|teknisi|rekan|noc|noc-fo|carrier)\.|\.(nexus|portal|sales|teknisi|rekan|noc|noc-fo|carrier)\.)
+        not header_regexp Host ^(nexus|portal)\.ispsync\.id$
     }
     handle @nexus {
         header {

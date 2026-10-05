@@ -24,7 +24,7 @@ import { FiberGridShowcase } from "@/components/showcase/FiberGridShowcase";
 
 export default async function InternationalLandingPage() {
   const headersList = await headers();
-  const rawHost = headersList.get("host") || "";
+  const rawHost = headersList.get("x-forwarded-host") || headersList.get("host") || "";
   const host = rawHost.toLowerCase().split(":")[0];
 
   // Subdomain & tenant domain routing
