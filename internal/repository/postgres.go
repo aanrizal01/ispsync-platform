@@ -863,6 +863,55 @@ func (s *PostgresStorage) ListJartaplokAgreements(ctx context.Context, tenantID 
 	return list, nil
 }
 
+func (s *PostgresStorage) ListJartaplokPartners(ctx context.Context, tenantID, branchCode string) ([]domain.JartaplokPartner, error) {
+	query := `
+		SELECT id, COALESCE(tenant_id, ''), code, name, COALESCE(api_key, ''),
+		       COALESCE(contact_phone, ''), COALESCE(coverage_area, ''),
+		       COALESCE(service_type, 'SEWA_PORT_FO'), COALESCE(suspension_policy, 'ALLOWED_WITH_WAIVER'),
+		       COALESCE(pricing_model, 'Standar Jartaplok'),
+		       COALESCE(rate_20m, 0), COALESCE(rate_30m, 0), COALESCE(rate_40m, 0),
+		       COALESCE(rate_50m, 50000), COALESCE(rate_100m, 90000), COALESCE(rate_150m, 135000),
+		       COALESCE(rate_200m, 180000), COALESCE(rate_300m, 270000),
+		       COALESCE(otc_fee, 0), COALESCE(max_distance_meters, 250.0),
+		       COALESCE(total_odps, 0), COALESCE(total_ports, 0), COALESCE(active_ports, 0),
+		       COALESCE(branch_code, 'ALL'), is_active, created_at, updated_at
+		FROM jartaplok_partners
+		WHERE (tenant_id = $1 OR tenant_id IS NULL OR tenant_id = '')
+	`
+	args := []interface{}{tenantID}
+	if branchCode != "" && branchCode != "ALL" {
+		query += " AND (branch_code = 'ALL' OR branch_code = $2)"
+		args = append(args, branchCode)
+	}
+	query += " ORDER BY created_at ASC"
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []domain.JartaplokPartner
+	for rows.Next() {
+		var p domain.JartaplokPartner
+		if err := rows.Scan(
+			&p.ID, &p.TenantID, &p.Code, &p.Name, &p.APIKey,
+			&p.ContactPhone, &p.CoverageArea,
+			&p.ServiceType, &p.SuspensionPolicy, &p.PricingModel,
+			&p.Rate20M, &p.Rate30M, &p.Rate40M,
+			&p.Rate50M, &p.Rate100M, &p.Rate150M,
+			&p.Rate200M, &p.Rate300M,
+			&p.OTCFee, &p.MaxDistanceMeters,
+			&p.TotalODPs, &p.TotalPorts, &p.ActivePorts,
+			&p.BranchCode, &p.IsActive, &p.CreatedAt, &p.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		list = append(list, p)
+	}
+	return list, nil
+}
+
 func (s *PostgresStorage) GetNearestODP(ctx context.Context, tenantID string, lat, lng float64) (*domain.ODP, float64, error) {
 	odps, err := s.ListODPs(ctx, tenantID)
 	if err != nil {

@@ -911,6 +911,10 @@ func (s *SQLiteStorage) ListJartaplokAgreements(ctx context.Context, tenantID st
 	return list, nil
 }
 
+func (s *SQLiteStorage) ListJartaplokPartners(ctx context.Context, tenantID, branchCode string) ([]domain.JartaplokPartner, error) {
+	return []domain.JartaplokPartner{}, nil
+}
+
 func (s *SQLiteStorage) GetNearestODP(ctx context.Context, tenantID string, lat, lng float64) (*domain.ODP, float64, error) {
 	odps, err := s.ListODPs(ctx, tenantID)
 	if err != nil {

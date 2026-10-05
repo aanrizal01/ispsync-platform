@@ -2594,10 +2594,15 @@ func (h *APIHandler) SuperuserJartaplokPartners(w http.ResponseWriter, r *http.R
 		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
 		return
 	}
-	ags, err := h.store.ListJartaplokAgreements(r.Context(), t.ID)
-	if err != nil || len(ags) == 0 {
-		h.successResponse(w, "Jartaplok partners retrieved", []domain.JartaplokAgreement{})
+	branch := r.URL.Query().Get("branch")
+	partners, err := h.store.ListJartaplokPartners(r.Context(), t.ID, branch)
+	if err == nil && len(partners) > 0 {
+		h.successResponse(w, "Jartaplok partners retrieved", partners)
 		return
+	}
+	ags, _ := h.store.ListJartaplokAgreements(r.Context(), t.ID)
+	if ags == nil {
+		ags = []domain.JartaplokAgreement{}
 	}
 	h.successResponse(w, "Jartaplok partners retrieved", ags)
 }

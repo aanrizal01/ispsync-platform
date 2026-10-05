@@ -132,6 +132,37 @@ type JartaplokAgreement struct {
 	CreatedAt             time.Time `json:"created_at"`
 }
 
+// JartaplokPartner profil perusahaan rekanan penyelenggara JARTAPLOK / Bitstream Wholesale
+type JartaplokPartner struct {
+	ID                string    `json:"id"`
+	TenantID          string    `json:"tenant_id,omitempty"`
+	Code              string    `json:"code"`
+	Name              string    `json:"name"`
+	APIKey            string    `json:"api_key"`
+	ContactPhone      string    `json:"contact_phone"`
+	CoverageArea      string    `json:"coverage_area"`
+	ServiceType       string    `json:"service_type"`
+	SuspensionPolicy  string    `json:"suspension_policy"`
+	PricingModel      string    `json:"pricing_model"`
+	Rate20M           int64     `json:"rate_20m"`
+	Rate30M           int64     `json:"rate_30m"`
+	Rate40M           int64     `json:"rate_40m"`
+	Rate50M           int64     `json:"rate_50m"`
+	Rate100M          int64     `json:"rate_100m"`
+	Rate150M          int64     `json:"rate_150m"`
+	Rate200M          int64     `json:"rate_200m"`
+	Rate300M          int64     `json:"rate_300m"`
+	OTCFee            int64     `json:"otc_fee"`
+	MaxDistanceMeters float64   `json:"max_distance_meters"`
+	TotalODPs         int       `json:"total_odps,omitempty"`
+	TotalPorts        int       `json:"total_ports,omitempty"`
+	ActivePorts       int       `json:"active_ports,omitempty"`
+	BranchCode        string    `json:"branch_code,omitempty"`
+	IsActive          bool      `json:"is_active"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+}
+
 // OLT perangkat OLT di jaringan tenant
 type OLT struct {
 	ID        string `json:"id"`
