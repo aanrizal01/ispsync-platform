@@ -172,17 +172,60 @@ export const settingsApi = {
       }
     ),
 
-  getTenantSettings: () =>
-    request<TenantIntegrationSettings>("/tenant/settings"),
+  getTenantSettings: async () => {
+    try {
+      const headers: Record<string, string> = {};
+      if (typeof window !== "undefined") {
+        const host = window.location.hostname.toLowerCase();
+        const parts = host.split(".");
+        let slug = "";
+        if (parts.length >= 4) {
+          slug = parts[1];
+        } else if (parts.length === 3 && parts[1] === "ispsync") {
+          slug = parts[0];
+        }
+        if (slug) headers["X-Tenant-Slug"] = slug;
+      }
+      const res = await fetch("/api/tenant/settings", { headers, cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      return (json.data || json) as TenantIntegrationSettings;
+    } catch (err) {
+      console.warn("Proxy tenant settings fetch failed, falling back to direct API:", err);
+      return request<TenantIntegrationSettings>("/tenant/settings");
+    }
+  },
 
-  updateTenantSettings: (data: Partial<TenantIntegrationSettings>) =>
-    request<TenantIntegrationSettings>(
-      "/tenant/settings",
-      {
+  updateTenantSettings: async (data: Partial<TenantIntegrationSettings>) => {
+    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (typeof window !== "undefined") {
+        const host = window.location.hostname.toLowerCase();
+        const parts = host.split(".");
+        let slug = "";
+        if (parts.length >= 4) {
+          slug = parts[1];
+        } else if (parts.length === 3 && parts[1] === "ispsync") {
+          slug = parts[0];
+        }
+        if (slug) headers["X-Tenant-Slug"] = slug;
+      }
+      const res = await fetch("/api/tenant/settings", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      return (json.data || json) as TenantIntegrationSettings;
+    } catch (err) {
+      console.warn("Proxy tenant settings update failed, falling back to direct API:", err);
+      return request<TenantIntegrationSettings>("/tenant/settings", {
         method: "POST",
         body: JSON.stringify(data),
-      }
-    ),
+      });
+    }
+  },
 };
 
 export interface BillingAddonSettings {
