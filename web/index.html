@@ -3951,9 +3951,7 @@
                 <div>
                   <label class="block text-[10px] font-mono font-bold uppercase text-slate-600 mb-1">Pilih / Nama Teknisi</label>
                   <select id="impersonate-technician-select" class="w-full bg-white border border-slate-300 text-slate-800 rounded-md px-3 py-2 text-xs outline-none focus:border-slate-900 font-sans">
-                    <option value="Teknisi 1">Teknisi Lapangan 1</option>
-                    <option value="Teknisi 2">Teknisi Lapangan 2</option>
-                    <option value="Mitra Teknisi">Mitra Teknisi Rekanan</option>
+                    <option value="">-- Memuat daftar teknisi... --</option>
                   </select>
                 </div>
               </div>
@@ -20268,24 +20266,49 @@
         }
       }
 
-      // 3. Technicians dropdown
+      // 3. Technicians dropdown (Dinamis dari Database Staf)
       const techSelect = document.getElementById('impersonate-technician-select');
       if (techSelect) {
-        let techList = [
-          { name: 'Nando', label: 'Nando (NANDO-TECH - Koordinator)', branch: 'PYK' },
-          { name: 'Ricci', label: 'Ricci (RICCI-TECH - Teknisi Lapangan)', branch: 'PYK' },
-          { name: 'Zikka', label: 'Zikka (ZIKKA-TECH - Teknisi Lapangan)', branch: 'PYK' },
-          { name: 'Egi', label: 'Egi (EGI-TECH - Teknisi Lapangan)', branch: 'PYK' },
-          { name: 'Melkias', label: 'Melkias (Teknisi Lapangan Papua)', branch: 'PAPUA' },
-          { name: 'Mitra Teknisi Rekanan', label: 'Mitra Teknisi Rekanan', branch: 'MITRA' }
-        ];
-        if (currentBranch !== 'ALL') {
-          techList = techList.filter(t => t.branch === currentBranch);
-        }
-        if (techList.length === 0) {
-          techSelect.innerHTML = '<option value="">(Belum ada teknisi di cabang ini)</option>';
-        } else {
-          techSelect.innerHTML = techList.map(t => `<option value="${t.name}">${t.label}</option>`).join('');
+        techSelect.innerHTML = '<option value="">-- Memuat data teknisi... --</option>';
+        try {
+          const res = await fetch('/api/v1/superuser/staff', {
+            headers: {
+              'X-Admin-Key': 'isp-onboarding-admin-key',
+              'Authorization': 'Bearer ' + (localStorage.getItem('auth_session_token') || ''),
+              'X-User-Role': localStorage.getItem('active_portal_role') || 'superuser',
+              'X-Client-Platform': 'web'
+            }
+          });
+          const json = await res.json();
+          let allStaff = [];
+          if (json.success) {
+            allStaff = Array.isArray(json.data) ? json.data : (json.data && Array.isArray(json.data.users) ? json.data.users : []);
+          }
+
+          // Filter staf dengan peran TECHNICIAN / Teknisi Lapangan
+          let techStaff = allStaff.filter(s => {
+            const role = (s.role || '').toUpperCase();
+            return role === 'TECHNICIAN' || role.includes('TECH') || role.includes('TEKNISI');
+          });
+
+          // Filter cabang jika ada filter cabang aktif
+          if (currentBranch !== 'ALL') {
+            techStaff = techStaff.filter(t => t.branch_code === currentBranch);
+          }
+
+          if (techStaff.length > 0) {
+            techSelect.innerHTML = '<option value="">-- Pilih Akun Teknisi (' + (currentBranch === 'ALL' ? 'Semua Wilayah' : currentBranch) + ') --</option>' +
+              techStaff.map(t => {
+                const displayName = t.full_name || t.username;
+                const branchStr = t.branch_code ? ` [Cabang: ${t.branch_code}]` : '';
+                const phoneStr = t.phone ? ` - HP: ${t.phone}` : '';
+                return `<option value="${encodeURIComponent(JSON.stringify(t))}">${displayName} (${t.username || t.email})${branchStr}${phoneStr}</option>`;
+              }).join('');
+          } else {
+            techSelect.innerHTML = '<option value="">(Belum ada staf teknisi terdaftar' + (currentBranch === 'ALL' ? '' : ' di cabang ' + currentBranch) + ')</option>';
+          }
+        } catch (e) {
+          techSelect.innerHTML = '<option value="">(Gagal memuat staf teknisi)</option>';
         }
       }
     }
@@ -20350,16 +20373,36 @@
 
     function impersonateTechnician() {
       const sel = document.getElementById('impersonate-technician-select');
-      const techName = sel ? sel.value : 'Nando';
-      sessionStorage.setItem('impersonation_orig_role', getActivePortalSession());
-      sessionStorage.setItem('superuser_active_backup', 'true');
+      if (!sel || !sel.value) {
+        alert('Silakan pilih akun teknisi terlebih dahulu, atau daftarkan akun teknisi di menu "Kontrol Staf & RBAC".');
+        return;
+      }
+      try {
+        let techObj = {};
+        let techName = '';
+        if (sel.value.startsWith('{') || sel.value.startsWith('%7B')) {
+          techObj = JSON.parse(decodeURIComponent(sel.value));
+          techName = techObj.full_name || techObj.username || 'Teknisi Lapangan';
+        } else {
+          techName = sel.value;
+          techObj = { name: techName, username: techName };
+        }
 
-      localStorage.setItem('technician_auth', JSON.stringify({ name: techName }));
-      localStorage.setItem('active_portal_role', 'technician');
+        sessionStorage.setItem('impersonation_orig_role', getActivePortalSession());
+        sessionStorage.setItem('superuser_active_backup', 'true');
 
-      showStickyImpersonationBanner(techName, 'Teknisi Lapangan');
-      switchTab('technician');
-      alert(`✓ Mode Impersonasi Aktif: Sedang mengakses portal teknisi "${techName}".`);
+        localStorage.setItem('technician_auth', JSON.stringify({
+          ...techObj,
+          name: techName
+        }));
+        localStorage.setItem('active_portal_role', 'technician');
+
+        showStickyImpersonationBanner(techName, 'Teknisi Lapangan');
+        switchTab('technician');
+        alert(`✓ Mode Impersonasi Aktif: Sedang mengakses portal teknisi "${techName}".`);
+      } catch (e) {
+        alert('Gagal memulai impersonasi teknisi: ' + e.message);
+      }
     }
 
     function exitImpersonationMode() {
