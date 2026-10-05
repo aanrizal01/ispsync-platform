@@ -1784,6 +1784,59 @@ func (h *APIHandler) AdminReassignODP(w http.ResponseWriter, r *http.Request) {
 	h.successResponse(w, "ODP berhasil dialihkan", map[string]interface{}{"id": id, "odp_code": req.ODPCode, "tenant_id": t.ID})
 }
 
+// AdminUpdateRegistrationPricing menyimpan perubahan paket, ODP, dan memajukan status instalasi
+func (h *APIHandler) AdminUpdateRegistrationPricing(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		h.failResponse(w, http.StatusBadRequest, "ID registrasi wajib diisi")
+		return
+	}
+
+	var req struct {
+		SelectedPlanID   string  `json:"selected_plan_id"`
+		SelectedPlanName string  `json:"selected_plan_name"`
+		ODPCode          string  `json:"odp_code"`
+		OTCFee           float64 `json:"otc_fee"`
+		MonthlyPrice     float64 `json:"monthly_price"`
+		OTCNotes         string  `json:"otc_notes"`
+		TaxID            string  `json:"tax_id"`
+		PromoteToInstall bool    `json:"promote_to_install"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.failResponse(w, http.StatusBadRequest, "Invalid payload JSON")
+		return
+	}
+
+	sub, err := h.store.GetSubscriberByID(r.Context(), t.ID, id)
+	if err != nil || sub == nil {
+		sub, err = h.store.GetSubscriberByNo(r.Context(), t.ID, id)
+	}
+	if err != nil || sub == nil {
+		h.failResponse(w, http.StatusNotFound, "Data registrasi pelanggan tidak ditemukan")
+		return
+	}
+
+	if err := h.store.UpdateSubscriberPricingAndODP(r.Context(), t.ID, sub.ID, req.SelectedPlanID, req.SelectedPlanName, req.ODPCode, req.PromoteToInstall); err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal mengupdate data registrasi: "+err.Error())
+		return
+	}
+
+	newStatus := sub.Status
+	if req.PromoteToInstall {
+		newStatus = "INSTALLATION_SCHEDULED"
+	}
+
+	h.successResponse(w, "Penetapan paket dan ODP berhasil disimpan", map[string]interface{}{
+		"id":                 sub.ID,
+		"registration_no":    sub.SubscriberNo,
+		"selected_plan_id":   req.SelectedPlanID,
+		"selected_plan_name": req.SelectedPlanName,
+		"nearest_odp_code":   req.ODPCode,
+		"status":             newStatus,
+	})
+}
+
 func (h *APIHandler) AdminListODPs(w http.ResponseWriter, r *http.Request) {
 	h.PublicODPs(w, r)
 }

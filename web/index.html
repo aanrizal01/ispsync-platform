@@ -16113,7 +16113,8 @@
 
       const activeRole = localStorage.getItem('active_portal_role');
       const salesAuth = localStorage.getItem('sales_auth');
-      const isSales = (activeRole === 'sales' || !localStorage.getItem('admin_logged_in')) && salesAuth;
+      const curMode = currentSubdomainMode || (typeof detectActiveSubdomain === 'function' ? detectActiveSubdomain() : '');
+      const isSales = (activeRole === 'sales' || curMode === 'sales') && !['superuser', 'admin', 'noc-fo'].includes(curMode) && !['superuser', 'admin'].includes(activeRole);
 
       const salesBox = document.getElementById('detail-pricing-sales-box');
       const nocPanel = document.getElementById('detail-pricing-noc-panel');
@@ -16932,17 +16933,25 @@
       try {
         const activeRole = localStorage.getItem('active_portal_role');
         const salesAuth = localStorage.getItem('sales_auth');
-        const isSales = (activeRole === 'sales' || !localStorage.getItem('admin_logged_in')) && salesAuth;
+        const curMode = currentSubdomainMode || (typeof detectActiveSubdomain === 'function' ? detectActiveSubdomain() : '');
+        const isSales = (activeRole === 'sales' || curMode === 'sales') && !['superuser', 'admin', 'noc-fo'].includes(curMode) && !['superuser', 'admin'].includes(activeRole);
         
+        const token = localStorage.getItem('auth_session_token') || sessionStorage.getItem('auth_session_token') || '';
         let url = `/api/v1/admin/registrations/${reg.id}/pricing`;
-        const headers = { 'Content-Type': 'application/json' };
+        const headers = { 
+          'Content-Type': 'application/json' 
+        };
+        if (token) {
+          headers['Authorization'] = 'Bearer ' + token;
+        }
 
-        if (isSales) {
+        if (isSales && salesAuth) {
           const partner = JSON.parse(salesAuth);
           url = `/api/v1/partner/registrations/${encodeURIComponent(reg.registration_no)}/pricing`;
-          headers['X-Partner-Key'] = partner.api_key;
-        } else {
-          headers['Authorization'] = 'Bearer ' + (localStorage.getItem('auth_session_token') || '');
+          headers['X-Partner-Key'] = partner.api_key || partner.code || '';
+          if (partner.token && !token) {
+            headers['Authorization'] = 'Bearer ' + partner.token;
+          }
         }
 
         let planId = '';
@@ -25259,6 +25268,7 @@
       if (data.token) {
         localStorage.setItem('auth_session_token', data.token);
         sessionStorage.setItem('auth_session_token', data.token);
+        localStorage.setItem('admin_logged_in', '1');
       }
       if (data.username) {
         localStorage.setItem('auth_username', data.username);

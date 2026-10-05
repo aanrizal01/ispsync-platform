@@ -1105,6 +1105,24 @@ func (s *SQLiteStorage) UpdateSubscriberStatus(ctx context.Context, tenantID, id
 	return err
 }
 
+func (s *SQLiteStorage) UpdateSubscriberPricingAndODP(ctx context.Context, tenantID, id, planID, planName, odpCode string, promoteToInstall bool) error {
+	statusClause := ""
+	if promoteToInstall {
+		statusClause = ", status = 'INSTALLATION_SCHEDULED'"
+	}
+	query := fmt.Sprintf(`
+		UPDATE subscribers SET
+			selected_plan_id = CASE WHEN ? <> '' THEN ? ELSE selected_plan_id END,
+			selected_plan_name = CASE WHEN ? <> '' THEN ? ELSE selected_plan_name END,
+			nearest_odp_code = CASE WHEN ? <> '' THEN ? ELSE nearest_odp_code END,
+			updated_at = CURRENT_TIMESTAMP
+			%s
+		WHERE tenant_id = ? AND (id = ? OR subscriber_no = ?)
+	`, statusClause)
+	_, err := s.db.ExecContext(ctx, query, planID, planName, odpCode, tenantID, id, id)
+	return err
+}
+
 func (s *SQLiteStorage) DeleteSubscriber(ctx context.Context, tenantID, idOrNo string) error {
 	_, err := s.db.ExecContext(ctx, `
 		DELETE FROM subscribers

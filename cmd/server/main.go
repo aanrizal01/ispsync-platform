@@ -235,6 +235,8 @@ func main() {
 			adm.Post("/registrations/{id}/suspend", apiH.AdminSuspendSubscriber)
 			adm.Post("/registrations/{id}/resume", apiH.AdminResumeSubscriber)
 			adm.Post("/registrations/{id}/reassign-odp", apiH.AdminReassignODP)
+			adm.Put("/registrations/{id}/pricing", apiH.AdminUpdateRegistrationPricing)
+			adm.Post("/registrations/{id}/pricing", apiH.AdminUpdateRegistrationPricing)
 			adm.Get("/odps", apiH.AdminListODPs)
 			adm.Post("/odps", apiH.AdminCreateODP)
 			adm.Delete("/odps/{id}", apiH.AdminDeleteODP)
@@ -266,6 +268,8 @@ func main() {
 			})
 			part.Get("/registrations", apiH.AdminListRegistrations)
 			part.Get("/registrations/{regNo}", apiH.PublicTrack)
+			part.Put("/registrations/{id}/pricing", apiH.AdminUpdateRegistrationPricing)
+			part.Post("/registrations/{id}/pricing", apiH.AdminUpdateRegistrationPricing)
 		})
 
 		api.Route("/superuser", func(sup chi.Router) {

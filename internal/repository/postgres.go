@@ -1056,6 +1056,24 @@ func (s *PostgresStorage) UpdateSubscriberStatus(ctx context.Context, tenantID, 
 	return err
 }
 
+func (s *PostgresStorage) UpdateSubscriberPricingAndODP(ctx context.Context, tenantID, id, planID, planName, odpCode string, promoteToInstall bool) error {
+	statusClause := ""
+	if promoteToInstall {
+		statusClause = ", status = 'INSTALLATION_SCHEDULED'"
+	}
+	query := fmt.Sprintf(`
+		UPDATE subscribers SET
+			selected_plan_id = CASE WHEN $1 <> '' THEN $1 ELSE selected_plan_id END,
+			selected_plan_name = CASE WHEN $2 <> '' THEN $2 ELSE selected_plan_name END,
+			nearest_odp_code = CASE WHEN $3 <> '' THEN $3 ELSE nearest_odp_code END,
+			updated_at = CURRENT_TIMESTAMP
+			%s
+		WHERE tenant_id = $4 AND (id = $5 OR subscriber_no = $5)
+	`, statusClause)
+	_, err := s.db.ExecContext(ctx, query, planID, planName, odpCode, tenantID, id)
+	return err
+}
+
 func (s *PostgresStorage) DeleteSubscriber(ctx context.Context, tenantID, idOrNo string) error {
 	_, err := s.db.ExecContext(ctx, `
 		DELETE FROM subscribers
