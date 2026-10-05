@@ -15228,7 +15228,14 @@
         const json = await regRes.json();
         if (json.success) {
           adminRegistrationsList = Array.isArray(json.data) ? json.data : [];
-          renderAdminRegistrationsTable();
+          const pendingStatuses = ['SUBMITTED', 'SURVEY_SCHEDULED', 'INSTALLATION_SCHEDULED', 'PENDING_SURVEY_OVERDISTANCE', 'WAITING_APPROVAL_NOC', 'WAITING_DIRECTOR_APPROVAL'];
+          const hasPending = adminRegistrationsList.some(r => pendingStatuses.includes(r.status));
+          const hasActive = adminRegistrationsList.some(r => r.status === 'ACTIVE');
+          if (!hasPending && hasActive && currentAdminRegFilter === 'PENDING') {
+            setAdminRegFilter('ACTIVE');
+          } else {
+            renderAdminRegistrationsTable();
+          }
         } else {
           if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-rose-600 font-mono text-xs">Gagal memuat: ${json.message || 'Sesi otentikasi kedaluwarsa'}. <button onclick="loadAdminRegistrations()" class="underline font-bold text-slate-800 ml-2">Coba Lagi</button></td></tr>`;
         }
