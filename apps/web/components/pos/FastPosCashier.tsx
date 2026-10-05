@@ -256,31 +256,23 @@ export function FastPosCashier({ onViewHistory, hideHeaderBack = false }: FastPo
     if (!completedPayment && !selectedInvoice) return null;
     return {
       id: completedPayment?.id || "PREVIEW-ID",
-      transaction_id: completedPayment?.transaction_id || `POS-${Date.now().toString().slice(-6)}`,
+      payment_number: completedPayment?.payment_number || `POS-${Date.now().toString().slice(-6)}`,
+      invoice_id: selectedInvoice?.id,
+      invoice_number: selectedInvoice?.invoice_number,
       amount: completedPayment?.amount || totalDue,
       payment_method: completedPayment?.payment_method || paymentMethod,
       status: "COMPLETED",
       paid_at: completedPayment?.paid_at || new Date().toISOString(),
+      created_at: completedPayment?.created_at || new Date().toISOString(),
       notes: completedPayment?.notes || notes,
-      cash_received: paymentMethod === "MANUAL" ? cashReceived : undefined,
-      change_amount: paymentMethod === "MANUAL" ? changeAmount : undefined,
-      cashier_name: currentUser?.full_name || "Kasir Utama",
     };
-  }, [completedPayment, selectedInvoice, totalDue, paymentMethod, notes, cashReceived, changeAmount, currentUser]);
+  }, [completedPayment, selectedInvoice, totalDue, paymentMethod, notes]);
 
   const customerAddress = useMemo(() => {
-    if (!selectedCustomer) return selectedInvoice?.customer_name || "-";
-    return (
-      [
-        selectedCustomer.address_street,
-        selectedCustomer.address_subdistrict ? `Kec. ${selectedCustomer.address_subdistrict}` : "",
-        selectedCustomer.address_district,
-        selectedCustomer.address_city,
-      ]
-        .filter(Boolean)
-        .join(", ") || "-"
-    );
-  }, [selectedCustomer, selectedInvoice]);
+    if (!selectedCustomer?.addresses?.length) return "-";
+    const primary = selectedCustomer.addresses.find((a) => a.is_primary) || selectedCustomer.addresses[0];
+    return [primary.street, primary.district, primary.city, primary.province].filter(Boolean).join(", ") || "-";
+  }, [selectedCustomer]);
 
   const receiptCustomerData: ReceiptCustomerData | null = useMemo(() => {
     if (!selectedInvoice && !selectedCustomer) return null;
@@ -288,7 +280,7 @@ export function FastPosCashier({ onViewHistory, hideHeaderBack = false }: FastPo
       customer_name: selectedCustomer?.full_name || selectedInvoice?.customer_name || "Pelanggan Loket",
       customer_number: selectedCustomer?.customer_number || selectedInvoice?.customer_number || "-",
       phone: selectedCustomer?.phone || selectedInvoice?.customer_phone || "-",
-      address: customerAddress,
+      address: customerAddress !== "-" ? customerAddress : undefined,
     };
   }, [selectedCustomer, selectedInvoice, customerAddress]);
 
@@ -503,7 +495,7 @@ export function FastPosCashier({ onViewHistory, hideHeaderBack = false }: FastPo
                 <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100">
                   <span className="text-slate-500">Periode Tagihan:</span>
                   <span className="font-medium text-slate-800">
-                    {formatDate(selectedInvoice.period_start)} s/d {formatDate(selectedInvoice.period_end)}
+                    {formatDate(selectedInvoice.billing_period_start)} s/d {formatDate(selectedInvoice.billing_period_end)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-xs py-1 border-b border-slate-100">
@@ -519,7 +511,7 @@ export function FastPosCashier({ onViewHistory, hideHeaderBack = false }: FastPo
                       {selectedInvoice.items.map((item, idx) => (
                         <div key={idx} className="py-1 flex items-center justify-between">
                           <span className="text-slate-700">{item.description} ({item.quantity}x)</span>
-                          <span className="font-bold text-slate-900">{formatRupiah(item.total_price)}</span>
+                          <span className="font-bold text-slate-900">{formatRupiah(item.total)}</span>
                         </div>
                       ))}
                     </div>
@@ -823,22 +815,42 @@ export function FastPosCashier({ onViewHistory, hideHeaderBack = false }: FastPo
                   width: printPaperMode === "thermal" ? (thermalWidth === "58mm" ? "240px" : "320px") : "100%",
                 }}
               >
-                <ReceiptPrintDocument
-                  template={templateSettings}
-                  payment={receiptPaymentData}
-                  customer={receiptCustomerData}
-                  invoice={
-                    selectedInvoice
-                      ? {
-                          ...selectedInvoice,
-                          invoice_number: selectedInvoice.invoice_number,
-                          items: selectedInvoice.items || [],
-                        }
-                      : null
-                  }
-                  overrideLayout={printPaperMode}
-                  thermalWidth={thermalWidth}
-                />
+                {receiptPaymentData && receiptCustomerData && (
+                  <ReceiptPrintDocument
+                    template={templateSettings}
+                    payment={receiptPaymentData}
+                    customer={receiptCustomerData}
+                    invoice={
+                      selectedInvoice
+                        ? {
+                            invoice_number: selectedInvoice.invoice_number,
+                            issue_date: selectedInvoice.issue_date,
+                            created_at: selectedInvoice.created_at,
+                            due_date: selectedInvoice.due_date,
+                            status: selectedInvoice.status,
+                            billing_period_start: selectedInvoice.billing_period_start,
+                            billing_period_end: selectedInvoice.billing_period_end,
+                            subtotal: selectedInvoice.subtotal,
+                            tax_amount: selectedInvoice.tax_amount,
+                            late_fee_amount: selectedInvoice.late_fee_amount,
+                            total_amount: selectedInvoice.total_amount,
+                            amount_paid: selectedInvoice.amount_paid,
+                            amount_due: selectedInvoice.amount_due,
+                            notes: selectedInvoice.notes,
+                            items: (selectedInvoice.items || []).map((it) => ({
+                              id: it.id,
+                              description: it.description,
+                              quantity: it.quantity,
+                              unit_price: it.unit_price,
+                              total: it.total,
+                            })),
+                          }
+                        : null
+                    }
+                    overrideLayout={printPaperMode}
+                    thermalWidth={thermalWidth}
+                  />
+                )}
               </div>
             </div>
 
