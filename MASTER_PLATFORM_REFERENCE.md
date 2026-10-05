@@ -24,7 +24,7 @@
 * **Hierarchical Subdomain Routing (The 3-Engine Platform Architecture)**:
   * **Engine 1: CMS Billing Platform** (`cms.<tenant>.ispsync.id` & `billing.<tenant>.ispsync.id`):
     * Next.js 14 Standalone (`web:3000`) & Go REST API (`api:8080`).
-    * Backoffice CRM, Billing, Invoices, Hotspot POS Blanko Vouchers, Payment Gateway (Midtrans, Xendit, QRIS).
+    * Backoffice CRM, Billing, Invoices, Loket Kasir POS (`/admin/payments?tab=pos`) dengan kalkulator uang pas & cetak thermal 58mm/80mm, Hotspot POS Blanko Vouchers, Payment Gateway (Midtrans, Xendit, QRIS).
   * **Engine 2: ISP Onboarding & Field Portals** (`ispsync-core.service` on Port 8082):
     * `portal.<tenant>.ispsync.id` $\rightarrow$ Registrasi Mandiri & Peta GIS Leaflet ODP Terdekat (Haversine $\le 250\text{ m}$), KTP, Tanda Tangan Kontrak.
     * `sales.<tenant>.ispsync.id` $\rightarrow$ Portal Sales Lapangan & Generator Link WhatsApp Referral.
@@ -85,11 +85,13 @@
   * NOC Core: `noc` / `Password@123`
   * Sales: `sales` / `Password@123`
   * Teknisi Lapangan: `teknisi` / `Password@123`
+  * Kasir Loket POS: `kasir` / `Password@123` (Hak akses: `payments:read`, `payments:write`)
 * **Tenant Default Login (`ispmu`) — PT. ISP Mitra Utama**:
   * Pimpinan / Owner: `owner` / `Password@123`
   * NOC Core: `noc` / `Password@123`
   * Sales: `sales` / `Password@123`
   * Teknisi Lapangan: `teknisi` / `Password@123`
+  * Kasir Loket POS: `kasir` / `Password@123` (Hak akses: `payments:read`, `payments:write`)
 * **Tenant Staging & R&D Lab Login (`dev`) — Laboratorium ISPSYNC R&D**:
   * Engine 3 Ledger / Billing: `https://billing.dev.ispsync.id/login` (`private@ispsync.id` / `RahasiaAan2026!` atau `admin@dev.ispsync.id` / `DevLab2026!`)
   * Engine 1 Nexus / Portals: `https://nexus.dev.ispsync.id` (`admin`, `noc`, `sales`, `teknisi` / `DevLab2026!`)

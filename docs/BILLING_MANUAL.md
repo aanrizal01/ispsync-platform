@@ -16,6 +16,9 @@ Dokumen ini berisi panduan komprehensif mengenai **Arsitektur Sistem Billing**, 
    - 6.3. Menerbitkan Faktur (DRAFT ➔ ISSUED)
    - 6.4. Membatalkan Faktur (VOID)
    - 6.5. Penerimaan & Pencatatan Pembayaran
+     - 6.5.1. Loket Kasir POS (Fast Checkout Register & Cetak Struk)
+     - 6.5.2. Pencatatan Pembayaran Manual & Riwayat Transaksi
+     - 6.5.3. Hak Akses & Pembatasan Keamanan Peran Kasir
    - 6.6. Menghubungkan Tagihan dengan Isolir / Suspend Radius
 7. [Panduan Portal Publik Pelanggan Cek & Bayar Tagihan (/billing/check)](#7-panduan-portal-publik-pelanggan-cek--bayar-tagihan-billingcheck)
 8. [Modul Kemitraan ISP (Reseller) & Sistem Bagi Hasil (Revenue Sharing)](#8-modul-kemitraan-isp-reseller--sistem-bagi-hasil-revenue-sharing)
@@ -195,12 +198,44 @@ Jika terjadi salah entri atau pelanggan membatalkan pesanan tambahan:
 > Faktur yang sudah berstatus `PAID` (lunas) **tidak dapat di-VOID**. Jika terjadi kelebihan bayar, gunakan fitur *Refund* atau *Credit Note*.
 
 ### 6.5. Penerimaan & Pencatatan Pembayaran
-1. Pelanggan dapat membayar mandiri melalui **QRIS Dinamis** pada portal pelanggan.
-2. Jika pelanggan membayar tunai di kantor atau via transfer manual ke rekening kasir:
-   - Buka menu **Payments** di dashboard admin.
-   - Klik **Catat Pembayaran Manual**.
-   - Masukkan ID Faktur, nominal, dan metode pembayaran (*CASH* / *BANK_TRANSFER*).
-   - Faktur di modul Billing akan otomatis ter-update menjadi `PAID`.
+
+Sistem menyediakan dua antarmuka pencatatan pembayaran: **Loket Kasir POS (Fast Checkout Register)** untuk pembayaran loket tatap muka/tunai cepat, dan **Catat Pembayaran Manual** untuk rekonsiliasi transfer bank.
+
+#### 6.5.1. Loket Kasir POS (Fast Checkout Register & Cetak Struk)
+Modul Loket POS terintegrasi langsung di dalam menu **Pembayaran** tab **Loket Kasir POS** (`/admin/payments?tab=pos`):
+1. **Pencarian Cepat Tagihan Pelanggan**:
+   - Mendukung **Pindai Barcode Faktur** menggunakan barcode scanner fisik (otomatis fokus pada kotak input pencarian).
+   - Mendukung pencarian instan berbasis teks: ketik **Nomor Faktur**, **ID Pelanggan**, **Nama Lengkap**, atau **Nomor Telepon / WhatsApp**.
+   - Indikator real-time menampilkan jumlah tagihan yang belum lunas (`Tagihan Menunggu`) dan tombol segarkan (*refresh*) data.
+2. **Review Tagihan & Informasi Pelanggan**:
+   - Klik tagihan dari daftar hasil pencarian.
+   - Kotak rincian tagihan akan memuat Nama Pelanggan, Paket Internet, Nomor WhatsApp, Alamat Pemasangan, Total Tagihan, serta masa aktif layanan.
+3. **Kalkulator Kasir & Uang Kembalian**:
+   - Pilih metode bayar: **Tunai (CASH)**, **Transfer Bank**, atau **QRIS**.
+   - Tombol pecahan cepat: `Rp 50.000`, `Rp 100.000`, `Rp 200.000`, atau `Uang Pas`.
+   - Sistem secara otomatis menghitung **Uang Kembalian** dan memvalidasi nominal bayar tidak boleh kurang dari total tagihan.
+4. **Penyelesaian Transaksi & Cetak Struk**:
+   - Klik tombol **"Terima Pembayaran & Cetak Struk"** (atau tekan shortcut keyboard jika tersedia).
+   - Tagihan seketika berstatus `PAID` dan isolir pelanggan (jika sebelumnya *overdue*) otomatis dibuka kembali (*auto-unsuspend* via RADIUS).
+   - Dialog pencetakan otomatis terbuka dengan pilihan dokumen:
+     - **Struk Thermal POS Kasir**: Ukuran 58mm atau 80mm untuk printer kasir mini thermal.
+     - **Kwitansi Bukti Bayar / Faktur**: Ukuran A4 standar perusahaan.
+
+#### 6.5.2. Pencatatan Pembayaran Manual & Riwayat Transaksi
+Untuk rekonsiliasi pembayaran transfer atau pelunasan di luar loket kasir:
+1. Masuk ke tab **Riwayat Transaksi** (`/admin/payments?tab=history`).
+2. Klik tombol **"Catat Pembayaran"**.
+3. Pilih Faktur yang belum lunas, masukkan nominal pembayaran, pilih metode (`CASH`, `BANK_TRANSFER`, `CREDIT_CARD`, `OTHER`), dan simpan.
+4. Setiap transaksi tercatat lengkap dengan ID Referensi Pembayaran, Nama Petugas/Kasir, Waktu Transaksi, dan tombol cetak ulang kwitansi / faktur kapan saja.
+
+#### 6.5.3. Hak Akses & Pembatasan Keamanan Peran Kasir (Cashier Role)
+Untuk menjamin prinsip keamanan *Least Privilege* (hak akses seminimal mungkin):
+1. **Hak Akses Khusus Kasir**:
+   - Akun staf kasir cukup diberikan hak akses: `payments:read` dan `payments:write`.
+   - Sistem API secara terpadu mengizinkan kasir membaca data faktur belum lunas (`GET /api/v1/invoices`) dan profil pelanggan terkait (`GET /api/v1/customers/:id`) tanpa memerlukan hak akses admin faktur penuh (`invoices:write` / `invoices:delete`).
+2. **Isolasi Menu & Proteksi Data Sensitif**:
+   - Staf kasir **hanya dapat mengakses** modul Pembayaran / Loket POS.
+   - Menu administratif sensitif seperti **Pengaturan Sistem (Settings)**, **Log Audit (Audit Logs)**, **Kemitraan ISP (Partners)**, dan **Manajemen Pengguna & Peran (Users & Roles)** otomatis disembunyikan dan diblokir dari akun kasir.
 
 ### 6.6. Menghubungkan Tagihan dengan Isolir / Suspend Radius
 - Ketika pelanggan memiliki faktur yang melewati `due_date` + `grace_period`, modul billing menandai akun tersebut sebagai `OVERDUE`.

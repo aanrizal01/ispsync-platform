@@ -34,6 +34,9 @@
    - Pengelolaan langganan ISP di `ispsync.id/member` (`members.json`).
 5. **Jartaplok Settlement**:
    - Rekonsiliasi bagi hasil dan komisi mitra Jartaplok (`jartaplok_partners`, `partner_settlements`).
+6. **Loket Kasir POS & Keamanan Peran Kasir (Cashier Role)**:
+   - Antarmuka register loket cepat di menu Pembayaran (`/admin/payments?tab=pos`) dengan pencarian barcode, kalkulator kembalian, dan cetak struk thermal 58mm/80mm & kwitansi A4.
+   - Hak akses peran Kasir (`payments:read`, `payments:write`) terisolasi aman dengan pembatasan menu berprinsip *Least Privilege*.
 
 ---
 

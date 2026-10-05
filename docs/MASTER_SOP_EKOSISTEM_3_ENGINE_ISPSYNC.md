@@ -206,12 +206,20 @@ Sistem FTTX menjalankan daemon SNMP Poller secara otomatis setiap **5 menit** un
 2. Begitu pembayaran berhasil di Tripay, webhook diterima oleh ISPSYNC Ledger dalam 1 detik.
 3. Sistem secara otomatis mencatat kwitansi lunas dan mengirimkan tanda terima pembayaran via WhatsApp.
 
-### SOP-BILL-03: Prosedur Penerimaan Pembayaran Tunai / Manual Kasir
-1. Jika pelanggan membayar tunai ke kantor GOGIGANET atau dititipkan ke teknisi:
-2. Kasir/Admin membuka [billing.gogiga.net.id](https://billing.{tenant}.ispsync.id), cari nama atau ID pelanggan.
-3. Buka invoice terkait, klik **"Catat Pembayaran Manual"**.
-4. Pilih metode kas: `Kas Kantor` atau `Transfer Rekening Bank Mandiri GMT`.
-5. Invoice seketika ditandai `PAID`. Dilarang menunda pencatatan pembayaran tunai lebih dari 1x24 jam untuk mencegah terjadinya isolir keliru.
+### SOP-BILL-03: Prosedur Penerimaan Pembayaran Tunai / Manual Kasir (Loket Kasir POS)
+1. **Akses Loket Kasir**: Petugas Kasir login ke `https://billing.{tenant}.ispsync.id` dengan akun peran **Kasir** (hak akses dibatasi hanya ke modul Pembayaran/POS).
+2. **Pencarian Tagihan**:
+   - Pindai barcode tagihan dengan barcode scanner atau ketik Nomor Faktur / ID Pelanggan / Nomor HP pada kotak pencarian tab **Loket Kasir POS** (`/admin/payments?tab=pos`).
+   - Verifikasi kesesuaian nama pelanggan dan jumlah tagihan yang tampil di layar.
+3. **Penerimaan Uang & Hitung Kembalian**:
+   - Terima uang fisik dari pelanggan, masukkan nominal pada kalkulator kasir atau klik tombol pecahan cepat uang pas.
+   - Konfirmasi uang kembalian yang dihitung sistem secara otomatis kepada pelanggan.
+4. **Penyelesaian Transaksi & Struk**:
+   - Klik **"Terima Pembayaran & Cetak Struk"**.
+   - Sistem seketika menandai status tagihan `PAID` dan membuka isolir pelanggan di router (*auto-unsuspend*).
+   - Cetak struk kasir thermal (58mm/80mm) dan serahkan ke pelanggan sebagai bukti sah pelunasan.
+5. **Pencatatan Non-Loket (Transfer Bank)**:
+   - Untuk pembayaran via transfer manual, gunakan tab **Riwayat Transaksi** (`/admin/payments?tab=history`) -> klik **Catat Pembayaran**, masukkan referensi bukti transfer. Dilarang menunda pencatatan pembayaran lebih dari 1x24 jam.
 
 ### SOP-BILL-04: Mekanisme Otomasi Isolir Penunggak (FreeRADIUS CoA)
 1. Pada tanggal **21 pukul 00:05 WIB**, sistem mendeteksi seluruh tagihan yang berstatus `UNPAID` dan telah melewati jatuh tempo.
