@@ -1744,7 +1744,23 @@ func (h *APIHandler) AdminDeleteRegistration(w http.ResponseWriter, r *http.Requ
 	})
 }
 
-// AdminNOCApproval memproses persetujuan atau penolakan teknis NOC
+func isCommercialApprover(claims *auth.Claims) bool {
+	if claims == nil {
+		return false
+	}
+	role := strings.ToUpper(strings.TrimSpace(claims.Role))
+	return role == "OWNER" || role == "SUPERUSER" || role == "MANAGER" || role == "SALES_MANAGER" || role == "COMMERCIAL_MANAGER" || role == "BRANCH_MANAGER"
+}
+
+func isPricingEditor(claims *auth.Claims) bool {
+	if claims == nil {
+		return false
+	}
+	role := strings.ToUpper(strings.TrimSpace(claims.Role))
+	return isCommercialApprover(claims) || role == "FINANCE"
+}
+
+// AdminNOCApproval memproses persetujuan kelayakan teknis jaringan oleh NOC
 func (h *APIHandler) AdminNOCApproval(w http.ResponseWriter, r *http.Request) {
 	t := middleware.GetTenant(r)
 	id := chi.URLParam(r, "id")
@@ -1775,16 +1791,16 @@ func (h *APIHandler) AdminNOCApproval(w http.ResponseWriter, r *http.Request) {
 		isCorporate := strings.Contains(planLower, "custom") || strings.Contains(planLower, "enterprise") || strings.Contains(planLower, "dedicated")
 		
 		claims := middleware.GetClaims(r)
-		isOwner := claims != nil && (strings.ToUpper(claims.Role) == "OWNER" || strings.ToUpper(claims.Role) == "SUPERUSER")
+		hasCommercialAuth := isCommercialApprover(claims)
 
-		if isCorporate && !isOwner {
+		if isCorporate && !hasCommercialAuth {
 			// Segregation of Duties: NOC hanya berwenang memeriksa kelayakan teknis ODP/kabel.
-			// Kesepakatan harga & kontrak B2B wajib di-ACC oleh Owner / Direktur.
+			// Kesepakatan harga & kontrak B2B wajib di-ACC oleh Commercial/Sales Manager atau Owner/Direktur.
 			status = "WAITING_DIRECTOR_APPROVAL"
-			msg = "Kelayakan teknis ODP & jalur optik berhasil diverifikasi oleh NOC. Permohonan kini menunggu persetujuan (ACC) komersial dari Owner / Direktur Utama."
-		} else if isCorporate && isOwner {
+			msg = "Kelayakan teknis ODP & jalur optik berhasil diverifikasi oleh NOC. Permohonan kini menunggu persetujuan (ACC) komersial dari Commercial / Sales Manager atau Direksi."
+		} else if isCorporate && hasCommercialAuth {
 			status = "INSTALLATION_SCHEDULED"
-			msg = "Kesepakatan kontrak B2B resmi di-ACC oleh Direktur Utama. SPK Instalasi aktif."
+			msg = "Kesepakatan kontrak B2B resmi di-ACC oleh Manajemen Komersial / Direksi. SPK Instalasi aktif."
 		}
 	}
 
@@ -1799,7 +1815,7 @@ func (h *APIHandler) AdminNOCApproval(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// AdminDirectorApproval mengesahkan kesepakatan komersial B2B oleh Owner/Direktur Utama
+// AdminDirectorApproval mengesahkan kesepakatan komersial B2B oleh Commercial Manager, Sales Manager, atau Direktur Utama
 func (h *APIHandler) AdminDirectorApproval(w http.ResponseWriter, r *http.Request) {
 	t := middleware.GetTenant(r)
 	id := chi.URLParam(r, "id")
@@ -1809,12 +1825,9 @@ func (h *APIHandler) AdminDirectorApproval(w http.ResponseWriter, r *http.Reques
 	}
 
 	claims := middleware.GetClaims(r)
-	if claims != nil {
-		role := strings.ToUpper(strings.TrimSpace(claims.Role))
-		if role != "OWNER" && role != "SUPERUSER" {
-			h.failResponse(w, http.StatusForbidden, "Khusus wewenang Owner / Direktur Utama untuk meng-ACC kesepakatan kontrak B2B.")
-			return
-		}
+	if !isCommercialApprover(claims) {
+		h.failResponse(w, http.StatusForbidden, "Wewenang khusus Commercial Manager, Sales Manager, Branch Manager, atau Direktur Utama untuk mengesahkan kontrak B2B.")
+		return
 	}
 
 	var req struct {
@@ -1826,10 +1839,10 @@ func (h *APIHandler) AdminDirectorApproval(w http.ResponseWriter, r *http.Reques
 	_ = json.NewDecoder(r.Body).Decode(&req)
 
 	status := "INSTALLATION_SCHEDULED"
-	msg := "Kesepakatan kontrak B2B resmi di-ACC oleh Direktur Utama. SPK Instalasi diterbitkan."
+	msg := "Kesepakatan kontrak B2B resmi di-ACC oleh Manajemen Komersial / Direksi. SPK Instalasi diterbitkan."
 	if strings.ToUpper(req.Action) == "REJECT" {
 		status = "REJECTED_BY_DIRECTOR"
-		msg = "Permohonan komersial ditolak oleh Direktur Utama"
+		msg = "Permohonan komersial ditolak oleh Manajemen / Direksi"
 	}
 
 	if err := h.store.UpdateSubscriberStatus(r.Context(), t.ID, id, status); err != nil {
@@ -1961,28 +1974,22 @@ func (h *APIHandler) AdminUpdateRegistrationPricing(w http.ResponseWriter, r *ht
 	}
 
 	// Segregation of Duties: Mengubah tarif bulanan (MRC) atau biaya instalasi (OTC)
-	// merupakan kewenangan OWNER / Direktur Utama atau FINANCE. Staf NOC tidak boleh mengubah nominal harga sepihak.
+	// merupakan kewenangan OWNER / Direktur Utama, Commercial/Sales/Branch MANAGER, atau FINANCE. Staf NOC tidak boleh mengubah nominal harga sepihak.
 	if req.MonthlyPrice > 0 || req.OTCFee > 0 {
 		claims := middleware.GetClaims(r)
-		if claims != nil {
-			role := strings.ToUpper(strings.TrimSpace(claims.Role))
-			if role != "OWNER" && role != "FINANCE" && role != "SUPERUSER" {
-				h.failResponse(w, http.StatusForbidden, "Penetapan dan perubahan tarif harga kesepakatan (MRC/OTC) merupakan kewenangan Owner/Direktur Utama atau Finance.")
-				return
-			}
+		if !isPricingEditor(claims) {
+			h.failResponse(w, http.StatusForbidden, "Penetapan dan perubahan tarif harga kesepakatan (MRC/OTC) merupakan kewenangan Commercial / Sales Manager, Finance, atau Direktur Utama.")
+			return
 		}
 	}
 
 	// Segregation of Duties: Jika pelanggan sudah berstatus AKTIF dan mencoba mengubah skema tagihan,
-	// wajib memiliki otorisasi OWNER atau FINANCE.
+	// wajib memiliki otorisasi Commercial/Sales/Branch Manager, Owner, atau Finance.
 	if strings.ToUpper(sub.Status) == "ACTIVE" && req.BillingType != "" && strings.ToUpper(req.BillingType) != strings.ToUpper(sub.BillingType) {
 		claims := middleware.GetClaims(r)
-		if claims != nil {
-			role := strings.ToUpper(strings.TrimSpace(claims.Role))
-			if role != "OWNER" && role != "FINANCE" && role != "SUPERUSER" {
-				h.failResponse(w, http.StatusForbidden, "Pelanggan sudah berstatus AKTIF. Pengalihan skema tagihan merupakan kewenangan Owner atau Divisi Billing/Keuangan.")
-				return
-			}
+		if !isPricingEditor(claims) {
+			h.failResponse(w, http.StatusForbidden, "Pelanggan sudah berstatus AKTIF. Pengalihan skema tagihan merupakan kewenangan Commercial Manager, Owner, atau Divisi Billing/Keuangan.")
+			return
 		}
 	}
 
@@ -2095,15 +2102,12 @@ func (h *APIHandler) AdminUpdateBillingType(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Segregation of Duties: Jika pelanggan sudah berstatus AKTIF,
-	// pengalihan skema kredit/tagihan wajib memiliki otorisasi OWNER atau FINANCE.
+	// pengalihan skema kredit/tagihan wajib memiliki otorisasi Manager, Owner, atau Finance.
 	if strings.ToUpper(sub.Status) == "ACTIVE" {
 		claims := middleware.GetClaims(r)
-		if claims != nil {
-			role := strings.ToUpper(strings.TrimSpace(claims.Role))
-			if role != "OWNER" && role != "FINANCE" && role != "SUPERUSER" {
-				h.failResponse(w, http.StatusForbidden, "Pelanggan sudah berstatus AKTIF. Pengalihan skema tagihan merupakan kewenangan Owner atau Divisi Billing/Keuangan.")
-				return
-			}
+		if !isPricingEditor(claims) {
+			h.failResponse(w, http.StatusForbidden, "Pelanggan sudah berstatus AKTIF. Pengalihan skema tagihan merupakan kewenangan Commercial Manager, Owner, atau Divisi Billing/Keuangan.")
+			return
 		}
 	}
 

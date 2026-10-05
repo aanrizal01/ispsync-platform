@@ -60,8 +60,8 @@
         if (mode === 'sales') hasAuth = !!localStorage.getItem('sales_auth');
         else if (mode === 'technician') hasAuth = !!localStorage.getItem('technician_auth');
         else if (mode === 'noc-fo' || mode === 'noc') {
-          var adminRole = localStorage.getItem('active_portal_role');
-          hasAuth = !!(localStorage.getItem('auth_session_token') || sessionStorage.getItem('auth_session_token')) && (adminRole === 'superuser' || adminRole === 'admin' || adminRole === 'finance' || adminRole === 'branch_manager');
+          var adminRole = (localStorage.getItem('active_portal_role') || '').toLowerCase();
+          hasAuth = !!(localStorage.getItem('auth_session_token') || sessionStorage.getItem('auth_session_token')) && ['superuser', 'admin', 'finance', 'branch_manager', 'manager', 'commercial_manager', 'sales_manager', 'owner'].includes(adminRole);
         }
         else if (mode === 'rekan') hasAuth = !!localStorage.getItem('jartaplok_auth');
         else if (mode === 'portal') hasAuth = !!localStorage.getItem('customer_auth_data');
@@ -3311,7 +3311,7 @@
               <span id="badge-count-waiting-noc" class="px-1.5 py-0.5 rounded text-[10px] bg-amber-50 text-amber-700 border border-amber-200 font-bold font-mono">0</span>
             </button>
             <button id="reg-filter-btn-WAITING_DIRECTOR" type="button" onclick="setAdminRegFilter('WAITING_DIRECTOR')" class="px-3 py-1.5 rounded-md text-xs font-mono font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
-              <span>👑 ACC Direktur</span>
+              <span>👑 ACC Manager / Direksi</span>
               <span id="badge-count-waiting-director" class="px-1.5 py-0.5 rounded text-[10px] bg-amber-100 text-amber-900 border border-amber-300 font-bold font-mono">0</span>
             </button>
             <button id="reg-filter-btn-ACTIVE" type="button" onclick="setAdminRegFilter('ACTIVE')" class="px-3 py-1.5 rounded-md text-xs font-mono font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
@@ -6923,15 +6923,15 @@
             </div>
           </div>
 
-          <!-- Panel Khusus Otorisasi Komersial & Kontrak (Khusus Owner / Direktur) -->
+          <!-- Panel Khusus Otorisasi Komersial & Kontrak (Commercial Manager / Direksi) -->
           <div id="detail-pricing-director-panel" class="p-4 rounded-md bg-slate-900 text-white border border-slate-800 space-y-3.5 hidden shadow-xl">
             <div class="flex items-center justify-between border-b border-slate-800 pb-2">
               <span class="text-xs font-mono font-bold uppercase text-amber-400 flex items-center gap-1.5">
                 <i data-lucide="crown" class="w-4 h-4 text-amber-400"></i>
-                <span>Otorisasi Komersial &amp; Kontrak (Owner / Direktur)</span>
+                <span>Otorisasi Komersial &amp; Kontrak (Commercial Manager / Direksi)</span>
               </span>
               <span class="text-[9.5px] font-mono font-bold px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800 uppercase">
-                Otoritas Tertinggi
+                Otoritas Komersial
               </span>
             </div>
             <p class="text-xs text-slate-300 leading-relaxed font-sans">
@@ -6949,7 +6949,7 @@
             </div>
             <div id="director-approval-notice-non-owner" class="hidden text-xs text-amber-300 bg-amber-950/60 border border-amber-800/80 p-2.5 rounded font-sans flex items-center gap-2">
               <i data-lucide="lock" class="w-4 h-4 shrink-0 text-amber-400"></i>
-              <span>Anda login sebagai Staf Teknis / NOC. Penerbitan SPK pelanggan korporat ini memerlukan persetujuan resmi (ACC) dari Owner / Direktur Utama.</span>
+              <span>Anda login sebagai Staf Teknis / NOC. Penerbitan SPK pelanggan korporat ini memerlukan pengesahan komersial resmi (ACC) dari Commercial / Sales Manager atau Direktur Utama.</span>
             </div>
           </div>
 
@@ -14989,7 +14989,7 @@
         const filterNames = {
           'PENDING': 'antrean pasang baru',
           'WAITING_NOC': 'approval NOC',
-          'WAITING_DIRECTOR': 'ACC Direktur / Owner',
+          'WAITING_DIRECTOR': 'ACC Manager / Direksi',
           'ACTIVE': 'pelanggan aktif',
           'SUSPENDED': 'jeda layanan',
           'UNCOVERED': 'wishlist / luar jangkauan',
@@ -15024,7 +15024,7 @@
           statusLabel = 'JEDA / ISOLIR';
         } else if (r.status === 'WAITING_DIRECTOR_APPROVAL') {
           statusBadgeClass = 'bg-amber-100 text-amber-900 border-amber-300 font-bold';
-          statusLabel = '👑 ACC DIREKTUR';
+          statusLabel = '👑 ACC MANAGER / DIREKSI';
         } else if (r.status === 'WAITING_APPROVAL_NOC') {
           statusBadgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
           statusLabel = 'APPROVAL NOC';
@@ -15036,7 +15036,7 @@
           statusLabel = r.status === 'INSTALLATION_SCHEDULED' ? 'JADWAL PASANG' : (r.status === 'SURVEY_SCHEDULED' ? 'JADWAL SURVEI' : 'MENUNGGU SPK');
         } else if (r.status === 'REJECTED_BY_DIRECTOR') {
           statusBadgeClass = 'bg-rose-50 text-rose-700 border-rose-200';
-          statusLabel = 'DITOLAK DIREKTUR';
+          statusLabel = 'DITOLAK MANAJEMEN / DIREKSI';
         } else if (r.status === 'UNCOVERED_WISHLIST') {
           statusBadgeClass = 'bg-indigo-50 text-indigo-700 border-indigo-200';
           statusLabel = 'WISHLIST';
@@ -16680,7 +16680,7 @@
           statusBadge.innerText = 'AKTIF ONLINE';
           statusBadge.className = "mt-0.5 inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200";
         } else if (r.status === 'WAITING_DIRECTOR_APPROVAL') {
-          statusBadge.innerText = '👑 MENUNGGU ACC DIREKTUR UTAMA';
+          statusBadge.innerText = '👑 MENUNGGU ACC MANAGER / DIREKSI';
           statusBadge.className = "mt-0.5 inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-amber-100 text-amber-900 border border-amber-300";
         } else if (r.status === 'WAITING_APPROVAL_NOC') {
           statusBadge.innerText = 'MENUNGGU APPROVAL NOC';
@@ -16692,7 +16692,7 @@
           statusBadge.innerText = 'SIAP PASANG (SPK AKTIF)';
           statusBadge.className = "mt-0.5 inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-blue-50 text-blue-700 border border-blue-200";
         } else if (r.status === 'REJECTED_BY_DIRECTOR') {
-          statusBadge.innerText = 'DITOLAK DIREKTUR UTAMA';
+          statusBadge.innerText = 'DITOLAK MANAJEMEN / DIREKSI';
           statusBadge.className = "mt-0.5 inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-rose-50 text-rose-700 border border-rose-200";
         } else {
           statusBadge.innerText = r.status || '-';
@@ -16755,20 +16755,20 @@
       const activeRole = localStorage.getItem('active_portal_role');
       const adminUser = localStorage.getItem('admin_user') ? JSON.parse(localStorage.getItem('admin_user')) : null;
       const userRole = (adminUser && adminUser.role ? adminUser.role : (activeRole || '')).toUpperCase();
-      const isOwner = userRole === 'OWNER' || userRole === 'SUPERUSER';
+      const isCommercialApprover = ['OWNER', 'SUPERUSER', 'MANAGER', 'COMMERCIAL_MANAGER', 'SALES_MANAGER', 'BRANCH_MANAGER'].includes(userRole);
       const isFinance = userRole === 'FINANCE';
-      const canEditPricing = isOwner || isFinance;
+      const canEditPricing = isCommercialApprover || isFinance;
 
       const salesAuth = localStorage.getItem('sales_auth');
       const curMode = currentSubdomainMode || (typeof detectActiveSubdomain === 'function' ? detectActiveSubdomain() : '');
       const isSales = (activeRole === 'sales' || curMode === 'sales') && !['superuser', 'admin', 'noc-fo'].includes(curMode) && !['superuser', 'admin'].includes(activeRole);
 
-      // Segregation of Duties: Kunci input harga (MRC & OTC) bagi peran non-Owner / non-Finance
+      // Segregation of Duties: Kunci input harga (MRC & OTC) bagi peran non-Manager / non-Finance
       if (otcInput) {
         otcInput.readOnly = !canEditPricing;
         if (!canEditPricing) {
           otcInput.classList.add('bg-slate-100', 'cursor-not-allowed');
-          otcInput.title = 'Wewenang khusus Owner / Direktur Utama & Finance';
+          otcInput.title = 'Wewenang khusus Commercial Manager, Sales Manager, Finance, atau Direktur Utama';
         } else {
           otcInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
           otcInput.title = '';
@@ -16778,7 +16778,7 @@
         monthlyInput.readOnly = !canEditPricing;
         if (!canEditPricing) {
           monthlyInput.classList.add('bg-slate-100', 'cursor-not-allowed');
-          monthlyInput.title = 'Wewenang khusus Owner / Direktur Utama & Finance';
+          monthlyInput.title = 'Wewenang khusus Commercial Manager, Sales Manager, Finance, atau Direktur Utama';
         } else {
           monthlyInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
           monthlyInput.title = '';
@@ -16801,7 +16801,7 @@
         if (nocPanel) nocPanel.classList.add('hidden');
         if (directorPanel) {
           directorPanel.classList.remove('hidden');
-          if (isOwner) {
+          if (isCommercialApprover) {
             if (dirActions) dirActions.classList.remove('hidden');
             if (dirNotice) dirNotice.classList.add('hidden');
           } else {
@@ -18006,7 +18006,7 @@
           `Paket: ${reg.selected_plan_name}\n` +
           `Tarif Bulanan (MRC): Rp ${mrcFormatted}\n` +
           `Biaya Pasang (OTC): Rp ${otcFormatted}\n\n` +
-          `Setelah di-ACC Direktur Utama, SPK Instalasi Teknisi dan Faktur Tagihan resmi akan diterbitkan.`
+          `Setelah di-ACC oleh Commercial / Sales Manager atau Direksi, SPK Instalasi Teknisi dan Faktur Tagihan resmi akan diterbitkan.`
         );
         if (!confirmApprove) return;
       }
@@ -18019,7 +18019,9 @@
       try {
         const token = localStorage.getItem('auth_session_token') || sessionStorage.getItem('auth_session_token') || '';
         const adminUser = localStorage.getItem('admin_user') ? JSON.parse(localStorage.getItem('admin_user')) : null;
-        const directorName = adminUser && (adminUser.name || adminUser.username) ? (adminUser.name || adminUser.username) : 'Direktur Utama';
+        const directorName = adminUser && (adminUser.name || adminUser.username) 
+          ? `${adminUser.name || adminUser.username} (${adminUser.role || 'Commercial Manager'})` 
+          : 'Commercial Manager';
 
         const resp = await fetch(`/api/v1/admin/registrations/${reg.id}/director-approval`, {
           method: 'POST',
@@ -18036,11 +18038,11 @@
 
         const resData = await resp.json();
         if (!resp.ok || !resData.success) {
-          throw new Error(resData.error || resData.message || 'Gagal memproses persetujuan Direktur Utama');
+          throw new Error(resData.error || resData.message || 'Gagal memproses persetujuan Manajemen / Direksi');
         }
 
         const successMsg = resData.message || (action === 'APPROVE'
-          ? 'Kesepakatan kontrak B2B resmi di-ACC oleh Direktur Utama. SPK Instalasi dan Faktur Tagihan telah diterbitkan.'
+          ? 'Kesepakatan kontrak B2B resmi di-ACC oleh Manajemen Komersial / Direksi. SPK Instalasi dan Faktur Tagihan telah diterbitkan.'
           : 'Kesepakatan komersial B2B berhasil ditolak/dibatalkan.');
         alert(successMsg);
 
