@@ -67,27 +67,33 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 			if tenantSlug == "" {
 				parts := strings.Split(host, ".")
 				// Format A: {app}.{tenant}.ispsync.id (contoh: cms.ispku.ispsync.id, nexus.ispku.ispsync.id)
-				if len(parts) >= 4 && strings.HasSuffix(host, baseDomain) {
+				// Format A: {app}.{tenant}.ispsync.id (contoh: cms.ispku.ispsync.id, nexus.ispku.ispsync.id)
+				// atau domain 4-bagian kustom: {app}.{tenant}.net.id (contoh: noc-fo.gogiga.net.id)
+				if len(parts) >= 4 {
 					appPart := parts[0]
 					tenantPart := parts[1]
 
+					matchedApp := true
 					switch appPart {
 					case "portal", "nexus":
 						appType = domain.AppPortal
-					case "noc":
+					case "noc", "noc-fo":
 						appType = domain.AppNOC
 					case "sales":
 						appType = domain.AppSales
-					case "teknisi":
+					case "teknisi", "technician":
 						appType = domain.AppTeknisi
 					case "wifi", "hotspot":
 						appType = domain.AppWifi
 					case "isolir":
 						appType = domain.AppIsolir
 					default:
-						appType = domain.AppCMS
+						matchedApp = false
 					}
-					tenantSlug = tenantPart
+
+					if matchedApp || strings.HasSuffix(host, baseDomain) {
+						tenantSlug = tenantPart
+					}
 				} else if len(parts) == 3 && strings.HasSuffix(host, baseDomain) {
 					// Format B (Cloudflare Universal SSL friendly): {app}-{tenant}.ispsync.id (contoh: cms-ispku.ispsync.id)
 					sub := parts[0]
