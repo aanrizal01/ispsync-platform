@@ -44,6 +44,11 @@
         window.__EARLY_TENANT_SLUG__ = favSlug;
         window.__EARLY_BRAND_NAME__ = earlyBrand;
         window.__EARLY_LOGO_URL__ = '/web/' + favSlug + '_logo.svg';
+        window.__TENANT_TAX_CONFIG__ = {
+          taxMode: (tCtxEarly.tax_mode) || 'NON_PKP',
+          taxRatePPN: tCtxEarly.tax_rate_ppn !== undefined ? Number(tCtxEarly.tax_rate_ppn) : 11.0,
+          npwp: tCtxEarly.npwp || ''
+        };
 
         var elFav = document.getElementById('dynamic-favicon');
         if (elFav) {

@@ -219,6 +219,19 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 		trackClassScript = "document.documentElement.classList.add('is-portal-track');\n"
 	}
 
+	taxMode := "NON_PKP"
+	taxRatePPN := 11.0
+	npwp := ""
+	if st, err := h.store.GetTenantSettings(r.Context(), tCtx.Tenant.ID); err == nil && st != nil {
+		if st.TaxMode != "" {
+			taxMode = st.TaxMode
+		}
+		if st.TaxRatePPN > 0 {
+			taxRatePPN = st.TaxRatePPN
+		}
+		npwp = st.NPWP
+	}
+
 	tenantScript := fmt.Sprintf(`
   <!-- DYNAMIC ISPSYNC TENANT INJECTION -->
   <script>
@@ -235,6 +248,9 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
       appType: %q,
       subdomain: %q,
       host: %q,
+      tax_mode: %q,
+      tax_rate_ppn: %f,
+      npwp: %q,
       allTenants: %s
     };
     (function() {
@@ -245,7 +261,7 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
       } catch (e) {}
     })();
   </script>
-`, tCtx.Tenant.ID, tCtx.Tenant.Slug, tCtx.Tenant.Name, tCtx.Tenant.PrefixID, tCtx.Tenant.LogoURL, tCtx.Tenant.BrandColor, tCtx.Tenant.ContactPhone, tCtx.Tenant.ContactEmail, tCtx.Tenant.Address, tCtx.AppType, tCtx.Subdomain, tCtx.Host, string(allTenantsJSON), mode, pageTitle, trackClassScript)
+`, tCtx.Tenant.ID, tCtx.Tenant.Slug, tCtx.Tenant.Name, tCtx.Tenant.PrefixID, tCtx.Tenant.LogoURL, tCtx.Tenant.BrandColor, tCtx.Tenant.ContactPhone, tCtx.Tenant.ContactEmail, tCtx.Tenant.Address, tCtx.AppType, tCtx.Subdomain, tCtx.Host, taxMode, taxRatePPN, npwp, string(allTenantsJSON), mode, pageTitle, trackClassScript)
 
 	// Inject script into <head>
 	html = strings.Replace(html, "<head>", "<head>\n"+tenantScript, 1)

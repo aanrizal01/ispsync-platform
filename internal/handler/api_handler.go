@@ -106,8 +106,20 @@ func (h *APIHandler) GetContext(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	gmapsKey := "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA"
-	if st, err := h.store.GetTenantSettings(r.Context(), tCtx.Tenant.ID); err == nil && st != nil && st.GoogleMapsAPIKey != "" {
-		gmapsKey = st.GoogleMapsAPIKey
+	taxMode := "NON_PKP"
+	taxRatePPN := 11.0
+	npwp := ""
+	if st, err := h.store.GetTenantSettings(r.Context(), tCtx.Tenant.ID); err == nil && st != nil {
+		if st.GoogleMapsAPIKey != "" {
+			gmapsKey = st.GoogleMapsAPIKey
+		}
+		if st.TaxMode != "" {
+			taxMode = st.TaxMode
+		}
+		if st.TaxRatePPN > 0 {
+			taxRatePPN = st.TaxRatePPN
+		}
+		npwp = st.NPWP
 	}
 	h.jsonResponse(w, http.StatusOK, map[string]interface{}{
 		"tenant":              tCtx.Tenant,
@@ -116,6 +128,9 @@ func (h *APIHandler) GetContext(w http.ResponseWriter, r *http.Request) {
 		"host":                tCtx.Host,
 		"capabilities":        h.tenantCapsFor(r),
 		"google_maps_api_key": gmapsKey,
+		"tax_mode":            taxMode,
+		"tax_rate_ppn":        taxRatePPN,
+		"npwp":                npwp,
 	})
 }
 
