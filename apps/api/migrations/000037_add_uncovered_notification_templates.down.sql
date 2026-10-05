@@ -1,0 +1,2 @@
+-- Migration 000037 Down
+DELETE FROM notification_templates WHERE code IN ('UNCOVERED_WISHLIST_WA', 'UNCOVERED_CANCELLED_WA');
