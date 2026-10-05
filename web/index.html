@@ -6549,7 +6549,7 @@
         </div>
 
         <!-- Order & Technical Info Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs bg-slate-50 p-4 sm:p-5 rounded-md border border-slate-200">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs bg-slate-50 p-4 sm:p-5 rounded-md border border-slate-200">
           <div>
             <span class="text-[10px] uppercase font-mono text-slate-500 font-bold block mb-0.5">Paket Dipilih</span>
             <strong id="admin-detail-plan" class="text-slate-900 font-mono font-bold block">-</strong>
@@ -6561,6 +6561,13 @@
           <div>
             <span class="text-[10px] uppercase font-mono text-slate-500 font-bold block mb-0.5">Status WO</span>
             <span id="admin-detail-status-badge" class="mt-0.5 inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase">-</span>
+          </div>
+          <div>
+            <span class="text-[10px] uppercase font-mono text-slate-500 font-bold block mb-0.5">Skema Tagihan</span>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <span id="admin-detail-billing-type-badge" class="inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-cyan-50 text-cyan-700 border border-cyan-200">PRABAYAR</span>
+              <button type="button" onclick="quickToggleBillingType()" class="text-[9.5px] font-mono font-bold text-slate-600 hover:text-slate-900 underline cursor-pointer" title="Klik untuk beralih antara Pra/Pascabayar">Ubah</button>
+            </div>
           </div>
         </div>
 
@@ -6850,11 +6857,24 @@
             <input type="text" id="detail-pricing-notes" placeholder="Contoh: Pelanggan setuju menanggung biaya kabel tambahan dropcore 429m dari ODP Golden" class="w-full py-2.5 px-3.5 bg-white border border-slate-300 rounded-md text-xs font-sans text-slate-900 focus:ring-1 focus:ring-slate-900 focus:border-slate-900 shadow-2xs" />
           </div>
 
-          <div>
-            <label class="block text-[11px] font-mono font-bold uppercase text-slate-800 mb-1">
-              NPWP Perusahaan / Pelanggan (Opsional):
-            </label>
-            <input type="text" id="detail-pricing-npwp" maxlength="20" placeholder="Contoh: 01.234.567.8-012.000" class="w-full py-2.5 px-3.5 bg-white border border-slate-300 rounded-md text-xs font-mono text-slate-900 focus:ring-1 focus:ring-slate-900 focus:border-slate-900 shadow-2xs" />
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-[11px] font-mono font-bold uppercase text-slate-800 mb-1">
+                Skema Penagihan (Billing Scheme):
+              </label>
+              <select id="detail-pricing-billing-type" onchange="updateDetailBillingTypeUI(this.value)" class="w-full py-2.5 px-3.5 bg-white border border-slate-300 rounded-md text-xs font-mono font-bold text-slate-900 focus:ring-1 focus:ring-slate-900 focus:border-slate-900 shadow-2xs">
+                <option value="PREPAID">PRABAYAR (PREPAID - Bayar di Awal)</option>
+                <option value="POSTPAID">PASCABAYAR (POSTPAID - Bayar di Akhir Periode)</option>
+              </select>
+              <span class="text-[9.5px] text-slate-500 block mt-1">Mengatur klausul perjanjian kontrak &amp; siklus faktur tagihan</span>
+            </div>
+            <div>
+              <label class="block text-[11px] font-mono font-bold uppercase text-slate-800 mb-1">
+                NPWP Perusahaan / Pelanggan (Opsional):
+              </label>
+              <input type="text" id="detail-pricing-npwp" maxlength="20" placeholder="Contoh: 01.234.567.8-012.000" class="w-full py-2.5 px-3.5 bg-white border border-slate-300 rounded-md text-xs font-mono text-slate-900 focus:ring-1 focus:ring-slate-900 focus:border-slate-900 shadow-2xs" />
+              <span class="text-[9.5px] text-slate-500 block mt-1">Nomor Pokok Wajib Pajak untuk faktur pajak resmi</span>
+            </div>
           </div>
 
           <!-- Opsi Pengajuan Persetujuan ke NOC (Sales) -->
@@ -10660,11 +10680,12 @@
 
       document.getElementById('contract-sig-cust-name-label').innerText = regData.full_name;
 
-      // Check if registration is via Wholesale Partner TIF (Postpaid Scheme)
+      // Check if registration is via Wholesale Partner TIF or explicit Postpaid Scheme
+      const rawBillingType = (regData.billing_type || '').toUpperCase();
       const partnerCode = (regData.partner_code || '').toUpperCase();
       const partnerName = (regData.partner_name || '').toUpperCase();
       const odpCode = (regData.nearest_odp_code || '').toUpperCase();
-      const isPostpaidTIF = Boolean(
+      const isPartnerPostpaid = Boolean(
         partnerCode === 'TELKO-PYK' ||
         partnerCode === 'TIF' ||
         partnerName.includes('TELKOM') ||
@@ -10674,6 +10695,7 @@
         regData.partner_suspension_policy === 'DISALLOWED' ||
         (regData.cluster_type && regData.cluster_type.toUpperCase().includes('TIF'))
       );
+      const isPostpaid = rawBillingType === 'POSTPAID' || (rawBillingType !== 'PREPAID' && isPartnerPostpaid);
 
       // Contract Type Badge & Scheme
       const typePillEl = document.getElementById('contract-type-pill');
@@ -10684,9 +10706,9 @@
       const clausesPostpaid = document.getElementById('contract-clauses-postpaid');
       const clausesPrepaid = document.getElementById('contract-clauses-prepaid');
 
-      if (isPostpaidTIF) {
+      if (isPostpaid) {
         if (typePillEl) {
-          typePillEl.innerText = "KONTRAK PASCABAYAR • MITRA TIF";
+          typePillEl.innerText = isPartnerPostpaid ? "KONTRAK PASCABAYAR • MITRA TIF" : "KONTRAK PASCABAYAR (POSTPAID)";
           typePillEl.className = "px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-indigo-900 text-white";
         }
         if (billingSchemeEl) {
@@ -16570,6 +16592,9 @@
               : (r.status === 'PENDING_SURVEY_OVERDISTANCE' ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-blue-50 text-blue-700 border border-blue-200'))
       );
 
+      // Render Skema Tagihan (Billing Type: PREPAID / POSTPAID)
+      updateDetailBillingTypeUI(r.billing_type || 'PREPAID');
+
       // 1. Render Custom Enterprise Quotation Box (jika ada catatan custom)
       const customCard = document.getElementById('admin-detail-custom-card');
       const customNotesEl = document.getElementById('admin-detail-custom-notes');
@@ -17151,6 +17176,73 @@
       document.getElementById('modal-admin-detail').classList.add('hidden');
     }
 
+    function updateDetailBillingTypeUI(type) {
+      const isPostpaid = (type || '').toUpperCase() === 'POSTPAID';
+      const badge = document.getElementById('admin-detail-billing-type-badge');
+      const select = document.getElementById('detail-pricing-billing-type');
+      if (badge) {
+        if (isPostpaid) {
+          badge.innerText = 'PASCABAYAR';
+          badge.className = 'inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-indigo-50 text-indigo-700 border border-indigo-200';
+        } else {
+          badge.innerText = 'PRABAYAR';
+          badge.className = 'inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-cyan-50 text-cyan-700 border border-cyan-200';
+        }
+      }
+      if (select && select.value !== (isPostpaid ? 'POSTPAID' : 'PREPAID')) {
+        select.value = isPostpaid ? 'POSTPAID' : 'PREPAID';
+      }
+    }
+
+    async function quickToggleBillingType() {
+      if (!currentDetailRegistration) return;
+      const reg = currentDetailRegistration;
+      const currentType = (reg.billing_type || 'PREPAID').toUpperCase();
+      const newType = currentType === 'POSTPAID' ? 'PREPAID' : 'POSTPAID';
+      const typeLabel = newType === 'POSTPAID' ? 'PASCABAYAR (Bayar di Belakang)' : 'PRABAYAR (Bayar di Depan)';
+
+      if (!confirm(`Ubah skema penagihan untuk ${reg.full_name} (${reg.registration_no}) menjadi ${typeLabel}?`)) {
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('auth_session_token') || sessionStorage.getItem('auth_session_token') || '';
+        const targetId = reg.id || reg.registration_no;
+        const resp = await fetch(`/api/v1/admin/registrations/${targetId}/billing-type`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+          },
+          body: JSON.stringify({ billing_type: newType })
+        });
+        const resData = await resp.json();
+        if (!resp.ok || !resData.success) {
+          throw new Error(resData.error || resData.message || 'Gagal mengubah skema penagihan');
+        }
+
+        reg.billing_type = newType;
+        updateDetailBillingTypeUI(newType);
+
+        // Update in memory registration lists
+        if (typeof adminRegistrationsList !== 'undefined' && Array.isArray(adminRegistrationsList)) {
+          const idx = adminRegistrationsList.findIndex(item => item.registration_no === reg.registration_no || item.id === reg.id);
+          if (idx !== -1) adminRegistrationsList[idx].billing_type = newType;
+        }
+        if (typeof salesRegistrationsList !== 'undefined' && Array.isArray(salesRegistrationsList)) {
+          const sIdx = salesRegistrationsList.findIndex(item => item.registration_no === reg.registration_no || item.id === reg.id);
+          if (sIdx !== -1) salesRegistrationsList[sIdx].billing_type = newType;
+        }
+
+        if (typeof renderAdminRegistrationsTable === 'function') renderAdminRegistrationsTable();
+        if (typeof renderSalesTable === 'function') renderSalesTable();
+
+        alert(`Skema tagihan berhasil diubah ke ${newType}`);
+      } catch (err) {
+        alert('Gagal mengubah skema penagihan: ' + err.message);
+      }
+    }
+
     function setSectionCardCollapsed(key, shouldCollapse) {
       const container = document.getElementById(`admin-detail-${key}-container`);
       const chevron = document.getElementById(`admin-detail-${key}-chevron`);
@@ -17474,6 +17566,7 @@
         }
         const odpVal = document.getElementById('detail-pricing-odp') ? document.getElementById('detail-pricing-odp').value.trim().toUpperCase() : '';
         const promoteVal = document.getElementById('detail-pricing-promote') ? document.getElementById('detail-pricing-promote').checked : false;
+        const billingTypeVal = document.getElementById('detail-pricing-billing-type') ? document.getElementById('detail-pricing-billing-type').value : (reg.billing_type || 'PREPAID');
 
         const resp = await fetch(url, {
           method: 'PUT',
@@ -17486,6 +17579,7 @@
             selected_plan_id: planId,
             selected_plan_name: planName,
             odp_code: odpVal,
+            billing_type: billingTypeVal,
             promote_to_install: promoteVal
           })
         });
@@ -17507,9 +17601,15 @@
             reg.selected_plan_id = planId;
           }
           if (odpVal) reg.nearest_odp_code = odpVal;
+          if (billingTypeVal) reg.billing_type = billingTypeVal;
           if (promoteVal) {
             reg.status = isSales ? 'WAITING_APPROVAL_NOC' : 'INSTALLATION_SCHEDULED';
           }
+        }
+
+        if (billingTypeVal) {
+          reg.billing_type = billingTypeVal;
+          updateDetailBillingTypeUI(billingTypeVal);
         }
 
         const detailNpwpEl = document.getElementById('admin-detail-npwp');
@@ -17545,11 +17645,11 @@
 
         // Update in lists
         if (typeof adminRegistrationsList !== 'undefined' && Array.isArray(adminRegistrationsList)) {
-          const idx = adminRegistrationsList.findIndex(item => item.registration_no === reg.registration_no);
+          const idx = adminRegistrationsList.findIndex(item => item.registration_no === reg.registration_no || item.id === reg.id);
           if (idx !== -1) adminRegistrationsList[idx] = reg;
         }
         if (typeof salesRegistrationsList !== 'undefined' && Array.isArray(salesRegistrationsList)) {
-          const sIdx = salesRegistrationsList.findIndex(item => item.registration_no === reg.registration_no);
+          const sIdx = salesRegistrationsList.findIndex(item => item.registration_no === reg.registration_no || item.id === reg.id);
           if (sIdx !== -1) salesRegistrationsList[sIdx] = reg;
         }
 

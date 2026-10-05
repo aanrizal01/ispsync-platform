@@ -177,6 +177,7 @@ type Subscriber struct {
 	VLANID           *int       `json:"vlan_id,omitempty"`
 	IPAddress        *string    `json:"ip_address,omitempty"`
 	Status           string     `json:"status"` // "REGISTERED", "SURVEY_SCHEDULED", "INSTALLATION_SCHEDULED", "ACTIVE", "RESTRICTED", "TERMINATED"
+	BillingType      string     `json:"billing_type"` // "PREPAID", "POSTPAID"
 	ActivatedAt      *time.Time `json:"activated_at,omitempty"`
 	SuspendedAt      *time.Time `json:"suspended_at,omitempty"`
 	CreatedAt        time.Time  `json:"created_at"`

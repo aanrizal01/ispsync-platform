@@ -35,7 +35,8 @@ type Storage interface {
 	GetSubscriberByNo(ctx context.Context, tenantID, subNo string) (*domain.Subscriber, error)
 	CreateSubscriber(ctx context.Context, sub *domain.Subscriber) error
 	UpdateSubscriberStatus(ctx context.Context, tenantID, id, status string) error
-	UpdateSubscriberPricingAndODP(ctx context.Context, tenantID, id, planID, planName, odpCode, pppoeUser, pppoePass string, promoteToInstall bool) error
+	UpdateSubscriberPricingAndODP(ctx context.Context, tenantID, id, planID, planName, odpCode, pppoeUser, pppoePass string, billingType string, promoteToInstall bool) error
+	UpdateSubscriberBillingType(ctx context.Context, tenantID, idOrNo, billingType string) error
 	DeleteSubscriber(ctx context.Context, tenantID, idOrNo string) error
 	UpdateSubscriberProvisioning(ctx context.Context, tenantID, id string, oltID *string, ponPort *string, onuID *int, sn, mac *string, rxPower *float64, pppoeUser, pppoePass *string, vlan *int, ip *string) error
 

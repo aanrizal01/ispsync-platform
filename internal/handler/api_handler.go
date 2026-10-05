@@ -1617,6 +1617,7 @@ func (h *APIHandler) AdminListRegistrations(w http.ResponseWriter, r *http.Reque
 		Email               string    `json:"email"`
 		Address             string    `json:"address"`
 		Status              string    `json:"status"`
+		BillingType         string    `json:"billing_type"`
 		SelectedPlanName    string    `json:"selected_plan_name"`
 		NearestODPCode      string    `json:"nearest_odp_code"`
 		DistanceToODPMeters float64   `json:"distance_to_odp_meters"`
@@ -1634,6 +1635,10 @@ func (h *APIHandler) AdminListRegistrations(w http.ResponseWriter, r *http.Reque
 		if s.PPPoEPassword != nil {
 			pP = *s.PPPoEPassword
 		}
+		bt := s.BillingType
+		if bt == "" {
+			bt = "PREPAID"
+		}
 		out = append(out, regItem{
 			ID:                  s.ID,
 			RegistrationNo:      s.SubscriberNo,
@@ -1642,6 +1647,7 @@ func (h *APIHandler) AdminListRegistrations(w http.ResponseWriter, r *http.Reque
 			Email:               s.Email,
 			Address:             s.Address,
 			Status:              s.Status,
+			BillingType:         bt,
 			SelectedPlanName:    s.SelectedPlanName,
 			NearestODPCode:      s.NearestODPCode,
 			DistanceToODPMeters: s.DistanceToODP,
@@ -1803,6 +1809,7 @@ func (h *APIHandler) AdminUpdateRegistrationPricing(w http.ResponseWriter, r *ht
 		TaxID            string  `json:"tax_id"`
 		PPPoEUsername    string  `json:"pppoe_username"`
 		PPPoEPassword    string  `json:"pppoe_password"`
+		BillingType      string  `json:"billing_type"`
 		PromoteToInstall bool    `json:"promote_to_install"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -1819,7 +1826,7 @@ func (h *APIHandler) AdminUpdateRegistrationPricing(w http.ResponseWriter, r *ht
 		return
 	}
 
-	if err := h.store.UpdateSubscriberPricingAndODP(r.Context(), t.ID, sub.ID, req.SelectedPlanID, req.SelectedPlanName, req.ODPCode, req.PPPoEUsername, req.PPPoEPassword, req.PromoteToInstall); err != nil {
+	if err := h.store.UpdateSubscriberPricingAndODP(r.Context(), t.ID, sub.ID, req.SelectedPlanID, req.SelectedPlanName, req.ODPCode, req.PPPoEUsername, req.PPPoEPassword, req.BillingType, req.PromoteToInstall); err != nil {
 		h.failResponse(w, http.StatusInternalServerError, "Gagal mengupdate data registrasi: "+err.Error())
 		return
 	}
@@ -1827,6 +1834,14 @@ func (h *APIHandler) AdminUpdateRegistrationPricing(w http.ResponseWriter, r *ht
 	newStatus := sub.Status
 	if req.PromoteToInstall {
 		newStatus = "INSTALLATION_SCHEDULED"
+	}
+
+	bt := req.BillingType
+	if bt == "" {
+		bt = sub.BillingType
+	}
+	if bt == "" {
+		bt = "PREPAID"
 	}
 
 	h.successResponse(w, "Penetapan paket dan ODP berhasil disimpan", map[string]interface{}{
@@ -1837,6 +1852,7 @@ func (h *APIHandler) AdminUpdateRegistrationPricing(w http.ResponseWriter, r *ht
 		"nearest_odp_code":   req.ODPCode,
 		"pppoe_username":     req.PPPoEUsername,
 		"pppoe_password":     req.PPPoEPassword,
+		"billing_type":       bt,
 		"status":             newStatus,
 	})
 }
@@ -1875,7 +1891,7 @@ func (h *APIHandler) AdminUpdatePPPoE(w http.ResponseWriter, r *http.Request) {
 		req.PPPoEPassword = randomPassword(10)
 	}
 
-	if err := h.store.UpdateSubscriberPricingAndODP(r.Context(), t.ID, sub.ID, "", "", "", req.PPPoEUsername, req.PPPoEPassword, false); err != nil {
+	if err := h.store.UpdateSubscriberPricingAndODP(r.Context(), t.ID, sub.ID, "", "", "", req.PPPoEUsername, req.PPPoEPassword, "", false); err != nil {
 		h.failResponse(w, http.StatusInternalServerError, "Gagal mengupdate kredensial PPPoE: "+err.Error())
 		return
 	}
@@ -1884,6 +1900,39 @@ func (h *APIHandler) AdminUpdatePPPoE(w http.ResponseWriter, r *http.Request) {
 		"id":             sub.ID,
 		"pppoe_username": req.PPPoEUsername,
 		"pppoe_password": req.PPPoEPassword,
+	})
+}
+
+// AdminUpdateBillingType mengubah skema penagihan pelanggan (PREPAID / POSTPAID)
+func (h *APIHandler) AdminUpdateBillingType(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		h.failResponse(w, http.StatusBadRequest, "ID atau Nomor Pelanggan wajib diisi")
+		return
+	}
+
+	var req struct {
+		BillingType string `json:"billing_type"` // PREPAID / POSTPAID
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.failResponse(w, http.StatusBadRequest, "Invalid JSON payload")
+		return
+	}
+
+	bt := strings.ToUpper(strings.TrimSpace(req.BillingType))
+	if bt != "POSTPAID" {
+		bt = "PREPAID"
+	}
+
+	if err := h.store.UpdateSubscriberBillingType(r.Context(), t.ID, id, bt); err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal mengubah skema penagihan: "+err.Error())
+		return
+	}
+
+	h.successResponse(w, "Skema tagihan berhasil diubah ke "+bt, map[string]interface{}{
+		"id":           id,
+		"billing_type": bt,
 	})
 }
 

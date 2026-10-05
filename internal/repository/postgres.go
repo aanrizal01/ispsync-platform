@@ -166,6 +166,7 @@ func (s *PostgresStorage) migrate() error {
 		vlan_id INTEGER,
 		ip_address TEXT,
 		status TEXT DEFAULT 'REGISTERED',
+		billing_type TEXT DEFAULT 'PREPAID',
 		activated_at TIMESTAMPTZ,
 		suspended_at TIMESTAMPTZ,
 		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -323,6 +324,7 @@ func (s *PostgresStorage) migrate() error {
 	ALTER TABLE tenant_integration_settings ADD COLUMN IF NOT EXISTS pppoe_pass_static TEXT DEFAULT 'isp';
 	ALTER TABLE tenant_integration_settings ADD COLUMN IF NOT EXISTS pppoe_pass_char_type TEXT DEFAULT 'NUMERIC';
 	ALTER TABLE tenant_integration_settings ADD COLUMN IF NOT EXISTS pppoe_pass_length INTEGER DEFAULT 6;
+	ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS billing_type TEXT DEFAULT 'PREPAID';
 	`
 	_, err := s.db.Exec(schema)
 	return err
@@ -940,7 +942,7 @@ func (s *PostgresStorage) ListSubscribers(ctx context.Context, tenantID string, 
 		       latitude, longitude, distance_to_odp, selected_plan_id, selected_plan_name,
 		       nearest_odp_id, nearest_odp_code, olt_id, pon_port, onu_id, serial_number, mac_address,
 		       rx_optical_power, pppoe_username, pppoe_password, vlan_id, ip_address, status,
-		       activated_at, suspended_at, created_at, updated_at
+		       COALESCE(billing_type, 'PREPAID'), activated_at, suspended_at, created_at, updated_at
 		FROM subscribers WHERE tenant_id = $1
 	`
 	args := []interface{}{tenantID}
@@ -964,7 +966,7 @@ func (s *PostgresStorage) ListSubscribers(ctx context.Context, tenantID string, 
 			&sub.Latitude, &sub.Longitude, &sub.DistanceToODP, &sub.SelectedPlanID, &sub.SelectedPlanName,
 			&sub.NearestODPID, &sub.NearestODPCode, &sub.OLTID, &sub.PONPort, &sub.ONUID, &sub.SerialNumber, &sub.MACAddress,
 			&sub.RxOpticalPower, &sub.PPPoEUsername, &sub.PPPoEPassword, &sub.VLANID, &sub.IPAddress, &sub.Status,
-			&sub.ActivatedAt, &sub.SuspendedAt, &sub.CreatedAt, &sub.UpdatedAt,
+			&sub.BillingType, &sub.ActivatedAt, &sub.SuspendedAt, &sub.CreatedAt, &sub.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -979,7 +981,7 @@ func (s *PostgresStorage) GetSubscriberByID(ctx context.Context, tenantID, id st
 		       latitude, longitude, distance_to_odp, selected_plan_id, selected_plan_name,
 		       nearest_odp_id, nearest_odp_code, olt_id, pon_port, onu_id, serial_number, mac_address,
 		       rx_optical_power, pppoe_username, pppoe_password, vlan_id, ip_address, status,
-		       activated_at, suspended_at, created_at, updated_at
+		       COALESCE(billing_type, 'PREPAID'), activated_at, suspended_at, created_at, updated_at
 		FROM subscribers WHERE tenant_id = $1 AND (id = $2 OR subscriber_no = $2)
 	`, tenantID, id)
 
@@ -989,7 +991,7 @@ func (s *PostgresStorage) GetSubscriberByID(ctx context.Context, tenantID, id st
 		&sub.Latitude, &sub.Longitude, &sub.DistanceToODP, &sub.SelectedPlanID, &sub.SelectedPlanName,
 		&sub.NearestODPID, &sub.NearestODPCode, &sub.OLTID, &sub.PONPort, &sub.ONUID, &sub.SerialNumber, &sub.MACAddress,
 		&sub.RxOpticalPower, &sub.PPPoEUsername, &sub.PPPoEPassword, &sub.VLANID, &sub.IPAddress, &sub.Status,
-		&sub.ActivatedAt, &sub.SuspendedAt, &sub.CreatedAt, &sub.UpdatedAt,
+		&sub.BillingType, &sub.ActivatedAt, &sub.SuspendedAt, &sub.CreatedAt, &sub.UpdatedAt,
 	); err != nil {
 		return nil, err
 	}
@@ -1002,7 +1004,7 @@ func (s *PostgresStorage) GetSubscriberByNo(ctx context.Context, tenantID, subNo
 		       latitude, longitude, distance_to_odp, selected_plan_id, selected_plan_name,
 		       nearest_odp_id, nearest_odp_code, olt_id, pon_port, onu_id, serial_number, mac_address,
 		       rx_optical_power, pppoe_username, pppoe_password, vlan_id, ip_address, status,
-		       activated_at, suspended_at, created_at, updated_at
+		       COALESCE(billing_type, 'PREPAID'), activated_at, suspended_at, created_at, updated_at
 		FROM subscribers WHERE tenant_id = $1 AND subscriber_no = $2
 	`, tenantID, subNo)
 
@@ -1012,7 +1014,7 @@ func (s *PostgresStorage) GetSubscriberByNo(ctx context.Context, tenantID, subNo
 		&sub.Latitude, &sub.Longitude, &sub.DistanceToODP, &sub.SelectedPlanID, &sub.SelectedPlanName,
 		&sub.NearestODPID, &sub.NearestODPCode, &sub.OLTID, &sub.PONPort, &sub.ONUID, &sub.SerialNumber, &sub.MACAddress,
 		&sub.RxOpticalPower, &sub.PPPoEUsername, &sub.PPPoEPassword, &sub.VLANID, &sub.IPAddress, &sub.Status,
-		&sub.ActivatedAt, &sub.SuspendedAt, &sub.CreatedAt, &sub.UpdatedAt,
+		&sub.BillingType, &sub.ActivatedAt, &sub.SuspendedAt, &sub.CreatedAt, &sub.UpdatedAt,
 	); err != nil {
 		return nil, err
 	}
@@ -1027,6 +1029,10 @@ func (s *PostgresStorage) CreateSubscriber(ctx context.Context, sub *domain.Subs
 	sub.CreatedAt = now
 	sub.UpdatedAt = now
 
+	if sub.BillingType == "" {
+		sub.BillingType = "PREPAID"
+	}
+
 	if sub.SubscriberNo == "" {
 		var count int
 		_ = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM subscribers WHERE tenant_id = $1", sub.TenantID).Scan(&count)
@@ -1039,19 +1045,19 @@ func (s *PostgresStorage) CreateSubscriber(ctx context.Context, sub *domain.Subs
 			latitude, longitude, distance_to_odp, selected_plan_id, selected_plan_name,
 			nearest_odp_id, nearest_odp_code, olt_id, pon_port, onu_id, serial_number, mac_address,
 			rx_optical_power, pppoe_username, pppoe_password, vlan_id, ip_address, status,
-			created_at, updated_at
+			billing_type, created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8,
 			$9, $10, $11, $12, $13,
 			$14, $15, $16, $17, $18, $19, $20,
 			$21, $22, $23, $24, $25, $26,
-			$27, $28
+			$27, $28, $29
 		)
 	`, sub.ID, sub.TenantID, sub.SubscriberNo, sub.FullName, sub.IdentityNumber, sub.Email, sub.Phone, sub.Address,
 		sub.Latitude, sub.Longitude, sub.DistanceToODP, sub.SelectedPlanID, sub.SelectedPlanName,
 		sub.NearestODPID, sub.NearestODPCode, sub.OLTID, sub.PONPort, sub.ONUID, sub.SerialNumber, sub.MACAddress,
 		sub.RxOpticalPower, sub.PPPoEUsername, sub.PPPoEPassword, sub.VLANID, sub.IPAddress, sub.Status,
-		sub.CreatedAt, sub.UpdatedAt)
+		sub.BillingType, sub.CreatedAt, sub.UpdatedAt)
 	return err
 }
 
@@ -1071,7 +1077,7 @@ func (s *PostgresStorage) UpdateSubscriberStatus(ctx context.Context, tenantID, 
 	return err
 }
 
-func (s *PostgresStorage) UpdateSubscriberPricingAndODP(ctx context.Context, tenantID, id, planID, planName, odpCode, pppoeUser, pppoePass string, promoteToInstall bool) error {
+func (s *PostgresStorage) UpdateSubscriberPricingAndODP(ctx context.Context, tenantID, id, planID, planName, odpCode, pppoeUser, pppoePass string, billingType string, promoteToInstall bool) error {
 	statusClause := ""
 	if promoteToInstall {
 		statusClause = ", status = 'INSTALLATION_SCHEDULED'"
@@ -1083,11 +1089,26 @@ func (s *PostgresStorage) UpdateSubscriberPricingAndODP(ctx context.Context, ten
 			nearest_odp_code = CASE WHEN $3 <> '' THEN $3 ELSE nearest_odp_code END,
 			pppoe_username = CASE WHEN $4 <> '' THEN $4 ELSE pppoe_username END,
 			pppoe_password = CASE WHEN $5 <> '' THEN $5 ELSE pppoe_password END,
+			billing_type = CASE WHEN $6 <> '' THEN $6 ELSE billing_type END,
 			updated_at = CURRENT_TIMESTAMP
 			%s
-		WHERE tenant_id = $6 AND (id = $7 OR subscriber_no = $7)
+		WHERE tenant_id = $7 AND (id = $8 OR subscriber_no = $8)
 	`, statusClause)
-	_, err := s.db.ExecContext(ctx, query, planID, planName, odpCode, pppoeUser, pppoePass, tenantID, id)
+	_, err := s.db.ExecContext(ctx, query, planID, planName, odpCode, pppoeUser, pppoePass, billingType, tenantID, id)
+	return err
+}
+
+func (s *PostgresStorage) UpdateSubscriberBillingType(ctx context.Context, tenantID, idOrNo, billingType string) error {
+	bt := strings.ToUpper(strings.TrimSpace(billingType))
+	if bt != "POSTPAID" {
+		bt = "PREPAID"
+	}
+	_, err := s.db.ExecContext(ctx, `
+		UPDATE subscribers SET
+			billing_type = $1,
+			updated_at = CURRENT_TIMESTAMP
+		WHERE tenant_id = $2 AND (id = $3 OR subscriber_no = $3)
+	`, bt, tenantID, idOrNo)
 	return err
 }
 

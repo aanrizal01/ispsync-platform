@@ -165,6 +165,7 @@ func (s *SQLiteStorage) migrate() error {
 		vlan_id INTEGER,
 		ip_address TEXT,
 		status TEXT DEFAULT 'REGISTERED',
+		billing_type TEXT DEFAULT 'PREPAID',
 		activated_at DATETIME,
 		suspended_at DATETIME,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -339,6 +340,7 @@ func (s *SQLiteStorage) migrate() error {
 	_, _ = s.db.Exec("ALTER TABLE tenant_integration_settings ADD COLUMN pppoe_pass_static TEXT DEFAULT 'isp'")
 	_, _ = s.db.Exec("ALTER TABLE tenant_integration_settings ADD COLUMN pppoe_pass_char_type TEXT DEFAULT 'NUMERIC'")
 	_, _ = s.db.Exec("ALTER TABLE tenant_integration_settings ADD COLUMN pppoe_pass_length INTEGER DEFAULT 6")
+	_, _ = s.db.Exec("ALTER TABLE subscribers ADD COLUMN billing_type TEXT DEFAULT 'PREPAID'")
 	return err
 }
 
@@ -988,7 +990,7 @@ func (s *SQLiteStorage) ListSubscribers(ctx context.Context, tenantID string, st
 		       latitude, longitude, distance_to_odp, selected_plan_id, selected_plan_name,
 		       nearest_odp_id, nearest_odp_code, olt_id, pon_port, onu_id, serial_number, mac_address,
 		       rx_optical_power, pppoe_username, pppoe_password, vlan_id, ip_address, status,
-		       activated_at, suspended_at, created_at, updated_at
+		       COALESCE(billing_type, 'PREPAID'), activated_at, suspended_at, created_at, updated_at
 		FROM subscribers WHERE tenant_id = ?
 	`
 	args := []interface{}{tenantID}
@@ -1012,7 +1014,7 @@ func (s *SQLiteStorage) ListSubscribers(ctx context.Context, tenantID string, st
 			&sub.Latitude, &sub.Longitude, &sub.DistanceToODP, &sub.SelectedPlanID, &sub.SelectedPlanName,
 			&sub.NearestODPID, &sub.NearestODPCode, &sub.OLTID, &sub.PONPort, &sub.ONUID, &sub.SerialNumber, &sub.MACAddress,
 			&sub.RxOpticalPower, &sub.PPPoEUsername, &sub.PPPoEPassword, &sub.VLANID, &sub.IPAddress, &sub.Status,
-			&sub.ActivatedAt, &sub.SuspendedAt, &sub.CreatedAt, &sub.UpdatedAt,
+			&sub.BillingType, &sub.ActivatedAt, &sub.SuspendedAt, &sub.CreatedAt, &sub.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -1027,7 +1029,7 @@ func (s *SQLiteStorage) GetSubscriberByID(ctx context.Context, tenantID, id stri
 		       latitude, longitude, distance_to_odp, selected_plan_id, selected_plan_name,
 		       nearest_odp_id, nearest_odp_code, olt_id, pon_port, onu_id, serial_number, mac_address,
 		       rx_optical_power, pppoe_username, pppoe_password, vlan_id, ip_address, status,
-		       activated_at, suspended_at, created_at, updated_at
+		       COALESCE(billing_type, 'PREPAID'), activated_at, suspended_at, created_at, updated_at
 		FROM subscribers WHERE tenant_id = ? AND (id = ? OR subscriber_no = ?)
 	`, tenantID, id, id)
 
@@ -1037,7 +1039,7 @@ func (s *SQLiteStorage) GetSubscriberByID(ctx context.Context, tenantID, id stri
 		&sub.Latitude, &sub.Longitude, &sub.DistanceToODP, &sub.SelectedPlanID, &sub.SelectedPlanName,
 		&sub.NearestODPID, &sub.NearestODPCode, &sub.OLTID, &sub.PONPort, &sub.ONUID, &sub.SerialNumber, &sub.MACAddress,
 		&sub.RxOpticalPower, &sub.PPPoEUsername, &sub.PPPoEPassword, &sub.VLANID, &sub.IPAddress, &sub.Status,
-		&sub.ActivatedAt, &sub.SuspendedAt, &sub.CreatedAt, &sub.UpdatedAt,
+		&sub.BillingType, &sub.ActivatedAt, &sub.SuspendedAt, &sub.CreatedAt, &sub.UpdatedAt,
 	); err != nil {
 		return nil, err
 	}
@@ -1050,7 +1052,7 @@ func (s *SQLiteStorage) GetSubscriberByNo(ctx context.Context, tenantID, subNo s
 		       latitude, longitude, distance_to_odp, selected_plan_id, selected_plan_name,
 		       nearest_odp_id, nearest_odp_code, olt_id, pon_port, onu_id, serial_number, mac_address,
 		       rx_optical_power, pppoe_username, pppoe_password, vlan_id, ip_address, status,
-		       activated_at, suspended_at, created_at, updated_at
+		       COALESCE(billing_type, 'PREPAID'), activated_at, suspended_at, created_at, updated_at
 		FROM subscribers WHERE tenant_id = ? AND subscriber_no = ?
 	`, tenantID, subNo)
 
@@ -1060,7 +1062,7 @@ func (s *SQLiteStorage) GetSubscriberByNo(ctx context.Context, tenantID, subNo s
 		&sub.Latitude, &sub.Longitude, &sub.DistanceToODP, &sub.SelectedPlanID, &sub.SelectedPlanName,
 		&sub.NearestODPID, &sub.NearestODPCode, &sub.OLTID, &sub.PONPort, &sub.ONUID, &sub.SerialNumber, &sub.MACAddress,
 		&sub.RxOpticalPower, &sub.PPPoEUsername, &sub.PPPoEPassword, &sub.VLANID, &sub.IPAddress, &sub.Status,
-		&sub.ActivatedAt, &sub.SuspendedAt, &sub.CreatedAt, &sub.UpdatedAt,
+		&sub.BillingType, &sub.ActivatedAt, &sub.SuspendedAt, &sub.CreatedAt, &sub.UpdatedAt,
 	); err != nil {
 		return nil, err
 	}
@@ -1075,6 +1077,10 @@ func (s *SQLiteStorage) CreateSubscriber(ctx context.Context, sub *domain.Subscr
 	sub.CreatedAt = now
 	sub.UpdatedAt = now
 
+	if sub.BillingType == "" {
+		sub.BillingType = "PREPAID"
+	}
+
 	// Auto generate SubscriberNo jika kosong
 	if sub.SubscriberNo == "" {
 		var count int
@@ -1088,19 +1094,19 @@ func (s *SQLiteStorage) CreateSubscriber(ctx context.Context, sub *domain.Subscr
 			latitude, longitude, distance_to_odp, selected_plan_id, selected_plan_name,
 			nearest_odp_id, nearest_odp_code, olt_id, pon_port, onu_id, serial_number, mac_address,
 			rx_optical_power, pppoe_username, pppoe_password, vlan_id, ip_address, status,
-			created_at, updated_at
+			billing_type, created_at, updated_at
 		) VALUES (
 			?, ?, ?, ?, ?, ?, ?, ?,
 			?, ?, ?, ?, ?,
 			?, ?, ?, ?, ?, ?, ?,
 			?, ?, ?, ?, ?, ?,
-			?, ?
+			?, ?, ?
 		)
 	`, sub.ID, sub.TenantID, sub.SubscriberNo, sub.FullName, sub.IdentityNumber, sub.Email, sub.Phone, sub.Address,
 		sub.Latitude, sub.Longitude, sub.DistanceToODP, sub.SelectedPlanID, sub.SelectedPlanName,
 		sub.NearestODPID, sub.NearestODPCode, sub.OLTID, sub.PONPort, sub.ONUID, sub.SerialNumber, sub.MACAddress,
 		sub.RxOpticalPower, sub.PPPoEUsername, sub.PPPoEPassword, sub.VLANID, sub.IPAddress, sub.Status,
-		sub.CreatedAt, sub.UpdatedAt)
+		sub.BillingType, sub.CreatedAt, sub.UpdatedAt)
 	return err
 }
 
@@ -1120,7 +1126,7 @@ func (s *SQLiteStorage) UpdateSubscriberStatus(ctx context.Context, tenantID, id
 	return err
 }
 
-func (s *SQLiteStorage) UpdateSubscriberPricingAndODP(ctx context.Context, tenantID, id, planID, planName, odpCode, pppoeUser, pppoePass string, promoteToInstall bool) error {
+func (s *SQLiteStorage) UpdateSubscriberPricingAndODP(ctx context.Context, tenantID, id, planID, planName, odpCode, pppoeUser, pppoePass string, billingType string, promoteToInstall bool) error {
 	statusClause := ""
 	if promoteToInstall {
 		statusClause = ", status = 'INSTALLATION_SCHEDULED'"
@@ -1132,11 +1138,26 @@ func (s *SQLiteStorage) UpdateSubscriberPricingAndODP(ctx context.Context, tenan
 			nearest_odp_code = CASE WHEN ? <> '' THEN ? ELSE nearest_odp_code END,
 			pppoe_username = CASE WHEN ? <> '' THEN ? ELSE pppoe_username END,
 			pppoe_password = CASE WHEN ? <> '' THEN ? ELSE pppoe_password END,
+			billing_type = CASE WHEN ? <> '' THEN ? ELSE billing_type END,
 			updated_at = CURRENT_TIMESTAMP
 			%s
 		WHERE tenant_id = ? AND (id = ? OR subscriber_no = ?)
 	`, statusClause)
-	_, err := s.db.ExecContext(ctx, query, planID, planName, odpCode, pppoeUser, pppoePass, tenantID, id, id)
+	_, err := s.db.ExecContext(ctx, query, planID, planName, odpCode, pppoeUser, pppoePass, billingType, tenantID, id, id)
+	return err
+}
+
+func (s *SQLiteStorage) UpdateSubscriberBillingType(ctx context.Context, tenantID, idOrNo, billingType string) error {
+	bt := strings.ToUpper(strings.TrimSpace(billingType))
+	if bt != "POSTPAID" {
+		bt = "PREPAID"
+	}
+	_, err := s.db.ExecContext(ctx, `
+		UPDATE subscribers SET
+			billing_type = ?,
+			updated_at = CURRENT_TIMESTAMP
+		WHERE tenant_id = ? AND (id = ? OR subscriber_no = ?)
+	`, bt, tenantID, idOrNo, idOrNo)
 	return err
 }
 
