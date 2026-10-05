@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth/context";
 import {
   reportsApi,
   FinancialSummary,
@@ -40,6 +42,9 @@ import RecentPayments from "./RecentPayments";
 import RevenueBreakdown from "./RevenueBreakdown";
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { user, hasPermission, isLoading: isAuthLoading } = useAuth();
+
   const [financial, setFinancial] = useState<FinancialSummary | null>(null);
   const [trends, setTrends] = useState<RevenueTrend[]>([]);
   const [traffic, setTraffic] = useState<TrafficStats | null>(null);
@@ -97,18 +102,31 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    if (isAuthLoading || !user) return;
+    if (!hasPermission("reports:read")) {
+      if (hasPermission("payments:read") || hasPermission("payments:write")) {
+        router.replace("/admin/pos");
+      } else if (hasPermission("customers:read")) {
+        router.replace("/admin/customers");
+      } else if (hasPermission("vouchers:read")) {
+        router.replace("/admin/vouchers");
+      } else {
+        router.replace("/admin/pos");
+      }
+      return;
+    }
     loadData();
     loadSystemStatus();
     loadPayments();
-  }, [loadData, loadSystemStatus, loadPayments]);
+  }, [isAuthLoading, user, hasPermission, router, loadData, loadSystemStatus, loadPayments]);
 
   useEffect(() => {
-    if (!autoRefresh) return;
+    if (!autoRefresh || !hasPermission("reports:read")) return;
     const interval = setInterval(() => {
       loadSystemStatus();
     }, 15000);
     return () => clearInterval(interval);
-  }, [autoRefresh, loadSystemStatus]);
+  }, [autoRefresh, hasPermission, loadSystemStatus]);
 
   const chartData = (trends || []).map((t) => ({
     bulan: t.month,
@@ -140,6 +158,17 @@ export default function DashboardPage() {
         return <Server className="w-5 h-5 text-slate-500" />;
     }
   };
+
+  if (isAuthLoading || !user || !hasPermission("reports:read")) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3 text-slate-400">
+          <RefreshCw className="w-8 h-8 animate-spin text-cyan-500" />
+          <p className="text-sm font-medium">Memverifikasi hak akses...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

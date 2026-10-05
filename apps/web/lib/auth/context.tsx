@@ -101,11 +101,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const user = await authApi.getMe();
         setState({ user, isLoading: false, isAuthenticated: true });
 
-        // Redirect based on user type
+        // Redirect based on user type & role permissions
         if (user.customer_id) {
           router.push("/portal/overview");
         } else if (user.roles?.some((r) => r.slug === "voucher_agent")) {
           router.push("/agent/dashboard");
+        } else if (
+          user.permissions &&
+          !user.permissions.includes("*") &&
+          !user.permissions.includes("reports:read") &&
+          (user.permissions.includes("payments:read") || user.permissions.includes("payments:write"))
+        ) {
+          // Dedicated Kasir / POS landing
+          router.push("/admin/pos");
         } else {
           router.push("/admin/dashboard");
         }

@@ -61,8 +61,10 @@ import {
 } from "@/lib/api/settings";
 import { ipamApi, type IPAMSettings, type Subnet, type TestResult } from "@/lib/api/ipam";
 import { InvoicePrintDocument } from "@/components/invoice/InvoicePrintDocument";
+import { useAuth } from "@/lib/auth/context";
 
 export default function AdminSettingsPage() {
+  const { hasPermission, isLoading: isAuthLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<
     "general" | "invoice_template" | "billing" | "payment" | "domain" | "notification" | "security" | "fibergrid"
   >("general");
@@ -676,6 +678,33 @@ export default function AdminSettingsPage() {
     previewDpp = sampleGross;
     previewPpn = 0;
     previewTotal = sampleGross;
+  }
+
+  if (isAuthLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3 text-slate-400">
+          <RefreshCw className="w-8 h-8 animate-spin text-cyan-500" />
+          <p className="text-sm font-medium">Memverifikasi hak akses...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasPermission("admin:roles") && !hasPermission("admin:users")) {
+    return (
+      <div className="p-6 max-w-4xl mx-auto">
+        <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-8 text-center backdrop-blur-sm">
+          <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center mx-auto mb-4">
+            <ShieldCheck className="w-6 h-6" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-900 mb-2">Akses Ditolak</h2>
+          <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">
+            Anda tidak memiliki izin (hak akses) untuk mengelola atau melihat Pengaturan Sistem. Hubungi Administrator ISP Anda.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
