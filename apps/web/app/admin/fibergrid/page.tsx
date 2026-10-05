@@ -20,7 +20,6 @@ import {
   FiberRoute,
   FTTXStats,
 } from "@/lib/api/network";
-import { settingsApi } from "@/lib/api/settings";
 
 export default function AdminFibergridPage() {
   const [tenantSlug, setTenantSlug] = useState("dev");
@@ -38,12 +37,13 @@ export default function AdminFibergridPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [searchOdp, setSearchOdp] = useState<string>("");
 
-  // Google Maps refs
+  // OpenStreetMap / Leaflet GIS refs & state
+  const [mapTheme, setMapTheme] = useState<"dark" | "voyager" | "osm">("dark");
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
-  const markersRef = useRef<{ [key: string]: { marker: any; infoWindow: any } }>({});
+  const tileLayerRef = useRef<any>(null);
+  const markersRef = useRef<{ [key: string]: { marker: any } }>({});
   const polylinesRef = useRef<any[]>([]);
-  const activeInfoWindowRef = useRef<any>(null);
 
   // 1. Dynamic Host & Domain Resolution
   useEffect(() => {
@@ -91,48 +91,67 @@ export default function AdminFibergridPage() {
     fetchFTTXData();
   }, []);
 
-  // 3. Initialize Interactive Google Maps GIS Map
+  // 3. Initialize Interactive Leaflet (OSM / CARTO) GIS Map
   useEffect(() => {
     let isMounted = true;
 
-    const initGoogleMap = () => {
-      const google = (window as any).google;
-      if (!google || !google.maps || !mapContainerRef.current) return;
+    const tileConfigs: Record<string, { url: string; subdomains: string; maxZoom: number; attr: string }> = {
+      dark: {
+        url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        subdomains: "abcd",
+        maxZoom: 20,
+        attr: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
+      },
+      voyager: {
+        url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+        subdomains: "abcd",
+        maxZoom: 20,
+        attr: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
+      },
+      osm: {
+        url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+        subdomains: "abc",
+        maxZoom: 19,
+        attr: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+      },
+    };
+
+    const initLeafletMap = () => {
+      const L = (window as any).L;
+      if (!L || !mapContainerRef.current) return;
 
       // Clean up previous markers and polylines
       Object.values(markersRef.current).forEach(({ marker }) => {
-        if (marker && marker.setMap) marker.setMap(null);
+        if (marker && marker.remove) marker.remove();
       });
       markersRef.current = {};
 
       polylinesRef.current.forEach((poly) => {
-        if (poly && poly.setMap) poly.setMap(null);
+        if (poly && poly.remove) poly.remove();
       });
       polylinesRef.current = [];
-
-      if (activeInfoWindowRef.current) {
-        activeInfoWindowRef.current.close();
-        activeInfoWindowRef.current = null;
-      }
 
       // Initialize map instance if not already created
       let map = mapInstanceRef.current;
       if (!map) {
-        map = new google.maps.Map(mapContainerRef.current, {
-          center: { lat: -0.2185, lng: 100.655 },
+        map = L.map(mapContainerRef.current, {
+          center: [-0.2185, 100.655],
           zoom: 14,
-          mapTypeId: google.maps.MapTypeId.ROADMAP,
-          mapTypeControl: true,
-          mapTypeControlOptions: {
-            style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-            position: google.maps.ControlPosition.TOP_RIGHT,
-          },
-          streetViewControl: false,
-          fullscreenControl: true,
           zoomControl: true,
         });
         mapInstanceRef.current = map;
       }
+
+      // Manage Tile Layer according to current mapTheme
+      if (tileLayerRef.current) {
+        map.removeLayer(tileLayerRef.current);
+      }
+      const activeTileCfg = tileConfigs[mapTheme] || tileConfigs.dark;
+      tileLayerRef.current = L.tileLayer(activeTileCfg.url, {
+        subdomains: activeTileCfg.subdomains,
+        maxZoom: activeTileCfg.maxZoom,
+        attribution: activeTileCfg.attr,
+      }).addTo(map);
 
       // Render Fiber Cable Routes (Polylines)
       fiberRoutes.forEach((route) => {
@@ -158,40 +177,27 @@ export default function AdminFibergridPage() {
           strokeColor = "#ea580c";
         }
 
-        const path = route.coordinates.map((c: [number, number]) => ({
-          lat: c[0],
-          lng: c[1],
-        }));
+        const latLngs = route.coordinates.map((c: [number, number]) => [c[0], c[1]]);
 
-        const polyline = new google.maps.Polyline({
-          path,
-          strokeColor,
-          strokeOpacity: 0.85,
-          strokeWeight,
-          map,
-        });
-        polylinesRef.current.push(polyline);
+        const polyline = L.polyline(latLngs, {
+          color: strokeColor,
+          weight: strokeWeight,
+          opacity: 0.85,
+        }).addTo(map);
 
-        const routeInfoWindow = new google.maps.InfoWindow({
-          content: `
-            <div style="font-family: inherit; font-size: 12px; min-width: 200px; padding: 4px; color: #1e293b;">
-              <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px; font-size: 13px;">${route.name}</div>
-              <div style="display: flex; gap: 4px; margin-bottom: 6px;">
-                <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #334155;">${route.cable_type}</span>
-                <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #e0f2fe; color: #0369a1;">${route.core_count} Core</span>
-                <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: ${route.status === 'ACTIVE' ? '#dcfce7' : '#fee2e2'}; color: ${route.status === 'ACTIVE' ? '#15803d' : '#b91c1c'};">${route.status}</span>
-              </div>
-              <div style="font-size: 11px; color: #64748b;">Panjang Jalur: <strong style="color: #0f172a;">${(route.length_meters / 1000).toFixed(2)} km (${route.length_meters} m)</strong></div>
+        const routePopup = `
+          <div style="font-family: inherit; font-size: 12px; min-width: 200px; padding: 4px; color: #1e293b;">
+            <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px; font-size: 13px;">${route.name}</div>
+            <div style="display: flex; gap: 4px; margin-bottom: 6px;">
+              <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #334155;">${route.cable_type}</span>
+              <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #e0f2fe; color: #0369a1;">${route.core_count} Core</span>
+              <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: ${route.status === 'ACTIVE' ? '#dcfce7' : '#fee2e2'}; color: ${route.status === 'ACTIVE' ? '#15803d' : '#b91c1c'};">${route.status}</span>
             </div>
-          `,
-        });
-
-        polyline.addListener("click", (e: any) => {
-          if (activeInfoWindowRef.current) activeInfoWindowRef.current.close();
-          routeInfoWindow.setPosition(e.latLng);
-          routeInfoWindow.open(map);
-          activeInfoWindowRef.current = routeInfoWindow;
-        });
+            <div style="font-size: 11px; color: #64748b;">Panjang Jalur: <strong style="color: #0f172a;">${(route.length_meters / 1000).toFixed(2)} km (${route.length_meters} m)</strong></div>
+          </div>
+        `;
+        polyline.bindPopup(routePopup);
+        polylinesRef.current.push(polyline);
       });
 
       // Filter ODP nodes based on UI filters
@@ -208,7 +214,7 @@ export default function AdminFibergridPage() {
         return true;
       });
 
-      const bounds = new google.maps.LatLngBounds();
+      const boundsLatLngs: [number, number][] = [];
 
       filtered.forEach((odp) => {
         const pct = odp.total_ports > 0 ? (odp.used_ports / odp.total_ports) * 100 : 0;
@@ -230,35 +236,30 @@ export default function AdminFibergridPage() {
           statusBadgeText = "#b45309";
         }
 
-        const pinSvg = `
-          <svg xmlns="http://www.w3.org/2000/svg" width="34" height="42" viewBox="0 0 34 42">
-            <defs>
-              <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.35"/>
-              </filter>
-            </defs>
-            <path d="M17 0 C7.6 0 0 7.6 0 17 C0 29.5 17 42 17 42 C17 42 34 29.5 34 17 C34 7.6 26.4 0 17 0 Z" fill="${pinBg}" stroke="#ffffff" stroke-width="2" filter="url(#sh)"/>
-            <circle cx="17" cy="17" r="12" fill="#ffffff" opacity="0.25"/>
-          </svg>
+        const pinHtml = `
+          <div style="position: relative; width: 34px; height: 42px; cursor: pointer;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="34" height="42" viewBox="0 0 34 42" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35));">
+              <path d="M17 0 C7.6 0 0 7.6 0 17 C0 29.5 17 42 17 42 C17 42 34 29.5 34 17 C34 7.6 26.4 0 17 0 Z" fill="${pinBg}" stroke="#ffffff" stroke-width="2"/>
+              <circle cx="17" cy="17" r="11" fill="#ffffff" opacity="0.25"/>
+            </svg>
+            <span style="position: absolute; top: 10px; left: 0; right: 0; text-align: center; color: #ffffff; font-size: 9px; font-weight: 800; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; text-shadow: 0 1px 2px rgba(0,0,0,0.7); pointer-events: none;">
+              ${odp.used_ports}/${odp.total_ports}
+            </span>
+          </div>
         `;
 
-        const marker = new google.maps.Marker({
-          position: { lat: odp.latitude, lng: odp.longitude },
-          map,
-          title: `${odp.code} - ${odp.name}`,
-          icon: {
-            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(pinSvg)}`,
-            scaledSize: new google.maps.Size(34, 42),
-            anchor: new google.maps.Point(17, 42),
-            labelOrigin: new google.maps.Point(17, 16),
-          },
-          label: {
-            text: `${odp.used_ports}/${odp.total_ports}`,
-            color: "#ffffff",
-            fontSize: "9px",
-            fontWeight: "700",
-          },
+        const customIcon = L.divIcon({
+          className: "custom-odp-pin",
+          html: pinHtml,
+          iconSize: [34, 42],
+          iconAnchor: [17, 42],
+          popupAnchor: [0, -42],
         });
+
+        const marker = L.marker([odp.latitude, odp.longitude], {
+          icon: customIcon,
+          title: `${odp.code} - ${odp.name}`,
+        }).addTo(map);
 
         const popupContent = `
           <div style="font-family: inherit; font-size: 12px; min-width: 240px; padding: 4px; color: #1e293b;">
@@ -292,88 +293,70 @@ export default function AdminFibergridPage() {
           </div>
         `;
 
-        const infoWindow = new google.maps.InfoWindow({
-          content: popupContent,
-        });
-
-        marker.addListener("click", () => {
-          if (activeInfoWindowRef.current) activeInfoWindowRef.current.close();
-          infoWindow.open(map, marker);
-          activeInfoWindowRef.current = infoWindow;
-        });
-
-        markersRef.current[odp.id] = { marker, infoWindow };
-        bounds.extend({ lat: odp.latitude, lng: odp.longitude });
+        marker.bindPopup(popupContent);
+        markersRef.current[odp.id] = { marker };
+        boundsLatLngs.push([odp.latitude, odp.longitude]);
       });
 
-      if (filtered.length > 0) {
-        map.fitBounds(bounds);
-        const listener = google.maps.event.addListener(map, "idle", () => {
-          if (map.getZoom() > 16) {
-            map.setZoom(16);
-          }
-          google.maps.event.removeListener(listener);
-        });
+      if (boundsLatLngs.length > 0) {
+        const bounds = L.latLngBounds(boundsLatLngs);
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
       }
     };
 
-    const loadScriptWithKey = (key: string) => {
+    const loadLeafletAssets = () => {
       if (!isMounted) return;
-      if ((window as any).google && (window as any).google.maps) {
-        initGoogleMap();
+      if ((window as any).L) {
+        initLeafletMap();
         return;
       }
-      const scriptId = "google-maps-js";
+
+      // Inject Leaflet CSS
+      const cssId = "leaflet-css";
+      if (!document.getElementById(cssId)) {
+        const link = document.createElement("link");
+        link.id = cssId;
+        link.rel = "stylesheet";
+        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        document.head.appendChild(link);
+      }
+
+      // Inject Leaflet JS
+      const scriptId = "leaflet-js";
       let script = document.getElementById(scriptId) as HTMLScriptElement | null;
       if (!script) {
         script = document.createElement("script");
         script.id = scriptId;
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places,geometry`;
+        script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
         script.async = true;
-        script.defer = true;
         script.onload = () => {
-          if (isMounted) initGoogleMap();
+          if (isMounted) initLeafletMap();
         };
         document.head.appendChild(script);
       } else {
         script.addEventListener("load", () => {
-          if (isMounted) initGoogleMap();
+          if (isMounted) initLeafletMap();
         });
-        if ((window as any).google && (window as any).google.maps) {
-          initGoogleMap();
+        if ((window as any).L) {
+          initLeafletMap();
         }
       }
     };
 
-    if ((window as any).google && (window as any).google.maps) {
-      initGoogleMap();
-    } else {
-      settingsApi
-        .getMapsSettings()
-        .then((res) => {
-          const key = res?.google_maps_api_key || "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA";
-          loadScriptWithKey(key);
-        })
-        .catch(() => {
-          loadScriptWithKey("AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA");
-        });
-    }
+    loadLeafletAssets();
 
     return () => {
       isMounted = false;
     };
-  }, [odpNodes, fiberRoutes, clusterFilter, statusFilter, searchOdp]);
+  }, [odpNodes, fiberRoutes, clusterFilter, statusFilter, searchOdp, mapTheme]);
 
   const focusOnODP = (odp: ODPNode) => {
     const item = markersRef.current[odp.id];
     if (item && mapInstanceRef.current) {
-      mapInstanceRef.current.panTo({ lat: odp.latitude, lng: odp.longitude });
-      mapInstanceRef.current.setZoom(17);
-      if (activeInfoWindowRef.current) {
-        activeInfoWindowRef.current.close();
+      mapInstanceRef.current.setView([odp.latitude, odp.longitude], 17);
+      if (item.marker && item.marker.openPopup) {
+        item.marker.openPopup();
       }
-      item.infoWindow.open(mapInstanceRef.current, item.marker);
-      activeInfoWindowRef.current = item.infoWindow;
     }
   };
 
@@ -566,16 +549,58 @@ export default function AdminFibergridPage() {
               Peta Topologi Geospasial Fiber Optik &amp; Titik ODP (NexusGIS)
             </h2>
           </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] text-slate-400 font-medium mr-1">Fokus Area:</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Tile Basemap Theme Switcher */}
+            <div className="flex items-center gap-0.5 bg-slate-200/80 p-0.5 rounded-lg border border-slate-300">
+              <button
+                type="button"
+                onClick={() => setMapTheme("dark")}
+                className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition ${
+                  mapTheme === "dark"
+                    ? "bg-slate-900 text-cyan-400 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+                title="Linear Telco Dark Basemap (CARTO Dark Matter)"
+              >
+                🌙 Dark
+              </button>
+              <button
+                type="button"
+                onClick={() => setMapTheme("voyager")}
+                className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition ${
+                  mapTheme === "voyager"
+                    ? "bg-white text-blue-600 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+                title="Clean High-Contrast Voyager Basemap (CARTO Voyager)"
+              >
+                ☀️ Voyager
+              </button>
+              <button
+                type="button"
+                onClick={() => setMapTheme("osm")}
+                className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition ${
+                  mapTheme === "osm"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+                title="Standard OpenStreetMap Basemap"
+              >
+                🗺️ OSM
+              </button>
+            </div>
+
+            <div className="h-4 w-px bg-slate-300 mx-0.5 hidden sm:block"></div>
+
+            <span className="text-[11px] text-slate-400 font-medium mr-0.5">Fokus:</span>
             <button
               type="button"
               onClick={() => {
                 setClusterFilter("ALL");
-                if (mapInstanceRef.current && odpNodes.length > 0) {
-                  const b = new (window as any).google.maps.LatLngBounds();
-                  odpNodes.forEach(o => b.extend({ lat: o.latitude, lng: o.longitude }));
-                  mapInstanceRef.current.fitBounds(b);
+                const L = (window as any).L;
+                if (mapInstanceRef.current && L && odpNodes.length > 0) {
+                  const b = L.latLngBounds(odpNodes.map(o => [o.latitude, o.longitude]));
+                  mapInstanceRef.current.fitBounds(b, { padding: [40, 40] });
                 }
               }}
               className={`px-2.5 py-1 text-[11px] font-semibold rounded-md border transition ${
@@ -595,12 +620,12 @@ export default function AdminFibergridPage() {
                   onClick={() => {
                     setClusterFilter(c);
                     const inCluster = odpNodes.filter(o => getClusterName(o) === c);
-                    if (mapInstanceRef.current && inCluster.length > 0) {
-                      const b = new (window as any).google.maps.LatLngBounds();
-                      inCluster.forEach(o => b.extend({ lat: o.latitude, lng: o.longitude }));
-                      mapInstanceRef.current.fitBounds(b);
+                    const L = (window as any).L;
+                    if (mapInstanceRef.current && L && inCluster.length > 0) {
+                      const b = L.latLngBounds(inCluster.map(o => [o.latitude, o.longitude]));
+                      mapInstanceRef.current.fitBounds(b, { padding: [40, 40] });
                       if (inCluster.length === 1) {
-                        mapInstanceRef.current.setZoom(16);
+                        mapInstanceRef.current.setView([inCluster[0].latitude, inCluster[0].longitude], 16);
                       }
                     }
                   }}
@@ -618,14 +643,25 @@ export default function AdminFibergridPage() {
         </div>
 
         <div className="relative">
+          <style dangerouslySetInnerHTML={{ __html: `
+            .custom-odp-pin {
+              background: transparent !important;
+              border: none !important;
+            }
+            .leaflet-popup-content-wrapper {
+              border-radius: 12px !important;
+              box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+              border: 1px solid rgba(226, 232, 240, 0.8) !important;
+            }
+          `}} />
           <div
             ref={mapContainerRef}
-            className="w-full h-[540px] bg-slate-100 z-0"
+            className="w-full h-[540px] bg-slate-900 z-0"
             style={{ minHeight: "540px" }}
           />
 
           {/* Map Legend Overlay */}
-          <div className="absolute bottom-4 right-4 z-[400] bg-white/95 backdrop-blur-sm p-3.5 rounded-xl border border-slate-200 shadow-md text-xs space-y-2 max-w-xs pointer-events-auto">
+          <div className="absolute bottom-4 right-4 z-[1000] bg-white/95 backdrop-blur-sm p-3.5 rounded-xl border border-slate-200 shadow-md text-xs space-y-2 max-w-xs pointer-events-auto">
             <p className="font-bold text-slate-800 text-[11px] uppercase tracking-wider pb-1 border-b border-slate-100">
               Legenda Topologi FTTX
             </p>
