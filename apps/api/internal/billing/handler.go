@@ -34,9 +34,9 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 		r.Use(authMW.Authenticate)
 
 		// Read routes
-		r.With(authMW.RequirePermission("invoices:read")).Get("/", h.List)
-		r.With(authMW.RequirePermission("invoices:read")).Get("/{id}", h.GetByID)
-		r.With(authMW.RequirePermission("invoices:read")).Get("/{id}/print", h.PrintInvoice)
+		r.With(authMW.RequireAnyPermission("invoices:read", "payments:read", "payments:write")).Get("/", h.List)
+		r.With(authMW.RequireAnyPermission("invoices:read", "payments:read", "payments:write")).Get("/{id}", h.GetByID)
+		r.With(authMW.RequireAnyPermission("invoices:read", "payments:read", "payments:write")).Get("/{id}/print", h.PrintInvoice)
 
 		// Write routes
 		r.With(authMW.RequirePermission("invoices:write")).Post("/", h.CreateManual)

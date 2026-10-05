@@ -14,7 +14,7 @@ import { ReceiptPrintDocument } from "@/components/receipt/ReceiptPrintDocument"
 import { InvoicePrintDocument } from "@/components/invoice/InvoicePrintDocument";
 import { FastPosCashier } from "@/components/pos/FastPosCashier";
 import { useAuth } from "@/lib/auth/context";
-import { Banknote, CreditCard, Plus, RefreshCw, ShieldCheck, Receipt } from "lucide-react";
+import { Banknote, CreditCard, Plus, RefreshCw, ShieldCheck, Receipt, FileText, X } from "lucide-react";
 import { formatDate, formatRupiah, cn } from "@/lib/utils";
 
 export default function PaymentsPage() {
@@ -571,7 +571,11 @@ export default function PaymentsPage() {
             {/* Modal Action Bar (Hidden on print) */}
             <div className="no-print bg-slate-900 text-white px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800">
               <div className="flex items-center gap-2">
-                <span className="text-lg">{printDocType === "receipt" ? "🧾" : "📄"}</span>
+                {printDocType === "receipt" ? (
+                  <Receipt className="w-5 h-5 text-emerald-400" />
+                ) : (
+                  <FileText className="w-5 h-5 text-blue-400" />
+                )}
                 <div>
                   <h2 className="text-sm font-bold tracking-wide">
                     {printDocType === "receipt"
@@ -604,7 +608,8 @@ export default function PaymentsPage() {
                         : "text-slate-400 hover:text-white"
                     }`}
                   >
-                    <span>🧾 Kwitansi Bukti Bayar</span>
+                    <Receipt className="w-3.5 h-3.5" />
+                    <span>Kwitansi Bukti Bayar</span>
                   </button>
                   <button
                     type="button"
@@ -617,7 +622,8 @@ export default function PaymentsPage() {
                     }`}
                     title={!selectedPayment.invoice_id ? "Tidak ada faktur terkait" : "Cetak Faktur Tagihan"}
                   >
-                    <span>📄 Faktur Tagihan</span>
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Faktur Tagihan</span>
                   </button>
                 </div>
 
@@ -632,7 +638,8 @@ export default function PaymentsPage() {
                         : "text-slate-400 hover:text-white"
                     }`}
                   >
-                    <span>📄 A4</span>
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>A4</span>
                   </button>
                   <button
                     type="button"
@@ -643,7 +650,8 @@ export default function PaymentsPage() {
                         : "text-slate-400 hover:text-white"
                     }`}
                   >
-                    <span>🧾 POS Kasir</span>
+                    <Receipt className="w-3.5 h-3.5" />
+                    <span>POS Kasir</span>
                   </button>
                 </div>
 
@@ -693,9 +701,10 @@ export default function PaymentsPage() {
                 <button
                   type="button"
                   onClick={() => setIsPrintModalOpen(false)}
-                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs transition-colors cursor-pointer"
+                  className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
+                  title="Tutup"
                 >
-                  ✕
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             </div>

@@ -286,66 +286,6 @@ export function FastPosCashier({ onViewHistory, hideHeaderBack = false }: FastPo
 
   return (
     <div className="space-y-6 select-none">
-      {/* Top Bar: Title & Shift Info */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 shrink-0">
-            <Receipt className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-black tracking-tight text-slate-900">
-                Loket Kasir POS (Fast Checkout)
-              </h1>
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
-                Sistem Kasir Aktif
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Penerimaan pembayaran tagihan internet pelanggan, cetak struk thermal kasir POS, dan hitung kembalian instan.
-            </p>
-          </div>
-        </div>
-
-        {/* Shift Badge & Actions */}
-        <div className="flex items-center gap-3">
-          <div className="hidden md:flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-slate-900 text-white text-xs border border-slate-800 shadow-xs">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-slate-400">Petugas:</span>
-            <span className="font-bold text-cyan-300">{currentUser?.full_name || "Kasir Utama"}</span>
-          </div>
-
-          {!hideHeaderBack && (
-            onViewHistory ? (
-              <button
-                type="button"
-                onClick={onViewHistory}
-                className="px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
-              >
-                <History className="w-4 h-4 text-slate-500" />
-                <span>Riwayat Transaksi</span>
-              </button>
-            ) : (
-              <Link
-                href="/admin/payments?tab=history"
-                className="px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs"
-              >
-                <History className="w-4 h-4 text-slate-500" />
-                <span>Riwayat Transaksi</span>
-              </Link>
-            )
-          )}
-
-          <button
-            onClick={loadData}
-            className="p-2 border border-slate-300 rounded-xl bg-white hover:bg-slate-50 text-slate-600 transition shadow-2xs cursor-pointer"
-            title="Refresh Data Tagihan"
-          >
-            <RefreshCw className={`w-4 h-4 ${loadingInvoices ? "animate-spin text-blue-600" : ""}`} />
-          </button>
-        </div>
-      </div>
-
       {/* POS Alert Notifications */}
       {posError && (
         <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-center justify-between text-rose-800 text-xs sm:text-sm animate-in fade-in">
@@ -370,11 +310,21 @@ export function FastPosCashier({ onViewHistory, hideHeaderBack = false }: FastPo
             <div className="flex items-center justify-between">
               <label className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
                 <Search className="w-4 h-4 text-blue-600" />
-                <span>Cari Tagihan Pelanggan (Tekan Barcode / Ketik Nama)</span>
+                <span>Cari Tagihan Pelanggan (Pindai Barcode / Ketik Nama)</span>
               </label>
-              <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                {unpaidInvoices.length} Tagihan Menunggu
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                  {unpaidInvoices.length} Tagihan Menunggu
+                </span>
+                <button
+                  type="button"
+                  onClick={loadData}
+                  className="p-1.5 border border-slate-200 rounded-lg bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-700 transition cursor-pointer"
+                  title="Segarkan Data Tagihan"
+                >
+                  <RefreshCw className={cn("w-3.5 h-3.5", loadingInvoices ? "animate-spin text-blue-600" : "")} />
+                </button>
+              </div>
             </div>
 
             <div className="relative">
@@ -575,7 +525,7 @@ export function FastPosCashier({ onViewHistory, hideHeaderBack = false }: FastPo
               ))}
               {unpaidInvoices.length === 0 && (
                 <div className="text-center py-6 text-xs text-slate-400">
-                  Semua tagihan pelanggan telah lunas! 🎉
+                  Semua tagihan pelanggan telah lunas.
                 </div>
               )}
             </div>
@@ -734,7 +684,7 @@ export function FastPosCashier({ onViewHistory, hideHeaderBack = false }: FastPo
 
             {/* Hint shortcut */}
             <div className="text-center text-[10px] text-slate-400 flex items-center justify-center gap-2">
-              <span>⌨️ Shortcut:</span>
+              <span className="font-semibold text-slate-500">Shortcut:</span>
               <kbd className="px-1.5 py-0.5 rounded bg-slate-100 border border-slate-300 font-mono text-[9px]">Esc</kbd>
               <span>Reset loket</span>
             </div>

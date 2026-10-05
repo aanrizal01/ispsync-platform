@@ -28,7 +28,7 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 
 		// Read routes
 		r.With(authMW.RequirePermission("customers:read")).Get("/", h.List)
-		r.With(authMW.RequirePermission("customers:read")).Get("/{id}", h.GetByID)
+		r.With(authMW.RequireAnyPermission("customers:read", "payments:read", "payments:write")).Get("/{id}", h.GetByID)
 		r.With(authMW.RequirePermission("customers:read")).Get("/{id}/devices", h.GetDevices)
 		r.With(authMW.RequirePermission("customers:read")).Get("/{id}/documents", h.GetDocuments)
 

@@ -87,6 +87,28 @@ func (m *Middleware) RequirePermission(perm string) func(http.Handler) http.Hand
 	}
 }
 
+// RequireAnyPermission returns a middleware that passes if the user has AT LEAST ONE of the given permissions.
+func (m *Middleware) RequireAnyPermission(perms ...string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			claims := ClaimsFromContext(r.Context())
+			if claims == nil {
+				middleware.JSONError(w, nil, apperrors.Unauthorized("Not authenticated"))
+				return
+			}
+			for _, perm := range perms {
+				if claims.HasPermission(perm) {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+			middleware.JSONError(w, nil, apperrors.Forbidden(
+				"Permission required: "+strings.Join(perms, " or "),
+			))
+		})
+	}
+}
+
 // RequireCustomer ensures the authenticated user is a customer portal user.
 func (m *Middleware) RequireCustomer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
