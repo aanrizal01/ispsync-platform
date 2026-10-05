@@ -301,6 +301,7 @@ func (r *Repository) ListFiberRoutes(ctx context.Context) ([]FiberRoute, error) 
 			Enabled        bool   `json:"enabled"`
 			APIURL         string `json:"api_url"`
 			APIKey         string `json:"api_key"`
+			TenantCode     string `json:"tenant_code"`
 			AutoSyncRoutes bool   `json:"auto_sync_routes"`
 		}
 		if jsonErr := json.Unmarshal(valBytes, &cfg); jsonErr == nil && cfg.Enabled && cfg.APIURL != "" {
@@ -310,6 +311,13 @@ func (r *Repository) ListFiberRoutes(ctx context.Context) ([]FiberRoute, error) 
 				if cfg.APIKey != "" {
 					req.Header.Set("X-Admin-Key", cfg.APIKey)
 					req.Header.Set("Authorization", "Bearer "+cfg.APIKey)
+				}
+				targetTenant := strings.TrimSpace(cfg.TenantCode)
+				if targetTenant == "" {
+					targetTenant = tenantSlug
+				}
+				if targetTenant != "" {
+					req.Header.Set("X-Tenant-Slug", targetTenant)
 				}
 				client := &http.Client{Timeout: 3 * time.Second}
 				resp, doErr := client.Do(req)

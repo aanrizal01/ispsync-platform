@@ -250,6 +250,9 @@ func (s *Service) TestFiberGridConnection(ctx context.Context, req TestFiberGrid
 		httpReq.Header.Set("X-Admin-Key", req.APIKey)
 		httpReq.Header.Set("Authorization", "Bearer "+req.APIKey)
 	}
+	if req.TenantCode != "" {
+		httpReq.Header.Set("X-Tenant-Slug", req.TenantCode)
+	}
 
 	client := &http.Client{Timeout: 4 * time.Second}
 	resp, err := client.Do(httpReq)
