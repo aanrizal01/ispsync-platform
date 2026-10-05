@@ -30,12 +30,14 @@ export type TenantInfo = {
 const TENANT_LEGAL_MAP: Record<string, string> = {
   ispmu: "PT. Mitra Usaha Data",
   ispku: "PT. ISP Kita Nusantara",
+  gogiga: "PT. GOGIGA MEDIA TEKNOLOGI",
   dev: "Laboratorium ISPSYNC R&D",
 };
 
 const TENANT_CONTACT_MAP: Record<string, string> = {
   ispmu: "6281377776666",
   ispku: "6281288889999",
+  gogiga: "6281166668888",
   dev: "6281100002026",
 };
 
@@ -60,9 +62,9 @@ export default function AgentLoginForm({ initialTenant }: { initialTenant: Tenan
       const parts = h.split(".");
       let detectedSlug = "";
 
-      if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "wifi" || parts[0] === "agent")) {
+      if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "billing" || parts[0] === "hotspot" || parts[0] === "wifi" || parts[0] === "agent")) {
         detectedSlug = parts[1].toLowerCase();
-      } else if (parts.length === 3 && (parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "wifi" || parts[0] === "agent")) {
+      } else if (parts.length === 3 && (parts[0] === "ledger" || parts[0] === "billing" || parts[0] === "hotspot" || parts[0] === "wifi" || parts[0] === "agent")) {
         detectedSlug = parts[1].toLowerCase();
       } else if (parts.length >= 3 && parts[0] !== "www") {
         detectedSlug = parts[0].toLowerCase();

@@ -7,6 +7,7 @@ const MEMBERS_PATH = path.join(process.cwd(), "data", "members.json");
 const TENANT_LEGAL_MAP: Record<string, string> = {
   ispmu: "PT. Mitra Usaha Data",
   ispku: "PT. ISP Kita Nusantara",
+  gogiga: "PT. GOGIGA MEDIA TEKNOLOGI",
   dev: "ISPSYNC Staging Lab",
 };
 
@@ -18,6 +19,10 @@ const TENANT_TELCO_LICENSES: Record<string, { nib: string; sklo: string }> = {
   ispku: {
     nib: "0220107654321",
     sklo: "No. 095/TEL.04.02/KOMINFO",
+  },
+  gogiga: {
+    nib: "0220309988776",
+    sklo: "No. 154/TEL.04.02/KOMINFO",
   },
   dev: {
     nib: "0220008819201",
@@ -57,14 +62,15 @@ export async function GET(req: NextRequest) {
   const explicitSlug = url.searchParams.get("slug") || req.headers.get("x-tenant-slug");
 
   // Determine host and slug
-  const host = (req.headers.get("x-forwarded-host") || req.headers.get("host") || "").toLowerCase();
+  const rawHost = req.headers.get("x-forwarded-host") || req.headers.get("host") || "";
+  const host = rawHost.toLowerCase().split(":")[0];
   const parts = host.split(".");
   let slug = (explicitSlug || "").toLowerCase();
 
   if (!slug) {
-    if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "wifi" || parts[0] === "agent" || parts[0] === "member")) {
+    if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "billing" || parts[0] === "hotspot" || parts[0] === "wifi" || parts[0] === "agent" || parts[0] === "member")) {
       slug = parts[1].toLowerCase();
-    } else if (parts.length === 3 && (parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "wifi" || parts[0] === "agent")) {
+    } else if (parts.length === 3 && (parts[0] === "ledger" || parts[0] === "billing" || parts[0] === "hotspot" || parts[0] === "wifi" || parts[0] === "agent")) {
       slug = parts[1].toLowerCase();
     } else if (parts.length >= 3 && parts[0] !== "www") {
       slug = parts[0].toLowerCase();

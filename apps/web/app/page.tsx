@@ -1,3 +1,5 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   Server,
@@ -17,7 +19,37 @@ import {
   Sparkles,
 } from "lucide-react";
 
-export default function InternationalLandingPage() {
+export default async function InternationalLandingPage() {
+  const headersList = await headers();
+  const rawHost = headersList.get("host") || "";
+  const host = rawHost.toLowerCase().split(":")[0];
+
+  // Subdomain & tenant domain routing
+  if (host.startsWith("agent.")) {
+    redirect("/agent/login");
+  }
+
+  if (host.startsWith("member.")) {
+    redirect("/member/login");
+  }
+
+  if (host.startsWith("hotspot.") || host.startsWith("wifi.") || host.startsWith("passpoint.")) {
+    redirect("/hotspot");
+  }
+
+  // Check if request is for the main SaaS public landing page
+  const isSaaSHost =
+    host === "ispsync.id" ||
+    host === "www.ispsync.id" ||
+    host === "localhost" ||
+    host === "127.0.0.1";
+
+  // All ISP & tenant domains (billing.gogiga.net.id, ledger.ispmu.ispsync.id, etc.)
+  // route directly to the ISP Ledger & Billing login page
+  if (!isSaaSHost) {
+    redirect("/login");
+  }
+
   return (
     <div className="min-h-screen bg-white text-gray-900 selection:bg-blue-600 selection:text-white">
       {/* ── Background Glow ────────────────────────────────────────── */}

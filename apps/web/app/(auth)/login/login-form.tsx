@@ -47,11 +47,36 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
         return;
       }
 
-      if (tenantSlug) {
-        document.title = `Masuk | ${tenantName} Ledger`;
+      const parts = h.split(".");
+      let detectedSlug = tenantSlug;
+      if (!detectedSlug || detectedSlug === "ispsync") {
+        if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "billing" || parts[0] === "hotspot" || parts[0] === "radius" || parts[0] === "wifi" || parts[0] === "admin" || parts[0] === "portal")) {
+          detectedSlug = parts[1].toLowerCase();
+        } else if (parts.length === 3 && (parts[0] === "ledger" || parts[0] === "billing" || parts[0] === "hotspot" || parts[0] === "radius" || parts[0] === "wifi" || parts[0] === "admin" || parts[0] === "portal")) {
+          detectedSlug = parts[1].toLowerCase();
+        } else if (parts.length >= 3 && parts[0] !== "www") {
+          detectedSlug = parts[0].toLowerCase();
+        }
+      }
+
+      const clientLegalMap: Record<string, string> = {
+        ispmu: "PT. Mitra Usaha Data",
+        ispku: "PT. ISP Kita Nusantara",
+        gogiga: "PT. GOGIGA MEDIA TEKNOLOGI",
+        dev: "Laboratorium ISPSYNC R&D",
+      };
+
+      if (detectedSlug && detectedSlug !== "ispsync") {
+        const up = detectedSlug.toUpperCase();
+        setTenantSlug(detectedSlug);
+        setTenantName(up);
+        setIsTenant(true);
+        setTenantLegalName(clientLegalMap[detectedSlug] || `PT. ${up} Data Nusantara`);
+        setTenantLogo(`/web/${detectedSlug}_logo.svg`);
+        document.title = `Masuk | ${up} Ledger`;
         const iconEl = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
-        if (iconEl && tenantSlug) {
-          iconEl.href = `/web/${tenantSlug}_favicon.svg`;
+        if (iconEl) {
+          iconEl.href = `/web/${detectedSlug}_favicon.svg`;
         }
       }
     }

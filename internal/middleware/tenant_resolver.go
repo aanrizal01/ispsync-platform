@@ -75,6 +75,8 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 
 					matchedApp := true
 					switch appPart {
+					case "billing", "ledger", "admin":
+						appType = domain.AppCMS
 					case "portal", "nexus":
 						appType = domain.AppPortal
 					case "noc", "noc-fo":

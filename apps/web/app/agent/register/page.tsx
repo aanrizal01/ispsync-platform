@@ -82,9 +82,9 @@ export default function AgentRegisterPage() {
     if (typeof window !== "undefined") {
       const parts = window.location.hostname.split(".");
       let detectedSlug = "dev";
-      if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "wifi" || parts[0] === "agent")) {
+      if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "billing" || parts[0] === "hotspot" || parts[0] === "wifi" || parts[0] === "agent")) {
         detectedSlug = parts[1].toLowerCase();
-      } else if (parts.length === 3 && (parts[0] === "ledger" || parts[0] === "hotspot" || parts[0] === "wifi" || parts[0] === "agent")) {
+      } else if (parts.length === 3 && (parts[0] === "ledger" || parts[0] === "billing" || parts[0] === "hotspot" || parts[0] === "wifi" || parts[0] === "agent")) {
         detectedSlug = parts[1].toLowerCase();
       } else if (parts.length >= 3 && parts[0] !== "www") {
         detectedSlug = parts[0].toLowerCase();
