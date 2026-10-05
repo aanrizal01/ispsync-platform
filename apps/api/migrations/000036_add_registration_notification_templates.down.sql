@@ -1,0 +1,2 @@
+-- Migration 000036 Down
+DELETE FROM notification_templates WHERE code IN ('REGISTRATION_SUBMITTED_WA', 'REGISTRATION_ALERT_NOC_WA');
