@@ -135,6 +135,9 @@ func main() {
 		MaxAge:           300,
 	}))
 
+	// Multi-Tenant Context Middleware
+	r.Use(middleware.TenantResolver(store, baseDomain))
+
 	// Health check endpoint (for Docker & Billing Dashboard)
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -147,9 +150,6 @@ func main() {
 			},
 		})
 	})
-
-	// Multi-Tenant Context Middleware
-	r.Use(middleware.TenantResolver(store, baseDomain))
 
 	// API Endpoints
 	// Middleware otorisasi (sesi staf bertanda tangan; wajib milik tenant yang diakses)
