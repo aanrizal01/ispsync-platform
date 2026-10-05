@@ -1801,6 +1801,8 @@ func (h *APIHandler) AdminUpdateRegistrationPricing(w http.ResponseWriter, r *ht
 		MonthlyPrice     float64 `json:"monthly_price"`
 		OTCNotes         string  `json:"otc_notes"`
 		TaxID            string  `json:"tax_id"`
+		PPPoEUsername    string  `json:"pppoe_username"`
+		PPPoEPassword    string  `json:"pppoe_password"`
 		PromoteToInstall bool    `json:"promote_to_install"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -1817,7 +1819,7 @@ func (h *APIHandler) AdminUpdateRegistrationPricing(w http.ResponseWriter, r *ht
 		return
 	}
 
-	if err := h.store.UpdateSubscriberPricingAndODP(r.Context(), t.ID, sub.ID, req.SelectedPlanID, req.SelectedPlanName, req.ODPCode, req.PromoteToInstall); err != nil {
+	if err := h.store.UpdateSubscriberPricingAndODP(r.Context(), t.ID, sub.ID, req.SelectedPlanID, req.SelectedPlanName, req.ODPCode, req.PPPoEUsername, req.PPPoEPassword, req.PromoteToInstall); err != nil {
 		h.failResponse(w, http.StatusInternalServerError, "Gagal mengupdate data registrasi: "+err.Error())
 		return
 	}
@@ -1833,7 +1835,55 @@ func (h *APIHandler) AdminUpdateRegistrationPricing(w http.ResponseWriter, r *ht
 		"selected_plan_id":   req.SelectedPlanID,
 		"selected_plan_name": req.SelectedPlanName,
 		"nearest_odp_code":   req.ODPCode,
+		"pppoe_username":     req.PPPoEUsername,
+		"pppoe_password":     req.PPPoEPassword,
 		"status":             newStatus,
+	})
+}
+
+// AdminUpdatePPPoE mengupdate atau mengenerate username dan password PPPoE pelanggan
+func (h *APIHandler) AdminUpdatePPPoE(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		h.failResponse(w, http.StatusBadRequest, "ID pelanggan wajib diisi")
+		return
+	}
+
+	var req struct {
+		PPPoEUsername string `json:"pppoe_username"`
+		PPPoEPassword string `json:"pppoe_password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.failResponse(w, http.StatusBadRequest, "Invalid payload JSON")
+		return
+	}
+
+	sub, err := h.store.GetSubscriberByID(r.Context(), t.ID, id)
+	if err != nil || sub == nil {
+		sub, err = h.store.GetSubscriberByNo(r.Context(), t.ID, id)
+	}
+	if err != nil || sub == nil {
+		h.failResponse(w, http.StatusNotFound, "Data pelanggan tidak ditemukan")
+		return
+	}
+
+	if req.PPPoEUsername == "" {
+		req.PPPoEUsername = fmt.Sprintf("sub%s@%s", sub.SubscriberNo, t.Slug)
+	}
+	if req.PPPoEPassword == "" {
+		req.PPPoEPassword = randomPassword(10)
+	}
+
+	if err := h.store.UpdateSubscriberPricingAndODP(r.Context(), t.ID, sub.ID, "", "", "", req.PPPoEUsername, req.PPPoEPassword, false); err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal mengupdate kredensial PPPoE: "+err.Error())
+		return
+	}
+
+	h.successResponse(w, "Kredensial PPPoE berhasil disimpan", map[string]interface{}{
+		"id":             sub.ID,
+		"pppoe_username": req.PPPoEUsername,
+		"pppoe_password": req.PPPoEPassword,
 	})
 }
 

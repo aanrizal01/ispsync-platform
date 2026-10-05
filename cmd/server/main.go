@@ -237,6 +237,7 @@ func main() {
 			adm.Post("/registrations/{id}/reassign-odp", apiH.AdminReassignODP)
 			adm.Put("/registrations/{id}/pricing", apiH.AdminUpdateRegistrationPricing)
 			adm.Post("/registrations/{id}/pricing", apiH.AdminUpdateRegistrationPricing)
+			adm.Post("/registrations/{id}/pppoe", apiH.AdminUpdatePPPoE)
 			adm.Get("/odps", apiH.AdminListODPs)
 			adm.Post("/odps", apiH.AdminCreateODP)
 			adm.Delete("/odps/{id}", apiH.AdminDeleteODP)

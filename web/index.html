@@ -6387,36 +6387,79 @@
             </span>
           </div>
 
-          <!-- 1. Identitas Pokok Pelanggan: Akun PPPoE Resmi GoGiga -->
+          <!-- 1. Identitas Pokok Pelanggan: Akun PPPoE Resmi Layanan -->
           <div class="space-y-1.5">
             <div class="flex items-center justify-between">
               <span class="text-[10px] font-mono font-bold uppercase text-slate-700 flex items-center gap-1.5">
                 <i data-lucide="shield-check" class="w-3.5 h-3.5 text-blue-600"></i>
-                <span>1. Akun Resmi GoGiga (Primary Identity &amp; GigaBill)</span>
+                <span>1. Akun PPPoE Resmi (Primary Dial &amp; MikroTik Secret)</span>
               </span>
-              <span class="text-[9px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-bold">
-                CANONICAL
-              </span>
+              <button type="button" onclick="toggleEditPPPoE()" class="text-[10px] font-mono font-bold text-cyan-700 hover:text-cyan-800 bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 px-2 py-0.5 rounded transition flex items-center gap-1">
+                <i data-lucide="edit-3" class="w-3 h-3"></i>
+                <span>Atur / Buat Akun PPPoE</span>
+              </button>
             </div>
+
+            <!-- Tampilan Ringkas Akun PPPoE -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs bg-slate-50 p-3 rounded-md border border-slate-200 font-mono">
               <div>
-                <span class="text-[9.5px] text-slate-500 font-bold block uppercase mb-1">Username PPPoE GoGiga</span>
+                <span class="text-[9.5px] text-slate-500 font-bold block uppercase mb-1">Username PPPoE</span>
                 <div class="flex items-center justify-between gap-1">
                   <strong id="admin-detail-pppoe-user" class="text-slate-900 font-bold text-xs select-all break-all">-</strong>
-                  <button type="button" onclick="copyToClipboard(document.getElementById('admin-detail-pppoe-user').innerText, 'Username PPPoE GoGiga disalin!')" class="p-1 hover:bg-slate-200 rounded text-slate-500 hover:text-slate-900 transition shrink-0" title="Salin Username">
+                  <button type="button" onclick="copyToClipboard(document.getElementById('admin-detail-pppoe-user').innerText, 'Username PPPoE disalin!')" class="p-1 hover:bg-slate-200 rounded text-slate-500 hover:text-slate-900 transition shrink-0" title="Salin Username">
                     <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                   </button>
                 </div>
               </div>
               <div>
-                <span class="text-[9.5px] text-slate-500 font-bold block uppercase mb-1">Password PPPoE GoGiga</span>
+                <span class="text-[9.5px] text-slate-500 font-bold block uppercase mb-1">Password PPPoE</span>
                 <div class="flex items-center justify-between gap-1">
                   <strong id="admin-detail-pppoe-pass" class="text-slate-900 font-bold text-xs select-all">-</strong>
-                  <button type="button" onclick="copyToClipboard(document.getElementById('admin-detail-pppoe-pass').innerText, 'Password PPPoE GoGiga disalin!')" class="p-1 hover:bg-slate-200 rounded text-slate-500 hover:text-slate-900 transition shrink-0" title="Salin Password">
+                  <button type="button" onclick="copyToClipboard(document.getElementById('admin-detail-pppoe-pass').innerText, 'Password PPPoE disalin!')" class="p-1 hover:bg-slate-200 rounded text-slate-500 hover:text-slate-900 transition shrink-0" title="Salin Password">
                     <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                   </button>
                 </div>
               </div>
+            </div>
+
+            <!-- Form Edit & Generate PPPoE (Hidden by default) -->
+            <div id="admin-detail-pppoe-edit-box" class="hidden p-3.5 bg-slate-100/80 border border-slate-200 rounded-md space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-mono font-bold uppercase text-slate-800">Konfigurasi Username &amp; Password PPPoE:</span>
+                <button type="button" onclick="generateRandomPPPoE()" class="px-2 py-0.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded text-[10px] font-mono font-bold transition flex items-center gap-1">
+                  <i data-lucide="zap" class="w-3 h-3"></i>
+                  <span>Generate Otomatis</span>
+                </button>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+                <div>
+                  <label class="block text-[9.5px] text-slate-600 font-bold uppercase mb-1">Username PPPoE</label>
+                  <input type="text" id="input-edit-pppoe-user" oninput="updateMikrotikSecretPreview(this.value, document.getElementById('input-edit-pppoe-pass').value)" placeholder="sub-reg20269172@dev" class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded text-xs text-slate-900 font-bold" />
+                </div>
+                <div>
+                  <label class="block text-[9.5px] text-slate-600 font-bold uppercase mb-1">Password PPPoE</label>
+                  <input type="text" id="input-edit-pppoe-pass" oninput="updateMikrotikSecretPreview(document.getElementById('input-edit-pppoe-user').value, this.value)" placeholder="isp123456" class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded text-xs text-slate-900 font-bold" />
+                </div>
+              </div>
+              <div class="flex items-center justify-between pt-1">
+                <button type="button" onclick="toggleEditPPPoE()" class="text-[10px] text-slate-500 hover:text-slate-700 font-mono">Tutup</button>
+                <button type="button" onclick="saveDetailPPPoE()" class="px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded text-xs font-mono font-bold transition flex items-center gap-1.5 shadow-2xs">
+                  <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                  <span>Simpan Akun PPPoE</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Preview MikroTik CLI Command -->
+            <div class="p-2.5 bg-slate-900 rounded-md text-slate-100 space-y-1 font-mono text-[10.5px]">
+              <div class="flex items-center justify-between text-slate-400 text-[9.5px]">
+                <span class="flex items-center gap-1"><i data-lucide="terminal" class="w-3 h-3 text-cyan-400"></i> Perintah MikroTik CLI (Secret):</span>
+                <button type="button" onclick="copyToClipboard(document.getElementById('pppoe-mikrotik-cmd').innerText, 'Perintah MikroTik CLI disalin!')" class="hover:text-white transition flex items-center gap-0.5" title="Salin Perintah CLI">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                  <span>Salin CLI</span>
+                </button>
+              </div>
+              <code id="pppoe-mikrotik-cmd" class="block text-cyan-300 text-[10px] break-all select-all font-mono">/ppp secret add name="user" password="pass" profile="DEFAULT" service=pppoe</code>
             </div>
           </div>
 
@@ -15562,6 +15605,84 @@
       }
     }
 
+    function toggleEditPPPoE() {
+      const editBox = document.getElementById('admin-detail-pppoe-edit-box');
+      if (!editBox) return;
+      editBox.classList.toggle('hidden');
+      if (!editBox.classList.contains('hidden')) {
+        const curUser = document.getElementById('admin-detail-pppoe-user').innerText.trim();
+        const curPass = document.getElementById('admin-detail-pppoe-pass').innerText.trim();
+        const userInput = document.getElementById('input-edit-pppoe-user');
+        const passInput = document.getElementById('input-edit-pppoe-pass');
+        if (userInput && curUser !== '-') userInput.value = curUser;
+        if (passInput && curPass !== '-') passInput.value = curPass;
+        if ((!curUser || curUser === '-') && typeof generateRandomPPPoE === 'function') {
+          generateRandomPPPoE();
+        }
+      }
+    }
+
+    function generateRandomPPPoE() {
+      if (!currentDetailRegistration) return;
+      const reg = currentDetailRegistration;
+      const slug = (window.__ISPSYNC_TENANT__ && window.__ISPSYNC_TENANT__.slug) || window.__EARLY_TENANT_SLUG__ || 'isp';
+      const cleanNo = (reg.registration_no || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const defaultUser = `sub-${cleanNo}@${slug}`;
+      const defaultPass = 'isp' + Math.floor(100000 + Math.random() * 900000);
+      
+      const userInput = document.getElementById('input-edit-pppoe-user');
+      const passInput = document.getElementById('input-edit-pppoe-pass');
+      if (userInput) userInput.value = defaultUser;
+      if (passInput) passInput.value = defaultPass;
+      updateMikrotikSecretPreview(defaultUser, defaultPass);
+    }
+
+    function updateMikrotikSecretPreview(u, p) {
+      const preview = document.getElementById('pppoe-mikrotik-cmd');
+      if (!preview) return;
+      const reg = currentDetailRegistration || {};
+      const plan = (reg.selected_plan_name || 'DEFAULT').replace(/\s+/g, '_');
+      const userVal = (u && u !== '-') ? u : '<username>';
+      const passVal = (p && p !== '-') ? p : '<password>';
+      const comment = `${reg.registration_no || ''} - ${reg.full_name || ''}`;
+      preview.innerText = `/ppp secret add name="${userVal}" password="${passVal}" profile="${plan}" service=pppoe comment="${comment}"`;
+    }
+
+    async function saveDetailPPPoE() {
+      if (!currentDetailRegistration) return;
+      const reg = currentDetailRegistration;
+      const u = document.getElementById('input-edit-pppoe-user').value.trim();
+      const p = document.getElementById('input-edit-pppoe-pass').value.trim();
+      if (!u) return alert('Username PPPoE tidak boleh kosong');
+      if (!p) return alert('Password PPPoE tidak boleh kosong');
+
+      const token = localStorage.getItem('auth_session_token') || sessionStorage.getItem('auth_session_token') || '';
+      try {
+        const res = await fetch(`/api/v1/admin/registrations/${reg.id}/pppoe`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({ pppoe_username: u, pppoe_password: p })
+        });
+        const json = await res.json();
+        if (json.success) {
+          reg.pppoe_username = u;
+          reg.pppoe_password = p;
+          document.getElementById('admin-detail-pppoe-user').innerText = u;
+          document.getElementById('admin-detail-pppoe-pass').innerText = p;
+          document.getElementById('admin-detail-pppoe-edit-box').classList.add('hidden');
+          updateMikrotikSecretPreview(u, p);
+          alert('✓ Akun PPPoE berhasil disimpan!');
+        } else {
+          alert('Gagal menyimpan PPPoE: ' + (json.error || json.message));
+        }
+      } catch (err) {
+        alert('Koneksi terganggu: ' + err.message);
+      }
+    }
+
     function handleDetailPlanSelectChange(el) {
       if (!el || !el.value) return;
       const parts = el.value.split('|');
@@ -16034,11 +16155,15 @@
       document.getElementById('admin-detail-plan').innerText = r.selected_plan_name;
       document.getElementById('admin-detail-distance').innerText = `~${Math.round(r.distance_to_odp_meters)} meter (ODP: ${r.nearest_odp_code || '-'})`;
 
-      // Tampilkan Kredensial PPPoE Resmi GoGiga
+      // Tampilkan Kredensial PPPoE Resmi Layanan
       const pppoeUserEl = document.getElementById('admin-detail-pppoe-user');
       const pppoePassEl = document.getElementById('admin-detail-pppoe-pass');
       if (pppoeUserEl) pppoeUserEl.innerText = r.pppoe_username || '-';
       if (pppoePassEl) pppoePassEl.innerText = r.pppoe_password || '-';
+      document.getElementById('admin-detail-pppoe-edit-box')?.classList.add('hidden');
+      if (typeof updateMikrotikSecretPreview === 'function') {
+        updateMikrotikSecretPreview(r.pppoe_username, r.pppoe_password);
+      }
 
       // Tampilkan Kredensial Dial ONT Upstream Jartaplok
       const upstreamUserEl = document.getElementById('detail-upstream-pppoe-user');

@@ -1105,7 +1105,7 @@ func (s *SQLiteStorage) UpdateSubscriberStatus(ctx context.Context, tenantID, id
 	return err
 }
 
-func (s *SQLiteStorage) UpdateSubscriberPricingAndODP(ctx context.Context, tenantID, id, planID, planName, odpCode string, promoteToInstall bool) error {
+func (s *SQLiteStorage) UpdateSubscriberPricingAndODP(ctx context.Context, tenantID, id, planID, planName, odpCode, pppoeUser, pppoePass string, promoteToInstall bool) error {
 	statusClause := ""
 	if promoteToInstall {
 		statusClause = ", status = 'INSTALLATION_SCHEDULED'"
@@ -1115,11 +1115,13 @@ func (s *SQLiteStorage) UpdateSubscriberPricingAndODP(ctx context.Context, tenan
 			selected_plan_id = CASE WHEN ? <> '' THEN ? ELSE selected_plan_id END,
 			selected_plan_name = CASE WHEN ? <> '' THEN ? ELSE selected_plan_name END,
 			nearest_odp_code = CASE WHEN ? <> '' THEN ? ELSE nearest_odp_code END,
+			pppoe_username = CASE WHEN ? <> '' THEN ? ELSE pppoe_username END,
+			pppoe_password = CASE WHEN ? <> '' THEN ? ELSE pppoe_password END,
 			updated_at = CURRENT_TIMESTAMP
 			%s
 		WHERE tenant_id = ? AND (id = ? OR subscriber_no = ?)
 	`, statusClause)
-	_, err := s.db.ExecContext(ctx, query, planID, planName, odpCode, tenantID, id, id)
+	_, err := s.db.ExecContext(ctx, query, planID, planName, odpCode, pppoeUser, pppoePass, tenantID, id, id)
 	return err
 }
 
