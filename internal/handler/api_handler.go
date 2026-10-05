@@ -1039,7 +1039,35 @@ func (h *APIHandler) PublicClusters(w http.ResponseWriter, r *http.Request) {
 	h.successResponse(w, "Clusters retrieved", clusters)
 }
 
-// PublicTrack pelacakan status registrasi mandiri
+func maskPublicPhone(phone string) string {
+	clean := notification.NormalizePhone(phone)
+	if len(clean) < 7 {
+		return phone
+	}
+	p := "0" + strings.TrimPrefix(clean, "62")
+	if len(p) >= 9 {
+		return p[:4] + "****" + p[len(p)-3:]
+	}
+	return p[:3] + "***" + p[len(p)-2:]
+}
+
+func maskPublicName(name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return "-"
+	}
+	parts := strings.Split(name, " ")
+	for i, p := range parts {
+		runes := []rune(p)
+		if len(runes) <= 2 {
+			continue
+		}
+		parts[i] = string(runes[0]) + strings.Repeat("*", len(runes)-2) + string(runes[len(runes)-1])
+	}
+	return strings.Join(parts, " ")
+}
+
+// PublicTrack pelacakan status registrasi mandiri dengan perlindungan data pribadi (UU PDP)
 func (h *APIHandler) PublicTrack(w http.ResponseWriter, r *http.Request) {
 	t := middleware.GetTenant(r)
 	regNo := chi.URLParam(r, "regNo")
@@ -1048,6 +1076,26 @@ func (h *APIHandler) PublicTrack(w http.ResponseWriter, r *http.Request) {
 		h.failResponse(w, http.StatusNotFound, "Data pendaftaran tidak ditemukan")
 		return
 	}
+
+	isActive := strings.EqualFold(sub.Status, "ACTIVE") || strings.EqualFold(sub.Status, "SUSPENDED")
+
+	// Jika pelanggan sudah AKTIF / BERLANGGANAN, tutup akses data terbuka demi keamanan akun & privasi UU PDP.
+	// Akses dashboard, invoice, ONT WiFi, dan dokumen resmi mewajibkan login autentikasi.
+	if isActive {
+		h.successResponse(w, "Layanan telah aktif terpasang", map[string]interface{}{
+			"id":                 sub.ID,
+			"registration_no":    sub.SubscriberNo,
+			"subscriber_no":      sub.SubscriberNo,
+			"full_name":          maskPublicName(sub.FullName),
+			"phone":              maskPublicPhone(sub.Phone),
+			"status":             sub.Status,
+			"selected_plan_name": sub.SelectedPlanName,
+			"require_login":      true,
+			"message":            "Layanan fiber Anda telah aktif. Demi privasi dan keamanan akun, silakan masuk menggunakan OTP WhatsApp atau kata sandi.",
+		})
+		return
+	}
+
 	wos, _ := h.store.ListWorkOrders(r.Context(), t.ID, "")
 	var woNo, woStatus string
 	for _, w := range wos {
@@ -1062,8 +1110,8 @@ func (h *APIHandler) PublicTrack(w http.ResponseWriter, r *http.Request) {
 		"registration_no":        sub.SubscriberNo,
 		"subscriber_no":          sub.SubscriberNo,
 		"full_name":              sub.FullName,
-		"phone":                  sub.Phone,
-		"email":                  sub.Email,
+		"phone":                  maskPublicPhone(sub.Phone),
+		"email":                  "",
 		"address":                sub.Address,
 		"status":                 sub.Status,
 		"selected_plan_name":     sub.SelectedPlanName,
@@ -1073,6 +1121,7 @@ func (h *APIHandler) PublicTrack(w http.ResponseWriter, r *http.Request) {
 		"work_order_no":          woNo,
 		"work_order_status":      woStatus,
 		"created_at":             sub.CreatedAt,
+		"require_login":          false,
 	})
 }
 
