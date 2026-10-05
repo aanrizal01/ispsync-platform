@@ -5663,22 +5663,72 @@
           </div>
 
           <!-- Corporate Custom Plan Fields (Conditional) -->
-          <div id="sales-reg-custom-plan-box" class="hidden p-3.5 bg-slate-50 border border-slate-200 rounded-md space-y-3">
-            <div class="flex items-center gap-2 text-slate-900 font-bold font-mono text-xs">
-              <i data-lucide="building-2" class="w-4 h-4 text-blue-600"></i>
-              <span>Spesifikasi Kebutuhan Paket Korporat / Dedicated</span>
+          <div id="sales-reg-custom-plan-box" class="hidden p-4 bg-slate-900 text-white rounded-lg border border-slate-800 space-y-3.5 shadow-md">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs">
+                  <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold font-mono text-cyan-300 uppercase tracking-tight">Spesifikasi Paket On-Demand (B2B / Dedicated)</h4>
+                  <p class="text-[10.5px] text-slate-400 font-sans">Input bandwidth &amp; harga kesepakatan kontrak langsung tanpa membuat paket katalog.</p>
+                </div>
+              </div>
+              <span class="text-[9.5px] font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/60 font-bold uppercase">Non-Katalog</span>
             </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label class="block text-[11px] font-semibold text-slate-700 mb-1">Kebutuhan Bandwidth</label>
-                <input type="text" id="sales-reg-input-corp-speed" placeholder="Contoh: 100 Mbps Dedicated 1:1" class="w-full px-3 py-2 rounded-md border border-slate-300 text-xs bg-white text-slate-900 focus:outline-none focus:border-slate-900">
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1 font-mono">Kecepatan Download (Mbps) <span class="text-cyan-400">*</span></label>
+                <div class="relative">
+                  <input type="number" id="sales-reg-corp-down" min="1" max="10000" value="500" class="w-full pl-3 pr-14 py-2 rounded-md border border-slate-700 bg-slate-800/90 text-white text-xs font-mono font-bold focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500" placeholder="500">
+                  <span class="absolute right-3 top-2 text-[10px] font-mono text-slate-400 font-bold">Mbps</span>
+                </div>
               </div>
               <div>
-                <label class="block text-[11px] font-semibold text-slate-700 mb-1">IP Publik Statis</label>
-                <select id="sales-reg-input-corp-ip" class="w-full px-3 py-2 rounded-md border border-slate-300 text-xs bg-white text-slate-900 focus:outline-none focus:border-slate-900">
-                  <option value="Tidak">Tidak Perlu</option>
-                  <option value="Ya">Ya, Butuh IP Publik Statis</option>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1 font-mono">Kecepatan Upload (Mbps) <span class="text-cyan-400">*</span></label>
+                <div class="relative">
+                  <input type="number" id="sales-reg-corp-up" min="1" max="10000" value="500" class="w-full pl-3 pr-14 py-2 rounded-md border border-slate-700 bg-slate-800/90 text-white text-xs font-mono font-bold focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500" placeholder="500">
+                  <span class="absolute right-3 top-2 text-[10px] font-mono text-slate-400 font-bold">Mbps</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1 font-mono">Jenis Layanan &amp; Rasio CIR</label>
+                <select id="sales-reg-corp-ratio" class="w-full px-3 py-2 rounded-md border border-slate-700 bg-slate-800/90 text-white text-xs font-sans focus:outline-none focus:border-cyan-500">
+                  <option value="DEDICATED_1_1">🏢 Dedicated 1:1 Simetris (CIR 100% SLA)</option>
+                  <option value="BROADBAND_1_1">⚡ Broadband Bisnis Simetris 1:1</option>
+                  <option value="BROADBAND_ASYM">🌐 Broadband Asimetris (Prioritas UKM)</option>
                 </select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1 font-mono">Fasilitas IP Publik</label>
+                <select id="sales-reg-corp-ip" class="w-full px-3 py-2 rounded-md border border-slate-700 bg-slate-800/90 text-white text-xs font-sans focus:outline-none focus:border-cyan-500">
+                  <option value="Tidak">Tanpa IP Publik (CGNAT/Private)</option>
+                  <option value="1 IP Publik (/32)">Termasuk 1 IP Publik Statis (/32)</option>
+                  <option value="Subnet /29 (4 IP)">Termasuk Subnet /29 (4 IP Usable)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-800/80">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1 font-mono">Tarif Bulanan Kesepakatan (MRC) <span class="text-cyan-400">*</span></label>
+                <div class="relative">
+                  <span class="absolute left-3 top-2 text-xs font-mono text-slate-400">Rp</span>
+                  <input type="number" id="sales-reg-corp-price" min="0" step="50000" placeholder="15000000" oninput="updateSalesCorpPriceHint()" class="w-full pl-9 pr-3 py-2 rounded-md border border-slate-700 bg-slate-800/90 text-amber-300 text-xs font-mono font-bold focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500">
+                </div>
+                <span id="sales-reg-corp-price-hint" class="text-[10px] font-mono text-cyan-300 block mt-1">Rp 0 / bln</span>
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1 font-mono">Biaya Pasang / Registrasi (OTC)</label>
+                <div class="relative">
+                  <span class="absolute left-3 top-2 text-xs font-mono text-slate-400">Rp</span>
+                  <input type="number" id="sales-reg-corp-otc" min="0" step="50000" value="0" placeholder="0 jika gratis" class="w-full pl-9 pr-3 py-2 rounded-md border border-slate-700 bg-slate-800/90 text-white text-xs font-mono focus:outline-none focus:border-cyan-500">
+                </div>
+                <span class="text-[10px] text-slate-400 font-sans block mt-1">Biaya instalasi perdana (OTC)</span>
               </div>
             </div>
           </div>
@@ -7127,6 +7177,34 @@
             <select id="upgrade-plan-select" onchange="onUpgradePlanChange()" class="w-full bg-white border border-slate-300 rounded-md py-2.5 px-3.5 text-xs font-sans focus:ring-1 focus:ring-slate-900 focus:border-slate-900 focus:outline-none">
               <option value="">-- Pilih Paket Internet Baru --</option>
             </select>
+          </div>
+
+          <!-- Custom Bandwidth Fields for Upgrade (Conditional) -->
+          <div id="upgrade-custom-speed-box" class="hidden p-3.5 bg-slate-900 text-white rounded-lg border border-slate-800 space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+              <div class="flex items-center gap-2">
+                <i data-lucide="zap" class="w-4 h-4 text-cyan-400"></i>
+                <span class="text-xs font-bold font-mono text-cyan-300 uppercase">Custom Bandwidth (On-Demand)</span>
+              </div>
+              <span class="text-[9px] font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/60 font-bold uppercase">Non-Katalog</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[10.5px] font-semibold text-slate-300 mb-1 font-mono">Download (Mbps)</label>
+                <input type="number" id="upgrade-custom-down" min="1" max="10000" value="500" class="w-full px-3 py-1.5 rounded-md border border-slate-700 bg-slate-800 text-white text-xs font-mono font-bold focus:outline-none focus:border-cyan-500">
+              </div>
+              <div>
+                <label class="block text-[10.5px] font-semibold text-slate-300 mb-1 font-mono">Upload (Mbps)</label>
+                <input type="number" id="upgrade-custom-up" min="1" max="10000" value="500" class="w-full px-3 py-1.5 rounded-md border border-slate-700 bg-slate-800 text-white text-xs font-mono font-bold focus:outline-none focus:border-cyan-500">
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10.5px] font-semibold text-slate-300 mb-1 font-mono">Jenis Layanan / Rasio</label>
+              <select id="upgrade-custom-ratio" class="w-full px-3 py-1.5 rounded-md border border-slate-700 bg-slate-800 text-white text-xs font-sans focus:outline-none focus:border-cyan-500">
+                <option value="DEDICATED">🏢 Dedicated 1:1 Simetris (CIR Penuh)</option>
+                <option value="BROADBAND">⚡ Broadband Bisnis Simetris 1:1</option>
+              </select>
+            </div>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -18267,6 +18345,11 @@
             </option>`;
           });
         }
+        optionsHtml += `
+          <optgroup label="Layanan Khusus &amp; B2B">
+            <option value="CUSTOM_SPEED" data-speed="custom" data-name="Custom Bandwidth (On-Demand)" data-price="0">🏢 Custom Bandwidth / Dedicated (Input Bebas)</option>
+          </optgroup>
+        `;
         select.innerHTML = optionsHtml;
       };
 
@@ -18342,12 +18425,20 @@
       const priceInput = document.getElementById('upgrade-plan-price');
       const jartaplokBox = document.getElementById('upgrade-jartaplok-box');
 
+      const customSpeedBox = document.getElementById('upgrade-custom-speed-box');
+      if (selectedOpt && selectedOpt.value === 'CUSTOM_SPEED') {
+        if (customSpeedBox) customSpeedBox.classList.remove('hidden');
+      } else {
+        if (customSpeedBox) customSpeedBox.classList.add('hidden');
+      }
+
       if (!selectedOpt || !selectedOpt.value) {
         jartaplokBox.classList.add('hidden');
         return;
       }
 
-      const speed = parseInt(selectedOpt.getAttribute('data-speed')) || 0;
+      const isCustomSpeed = selectedOpt.value === 'CUSTOM_SPEED';
+      const speed = isCustomSpeed ? (parseInt(document.getElementById('upgrade-custom-down')?.value) || 500) : (parseInt(selectedOpt.getAttribute('data-speed')) || 0);
       const defaultPrice = parseInt(selectedOpt.getAttribute('data-price')) || 0;
       const newPlanName = selectedOpt.getAttribute('data-name') || selectedOpt.text;
       
@@ -18498,11 +18589,21 @@
         return;
       }
 
-      const newPlanId = selectedOpt.value;
-      const newPlanName = selectedOpt.getAttribute('data-name') || selectedOpt.text;
+      let newPlanId = selectedOpt.value;
+      let newPlanName = selectedOpt.getAttribute('data-name') || selectedOpt.text;
       const newPrice = parseInt(document.getElementById('upgrade-plan-price').value) || 0;
       const effectiveDate = document.getElementById('upgrade-plan-effective').value;
-      const notes = document.getElementById('upgrade-plan-notes').value.trim();
+      let notes = document.getElementById('upgrade-plan-notes').value.trim();
+
+      if (newPlanId === 'CUSTOM_SPEED') {
+        const speedDown = parseInt(document.getElementById('upgrade-custom-down')?.value) || 500;
+        const speedUp = parseInt(document.getElementById('upgrade-custom-up')?.value) || speedDown;
+        const ratio = document.getElementById('upgrade-custom-ratio')?.value || 'DEDICATED';
+        const isDedicated = ratio === 'DEDICATED';
+        newPlanName = `${isDedicated ? 'Dedicated' : 'Broadband'} ${speedDown} Mbps${speedUp !== speedDown ? `/${speedUp}M` : ''}`;
+        const cNote = `Custom Bandwidth: ↓${speedDown}M/↑${speedUp}M (${isDedicated ? 'Dedicated 1:1' : 'Broadband Bisnis'})`;
+        notes = notes ? `${cNote} | ${notes}` : cNote;
+      }
 
       const btn = document.getElementById('btn-submit-upgrade-plan');
       const origText = btn.innerHTML;
@@ -24288,10 +24389,19 @@
 
       if (select.value === 'paket-custom-enterprise') {
         corpBox.classList.remove('hidden');
+        updateSalesCorpPriceHint();
       } else {
         corpBox.classList.add('hidden');
       }
       if (window.lucide) lucide.createIcons();
+    }
+
+    function updateSalesCorpPriceHint() {
+      const val = parseInt(document.getElementById('sales-reg-corp-price')?.value) || 0;
+      const el = document.getElementById('sales-reg-corp-price-hint');
+      if (el) {
+        el.innerText = val > 0 ? `Rp ${val.toLocaleString('id-ID')} / bulan (Kesepakatan)` : 'Rp 0 / bln';
+      }
     }
 
     function handleSalesKtpFileSelected(event) {
@@ -24329,15 +24439,24 @@
       const selectedOption = planSelect.options[planSelect.selectedIndex];
       const planId = planSelect.value;
       let planName = selectedOption ? (selectedOption.getAttribute('data-name') || selectedOption.text) : 'Broadband Plan';
-      const monthlyPrice = selectedOption ? Number(selectedOption.getAttribute('data-price') || 0) : 0;
+      let monthlyPrice = selectedOption ? Number(selectedOption.getAttribute('data-price') || 0) : 0;
 
       let customNotesStr = document.getElementById('sales-reg-input-notes')?.value.trim() || '';
       if (planId === 'paket-custom-enterprise') {
-        const speed = document.getElementById('sales-reg-input-corp-speed')?.value.trim() || 'Custom';
-        const ipStat = document.getElementById('sales-reg-input-corp-ip')?.value || 'Tidak';
-        const corpNote = `Peruntukan: Bisnis Korporat | Bandwidth: ${speed} | IP Statis: ${ipStat}`;
+        const speedDown = parseInt(document.getElementById('sales-reg-corp-down')?.value) || 500;
+        const speedUp = parseInt(document.getElementById('sales-reg-corp-up')?.value) || speedDown;
+        const ratio = document.getElementById('sales-reg-corp-ratio')?.value || 'DEDICATED_1_1';
+        const customPrice = parseInt(document.getElementById('sales-reg-corp-price')?.value) || 0;
+        const customOtc = parseInt(document.getElementById('sales-reg-corp-otc')?.value) || 0;
+        const ipStat = document.getElementById('sales-reg-corp-ip')?.value || 'Tidak';
+
+        const isDedicated = ratio === 'DEDICATED_1_1';
+        const ratioLabel = isDedicated ? 'Dedicated 1:1 Simetris' : (ratio === 'BROADBAND_1_1' ? 'Broadband Bisnis Simetris' : 'Broadband Asimetris');
+        planName = `${isDedicated ? 'Dedicated' : 'Broadband'} ${speedDown} Mbps${speedUp !== speedDown ? `/${speedUp}M` : ''}`;
+        monthlyPrice = customPrice;
+
+        const corpNote = `Peruntukan: Bisnis Korporat | Bandwidth: ↓${speedDown} Mbps / ↑${speedUp} Mbps (${ratioLabel}) | IP Publik: ${ipStat} | Kesepakatan: Rp ${customPrice.toLocaleString('id-ID')}/bln${customOtc > 0 ? ` (OTC: Rp ${customOtc.toLocaleString('id-ID')})` : ''}`;
         customNotesStr = customNotesStr ? `${corpNote} | Catatan: ${customNotesStr}` : corpNote;
-        planName = `Custom Enterprise (${speed})`;
       }
 
       const payload = {

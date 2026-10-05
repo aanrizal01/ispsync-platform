@@ -810,16 +810,19 @@ func (h *APIHandler) PublicPlans(w http.ResponseWriter, r *http.Request) {
 func (h *APIHandler) PublicRegister(w http.ResponseWriter, r *http.Request) {
 	t := middleware.GetTenant(r)
 	var req struct {
-		FullName       string  `json:"full_name"`
-		IDCardNumber   string  `json:"id_card_number"`
-		Phone          string  `json:"phone"`
-		Email          string  `json:"email"`
-		Address        string  `json:"address"`
-		Latitude       float64 `json:"latitude"`
-		Longitude      float64 `json:"longitude"`
-		SelectedPlanID string  `json:"selected_plan_id"`
-		PlanID         string  `json:"plan_id"`
-		ReferralCode   string  `json:"referral_code"`
+		FullName         string  `json:"full_name"`
+		IDCardNumber     string  `json:"id_card_number"`
+		Phone            string  `json:"phone"`
+		Email            string  `json:"email"`
+		Address          string  `json:"address"`
+		Latitude         float64 `json:"latitude"`
+		Longitude        float64 `json:"longitude"`
+		SelectedPlanID   string  `json:"selected_plan_id"`
+		SelectedPlanName string  `json:"selected_plan_name"`
+		PlanID           string  `json:"plan_id"`
+		ReferralCode     string  `json:"referral_code"`
+		MonthlyPrice     float64 `json:"monthly_price"`
+		CustomNotes      string  `json:"custom_notes"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		h.failResponse(w, http.StatusBadRequest, "Invalid JSON input")
@@ -834,12 +837,15 @@ func (h *APIHandler) PublicRegister(w http.ResponseWriter, r *http.Request) {
 	if planID == "" {
 		planID = req.PlanID
 	}
-	plans, _ := h.store.ListPlans(r.Context(), t.ID)
-	planName := "Paket Reguler Fiber"
-	for _, p := range plans {
-		if p.ID == planID {
-			planName = p.Name
-			break
+	planName := strings.TrimSpace(req.SelectedPlanName)
+	if planName == "" {
+		plans, _ := h.store.ListPlans(r.Context(), t.ID)
+		planName = "Paket Reguler Fiber"
+		for _, p := range plans {
+			if p.ID == planID {
+				planName = p.Name
+				break
+			}
 		}
 	}
 
@@ -1803,6 +1809,54 @@ func (h *APIHandler) AdminReassignODP(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = json.NewDecoder(r.Body).Decode(&req)
 	h.successResponse(w, "ODP berhasil dialihkan", map[string]interface{}{"id": id, "odp_code": req.ODPCode, "tenant_id": t.ID})
+}
+
+// AdminUpgradePlan menangani upgrade atau perubahan paket bandwidth pelanggan
+func (h *APIHandler) AdminUpgradePlan(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		h.failResponse(w, http.StatusBadRequest, "ID registrasi wajib diisi")
+		return
+	}
+
+	var req struct {
+		NewPlanID       string  `json:"new_plan_id"`
+		NewPlanName     string  `json:"new_plan_name"`
+		NewMonthlyPrice float64 `json:"new_monthly_price"`
+		EffectiveDate   string  `json:"effective_date"`
+		Notes           string  `json:"notes"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.failResponse(w, http.StatusBadRequest, "Format JSON tidak valid")
+		return
+	}
+
+	planName := strings.TrimSpace(req.NewPlanName)
+	if planName == "" {
+		plans, _ := h.store.ListPlans(r.Context(), t.ID)
+		for _, p := range plans {
+			if p.ID == req.NewPlanID {
+				planName = p.Name
+				break
+			}
+		}
+	}
+	if planName == "" {
+		planName = "Paket Internet"
+	}
+
+	if err := h.store.UpdateSubscriberPricingAndODP(r.Context(), t.ID, id, req.NewPlanID, planName, "", "", "", "", false); err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal memperbarui paket pelanggan: "+err.Error())
+		return
+	}
+
+	h.successResponse(w, fmt.Sprintf("Paket berhasil diperbarui ke %s", planName), map[string]interface{}{
+		"id":                 id,
+		"selected_plan_id":   req.NewPlanID,
+		"selected_plan_name": planName,
+		"monthly_price":      req.NewMonthlyPrice,
+	})
 }
 
 // AdminUpdateRegistrationPricing menyimpan perubahan paket, ODP, dan memajukan status instalasi
