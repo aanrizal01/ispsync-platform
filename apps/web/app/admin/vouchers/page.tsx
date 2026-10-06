@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { voucherApi, type Voucher, type VoucherDetail, type VoucherSessionLog, type VoucherTemplate, type VoucherBatch, type CreateTemplateInput, type GenerateBatchInput, type HotspotOrder, type HotspotOrdersSummary } from "@/lib/api/vouchers";
 import { agentApi, type Agent } from "@/lib/api/agents";
 import { formatDate, formatRupiah, formatBandwidth, cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Search, X, Eye, EyeOff, Copy, Check, Ticket, Globe, Sparkles, Layers, Sliders, RefreshCw, Clock, CheckCircle2, AlertCircle, ExternalLink, ArrowRight, Shield, Wifi, Activity, Power, ArrowUp, ArrowDown, Laptop, Smartphone } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X, Eye, EyeOff, Copy, Check, Ticket, Globe, Sparkles, Layers, Sliders, RefreshCw, Clock, CheckCircle2, AlertCircle, ExternalLink, ArrowRight, Shield, Wifi, Activity, Power, ArrowUp, ArrowDown, Laptop, Smartphone, MoreHorizontal, Printer, Send, Slash, RotateCcw, ChevronDown } from "lucide-react";
 
 function formatBytes(bytes: number): string {
   if (!bytes || bytes <= 0) return "0 B";
@@ -360,6 +360,19 @@ export default function VouchersPage() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [kickLoadingId, setKickLoadingId] = useState<string | null>(null);
+
+  // Compact Row Action Toggle / Dropdown Menu State
+  const [openActionDropdownId, setOpenActionDropdownId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleDocClick = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest(".row-action-dropdown")) {
+        setOpenActionDropdownId(null);
+      }
+    };
+    document.addEventListener("click", handleDocClick);
+    return () => document.removeEventListener("click", handleDocClick);
+  }, []);
 
   const calculateTotalMinutes = (val: number, unit: "MINUTES" | "HOURS" | "DAYS" | "MONTHS") => {
     switch (unit) {
@@ -1232,11 +1245,11 @@ export default function VouchersPage() {
                             </div>
                             {v.is_mac_locked === false ? (
                               <div className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded mt-0.5" title="Bebas digunakan di perangkat apa saja tanpa kuncian MAC">
-                                🔓 Bebas MAC
+                                <Wifi className="w-3 h-3 text-emerald-600" /> Bebas MAC
                               </div>
                             ) : v.buyer_mac ? (
                               <div className="text-[10px] text-amber-600 font-mono mt-0.5 flex items-center gap-1" title="Terkunci ke MAC ini">
-                                🔒 MAC: {v.buyer_mac}
+                                <Shield className="w-3 h-3 text-amber-600" /> MAC: {v.buyer_mac}
                               </div>
                             ) : null}
                           </td>
@@ -1288,52 +1301,123 @@ export default function VouchersPage() {
                           <td className="px-5 py-4 text-xs text-slate-500">
                             {v.expires_at ? formatDate(v.expires_at) : "—"}
                           </td>
-                          <td className="px-5 py-4 text-right space-x-1.5 whitespace-nowrap">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenDetail(v.id)}
-                              className="px-2.5 py-1 text-xs font-semibold text-cyan-700 bg-cyan-50 hover:bg-cyan-100 rounded border border-cyan-200"
-                              title="Periksa Detail Sesi & Riwayat Log Login"
-                            >
-                              Detail
-                            </button>
-                            <button
-                              onClick={() => handlePrintSingle(v, "modern")}
-                              className="px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded border border-slate-200"
-                              title="Cetak lembar voucher ini"
-                            >
-                              Cetak
-                            </button>
-                            {v.buyer_mac && (
+                          <td className="px-5 py-4 text-right whitespace-nowrap">
+                            <div className="inline-flex items-center justify-end gap-1.5 relative row-action-dropdown">
                               <button
                                 type="button"
-                                disabled={resetMACLoadingId === v.id}
-                                onClick={() => handleResetMAC(v.id, v.code)}
-                                className="px-2.5 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 rounded border border-amber-200 disabled:opacity-50"
-                                title={`Reset Kuncian Perangkat (MAC: ${v.buyer_mac})`}
+                                onClick={() => handleOpenDetail(v.id)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-cyan-700 bg-cyan-50 hover:bg-cyan-100 rounded-lg border border-cyan-200 transition-colors shadow-xs"
+                                title="Periksa Detail Sesi & Riwayat Log Login"
                               >
-                                {resetMACLoadingId === v.id ? "Mereset..." : "Reset MAC"}
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>Detail</span>
                               </button>
-                            )}
-                            {v.status !== "REVOKED" && v.status !== "EXPIRED" && (
-                              <button
-                                onClick={() => handleRevoke(v.id, v.code)}
-                                className="px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50 rounded border border-rose-200"
-                              >
-                                Revoke
-                              </button>
-                            )}
-                            {v.status === "REVOKED" && (
-                              <button
-                                type="button"
-                                disabled={restoreLoadingId === v.id}
-                                onClick={() => handleRestore(v.id, v.code)}
-                                className="px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 rounded border border-emerald-300 disabled:opacity-50"
-                                title="Aktifkan kembali voucher ini"
-                              >
-                                {restoreLoadingId === v.id ? "Mengaktifkan..." : "Aktifkan"}
-                              </button>
-                            )}
+
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenActionDropdownId(openActionDropdownId === v.id ? null : v.id);
+                                  }}
+                                  className={cn(
+                                    "p-1.5 rounded-lg border text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 cursor-pointer",
+                                    openActionDropdownId === v.id ? "bg-slate-100 border-slate-300 text-slate-900 shadow-xs" : "border-slate-200 bg-white"
+                                  )}
+                                  title="Menu Aksi Lainnya"
+                                >
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </button>
+
+                                {openActionDropdownId === v.id && (
+                                  <div
+                                    className="absolute right-0 top-full mt-1.5 w-44 bg-white rounded-xl border border-slate-200 shadow-xl py-1 z-50 text-left animate-in fade-in zoom-in-95 duration-100 divide-y divide-slate-100"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <div className="py-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          handlePrintSingle(v, "modern");
+                                          setOpenActionDropdownId(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors font-medium text-left"
+                                      >
+                                        <Printer className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                        <span>Cetak Lembar</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          copyToClipboard(v.code, v.id);
+                                          setOpenActionDropdownId(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors font-medium text-left"
+                                      >
+                                        {copiedId === v.id ? (
+                                          <>
+                                            <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                            <span className="text-emerald-700 font-semibold">Tersalin!</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Copy className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                            <span>Salin Kode</span>
+                                          </>
+                                        )}
+                                      </button>
+
+                                      {v.buyer_mac && (
+                                        <button
+                                          type="button"
+                                          disabled={resetMACLoadingId === v.id}
+                                          onClick={() => {
+                                            handleResetMAC(v.id, v.code);
+                                            setOpenActionDropdownId(null);
+                                          }}
+                                          className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-amber-700 hover:bg-amber-50 transition-colors font-medium text-left disabled:opacity-50"
+                                        >
+                                          <RefreshCw className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                          <span>{resetMACLoadingId === v.id ? "Mereset..." : "Reset Kunci MAC"}</span>
+                                        </button>
+                                      )}
+                                    </div>
+
+                                    <div className="py-1">
+                                      {v.status !== "REVOKED" && v.status !== "EXPIRED" && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            handleRevoke(v.id, v.code);
+                                            setOpenActionDropdownId(null);
+                                          }}
+                                          className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-rose-600 hover:bg-rose-50 transition-colors font-medium text-left"
+                                        >
+                                          <Slash className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                                          <span>Revoke Voucher</span>
+                                        </button>
+                                      )}
+
+                                      {v.status === "REVOKED" && (
+                                        <button
+                                          type="button"
+                                          disabled={restoreLoadingId === v.id}
+                                          onClick={() => {
+                                            handleRestore(v.id, v.code);
+                                            setOpenActionDropdownId(null);
+                                          }}
+                                          className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-emerald-700 hover:bg-emerald-50 transition-colors font-semibold text-left disabled:opacity-50"
+                                        >
+                                          <RotateCcw className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                          <span>{restoreLoadingId === v.id ? "Mengaktifkan..." : "Aktifkan Kembali"}</span>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -2063,63 +2147,126 @@ export default function VouchersPage() {
                             <div className="text-[10px] text-slate-400 mt-0.5">Exp: {formatDate(v.expires_at)}</div>
                           )}
                         </td>
-                        <td className="px-5 py-4 text-right space-x-1.5 whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenDetail(v.id)}
-                            className="px-2.5 py-1 text-xs font-semibold text-cyan-700 bg-cyan-50 hover:bg-cyan-100 rounded border border-cyan-200"
-                            title="Periksa Detail Sesi & Riwayat Log Login"
-                          >
-                            Detail
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => copyToClipboard(v.code, v.id)}
-                            className="px-2.5 py-1 text-xs font-medium text-teal-700 hover:bg-teal-50 rounded border border-teal-200"
-                          >
-                            {copiedId === v.id ? "Tersalin!" : "Salin Kode"}
-                          </button>
-                          {v.buyer_phone && (
+                        <td className="px-5 py-4 text-right whitespace-nowrap">
+                          <div className="inline-flex items-center justify-end gap-1.5 relative row-action-dropdown">
                             <button
                               type="button"
-                              disabled={resendLoadingId === v.id}
-                              onClick={() => handleResendWA(v.id, v.buyer_phone)}
-                              className="px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-50 rounded border border-emerald-200 disabled:opacity-50"
-                              title="Kirim ulang pesan WhatsApp via Gateway Fonnte"
+                              onClick={() => handleOpenDetail(v.id)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-cyan-700 bg-cyan-50 hover:bg-cyan-100 rounded-lg border border-cyan-200 transition-colors shadow-xs"
+                              title="Periksa Detail Sesi & Riwayat Log Login"
                             >
-                              {resendLoadingId === v.id ? "Mengirim..." : "Kirim WA"}
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Detail</span>
                             </button>
-                          )}
-                          {v.buyer_mac && (
-                            <button
-                              type="button"
-                              disabled={resetMACLoadingId === v.id}
-                              onClick={() => handleResetMAC(v.id, v.code)}
-                              className="px-2.5 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 rounded border border-amber-200 disabled:opacity-50"
-                              title={`Reset Kuncian Perangkat (MAC: ${v.buyer_mac})`}
-                            >
-                              {resetMACLoadingId === v.id ? "Mereset..." : "Reset MAC"}
-                            </button>
-                          )}
-                          {v.status !== "REVOKED" && v.status !== "EXPIRED" && (
-                            <button
-                              onClick={() => handleRevoke(v.id, v.code)}
-                              className="px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50 rounded border border-rose-200"
-                            >
-                              Revoke
-                            </button>
-                          )}
-                          {v.status === "REVOKED" && (
-                            <button
-                              type="button"
-                              disabled={restoreLoadingId === v.id}
-                              onClick={() => handleRestore(v.id, v.code)}
-                              className="px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 rounded border border-emerald-300 disabled:opacity-50"
-                              title="Aktifkan kembali voucher ini"
-                            >
-                              {restoreLoadingId === v.id ? "Mengaktifkan..." : "Aktifkan"}
-                            </button>
-                          )}
+
+                            <div className="relative">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenActionDropdownId(openActionDropdownId === v.id ? null : v.id);
+                                }}
+                                className={cn(
+                                  "p-1.5 rounded-lg border text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 cursor-pointer",
+                                  openActionDropdownId === v.id ? "bg-slate-100 border-slate-300 text-slate-900 shadow-xs" : "border-slate-200 bg-white"
+                                )}
+                                title="Menu Aksi Lainnya"
+                              >
+                                <MoreHorizontal className="w-4 h-4" />
+                              </button>
+
+                              {openActionDropdownId === v.id && (
+                                <div
+                                  className="absolute right-0 top-full mt-1.5 w-44 bg-white rounded-xl border border-slate-200 shadow-xl py-1 z-50 text-left animate-in fade-in zoom-in-95 duration-100 divide-y divide-slate-100"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <div className="py-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        copyToClipboard(v.code, v.id);
+                                        setOpenActionDropdownId(null);
+                                      }}
+                                      className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors font-medium text-left"
+                                    >
+                                      {copiedId === v.id ? (
+                                        <>
+                                          <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                          <span className="text-emerald-700 font-semibold">Tersalin!</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Copy className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                          <span>Salin Kode</span>
+                                        </>
+                                      )}
+                                    </button>
+
+                                    {v.buyer_phone && (
+                                      <button
+                                        type="button"
+                                        disabled={resendLoadingId === v.id}
+                                        onClick={() => {
+                                          handleResendWA(v.id, v.buyer_phone);
+                                          setOpenActionDropdownId(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors font-medium text-left disabled:opacity-50"
+                                      >
+                                        <Send className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                        <span>{resendLoadingId === v.id ? "Mengirim..." : "Kirim Ulang WA"}</span>
+                                      </button>
+                                    )}
+
+                                    {v.buyer_mac && (
+                                      <button
+                                        type="button"
+                                        disabled={resetMACLoadingId === v.id}
+                                        onClick={() => {
+                                          handleResetMAC(v.id, v.code);
+                                          setOpenActionDropdownId(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-amber-700 hover:bg-amber-50 transition-colors font-medium text-left disabled:opacity-50"
+                                      >
+                                        <RefreshCw className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                        <span>{resetMACLoadingId === v.id ? "Mereset..." : "Reset Kunci MAC"}</span>
+                                      </button>
+                                    )}
+                                  </div>
+
+                                  <div className="py-1">
+                                    {v.status !== "REVOKED" && v.status !== "EXPIRED" && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          handleRevoke(v.id, v.code);
+                                          setOpenActionDropdownId(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-rose-600 hover:bg-rose-50 transition-colors font-medium text-left"
+                                      >
+                                        <Slash className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                                        <span>Revoke Voucher</span>
+                                      </button>
+                                    )}
+
+                                    {v.status === "REVOKED" && (
+                                      <button
+                                        type="button"
+                                        disabled={restoreLoadingId === v.id}
+                                        onClick={() => {
+                                          handleRestore(v.id, v.code);
+                                          setOpenActionDropdownId(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-emerald-700 hover:bg-emerald-50 transition-colors font-semibold text-left disabled:opacity-50"
+                                      >
+                                        <RotateCcw className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                        <span>{restoreLoadingId === v.id ? "Mengaktifkan..." : "Aktifkan Kembali"}</span>
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -2418,11 +2565,11 @@ export default function VouchersPage() {
                             </div>
                             {v.is_mac_locked === false ? (
                               <div className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded mt-0.5" title="Bebas digunakan di perangkat apa saja tanpa kuncian MAC">
-                                🔓 Bebas MAC
+                                <Wifi className="w-3 h-3 text-emerald-600" /> Bebas MAC
                               </div>
                             ) : v.buyer_mac ? (
                               <div className="text-[10px] text-amber-600 font-mono mt-0.5 flex items-center gap-1" title="Terkunci ke MAC ini">
-                                🔒 MAC: {v.buyer_mac}
+                                <Shield className="w-3 h-3 text-amber-600" /> MAC: {v.buyer_mac}
                               </div>
                             ) : null}
                           </td>
@@ -2510,59 +2657,135 @@ export default function VouchersPage() {
                             {v.batch_number && <div className="font-mono text-slate-600">{v.batch_number}</div>}
                             <div className="text-[10px] text-slate-400">{formatDate(v.created_at)}</div>
                           </td>
-                          <td className="px-5 py-4 text-right space-x-1 whitespace-nowrap">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenDetail(v.id)}
-                              className="px-2 py-1 text-xs font-semibold text-cyan-700 bg-cyan-50 hover:bg-cyan-100 rounded border border-cyan-200"
-                              title="Periksa Detail Sesi & Riwayat Log Login"
-                            >
-                              Detail
-                            </button>
-                            <button
-                              onClick={() => handlePrintSingle(v, "atm_wifi_id")}
-                              className="px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 rounded border border-amber-200"
-                              title="Cetak model kartu ATM WiFi.ID"
-                            >
-                              ATM
-                            </button>
-                            <button
-                              onClick={() => handlePrintSingle(v, "scratch_card")}
-                              className="px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded border border-slate-200"
-                              title="Cetak format kartu gosok"
-                            >
-                              Gosok
-                            </button>
-                            {v.buyer_mac && (
+                          <td className="px-5 py-4 text-right whitespace-nowrap">
+                            <div className="inline-flex items-center justify-end gap-1.5 relative row-action-dropdown">
                               <button
                                 type="button"
-                                disabled={resetMACLoadingId === v.id}
-                                onClick={() => handleResetMAC(v.id, sn)}
-                                className="px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 rounded border border-amber-200 disabled:opacity-50"
-                                title={`Reset Kuncian Perangkat (MAC: ${v.buyer_mac})`}
+                                onClick={() => handleOpenDetail(v.id)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-cyan-700 bg-cyan-50 hover:bg-cyan-100 rounded-lg border border-cyan-200 transition-colors shadow-xs"
+                                title="Periksa Detail Sesi & Riwayat Log Login"
                               >
-                                {resetMACLoadingId === v.id ? "Mereset..." : "Reset MAC"}
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>Detail</span>
                               </button>
-                            )}
-                            {v.status !== "REVOKED" && v.status !== "EXPIRED" && (
-                              <button
-                                onClick={() => handleRevoke(v.id, sn)}
-                                className="px-2 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50 rounded border border-rose-200"
-                              >
-                                Void
-                              </button>
-                            )}
-                            {v.status === "REVOKED" && (
-                              <button
-                                type="button"
-                                disabled={restoreLoadingId === v.id}
-                                onClick={() => handleRestore(v.id, sn)}
-                                className="px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 rounded border border-emerald-300 disabled:opacity-50"
-                                title="Aktifkan kembali kartu voucher ini"
-                              >
-                                {restoreLoadingId === v.id ? "Mengaktifkan..." : "Aktifkan"}
-                              </button>
-                            )}
+
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setOpenActionDropdownId(openActionDropdownId === v.id ? null : v.id);
+                                  }}
+                                  className={cn(
+                                    "p-1.5 rounded-lg border text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 cursor-pointer",
+                                    openActionDropdownId === v.id ? "bg-slate-100 border-slate-300 text-slate-900 shadow-xs" : "border-slate-200 bg-white"
+                                  )}
+                                  title="Menu Aksi Lainnya"
+                                >
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </button>
+
+                                {openActionDropdownId === v.id && (
+                                  <div
+                                    className="absolute right-0 top-full mt-1.5 w-48 bg-white rounded-xl border border-slate-200 shadow-xl py-1 z-50 text-left animate-in fade-in zoom-in-95 duration-100 divide-y divide-slate-100"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <div className="py-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          handlePrintSingle(v, "atm_wifi_id");
+                                          setOpenActionDropdownId(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors font-medium text-left"
+                                      >
+                                        <Printer className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                        <span>Cetak Format ATM</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          handlePrintSingle(v, "scratch_card");
+                                          setOpenActionDropdownId(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors font-medium text-left"
+                                      >
+                                        <Layers className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                        <span>Cetak Format Kartu Gosok</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          copyToClipboard(sn, v.id);
+                                          setOpenActionDropdownId(null);
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors font-medium text-left"
+                                      >
+                                        {copiedId === v.id ? (
+                                          <>
+                                            <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                            <span className="text-emerald-700 font-semibold">Tersalin!</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Copy className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                            <span>Salin Serial Number</span>
+                                          </>
+                                        )}
+                                      </button>
+
+                                      {v.buyer_mac && (
+                                        <button
+                                          type="button"
+                                          disabled={resetMACLoadingId === v.id}
+                                          onClick={() => {
+                                            handleResetMAC(v.id, sn);
+                                            setOpenActionDropdownId(null);
+                                          }}
+                                          className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-amber-700 hover:bg-amber-50 transition-colors font-medium text-left disabled:opacity-50"
+                                        >
+                                          <RefreshCw className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                          <span>{resetMACLoadingId === v.id ? "Mereset..." : "Reset Kunci MAC"}</span>
+                                        </button>
+                                      )}
+                                    </div>
+
+                                    <div className="py-1">
+                                      {v.status !== "REVOKED" && v.status !== "EXPIRED" && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            handleRevoke(v.id, sn);
+                                            setOpenActionDropdownId(null);
+                                          }}
+                                          className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-rose-600 hover:bg-rose-50 transition-colors font-medium text-left"
+                                        >
+                                          <Slash className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                                          <span>Void Voucher</span>
+                                        </button>
+                                      )}
+
+                                      {v.status === "REVOKED" && (
+                                        <button
+                                          type="button"
+                                          disabled={restoreLoadingId === v.id}
+                                          onClick={() => {
+                                            handleRestore(v.id, sn);
+                                            setOpenActionDropdownId(null);
+                                          }}
+                                          className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-emerald-700 hover:bg-emerald-50 transition-colors font-semibold text-left disabled:opacity-50"
+                                        >
+                                          <RotateCcw className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                          <span>{restoreLoadingId === v.id ? "Mengaktifkan..." : "Aktifkan Kembali"}</span>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -2692,11 +2915,11 @@ export default function VouchersPage() {
                   <td className="px-5 py-4">
                     {b.is_mac_locked === false ? (
                       <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                        🔓 Bebas MAC
+                        <Wifi className="w-3 h-3 text-emerald-600" /> Bebas MAC
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
-                        🔒 Kunci MAC (1 HP)
+                        <Shield className="w-3 h-3 text-blue-600" /> Kunci MAC (1 HP)
                       </span>
                     )}
                   </td>
@@ -2766,7 +2989,7 @@ export default function VouchersPage() {
                 <>
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs space-y-1">
                     <div className="font-bold flex items-center gap-1.5">
-                      <span>💡 Sistem Blanko Gesek Ala Telkomsel</span>
+                      <span>Sistem Blanko Gesek Terpadu</span>
                     </div>
                     <p className="text-[11px] text-amber-800 leading-relaxed">
                       Voucher dicetak dalam keadaan kosong (Rp 0) dengan <b>Serial Number (SN 12-Digit)</b> dan <b>Kode PIN 6-Digit Angka</b> tertutup stiker gesek. Mitra agen dapat menginjeksi paket on-demand melalui portal agen sebelum dijual ke pelanggan.
@@ -3019,7 +3242,11 @@ export default function VouchersPage() {
               <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/80 transition-all">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-start gap-2.5">
-                    <span className="text-xl leading-none mt-0.5">{batchForm.is_mac_locked !== false ? "🔒" : "🔓"}</span>
+                    {batchForm.is_mac_locked !== false ? (
+                      <Shield className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <Wifi className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                    )}
                     <div>
                       <div className="font-bold text-xs text-slate-800">
                         {batchForm.is_mac_locked !== false ? "Kunci MAC Aktif (1 Voucher = 1 HP)" : "Bebas MAC (Bisa Ganti HP / Multi-Device)"}
@@ -3325,7 +3552,7 @@ export default function VouchersPage() {
                     Pilih template desain voucher atau kustomisasi HTML sendiri sebelum mencetak.
                     {vouchersToPrint.length > 50 && (
                       <span className="block text-amber-600 font-medium mt-0.5">
-                        ⚠️ Tips: Mencetak {vouchersToPrint.length} lembar dapat menghasilkan banyak halaman kertas. Gunakan opsi batas di bawah jika perlu.
+                        Tips: Mencetak {vouchersToPrint.length} lembar dapat menghasilkan banyak halaman kertas. Gunakan opsi batas di bawah jika perlu.
                       </span>
                     )}
                   </p>
@@ -3536,7 +3763,7 @@ export default function VouchersPage() {
             {/* Tips Cetak A4 */}
             <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 text-xs space-y-1.5 print:hidden">
               <div className="font-bold flex items-center gap-1.5 text-amber-900">
-                <span className="text-base">💡</span>
+                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
                 <span className="text-sm font-extrabold">Panduan Setelan Cetak Rapi Anti-Ngegantung (Kertas A4):</span>
               </div>
               <ul className="list-disc list-inside text-xs space-y-1 text-amber-900/90 pl-1 font-medium leading-relaxed">
