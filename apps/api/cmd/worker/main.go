@@ -115,17 +115,23 @@ func main() {
 	voucherTicker := time.NewTicker(1 * time.Hour)
 	defer voucherTicker.Stop()
 
+	voucherSyncTicker := time.NewTicker(1 * time.Minute)
+	defer voucherSyncTicker.Stop()
+
 	passpointTicker := time.NewTicker(2 * time.Minute)
 	defer passpointTicker.Stop()
 
 	go func() {
-		log.Info("background workers started (auto-invoice, overdue/isolir, wa-reminder, voucher-cleanup, passpoint-expiry-reminder)")
+		log.Info("background workers started (auto-invoice, overdue/isolir, wa-reminder, voucher-cleanup, voucher-accounting-sync, passpoint-expiry-reminder)")
 		// Immediate initial checks on startup
 		if err := billingSvc.RunInvoiceReminderJob(ctx); err != nil {
 			log.Error("error in initial whatsapp reminder job", "error", err)
 		}
 		if err := voucherSvc.RunVoucherCleanupJob(ctx); err != nil {
 			log.Error("error in initial voucher cleanup job", "error", err)
+		}
+		if err := voucherSvc.RunVoucherAccountingSyncJob(ctx); err != nil {
+			log.Error("error in initial voucher accounting sync job", "error", err)
 		}
 		if err := passpointSvc.RunPasspointExpiryJob(ctx); err != nil {
 			log.Error("error in initial passpoint expiry job", "error", err)
@@ -154,6 +160,10 @@ func main() {
 			case <-voucherTicker.C:
 				if err := voucherSvc.RunVoucherCleanupJob(ctx); err != nil {
 					log.Error("error in periodic voucher cleanup job", "error", err)
+				}
+			case <-voucherSyncTicker.C:
+				if err := voucherSvc.RunVoucherAccountingSyncJob(ctx); err != nil {
+					log.Error("error in periodic voucher accounting sync job", "error", err)
 				}
 			case <-passpointTicker.C:
 				if err := passpointSvc.RunPasspointExpiryJob(ctx); err != nil {

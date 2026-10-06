@@ -358,6 +358,15 @@ func (s *Service) RunVoucherCleanupJob(ctx context.Context) error {
 	return nil
 }
 
+// RunVoucherAccountingSyncJob reconciles voucher status, MAC binding, and usage with radius_sessions.
+func (s *Service) RunVoucherAccountingSyncJob(ctx context.Context) error {
+	if err := s.repo.SyncVouchersFromAccounting(ctx); err != nil {
+		s.logger.Error("failed to sync vouchers from radius accounting", "error", err)
+		return err
+	}
+	return nil
+}
+
 // GenerateBlankBatch generates a batch of unassigned scratch vouchers with unique serial numbers
 func (s *Service) GenerateBlankBatch(ctx context.Context, req GenerateBlankBatchRequest, createdBy *uuid.UUID) (*Batch, []Voucher, error) {
 	if req.Quantity < 1 || req.Quantity > 1000 {

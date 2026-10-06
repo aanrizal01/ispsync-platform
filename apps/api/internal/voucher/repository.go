@@ -988,4 +988,46 @@ func (r *Repository) GetHotspotOrdersSummary(ctx context.Context) (HotspotOrders
 	return s, err
 }
 
+func (r *Repository) SyncVouchersFromAccounting(ctx context.Context) error {
+	const q = `
+		WITH session_agg AS (
+			SELECT 
+				rs.username,
+				MIN(rs.acctstarttime) AS first_start,
+				COALESCE(SUM(rs.acctsessiontime), 0) AS total_seconds,
+				COALESCE(SUM(COALESCE(rs.acctinputoctets, 0) + COALESCE(rs.acctoutputoctets, 0)), 0) AS total_bytes,
+				(ARRAY_AGG(rs.callingstationid ORDER BY rs.acctstarttime DESC))[1] AS last_mac,
+				COALESCE(vt.duration_minutes, 60) AS duration_minutes
+			FROM radius_sessions rs
+			JOIN vouchers v ON v.code = rs.username
+			LEFT JOIN voucher_templates vt ON vt.id = v.template_id
+			WHERE v.status != 'REVOKED'
+			GROUP BY rs.username, vt.duration_minutes
+		)
+		UPDATE vouchers v
+		SET 
+			status = CASE 
+				WHEN NOW() >= (COALESCE(v.first_used_at, sa.first_start) + (sa.duration_minutes * INTERVAL '1 minute')) THEN 'EXPIRED'
+				WHEN v.time_limit_seconds > 0 AND sa.total_seconds >= v.time_limit_seconds THEN 'DEPLETED'
+				WHEN v.data_limit_bytes > 0 AND sa.total_bytes >= v.data_limit_bytes THEN 'DEPLETED'
+				ELSE 'ACTIVE'
+			END,
+			first_used_at = COALESCE(v.first_used_at, sa.first_start),
+			expires_at = COALESCE(v.first_used_at, sa.first_start) + (sa.duration_minutes * INTERVAL '1 minute'),
+			used_seconds = sa.total_seconds,
+			used_bytes = sa.total_bytes,
+			buyer_mac = CASE 
+				WHEN (v.buyer_mac IS NULL OR v.buyer_mac = '') AND sa.last_mac IS NOT NULL AND sa.last_mac != '' 
+				THEN sa.last_mac 
+				ELSE v.buyer_mac 
+			END,
+			updated_at = NOW()
+		FROM session_agg sa
+		WHERE v.code = sa.username AND v.status != 'REVOKED'
+		  AND (v.status = 'UNUSED' OR v.used_seconds != sa.total_seconds OR v.used_bytes != sa.total_bytes OR v.buyer_mac IS NULL);
+	`
+	_, err := r.db.Exec(ctx, q)
+	return err
+}
+
 
