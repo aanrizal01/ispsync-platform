@@ -105,6 +105,10 @@ export default function AdminSettingsPage() {
   const [waTesting, setWaTesting] = useState(false);
   const [waTestResult, setWaTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
+  const [showTgToken, setShowTgToken] = useState(false);
+  const [tgTesting, setTgTesting] = useState(false);
+  const [tgTestResult, setTgTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
   // FiberGrid Custom Integration State
   const [fibergridSettings, setFibergridSettings] = useState<FiberGridIntegrationSettings>(defaultFiberGridIntegrationSettings);
   const [fibergridTesting, setFibergridTesting] = useState(false);
@@ -169,6 +173,8 @@ export default function AdminSettingsPage() {
     smtpUser: "",
     smtpPass: "",
     smtpFrom: "",
+    telegramBotToken: "",
+    telegramChatId: "",
 
     // Security & AAA
     jwtExpiryHours: 24,
@@ -463,7 +469,15 @@ export default function AdminSettingsPage() {
             taxRatePPN: rate,
             defaultTaxBps: Math.round(rate * 100),
             npwp: data.npwp || prev.npwp,
+            telegramBotToken: data.telegram_bot_token || prev.telegramBotToken,
+            telegramChatId: data.telegram_chat_id || prev.telegramChatId,
           }));
+          if (data.google_maps_api_key) {
+            setSecuritySettings((prev) => ({
+              ...prev,
+              google_maps_api_key: prev.google_maps_api_key || data.google_maps_api_key,
+            }));
+          }
           if (data.npwp) {
             setInvoiceTemplate((prev) => ({
               ...prev,
@@ -544,6 +558,48 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const handleTestTelegram = async () => {
+    if (!settings.telegramBotToken || !settings.telegramChatId) {
+      setTgTestResult({
+        success: false,
+        message: "Harap masukkan Token Bot Telegram dan Chat ID terlebih dahulu.",
+      });
+      return;
+    }
+    setTgTesting(true);
+    setTgTestResult(null);
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${settings.telegramBotToken.trim()}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: settings.telegramChatId.trim(),
+          text: `🚀 <b>[ISPSYNC Ledger] Uji Coba Gateway Telegram</b>\n\nKoneksi Telegram Bot berhasil terhubung ke server ISPSYNC.\n\n📅 <b>Waktu:</b> ${new Date().toLocaleString("id-ID")}\n🏢 <b>Tenant:</b> ${settings.brandName || "ISPSYNC Enterprise"}\n🛡️ <b>Status:</b> Operasional (Active)`,
+          parse_mode: "HTML",
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setTgTestResult({
+          success: true,
+          message: `Pesan uji coba berhasil dikirim ke Chat ID: ${settings.telegramChatId} (Pesan ID: ${data.result?.message_id || "OK"}).`,
+        });
+      } else {
+        setTgTestResult({
+          success: false,
+          message: `Gagal mengirim ke Telegram API: ${data.description || "Periksa token bot dan chat ID"}.`,
+        });
+      }
+    } catch (err: any) {
+      setTgTestResult({
+        success: false,
+        message: `Kesalahan jaringan: ${err.message || "Gagal menghubungi api.telegram.org"}`,
+      });
+    } finally {
+      setTgTesting(false);
+    }
+  };
+
   const handleTestIPAM = async () => {
     setIpamTesting(true);
     setIpamTestResult(null);
@@ -596,6 +652,9 @@ export default function AdminSettingsPage() {
           tax_mode: settings.taxMode,
           tax_rate_ppn: settings.taxRatePPN,
           npwp: settings.npwp,
+          telegram_bot_token: settings.telegramBotToken,
+          telegram_chat_id: settings.telegramChatId,
+          google_maps_api_key: securitySettings.google_maps_api_key,
         })
         .catch((err) => {
           console.warn("Direct settingsApi update failed:", err);
@@ -754,7 +813,7 @@ export default function AdminSettingsPage() {
           { id: "payment", label: "Payment Gateway", icon: CreditCard },
           { id: "domain", label: "Domain & Sub-Brand WiFi", icon: Globe },
           { id: "fibergrid", label: "Integrasi FiberGrid & GIS", icon: Radio },
-          { id: "notification", label: "WhatsApp & Email", icon: MessageSquare },
+          { id: "notification", label: "WhatsApp & Telegram Gateway", icon: MessageSquare },
           { id: "security", label: "Keamanan & Jaringan", icon: ShieldCheck },
         ].map((tab) => {
           const Icon = tab.icon;
@@ -3238,6 +3297,118 @@ export default function AdminSettingsPage() {
               )}
             </div>
 
+            {/* Telegram Bot Alert Gateway */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200/80">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-600 flex items-center justify-center shrink-0">
+                    <Send className="w-4 h-4 text-sky-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-black text-slate-900">Telegram Bot Gateway &amp; Notifikasi NOC</h3>
+                    <p className="text-[11px] text-slate-500">Kirim notifikasi registrasi, ODP penuh, reminder tagihan, dan alert gangguan ke grup NOC Telegram</p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
+                  TELEGRAM BOT API
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
+                    <span>Token Bot Telegram (HTTP API Token)</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowTgToken(!showTgToken)}
+                      className="text-[10px] text-cyan-600 hover:text-cyan-700 font-semibold cursor-pointer"
+                    >
+                      {showTgToken ? "Sembunyikan" : "Tampilkan"}
+                    </button>
+                  </label>
+                  <div className="relative">
+                    <Key className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type={showTgToken ? "text" : "password"}
+                      value={settings.telegramBotToken}
+                      onChange={(e) => setSettings({ ...settings, telegramBotToken: e.target.value })}
+                      placeholder="Contoh: 7123456789:AAHk..."
+                      className="w-full pl-8 pr-3 py-1.5 text-xs font-mono border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-500 mt-1 block">
+                    Dapatkan token gratis melalui akun resmi <strong>@BotFather</strong> di Telegram (perintah <code>/newbot</code>).
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Target Chat ID / Grup ID NOC
+                  </label>
+                  <div className="relative">
+                    <MessageSquare className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      value={settings.telegramChatId}
+                      onChange={(e) => setSettings({ ...settings, telegramChatId: e.target.value })}
+                      placeholder="Contoh: -1001234567890 (Grup NOC) atau 12345678 (Akun Pribadi)"
+                      className="w-full pl-8 pr-3 py-1.5 text-xs font-mono border border-slate-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500"
+                    />
+                  </div>
+                  <span className="text-[10px] text-slate-500 mt-1 block">
+                    Tambahkan bot ke grup lalu gunakan bot <strong>@RawDataBot</strong> atau <strong>@userinfobot</strong> untuk mengetahui Chat ID.
+                  </span>
+                </div>
+              </div>
+
+              {/* Uji Coba Telegram Gateway */}
+              <div className="pt-2 border-t border-slate-200/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <p className="text-[11px] text-slate-600">
+                  Kirim pesan uji coba untuk memverifikasi apakah bot Telegram dapat mengirim pesan ke Chat ID yang ditentukan.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleTestTelegram}
+                  disabled={tgTesting || !settings.telegramBotToken || !settings.telegramChatId}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-blue-600 disabled:from-slate-400 disabled:to-slate-500 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed shrink-0"
+                >
+                  {tgTesting ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Mengirim ke Telegram...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Kirim Pesan Uji Coba Telegram</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {tgTestResult && (
+                <div
+                  className={`p-3 rounded-xl text-xs flex items-start gap-2.5 border ${
+                    tgTestResult.success
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                      : "bg-rose-50 border-rose-200 text-rose-900"
+                  }`}
+                >
+                  {tgTestResult.success ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  )}
+                  <div className="space-y-0.5">
+                    <p className="font-bold">
+                      {tgTestResult.success ? "Uji Coba Telegram Berhasil" : "Uji Coba Telegram Gagal"}
+                    </p>
+                    <p className="text-[11px] leading-relaxed opacity-90">{tgTestResult.message}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* SMTP Mailer */}
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
               <h3 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
@@ -4256,6 +4427,40 @@ add dst-host=tripay.co.id action=allow comment="Tripay Payment Gateway"`}
                     <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
+              </div>
+
+              {/* Google Maps API Key for GIS & FiberGrid */}
+              <div className="md:col-span-2 pt-4 border-t border-slate-200/80">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-cyan-600" />
+                    <span>Google Maps Platform API Key (Peta Topologi GIS &amp; FiberGrid)</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowMapsKey(!showMapsKey)}
+                    className="text-[10px] text-cyan-600 hover:text-cyan-700 font-semibold cursor-pointer"
+                  >
+                    {showMapsKey ? "Sembunyikan" : "Tampilkan"}
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showMapsKey ? "text" : "password"}
+                    value={securitySettings.google_maps_api_key ?? ""}
+                    onChange={(e) =>
+                      setSecuritySettings({
+                        ...securitySettings,
+                        google_maps_api_key: e.target.value,
+                      })
+                    }
+                    placeholder="Contoh: AIzaSy..."
+                    className="w-full px-3.5 py-2.5 text-xs font-mono rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition"
+                  />
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Kunci API ini disinkronkan langsung ke modul GIS &amp; FiberGrid untuk peta satelit/hybrid, auto-routing jalan raya, dan pencarian koordinat pelanggan.
+                </p>
               </div>
             </div>
 
