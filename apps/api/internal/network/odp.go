@@ -94,9 +94,12 @@ func WithTenantSlug(ctx context.Context, slug string) context.Context {
 func (r *Repository) fetchFromNexus(ctx context.Context) ([]ODPNode, bool) {
 	baseURL := os.Getenv("NEXUS_API_URL")
 	if baseURL == "" {
-		baseURL = "http://172.18.0.1:8081"
+		baseURL = os.Getenv("ISP_BASE_URL")
 	}
-	req, err := http.NewRequestWithContext(ctx, "GET", baseURL+"/api/v1/odps", nil)
+	if baseURL == "" {
+		baseURL = "http://nexus:8081"
+	}
+	req, err := http.NewRequestWithContext(ctx, "GET", strings.TrimRight(baseURL, "/")+"/api/v1/odps", nil)
 	if err != nil {
 		return nil, false
 	}
@@ -108,8 +111,9 @@ func (r *Repository) fetchFromNexus(ctx context.Context) ([]ODPNode, bool) {
 	host := fmt.Sprintf("nexus.%s.ispsync.id", tenantSlug)
 	req.Host = host
 	req.Header.Set("Host", host)
+	req.Header.Set("X-Tenant-Slug", tenantSlug)
 
-	client := &http.Client{Timeout: 3 * time.Second}
+	client := &http.Client{Timeout: 5 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != http.StatusOK {
 		return nil, false
@@ -125,12 +129,25 @@ func (r *Repository) fetchFromNexus(ctx context.Context) ([]ODPNode, bool) {
 	for _, it := range rawItems {
 		clusterArea := "Lokal"
 		providerName := "Internal ISP"
-		if strings.HasPrefix(it.Code, "ODP-HRU") || strings.HasPrefix(it.Code, "ODP-PYK") {
-			clusterArea = "Cluster Harau / Payakumbuh"
-		} else if strings.HasPrefix(it.Code, "ODP-PDG") {
+		upperCode := strings.ToUpper(it.Code)
+		if strings.HasPrefix(upperCode, "ODP-HRU") || strings.HasPrefix(upperCode, "OPD-HRU") || strings.HasPrefix(upperCode, "ODP-HR") {
+			clusterArea = "Cluster Harau (FiberGrid In-House)"
+			providerName = "GOGIGA In-House FO"
+		} else if strings.HasPrefix(upperCode, "ODP-PYK") {
+			clusterArea = "Cluster Payakumbuh"
+			providerName = "Mitra Rekanan Payakumbuh"
+		} else if strings.HasPrefix(upperCode, "ODP-BIO") {
+			clusterArea = "Cluster Biaro (Golden Net)"
+			providerName = "Mitra Golden Net Biaro"
+		} else if strings.HasPrefix(upperCode, "ODP-SGG") {
+			clusterArea = "Cluster Suliki Guguk"
+			providerName = "Mitra Rekanan 50 Kota"
+		} else if strings.HasPrefix(upperCode, "ODP-PDG") {
 			clusterArea = "Cluster Padang"
-		} else if strings.HasPrefix(it.Code, "ODP-BKT") {
+			providerName = "Mitra Rekanan Padang"
+		} else if strings.HasPrefix(upperCode, "ODP-BKT") {
 			clusterArea = "Cluster Bukittinggi"
+			providerName = "Mitra Rekanan Bukittinggi"
 		}
 		if it.IsSharedJartaplok {
 			clusterArea = "Jartaplok " + strings.ToUpper(it.OwnerTenantSlug)
@@ -285,6 +302,19 @@ func (r *Repository) ListODPNodes(ctx context.Context, cluster string) ([]ODPNod
 	// 1. First attempt to fetch from EngineNexus (which aggregates own ODPs + Jartaplok partner ODPs)
 	nexusNodes, ok := r.fetchFromNexus(ctx)
 	if ok {
+		// Also merge any FiberGrid in-house nodes if not present in Nexus
+		if fttxNodes, fttxOk := r.fetchFromFiberGrid(ctx); fttxOk {
+			existingCodes := make(map[string]bool)
+			for _, n := range nexusNodes {
+				existingCodes[strings.ToUpper(strings.TrimSpace(n.Code))] = true
+			}
+			for _, fn := range fttxNodes {
+				if !existingCodes[strings.ToUpper(strings.TrimSpace(fn.Code))] {
+					nexusNodes = append(nexusNodes, fn)
+				}
+			}
+		}
+
 		if cluster != "" && cluster != "all" {
 			filtered := make([]ODPNode, 0)
 			for _, n := range nexusNodes {

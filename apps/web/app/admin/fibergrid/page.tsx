@@ -361,12 +361,19 @@ export default function AdminFibergridPage() {
   };
 
   const getClusterName = (odp: ODPNode) => {
-    if (odp.cluster && odp.cluster !== "Lokal") return odp.cluster;
-    if (odp.cluster_area && odp.cluster_area !== "Lokal") return odp.cluster_area;
+    if (odp.cluster_area && odp.cluster_area !== "Lokal" && odp.cluster_area !== "Cluster Utama") {
+      return odp.cluster_area;
+    }
+    if (odp.cluster && odp.cluster !== "Lokal" && odp.cluster !== "Cluster Utama") {
+      return odp.cluster;
+    }
     const code = (odp.code || "").toUpperCase();
-    if (code.includes("HRU") || code.includes("PYK")) return "Harau / Payakumbuh";
-    if (code.includes("PDG")) return "Padang";
-    if (code.includes("BKT")) return "Bukittinggi";
+    if (code.includes("HRU")) return "Cluster Harau (FiberGrid In-House)";
+    if (code.includes("PYK")) return "Cluster Payakumbuh";
+    if (code.includes("BIO")) return "Cluster Biaro (Golden Net)";
+    if (code.includes("SGG")) return "Cluster Suliki Guguk";
+    if (code.includes("PDG")) return "Cluster Padang";
+    if (code.includes("BKT")) return "Cluster Bukittinggi";
     return "Cluster Umum";
   };
 
