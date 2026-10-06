@@ -1100,30 +1100,57 @@ func (s *PostgresStorage) ListSubscribers(ctx context.Context, tenantID string, 
 	`, tenantID)
 
 	query := `
-		SELECT id, tenant_id, subscriber_no, full_name, 
-		       COALESCE(identity_number, ''), 
-		       COALESCE(email, ''), 
-		       COALESCE(phone, ''), 
-		       COALESCE(address, ''),
-		       COALESCE(latitude, 0), 
-		       COALESCE(longitude, 0), 
-		       COALESCE(distance_to_odp, 0), 
-		       COALESCE(selected_plan_id, ''), 
-		       COALESCE(selected_plan_name, ''),
-		       COALESCE(nearest_odp_id, ''), 
-		       COALESCE(nearest_odp_code, ''), 
-		       olt_id, pon_port, onu_id, serial_number, mac_address,
-		       rx_optical_power, pppoe_username, pppoe_password, vlan_id, ip_address, 
-		       COALESCE(status, 'REGISTERED'),
-		       COALESCE(billing_type, 'PREPAID'), activated_at, suspended_at, created_at, updated_at
-		FROM subscribers WHERE tenant_id = $1
+		SELECT sub.id, sub.tenant_id, sub.subscriber_no, sub.full_name, 
+		       COALESCE(NULLIF(reg.id_card_number, ''), sub.identity_number, ''), 
+		       COALESCE(sub.email, ''), 
+		       COALESCE(sub.phone, ''), 
+		       COALESCE(sub.address, ''),
+		       COALESCE(sub.latitude, 0), 
+		       COALESCE(sub.longitude, 0), 
+		       COALESCE(sub.distance_to_odp, 0), 
+		       COALESCE(sub.selected_plan_id, ''), 
+		       COALESCE(sub.selected_plan_name, ''),
+		       COALESCE(sub.nearest_odp_id, ''), 
+		       COALESCE(sub.nearest_odp_code, ''), 
+		       sub.olt_id, sub.pon_port, sub.onu_id, 
+		       COALESCE(NULLIF(wo.serial_number, ''), sub.serial_number), 
+		       COALESCE(NULLIF(wo.mac_address, ''), sub.mac_address),
+		       COALESCE(wo.rx_power_dbm, sub.rx_optical_power), 
+		       sub.pppoe_username, sub.pppoe_password, sub.vlan_id, sub.ip_address, 
+		       COALESCE(sub.status, 'REGISTERED'),
+		       COALESCE(sub.billing_type, 'PREPAID'), 
+		       sub.activated_at, sub.suspended_at, sub.created_at, sub.updated_at,
+		       COALESCE(reg.ktp_photo_url, ''),
+		       COALESCE(reg.contract_signature_url, ''),
+		       reg.contract_signed_at,
+		       COALESCE(wo.id, ''),
+		       COALESCE(wo.order_no, ''),
+		       COALESCE(wo.status, ''),
+		       COALESCE(wo.technician_name, ''),
+		       COALESCE(reg.monthly_price, 0),
+		       COALESCE(reg.otc_fee, 0),
+		       COALESCE(reg.tax_id, ''),
+		       COALESCE(reg.partner_code, ''),
+		       COALESCE(reg.custom_notes, '')
+		FROM subscribers sub
+		LEFT JOIN (
+		    SELECT DISTINCT ON (COALESCE(NULLIF(gigabill_customer_id, ''), phone)) * 
+		    FROM public.registrations 
+		    ORDER BY COALESCE(NULLIF(gigabill_customer_id, ''), phone), created_at DESC
+		) reg ON sub.id = reg.gigabill_customer_id OR sub.phone = reg.phone
+		LEFT JOIN (
+		    SELECT DISTINCT ON (subscriber_no) * 
+		    FROM ispsync.work_orders 
+		    ORDER BY subscriber_no, created_at DESC
+		) wo ON sub.id = wo.subscriber_id OR sub.subscriber_no = wo.subscriber_no
+		WHERE sub.tenant_id = $1
 	`
 	args := []interface{}{tenantID}
 	if status != "" {
-		query += " AND status = $2"
+		query += " AND sub.status = $2"
 		args = append(args, status)
 	}
-	query += " ORDER BY created_at DESC"
+	query += " ORDER BY sub.created_at DESC"
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -1140,6 +1167,9 @@ func (s *PostgresStorage) ListSubscribers(ctx context.Context, tenantID string, 
 			&sub.NearestODPID, &sub.NearestODPCode, &sub.OLTID, &sub.PONPort, &sub.ONUID, &sub.SerialNumber, &sub.MACAddress,
 			&sub.RxOpticalPower, &sub.PPPoEUsername, &sub.PPPoEPassword, &sub.VLANID, &sub.IPAddress, &sub.Status,
 			&sub.BillingType, &sub.ActivatedAt, &sub.SuspendedAt, &sub.CreatedAt, &sub.UpdatedAt,
+			&sub.KTPPhotoURL, &sub.ContractSignatureURL, &sub.ContractSignedAt,
+			&sub.WorkOrderID, &sub.WorkOrderNo, &sub.WorkOrderStatus, &sub.TechnicianName,
+			&sub.MonthlyPrice, &sub.OTCFee, &sub.TaxID, &sub.PartnerCode, &sub.CustomNotes,
 		); err != nil {
 			return nil, err
 		}
@@ -1150,23 +1180,50 @@ func (s *PostgresStorage) ListSubscribers(ctx context.Context, tenantID string, 
 
 func (s *PostgresStorage) GetSubscriberByID(ctx context.Context, tenantID, id string) (*domain.Subscriber, error) {
 	row := s.db.QueryRowContext(ctx, `
-		SELECT id, tenant_id, subscriber_no, full_name, 
-		       COALESCE(identity_number, ''), 
-		       COALESCE(email, ''), 
-		       COALESCE(phone, ''), 
-		       COALESCE(address, ''),
-		       COALESCE(latitude, 0), 
-		       COALESCE(longitude, 0), 
-		       COALESCE(distance_to_odp, 0), 
-		       COALESCE(selected_plan_id, ''), 
-		       COALESCE(selected_plan_name, ''),
-		       COALESCE(nearest_odp_id, ''), 
-		       COALESCE(nearest_odp_code, ''), 
-		       olt_id, pon_port, onu_id, serial_number, mac_address,
-		       rx_optical_power, pppoe_username, pppoe_password, vlan_id, ip_address, 
-		       COALESCE(status, 'REGISTERED'),
-		       COALESCE(billing_type, 'PREPAID'), activated_at, suspended_at, created_at, updated_at
-		FROM subscribers WHERE tenant_id = $1 AND (id = $2 OR subscriber_no = $2)
+		SELECT sub.id, sub.tenant_id, sub.subscriber_no, sub.full_name, 
+		       COALESCE(NULLIF(reg.id_card_number, ''), sub.identity_number, ''), 
+		       COALESCE(sub.email, ''), 
+		       COALESCE(sub.phone, ''), 
+		       COALESCE(sub.address, ''),
+		       COALESCE(sub.latitude, 0), 
+		       COALESCE(sub.longitude, 0), 
+		       COALESCE(sub.distance_to_odp, 0), 
+		       COALESCE(sub.selected_plan_id, ''), 
+		       COALESCE(sub.selected_plan_name, ''),
+		       COALESCE(sub.nearest_odp_id, ''), 
+		       COALESCE(sub.nearest_odp_code, ''), 
+		       sub.olt_id, sub.pon_port, sub.onu_id, 
+		       COALESCE(NULLIF(wo.serial_number, ''), sub.serial_number), 
+		       COALESCE(NULLIF(wo.mac_address, ''), sub.mac_address),
+		       COALESCE(wo.rx_power_dbm, sub.rx_optical_power), 
+		       sub.pppoe_username, sub.pppoe_password, sub.vlan_id, sub.ip_address, 
+		       COALESCE(sub.status, 'REGISTERED'),
+		       COALESCE(sub.billing_type, 'PREPAID'), 
+		       sub.activated_at, sub.suspended_at, sub.created_at, sub.updated_at,
+		       COALESCE(reg.ktp_photo_url, ''),
+		       COALESCE(reg.contract_signature_url, ''),
+		       reg.contract_signed_at,
+		       COALESCE(wo.id, ''),
+		       COALESCE(wo.order_no, ''),
+		       COALESCE(wo.status, ''),
+		       COALESCE(wo.technician_name, ''),
+		       COALESCE(reg.monthly_price, 0),
+		       COALESCE(reg.otc_fee, 0),
+		       COALESCE(reg.tax_id, ''),
+		       COALESCE(reg.partner_code, ''),
+		       COALESCE(reg.custom_notes, '')
+		FROM subscribers sub
+		LEFT JOIN (
+		    SELECT DISTINCT ON (COALESCE(NULLIF(gigabill_customer_id, ''), phone)) * 
+		    FROM public.registrations 
+		    ORDER BY COALESCE(NULLIF(gigabill_customer_id, ''), phone), created_at DESC
+		) reg ON sub.id = reg.gigabill_customer_id OR sub.phone = reg.phone
+		LEFT JOIN (
+		    SELECT DISTINCT ON (subscriber_no) * 
+		    FROM ispsync.work_orders 
+		    ORDER BY subscriber_no, created_at DESC
+		) wo ON sub.id = wo.subscriber_id OR sub.subscriber_no = wo.subscriber_no
+		WHERE sub.tenant_id = $1 AND (sub.id = $2 OR sub.subscriber_no = $2)
 	`, tenantID, id)
 
 	var sub domain.Subscriber
@@ -1176,6 +1233,9 @@ func (s *PostgresStorage) GetSubscriberByID(ctx context.Context, tenantID, id st
 		&sub.NearestODPID, &sub.NearestODPCode, &sub.OLTID, &sub.PONPort, &sub.ONUID, &sub.SerialNumber, &sub.MACAddress,
 		&sub.RxOpticalPower, &sub.PPPoEUsername, &sub.PPPoEPassword, &sub.VLANID, &sub.IPAddress, &sub.Status,
 		&sub.BillingType, &sub.ActivatedAt, &sub.SuspendedAt, &sub.CreatedAt, &sub.UpdatedAt,
+		&sub.KTPPhotoURL, &sub.ContractSignatureURL, &sub.ContractSignedAt,
+		&sub.WorkOrderID, &sub.WorkOrderNo, &sub.WorkOrderStatus, &sub.TechnicianName,
+		&sub.MonthlyPrice, &sub.OTCFee, &sub.TaxID, &sub.PartnerCode, &sub.CustomNotes,
 	); err != nil {
 		return nil, err
 	}
@@ -1183,26 +1243,7 @@ func (s *PostgresStorage) GetSubscriberByID(ctx context.Context, tenantID, id st
 }
 
 func (s *PostgresStorage) GetSubscriberByNo(ctx context.Context, tenantID, subNo string) (*domain.Subscriber, error) {
-	row := s.db.QueryRowContext(ctx, `
-		SELECT id, tenant_id, subscriber_no, full_name, identity_number, email, phone, address,
-		       latitude, longitude, distance_to_odp, selected_plan_id, selected_plan_name,
-		       nearest_odp_id, nearest_odp_code, olt_id, pon_port, onu_id, serial_number, mac_address,
-		       rx_optical_power, pppoe_username, pppoe_password, vlan_id, ip_address, status,
-		       COALESCE(billing_type, 'PREPAID'), activated_at, suspended_at, created_at, updated_at
-		FROM subscribers WHERE tenant_id = $1 AND subscriber_no = $2
-	`, tenantID, subNo)
-
-	var sub domain.Subscriber
-	if err := row.Scan(
-		&sub.ID, &sub.TenantID, &sub.SubscriberNo, &sub.FullName, &sub.IdentityNumber, &sub.Email, &sub.Phone, &sub.Address,
-		&sub.Latitude, &sub.Longitude, &sub.DistanceToODP, &sub.SelectedPlanID, &sub.SelectedPlanName,
-		&sub.NearestODPID, &sub.NearestODPCode, &sub.OLTID, &sub.PONPort, &sub.ONUID, &sub.SerialNumber, &sub.MACAddress,
-		&sub.RxOpticalPower, &sub.PPPoEUsername, &sub.PPPoEPassword, &sub.VLANID, &sub.IPAddress, &sub.Status,
-		&sub.BillingType, &sub.ActivatedAt, &sub.SuspendedAt, &sub.CreatedAt, &sub.UpdatedAt,
-	); err != nil {
-		return nil, err
-	}
-	return &sub, nil
+	return s.GetSubscriberByID(ctx, tenantID, subNo)
 }
 
 func (s *PostgresStorage) CreateSubscriber(ctx context.Context, sub *domain.Subscriber) error {
@@ -1376,6 +1417,13 @@ func (s *PostgresStorage) ListWorkOrders(ctx context.Context, tenantID string, s
 		); err != nil {
 			return nil, err
 		}
+		wo.Registration = map[string]interface{}{
+			"registration_no":    wo.SubscriberNo,
+			"full_name":          wo.CustomerName,
+			"phone":              wo.CustomerPhone,
+			"selected_plan_name": wo.PlanName,
+			"address":            wo.CustomerAddress,
+		}
 		list = append(list, wo)
 	}
 	return list, nil
@@ -1386,7 +1434,7 @@ func (s *PostgresStorage) GetWorkOrderByID(ctx context.Context, tenantID, id str
 		SELECT id, tenant_id, order_no, subscriber_id, subscriber_no, customer_name, customer_phone, customer_address,
 		       customer_lat, customer_lng, odp_code, plan_name, order_type, technician_id, technician_name, status,
 		       rx_power_dbm, serial_number, mac_address, notes, bast_completed_at, created_at, updated_at
-		FROM work_orders WHERE tenant_id = $1 AND id = $2
+		FROM work_orders WHERE tenant_id = $1 AND (id = $2 OR order_no = $2)
 	`, tenantID, id)
 
 	var wo domain.WorkOrder
@@ -1397,6 +1445,81 @@ func (s *PostgresStorage) GetWorkOrderByID(ctx context.Context, tenantID, id str
 	); err != nil {
 		return nil, err
 	}
+
+	wo.Registration = map[string]interface{}{
+		"registration_no":    wo.SubscriberNo,
+		"full_name":          wo.CustomerName,
+		"phone":              wo.CustomerPhone,
+		"selected_plan_name": wo.PlanName,
+		"address":            wo.CustomerAddress,
+	}
+
+	var housePhotoReg, ktpReg string
+	_ = s.db.QueryRowContext(ctx, `
+		SELECT COALESCE(house_photo_url, ''), COALESCE(ktp_photo_url, '')
+		FROM public.registrations
+		WHERE gigabill_customer_id = $1 OR phone = $2 OR phone = $3
+		ORDER BY created_at DESC LIMIT 1
+	`, wo.SubscriberID, wo.CustomerPhone, strings.TrimPrefix(wo.CustomerPhone, "+62")).Scan(&housePhotoReg, &ktpReg)
+	if housePhotoReg != "" {
+		wo.Registration["house_photo_url"] = housePhotoReg
+	}
+	if ktpReg != "" {
+		wo.Registration["ktp_photo_url"] = ktpReg
+	}
+
+	var (
+		optPower, spdDown, spdUp float64
+		ontSN, ontMAC, custSig, proofPhoto, housePhoto, bastNotes string
+		dropcoreLen int
+		bCreatedAt time.Time
+	)
+	errBast := s.db.QueryRowContext(ctx, `
+		SELECT optical_power_dbm, ont_serial_number, ont_mac_address, dropcore_length_meters,
+		       COALESCE(customer_signature_url, ''), COALESCE(proof_photo_url, ''), COALESCE(house_photo_url, ''),
+		       COALESCE(speedtest_down_mbps, 0), COALESCE(speedtest_up_mbps, 0), COALESCE(notes, ''), created_at
+		FROM public.bast_reports
+		WHERE work_order_id = $1 OR work_order_id = $2
+		ORDER BY created_at DESC LIMIT 1
+	`, wo.ID, wo.OrderNo).Scan(
+		&optPower, &ontSN, &ontMAC, &dropcoreLen,
+		&custSig, &proofPhoto, &housePhoto,
+		&spdDown, &spdUp, &bastNotes, &bCreatedAt,
+	)
+
+	if errBast == nil {
+		wo.BAST = map[string]interface{}{
+			"optical_power_dbm":      optPower,
+			"ont_serial_number":      ontSN,
+			"ont_mac_address":        ontMAC,
+			"dropcore_length_meters": dropcoreLen,
+			"customer_signature_url": custSig,
+			"proof_photo_url":        proofPhoto,
+			"house_photo_url":        housePhoto,
+			"speedtest_down_mbps":    spdDown,
+			"speedtest_up_mbps":      spdUp,
+			"notes":                  bastNotes,
+			"created_at":             bCreatedAt,
+		}
+	} else if wo.Status == "COMPLETED" || wo.BASTCompletedAt != nil {
+		rx := 0.0
+		if wo.RxPowerDBM != nil {
+			rx = *wo.RxPowerDBM
+		}
+		bTime := wo.UpdatedAt
+		if wo.BASTCompletedAt != nil {
+			bTime = *wo.BASTCompletedAt
+		}
+		wo.BAST = map[string]interface{}{
+			"optical_power_dbm":      rx,
+			"ont_serial_number":      wo.SerialNumber,
+			"ont_mac_address":        wo.MACAddress,
+			"dropcore_length_meters": 0,
+			"notes":                  wo.Notes,
+			"created_at":             bTime,
+		}
+	}
+
 	return &wo, nil
 }
 

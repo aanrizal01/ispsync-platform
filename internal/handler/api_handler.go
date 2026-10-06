@@ -1632,22 +1632,45 @@ func (h *APIHandler) AdminListRegistrations(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	type regItem struct {
-		ID                  string    `json:"id"`
-		RegistrationNo      string    `json:"registration_no"`
-		FullName            string    `json:"full_name"`
-		Phone               string    `json:"phone"`
-		Email               string    `json:"email"`
-		Address             string    `json:"address"`
-		Status              string    `json:"status"`
-		BillingType         string    `json:"billing_type"`
-		SelectedPlanName    string    `json:"selected_plan_name"`
-		NearestODPCode      string    `json:"nearest_odp_code"`
-		DistanceToODPMeters float64   `json:"distance_to_odp_meters"`
-		PPPoEUsername       string    `json:"pppoe_username,omitempty"`
-		PPPoEPassword       string    `json:"pppoe_password,omitempty"`
-		CreatedAt           time.Time `json:"created_at"`
+		ID                   string     `json:"id"`
+		RegistrationNo       string     `json:"registration_no"`
+		FullName             string     `json:"full_name"`
+		IDCardNumber         string     `json:"id_card_number,omitempty"`
+		Phone                string     `json:"phone"`
+		Email                string     `json:"email"`
+		Address              string     `json:"address"`
+		Latitude             float64    `json:"latitude"`
+		Longitude            float64    `json:"longitude"`
+		Status               string     `json:"status"`
+		BillingType          string     `json:"billing_type"`
+		SelectedPlanID       string     `json:"selected_plan_id,omitempty"`
+		SelectedPlanName     string     `json:"selected_plan_name"`
+		NearestODPID         string     `json:"nearest_odp_id,omitempty"`
+		NearestODPCode       string     `json:"nearest_odp_code"`
+		DistanceToODPMeters  float64    `json:"distance_to_odp_meters"`
+		OLTID                string     `json:"olt_id,omitempty"`
+		PONPort              string     `json:"pon_port,omitempty"`
+		ONUID                int        `json:"onu_id,omitempty"`
+		SerialNumber         string     `json:"serial_number,omitempty"`
+		MACAddress           string     `json:"mac_address,omitempty"`
+		RxOpticalPower       float64    `json:"rx_optical_power,omitempty"`
+		PPPoEUsername        string     `json:"pppoe_username,omitempty"`
+		PPPoEPassword        string     `json:"pppoe_password,omitempty"`
+		KTPPhotoURL          string     `json:"ktp_photo_url,omitempty"`
+		ContractSignatureURL string     `json:"contract_signature_url,omitempty"`
+		ContractSignedAt     *time.Time `json:"contract_signed_at,omitempty"`
+		WorkOrderID          string     `json:"work_order_id,omitempty"`
+		WorkOrderNo          string     `json:"work_order_no,omitempty"`
+		WorkOrderStatus      string     `json:"work_order_status,omitempty"`
+		TechnicianName       string     `json:"technician_name,omitempty"`
+		MonthlyPrice         float64    `json:"monthly_price,omitempty"`
+		OTCFee               float64    `json:"otc_fee,omitempty"`
+		TaxID                string     `json:"tax_id,omitempty"`
+		PartnerCode          string     `json:"partner_code,omitempty"`
+		CustomNotes          string     `json:"custom_notes,omitempty"`
+		CreatedAt            time.Time  `json:"created_at"`
 	}
-	out := make([]regItem, 0)
+	out := make([]regItem, 0, len(subs))
 	for _, s := range subs {
 		pU := ""
 		pP := ""
@@ -1661,21 +1684,74 @@ func (h *APIHandler) AdminListRegistrations(w http.ResponseWriter, r *http.Reque
 		if bt == "" {
 			bt = "PREPAID"
 		}
+		planID := s.SelectedPlanID
+		odpID := s.NearestODPID
+		oltID := ""
+		if s.OLTID != nil {
+			oltID = *s.OLTID
+		}
+		ponPort := ""
+		if s.PONPort != nil {
+			ponPort = *s.PONPort
+		}
+		onuID := 0
+		if s.ONUID != nil {
+			onuID = *s.ONUID
+		}
+		sn := ""
+		if s.SerialNumber != nil {
+			sn = *s.SerialNumber
+		}
+		mac := ""
+		if s.MACAddress != nil {
+			mac = *s.MACAddress
+		}
+		rx := 0.0
+		if s.RxOpticalPower != nil {
+			rx = *s.RxOpticalPower
+		}
+		idCard := s.IDCardNumber
+		if idCard == "" {
+			idCard = s.IdentityNumber
+		}
 		out = append(out, regItem{
-			ID:                  s.ID,
-			RegistrationNo:      s.SubscriberNo,
-			FullName:            s.FullName,
-			Phone:               s.Phone,
-			Email:               s.Email,
-			Address:             s.Address,
-			Status:              s.Status,
-			BillingType:         bt,
-			SelectedPlanName:    s.SelectedPlanName,
-			NearestODPCode:      s.NearestODPCode,
-			DistanceToODPMeters: s.DistanceToODP,
-			PPPoEUsername:       pU,
-			PPPoEPassword:       pP,
-			CreatedAt:           s.CreatedAt,
+			ID:                   s.ID,
+			RegistrationNo:       s.SubscriberNo,
+			FullName:             s.FullName,
+			IDCardNumber:         idCard,
+			Phone:                s.Phone,
+			Email:                s.Email,
+			Address:              s.Address,
+			Latitude:             s.Latitude,
+			Longitude:            s.Longitude,
+			Status:               s.Status,
+			BillingType:          bt,
+			SelectedPlanID:       planID,
+			SelectedPlanName:     s.SelectedPlanName,
+			NearestODPID:         odpID,
+			NearestODPCode:       s.NearestODPCode,
+			DistanceToODPMeters:  s.DistanceToODP,
+			OLTID:                oltID,
+			PONPort:              ponPort,
+			ONUID:                onuID,
+			SerialNumber:         sn,
+			MACAddress:           mac,
+			RxOpticalPower:       rx,
+			PPPoEUsername:        pU,
+			PPPoEPassword:        pP,
+			KTPPhotoURL:          s.KTPPhotoURL,
+			ContractSignatureURL: s.ContractSignatureURL,
+			ContractSignedAt:     s.ContractSignedAt,
+			WorkOrderID:          s.WorkOrderID,
+			WorkOrderNo:          s.WorkOrderNo,
+			WorkOrderStatus:      s.WorkOrderStatus,
+			TechnicianName:       s.TechnicianName,
+			MonthlyPrice:         s.MonthlyPrice,
+			OTCFee:               s.OTCFee,
+			TaxID:                s.TaxID,
+			PartnerCode:          s.PartnerCode,
+			CustomNotes:          s.CustomNotes,
+			CreatedAt:            s.CreatedAt,
 		})
 	}
 	h.successResponse(w, "Registrations retrieved", out)

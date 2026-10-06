@@ -214,33 +214,50 @@ type Subscriber struct {
 	SuspendedAt      *time.Time `json:"suspended_at,omitempty"`
 	CreatedAt        time.Time  `json:"created_at"`
 	UpdatedAt        time.Time  `json:"updated_at"`
+
+	// Enriched registration documents & BAST info
+	IDCardNumber         string     `json:"id_card_number,omitempty"`
+	KTPPhotoURL          string     `json:"ktp_photo_url,omitempty"`
+	ContractSignatureURL string     `json:"contract_signature_url,omitempty"`
+	ContractSignedAt     *time.Time `json:"contract_signed_at,omitempty"`
+	WorkOrderID          string     `json:"work_order_id,omitempty"`
+	WorkOrderNo          string     `json:"work_order_no,omitempty"`
+	WorkOrderStatus      string     `json:"work_order_status,omitempty"`
+	TechnicianName       string     `json:"technician_name,omitempty"`
+	MonthlyPrice         float64    `json:"monthly_price,omitempty"`
+	OTCFee               float64    `json:"otc_fee,omitempty"`
+	TaxID                string     `json:"tax_id,omitempty"`
+	PartnerCode          string     `json:"partner_code,omitempty"`
+	CustomNotes          string     `json:"custom_notes,omitempty"`
 }
 
 // WorkOrder surat perintah kerja teknisi lapangan
 type WorkOrder struct {
-	ID               string     `json:"id"`
-	TenantID         string     `json:"tenant_id"`
-	OrderNo          string     `json:"order_no"` // "SPK-2026-0001"
-	SubscriberID     string     `json:"subscriber_id"`
-	SubscriberNo     string     `json:"subscriber_no"`
-	CustomerName     string     `json:"customer_name"`
-	CustomerPhone    string     `json:"customer_phone"`
-	CustomerAddress  string     `json:"customer_address"`
-	CustomerLat      float64    `json:"customer_lat"`
-	CustomerLng      float64    `json:"customer_lng"`
-	ODPCode          string     `json:"odp_code"`
-	PlanName         string     `json:"plan_name"`
-	OrderType        string     `json:"order_type"` // "SURVEY", "INSTALLATION", "REPAIR"
-	TechnicianID     *string    `json:"technician_id,omitempty"`
-	TechnicianName   string     `json:"technician_name"`
-	Status           string     `json:"status"` // "PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"
-	RxPowerDBM       *float64   `json:"rx_power_dbm,omitempty"`
-	SerialNumber     string     `json:"serial_number,omitempty"`
-	MACAddress       string     `json:"mac_address,omitempty"`
-	Notes            string     `json:"notes"`
-	BASTCompletedAt  *time.Time `json:"bast_completed_at,omitempty"`
-	CreatedAt        time.Time  `json:"created_at"`
-	UpdatedAt        time.Time  `json:"updated_at"`
+	ID               string                 `json:"id"`
+	TenantID         string                 `json:"tenant_id"`
+	OrderNo          string                 `json:"order_no"` // "SPK-2026-0001"
+	SubscriberID     string                 `json:"subscriber_id"`
+	SubscriberNo     string                 `json:"subscriber_no"`
+	CustomerName     string                 `json:"customer_name"`
+	CustomerPhone    string                 `json:"customer_phone"`
+	CustomerAddress  string                 `json:"customer_address"`
+	CustomerLat      float64                `json:"customer_lat"`
+	CustomerLng      float64                `json:"customer_lng"`
+	ODPCode          string                 `json:"odp_code"`
+	PlanName         string                 `json:"plan_name"`
+	OrderType        string                 `json:"order_type"` // "SURVEY", "INSTALLATION", "REPAIR"
+	TechnicianID     *string                `json:"technician_id,omitempty"`
+	TechnicianName   string                 `json:"technician_name"`
+	Status           string                 `json:"status"` // "PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED"
+	RxPowerDBM       *float64               `json:"rx_power_dbm,omitempty"`
+	SerialNumber     string                 `json:"serial_number,omitempty"`
+	MACAddress       string                 `json:"mac_address,omitempty"`
+	Notes            string                 `json:"notes"`
+	BASTCompletedAt  *time.Time             `json:"bast_completed_at,omitempty"`
+	CreatedAt        time.Time              `json:"created_at"`
+	UpdatedAt        time.Time              `json:"updated_at"`
+	Registration     map[string]interface{} `json:"registration,omitempty"`
+	BAST             map[string]interface{} `json:"bast,omitempty"`
 }
 
 // Invoice tagihan siklus bulanan pelanggan
