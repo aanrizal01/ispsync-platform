@@ -55,6 +55,7 @@ export default function AdminNetworkPage() {
   const [error, setError] = useState<string | null>(null);
 
   // ODP Filters & Search
+  const [networkScope, setNetworkScope] = useState<"inhouse" | "all">("inhouse");
   const [clusterFilter, setClusterFilter] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [searchOdp, setSearchOdp] = useState<string>("");
@@ -266,6 +267,41 @@ export default function AdminNetworkPage() {
     }
   };
 
+  // Filter helper: in-house FiberGrid ODPs (excludes shared/rekanan wholesale Jartaplok)
+  const isFibergridInhouse = (odp: ODPNode) => {
+    const cluster = (odp.cluster || odp.cluster_area || "").toLowerCase();
+    const name = (odp.name || "").toLowerCase();
+    const code = (odp.code || "").toUpperCase();
+    if (
+      cluster.includes("jartaplok") ||
+      cluster.includes("golden") ||
+      cluster.includes("biaro") ||
+      cluster.includes("geringging")
+    ) {
+      return false;
+    }
+    if (
+      name.includes("golden net") ||
+      name.includes("biaro") ||
+      name.includes("geringging")
+    ) {
+      return false;
+    }
+    if (code.startsWith("ODP-BIO") || code.startsWith("ODP-SGG")) {
+      return false;
+    }
+    return true;
+  };
+
+  const scopedODPs = odpNodes.filter((odp) => {
+    if (networkScope === "inhouse") {
+      return isFibergridInhouse(odp);
+    }
+    return true;
+  });
+
+  const inhouseCount = odpNodes.filter(isFibergridInhouse).length;
+
   // Dynamically load Leaflet and render map when tab is fttx_map
   useEffect(() => {
     if (networkTab !== "fttx_map") return;
@@ -338,9 +374,10 @@ export default function AdminNetworkPage() {
         polyline.bindPopup(routePopup);
       });
 
-      // Filter ODP nodes based on UI filters
-      const filtered = odpNodes.filter((odp) => {
-        if (clusterFilter !== "ALL" && odp.cluster !== clusterFilter) return false;
+      // Filter ODP nodes based on UI filters and active scope
+      const filtered = scopedODPs.filter((odp) => {
+        const cName = odp.cluster || odp.cluster_area;
+        if (clusterFilter !== "ALL" && cName !== clusterFilter) return false;
         if (statusFilter !== "ALL" && odp.status !== statusFilter) return false;
         if (searchOdp.trim() !== "") {
           const q = searchOdp.toLowerCase();
@@ -488,7 +525,7 @@ export default function AdminNetworkPage() {
         mapInstanceRef.current = null;
       }
     };
-  }, [networkTab, odpNodes, fiberRoutes, clusterFilter, statusFilter, searchOdp]);
+  }, [networkTab, odpNodes, fiberRoutes, clusterFilter, statusFilter, searchOdp, networkScope]);
 
   const focusOnODP = (odp: ODPNode) => {
     if (!mapInstanceRef.current) return;
@@ -537,10 +574,11 @@ export default function AdminNetworkPage() {
     }
   };
 
-  const clusters = Array.from(new Set(odpNodes.map((o) => o.cluster).filter(Boolean)));
+  const clusters = Array.from(new Set(scopedODPs.map((o) => o.cluster || o.cluster_area).filter(Boolean)));
 
-  const filteredODPs = odpNodes.filter((odp) => {
-    if (clusterFilter !== "ALL" && odp.cluster !== clusterFilter) return false;
+  const filteredODPs = scopedODPs.filter((odp) => {
+    const cName = odp.cluster || odp.cluster_area;
+    if (clusterFilter !== "ALL" && cName !== clusterFilter) return false;
     if (statusFilter !== "ALL" && odp.status !== statusFilter) return false;
     if (searchOdp.trim() !== "") {
       const q = searchOdp.toLowerCase();
@@ -551,6 +589,11 @@ export default function AdminNetworkPage() {
     }
     return true;
   });
+
+  const scopedTotalPorts = scopedODPs.reduce((acc, o) => acc + (o.total_ports || 8), 0);
+  const scopedUsedPorts = scopedODPs.reduce((acc, o) => acc + (o.used_ports || 0), 0);
+  const scopedAvailPorts = Math.max(0, scopedTotalPorts - scopedUsedPorts);
+  const scopedTotalFiberKm = fiberRoutes.reduce((acc, r) => acc + (r.length_meters || 0), 0) / 1000;
 
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return "0 MB";
@@ -622,21 +665,21 @@ export default function AdminNetworkPage() {
         </div>
       </div>
 
-      {/* Hub Banner: EngineFibergrid NOC & GIS */}
+      {/* Hub Banner: Engine FiberGrid In-House vs NexusGIS Cross-Carrier */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-blue-950 p-4 rounded-xl border border-slate-800 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
             <Network className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-white">Peta NexusGIS</h3>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                FTTX &amp; NEXUS
+              <h3 className="text-sm font-bold text-white">Jaringan Distribusi FiberGrid (In-House)</h3>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                IN-HOUSE FTTH
               </span>
             </div>
             <p className="text-xs text-slate-400">
-              Topologi kabel FO end-to-end, OLT multi-vendor, ODC, rute tiang, dan agregasi data sebaran ODP mitra Jartaplok.
+              Menampilkan infrastruktur fisik kabel optik, ODP, dan perangkat in-house milik internal. Untuk agregasi seluruh titik ODP mitra Jartaplok (1.351 node), pantau melalui NexusGIS.
             </p>
           </div>
         </div>
@@ -644,7 +687,7 @@ export default function AdminNetworkPage() {
           href="/admin/nexusgis"
           className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-bold rounded-lg transition shrink-0 flex items-center gap-2 text-center justify-center"
         >
-          <span>Buka NexusGIS</span>
+          <span>Buka NexusGIS (Semua Mitra)</span>
           <ExternalLink className="w-3.5 h-3.5" />
         </Link>
       </div>
@@ -657,8 +700,10 @@ export default function AdminNetworkPage() {
               <MapPin className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Total ODP</p>
-              <p className="text-xl font-bold text-slate-900">{fttxStats?.total_odp ?? odpNodes.length} Titik</p>
+              <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
+                {networkScope === "inhouse" ? "ODP In-House" : "Total ODP"}
+              </p>
+              <p className="text-xl font-bold text-slate-900">{scopedODPs.length} Titik</p>
             </div>
           </div>
 
@@ -668,7 +713,7 @@ export default function AdminNetworkPage() {
             </div>
             <div>
               <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Kapasitas Port</p>
-              <p className="text-xl font-bold text-slate-900">{fttxStats?.total_ports ?? 0} Port</p>
+              <p className="text-xl font-bold text-slate-900">{scopedTotalPorts} Port</p>
             </div>
           </div>
 
@@ -679,9 +724,9 @@ export default function AdminNetworkPage() {
             <div>
               <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Port Terpakai</p>
               <p className="text-xl font-bold text-amber-600">
-                {fttxStats?.used_ports ?? 0}{" "}
+                {scopedUsedPorts}{" "}
                 <span className="text-xs font-semibold text-slate-400">
-                  ({Math.round(((fttxStats?.used_ports ?? 0) / (fttxStats?.total_ports || 1)) * 100)}%)
+                  ({Math.round((scopedUsedPorts / (scopedTotalPorts || 1)) * 100)}%)
                 </span>
               </p>
             </div>
@@ -693,7 +738,7 @@ export default function AdminNetworkPage() {
             </div>
             <div>
               <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Port Bebas</p>
-              <p className="text-xl font-bold text-emerald-600">{fttxStats?.available_ports ?? 0} Port</p>
+              <p className="text-xl font-bold text-emerald-600">{scopedAvailPorts} Port</p>
             </div>
           </div>
 
@@ -703,7 +748,7 @@ export default function AdminNetworkPage() {
             </div>
             <div>
               <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Jalur Kabel FO</p>
-              <p className="text-xl font-bold text-cyan-600">{(fttxStats?.total_fiber_km ?? 0).toFixed(1)} km</p>
+              <p className="text-xl font-bold text-cyan-600">{scopedTotalFiberKm.toFixed(1)} km</p>
             </div>
           </div>
         </div>
@@ -833,9 +878,9 @@ export default function AdminNetworkPage() {
           }`}
         >
           <MapPin className="w-4 h-4" />
-          <span>Ringkasan Titik ODP</span>
+          <span>Distribusi FiberGrid (In-House)</span>
           <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-bold">
-            {odpNodes.length}
+            {networkScope === "inhouse" ? inhouseCount : odpNodes.length}
           </span>
         </button>
       </div>
@@ -846,7 +891,39 @@ export default function AdminNetworkPage() {
           {/* Filter Toolbar */}
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2.5">
-              <div className="relative min-w-[200px]">
+              {/* Scope Switcher: FiberGrid In-House vs Semua Rekanan */}
+              <div className="p-1 bg-slate-100 rounded-xl flex items-center border border-slate-200/80">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNetworkScope("inhouse");
+                    setClusterFilter("ALL");
+                  }}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+                    networkScope === "inhouse"
+                      ? "bg-white text-blue-600 shadow-xs border border-slate-200 font-extrabold"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  FiberGrid In-House ({inhouseCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNetworkScope("all");
+                    setClusterFilter("ALL");
+                  }}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+                    networkScope === "all"
+                      ? "bg-white text-blue-600 shadow-xs border border-slate-200 font-extrabold"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  Semua + Rekanan ({odpNodes.length})
+                </button>
+              </div>
+
+              <div className="relative min-w-[180px]">
                 <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                 <input
                   type="text"
@@ -864,10 +941,10 @@ export default function AdminNetworkPage() {
                   onChange={(e) => setClusterFilter(e.target.value)}
                   className="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
-                  <option value="ALL">Semua Cluster ({odpNodes.length})</option>
+                  <option value="ALL">Semua Cluster ({scopedODPs.length})</option>
                   {clusters.map((c) => (
                     <option key={c} value={c}>
-                      Cluster {c} ({odpNodes.filter((o) => o.cluster === c).length})
+                      Cluster {c} ({scopedODPs.filter((o) => (o.cluster || o.cluster_area) === c).length})
                     </option>
                   ))}
                 </select>
@@ -965,9 +1042,15 @@ export default function AdminNetworkPage() {
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
               <div>
-                <h2 className="text-base font-semibold text-slate-800">Daftar Titik Distribusi ODP (Optical Distribution Point)</h2>
+                <h2 className="text-base font-semibold text-slate-800">
+                  {networkScope === "inhouse"
+                    ? "Daftar Titik Distribusi FiberGrid (In-House)"
+                    : "Daftar Titik Distribusi ODP (Agregasi Seluruh Jaringan)"}
+                </h2>
                 <p className="text-xs text-slate-500">
-                  {filteredODPs.length} titik ODP aktif tercatat dalam sistem spasial PostGIS
+                  {networkScope === "inhouse"
+                    ? `${filteredODPs.length} titik ODP in-house FiberGrid tercatat dalam sistem`
+                    : `${filteredODPs.length} titik ODP (agregasi internal & mitra Jartaplok)`}
                 </p>
               </div>
               <button
