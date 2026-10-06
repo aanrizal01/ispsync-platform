@@ -214,7 +214,61 @@ export const voucherApi = {
     if (params?.search) query.set("search", params.search);
     return requestPaginated<Voucher>(`/vouchers/agent/history?${query.toString()}`);
   },
+
+  listOrders: (params?: { page?: number; limit?: number; status?: string; search?: string }): Promise<HotspotOrdersResponse> => {
+    const query = new URLSearchParams();
+    if (params?.page) query.set("page", params.page.toString());
+    if (params?.limit) query.set("limit", params.limit.toString());
+    if (params?.status) query.set("status", params.status);
+    if (params?.search) query.set("search", params.search);
+    return request<HotspotOrdersResponse>(`/vouchers/orders?${query.toString()}`);
+  },
 };
+
+export interface HotspotOrder {
+  id: string;
+  order_id: string;
+  template_id: string;
+  package_name: string;
+  amount: number;
+  original_price: number;
+  discount_amount: number;
+  customer_phone: string;
+  payment_method: string;
+  payment_url: string;
+  snap_token: string;
+  client_ip: string;
+  client_mac: string;
+  promo_code?: string;
+  agent_id?: string;
+  agent_name?: string;
+  agent_commission: number;
+  status: "PENDING" | "PAID" | "EXPIRED" | "FAILED";
+  voucher_code: string;
+  paid_at?: string;
+  expires_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HotspotOrdersSummary {
+  total_orders: number;
+  total_paid: number;
+  total_pending: number;
+  total_expired: number;
+  total_revenue: number;
+}
+
+export interface HotspotOrdersResponse {
+  data: HotspotOrder[];
+  summary: HotspotOrdersSummary;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    total_pages: number;
+  };
+}
 
 export interface BlankVoucherInquiry {
   serial_number: string;

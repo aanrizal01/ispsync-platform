@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/gigabill/isp/internal/shared/pagination"
 	"github.com/gigabill/isp/pkg/money"
 )
 
@@ -188,4 +189,52 @@ type RangeActivationResult struct {
 	AgentCommission int64    `json:"agent_commission"`
 	ActivatedSNs    []string `json:"activated_sns"`
 }
+
+type HotspotOrder struct {
+	ID              uuid.UUID  `json:"id"`
+	OrderID         string     `json:"order_id"`
+	TemplateID      string     `json:"template_id"`
+	PackageName     string     `json:"package_name"`
+	Amount          int64      `json:"amount"`
+	OriginalPrice   int64      `json:"original_price"`
+	DiscountAmount  int64      `json:"discount_amount"`
+	CustomerPhone   string     `json:"customer_phone"`
+	PaymentMethod   string     `json:"payment_method"`
+	PaymentURL      string     `json:"payment_url"`
+	SnapToken       string     `json:"snap_token"`
+	ClientIP        string     `json:"client_ip"`
+	ClientMAC       string     `json:"client_mac"`
+	PromoCode       string     `json:"promo_code"`
+	AgentID         *uuid.UUID `json:"agent_id,omitempty"`
+	AgentName       string     `json:"agent_name,omitempty"`
+	AgentCommission int64      `json:"agent_commission"`
+	Status          string     `json:"status"` // 'PENDING', 'PAID', 'EXPIRED', 'FAILED'
+	VoucherCode     string     `json:"voucher_code"`
+	PaidAt          *time.Time `json:"paid_at,omitempty"`
+	ExpiresAt       time.Time  `json:"expires_at"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
+}
+
+type HotspotOrdersSummary struct {
+	TotalOrders  int64 `json:"total_orders"`
+	TotalPaid    int64 `json:"total_paid"`
+	TotalPending int64 `json:"total_pending"`
+	TotalExpired int64 `json:"total_expired"`
+	TotalRevenue int64 `json:"total_revenue"`
+}
+
+type HotspotOrdersResponse struct {
+	Data       []HotspotOrder       `json:"data"`
+	Summary    HotspotOrdersSummary `json:"summary"`
+	Pagination pagination.Meta      `json:"pagination"`
+}
+
+type ListHotspotOrdersFilter struct {
+	Status string
+	Search string
+	Page   int
+	Limit  int
+}
+
 

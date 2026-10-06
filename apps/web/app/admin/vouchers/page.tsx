@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { voucherApi, type Voucher, type VoucherTemplate, type VoucherBatch, type CreateTemplateInput, type GenerateBatchInput } from "@/lib/api/vouchers";
+import { voucherApi, type Voucher, type VoucherTemplate, type VoucherBatch, type CreateTemplateInput, type GenerateBatchInput, type HotspotOrder, type HotspotOrdersSummary } from "@/lib/api/vouchers";
 import { agentApi, type Agent } from "@/lib/api/agents";
 import { formatDate, formatRupiah, formatBandwidth, cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Search, X, Eye, EyeOff, Copy, Check, Ticket, Globe, Sparkles, Layers, Sliders } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X, Eye, EyeOff, Copy, Check, Ticket, Globe, Sparkles, Layers, Sliders, RefreshCw, Clock, CheckCircle2, AlertCircle, ExternalLink, ArrowRight } from "lucide-react";
 
 function formatDurationHuman(minutes: number): string {
   if (!minutes || minutes <= 0) return "0 Menit";
@@ -184,6 +184,91 @@ export default function VouchersPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [searchInput, setSearchInput] = useState<string>("");
   const [activeSearch, setActiveSearch] = useState<string>("");
+
+  // Hotspot Orders Log State
+  const [onlineSubTab, setOnlineSubTab] = useState<"orders" | "vouchers">("orders");
+  const [orders, setOrders] = useState<HotspotOrder[]>([]);
+  const [ordersSummary, setOrdersSummary] = useState<HotspotOrdersSummary>({
+    total_orders: 0,
+    total_paid: 0,
+    total_pending: 0,
+    total_expired: 0,
+    total_revenue: 0,
+  });
+  const [orderStatusFilter, setOrderStatusFilter] = useState<string>("");
+  const [orderSearch, setOrderSearch] = useState<string>("");
+  const [orderSearchInput, setOrderSearchInput] = useState<string>("");
+  const [ordersLoading, setOrdersLoading] = useState<boolean>(false);
+  const [ordersPage, setOrdersPage] = useState<number>(1);
+  const [ordersTotalPages, setOrdersTotalPages] = useState<number>(1);
+  const [ordersTotalCount, setOrdersTotalCount] = useState<number>(0);
+  const [checkingOrderId, setCheckingOrderId] = useState<string | null>(null);
+
+  const fetchOrders = useCallback(async () => {
+    try {
+      setOrdersLoading(true);
+      const res = await voucherApi.listOrders({
+        page: ordersPage,
+        limit: 20,
+        status: orderStatusFilter || undefined,
+        search: orderSearch || undefined,
+      });
+      if (res && res.data) {
+        setOrders(res.data);
+      }
+      if (res && res.summary) {
+        setOrdersSummary(res.summary);
+      }
+      if (res && res.pagination) {
+        setOrdersTotalPages(res.pagination.total_pages || 1);
+        setOrdersTotalCount(res.pagination.total || 0);
+      }
+    } catch (err) {
+      console.error("Failed to load hotspot orders:", err);
+    } finally {
+      setOrdersLoading(false);
+    }
+  }, [ordersPage, orderStatusFilter, orderSearch]);
+
+  useEffect(() => {
+    if (activeTab === "online") {
+      fetchOrders();
+    }
+  }, [activeTab, fetchOrders]);
+
+  const handleOrderSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setOrderSearch(orderSearchInput.trim());
+    setOrdersPage(1);
+  };
+
+  const handleClearOrderSearch = () => {
+    setOrderSearchInput("");
+    setOrderSearch("");
+    setOrdersPage(1);
+  };
+
+  const handleCheckOrderStatus = async (orderId: string) => {
+    setCheckingOrderId(orderId);
+    try {
+      const res = await fetch("/api/v1/hotspot/check-purchase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_id: orderId }),
+      });
+      const data = await res.json();
+      if (data.status === "PAID") {
+        alert(`Pembayaran Terverifikasi! Voucher ${data.code} berhasil diterbitkan.`);
+      } else {
+        alert(data.message || "Pesanan masih berstatus PENDING (belum dibayar oleh pelanggan).");
+      }
+      await fetchOrders();
+    } catch (err: any) {
+      alert("Gagal memeriksa status pembayaran: " + (err.message || "Network error"));
+    } finally {
+      setCheckingOrderId(null);
+    }
+  };
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -1166,34 +1251,470 @@ export default function VouchersPage() {
         </div>
       )}
 
-      {/* TAB 2: VOUCHER ONLINE (QRIS / MANDIRI OLEH PELANGGAN) */}
+      {/* TAB 2: VOUCHER ONLINE & LOG TRANSAKSI QRIS */}
       {activeTab === "online" && (
         <div className="space-y-6">
-          {/* Summary Stat Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-xl border border-teal-200 shadow-xs bg-teal-50/20">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-teal-700">Total Beli Online</span>
-              <div className="text-2xl font-black text-teal-800 mt-1">{totalCount}</div>
+          {/* Sub-navigation tabs: Orders Log vs Vouchers Issued */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setOnlineSubTab("orders")}
+                className={cn(
+                  "px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 cursor-pointer",
+                  onlineSubTab === "orders"
+                    ? "bg-teal-600 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                )}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Log Order Transaksi (Pending & Lunas)</span>
+                {ordersSummary.total_orders > 0 && (
+                  <span
+                    className={cn(
+                      "text-[10px] px-1.5 py-0.5 rounded-full font-extrabold",
+                      onlineSubTab === "orders" ? "bg-teal-800 text-teal-100" : "bg-slate-200 text-slate-700"
+                    )}
+                  >
+                    {ordersSummary.total_orders}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setOnlineSubTab("vouchers")}
+                className={cn(
+                  "px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 cursor-pointer",
+                  onlineSubTab === "vouchers"
+                    ? "bg-teal-600 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                )}
+              >
+                <Ticket className="w-3.5 h-3.5" />
+                <span>Voucher Online Terbit</span>
+                {totalCount > 0 && (
+                  <span
+                    className={cn(
+                      "text-[10px] px-1.5 py-0.5 rounded-full font-extrabold",
+                      onlineSubTab === "vouchers" ? "bg-teal-800 text-teal-100" : "bg-slate-200 text-slate-700"
+                    )}
+                  >
+                    {totalCount}
+                  </span>
+                )}
+              </button>
             </div>
-            <div className="bg-white p-4 rounded-xl border border-emerald-200 shadow-xs bg-emerald-50/20">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Aktif Digunakan</span>
-              <div className="text-2xl font-black text-emerald-700 mt-1">
-                {vouchers.filter((v) => v.status === "ACTIVE").length}
-              </div>
-            </div>
-            <div className="bg-white p-4 rounded-xl border border-blue-200 shadow-xs bg-blue-50/20">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700">Menunggu Login (UNUSED)</span>
-              <div className="text-2xl font-black text-blue-700 mt-1">
-                {vouchers.filter((v) => v.status === "UNUSED").length}
-              </div>
-            </div>
-            <div className="bg-white p-4 rounded-xl border border-purple-200 shadow-xs bg-purple-50/20">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-purple-700">Via Referral Agen</span>
-              <div className="text-2xl font-black text-purple-700 mt-1">
-                {vouchers.filter((v) => !!v.agent_name || !!v.promo_code).length}
-              </div>
-            </div>
+
+            {onlineSubTab === "orders" && (
+              <button
+                type="button"
+                onClick={fetchOrders}
+                disabled={ordersLoading}
+                className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50 self-start sm:self-auto"
+              >
+                <RefreshCw className={cn("w-3.5 h-3.5", ordersLoading && "animate-spin")} />
+                <span>Refresh Order</span>
+              </button>
+            )}
           </div>
+
+          {/* SUB-VIEW 1: LOG ORDER TRANSAKSI (SEMUA STATUS: PENDING & LUNAS) */}
+          {onlineSubTab === "orders" && (
+            <div className="space-y-6">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3.5">
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Order</span>
+                  <div className="text-xl font-black text-slate-900 mt-1">{ordersSummary.total_orders}</div>
+                </div>
+
+                <div className="bg-white p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/20 shadow-xs">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    Lunas (PAID)
+                  </span>
+                  <div className="text-xl font-black text-emerald-700 mt-1">{ordersSummary.total_paid}</div>
+                </div>
+
+                <div className="bg-white p-3.5 rounded-xl border border-amber-200 bg-amber-50/20 shadow-xs">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-amber-600" />
+                    Menunggu (PENDING)
+                  </span>
+                  <div className="text-xl font-black text-amber-700 mt-1">{ordersSummary.total_pending}</div>
+                </div>
+
+                <div className="bg-white p-3.5 rounded-xl border border-slate-200 bg-slate-50 shadow-xs">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                    Kedaluwarsa (EXPIRED)
+                  </span>
+                  <div className="text-xl font-black text-slate-600 mt-1">{ordersSummary.total_expired}</div>
+                </div>
+
+                <div className="bg-white p-3.5 rounded-xl border border-teal-200 bg-teal-50/30 shadow-xs col-span-2 sm:col-span-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-teal-700">Total Omset Lunas</span>
+                  <div className="text-lg font-black text-teal-800 mt-1">{formatRupiah(ordersSummary.total_revenue)}</div>
+                </div>
+              </div>
+
+              {/* Search & Filter Bar */}
+              <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 shadow-sm">
+                <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
+                  <form onSubmit={handleOrderSearchSubmit} className="flex items-center gap-2 flex-1 max-w-lg">
+                    <div className="relative flex-1">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                      <input
+                        type="text"
+                        placeholder="Cari Order ID, No WA, Paket, Voucher, Promo..."
+                        value={orderSearchInput}
+                        onChange={(e) => setOrderSearchInput(e.target.value)}
+                        className="w-full pl-9 pr-8 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+                      />
+                      {orderSearchInput && (
+                        <button
+                          type="button"
+                          onClick={handleClearOrderSearch}
+                          className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600"
+                          title="Hapus pencarian"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-lg shadow-xs transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer"
+                    >
+                      <Search className="w-3.5 h-3.5" />
+                      Cari
+                    </button>
+                    {orderSearch && (
+                      <button
+                        type="button"
+                        onClick={handleClearOrderSearch}
+                        className="px-3 py-2 text-xs text-slate-500 hover:text-slate-800 font-medium border border-slate-200 rounded-lg bg-slate-50 shrink-0"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </form>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-slate-500">Status Order:</span>
+                    <select
+                      value={orderStatusFilter}
+                      onChange={(e) => {
+                        setOrderStatusFilter(e.target.value);
+                        setOrdersPage(1);
+                      }}
+                      className="px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white font-medium"
+                    >
+                      <option value="">Semua Status Order</option>
+                      <option value="PAID">Lunas / Berhasil (PAID)</option>
+                      <option value="PENDING">Menunggu Bayar (PENDING)</option>
+                      <option value="EXPIRED">Kedaluwarsa (EXPIRED)</option>
+                      <option value="FAILED">Gagal (FAILED)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {orderSearch && (
+                  <div className="text-xs text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-md flex items-center gap-1.5 w-fit">
+                    <span>
+                      Hasil pencarian: <b>&quot;{orderSearch}&quot;</b> ({ordersTotalCount} ditemukan)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleClearOrderSearch}
+                      className="text-teal-500 hover:text-teal-800"
+                      title="Hapus pencarian"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Table Orders */}
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-xs">
+                      <tr>
+                        <th className="px-4 py-3.5">Order ID & Waktu</th>
+                        <th className="px-4 py-3.5">Pelanggan & Perangkat</th>
+                        <th className="px-4 py-3.5">Paket & Tarif</th>
+                        <th className="px-4 py-3.5">Status Order</th>
+                        <th className="px-4 py-3.5">Kode Voucher</th>
+                        <th className="px-4 py-3.5">Saluran / Referral</th>
+                        <th className="px-4 py-3.5 text-right">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {ordersLoading ? (
+                        <tr>
+                          <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
+                            Memuat log transaksi order hotspot...
+                          </td>
+                        </tr>
+                      ) : orders.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
+                            {orderSearch
+                              ? `Tidak ada transaksi yang cocok dengan pencarian "${orderSearch}"`
+                              : "Belum ada riwayat pesanan online hotspot"}
+                          </td>
+                        </tr>
+                      ) : (
+                        orders.map((ord) => (
+                          <tr key={ord.id} className="hover:bg-slate-50/80 transition-colors">
+                            <td className="px-4 py-3.5">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-mono font-bold text-slate-900 text-xs">{ord.order_id}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => copyToClipboard(ord.order_id, ord.id + "_ord")}
+                                  className="p-1 text-slate-400 hover:text-teal-700 cursor-pointer"
+                                  title="Salin Order ID"
+                                >
+                                  {copiedId === ord.id + "_ord" ? (
+                                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                  ) : (
+                                    <Copy className="w-3.5 h-3.5" />
+                                  )}
+                                </button>
+                              </div>
+                              <div className="text-[11px] text-slate-500 mt-0.5">{formatDate(ord.created_at)}</div>
+                              {ord.paid_at && (
+                                <div className="text-[10px] text-emerald-600 font-medium">
+                                  Lunas: {formatDate(ord.paid_at)}
+                                </div>
+                              )}
+                            </td>
+
+                            <td className="px-4 py-3.5">
+                              {ord.customer_phone ? (
+                                <a
+                                  href={`https://wa.me/${ord.customer_phone.replace(/\D/g, "")}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-xs font-semibold text-emerald-600 hover:underline block"
+                                  title="Chat WhatsApp"
+                                >
+                                  WA: {ord.customer_phone} ↗
+                                </a>
+                              ) : (
+                                <span className="text-xs text-slate-400">-</span>
+                              )}
+                              {ord.client_ip && (
+                                <div className="text-[10px] text-slate-400 font-mono mt-0.5">IP: {ord.client_ip}</div>
+                              )}
+                              {ord.client_mac && (
+                                <div className="text-[10px] text-slate-400 font-mono mt-0.5">MAC: {ord.client_mac}</div>
+                              )}
+                            </td>
+
+                            <td className="px-4 py-3.5">
+                              <div className="font-semibold text-slate-900 text-xs">{ord.package_name}</div>
+                              <div className="font-bold text-teal-700 mt-0.5">{formatRupiah(ord.amount)}</div>
+                              {ord.discount_amount > 0 && (
+                                <div className="text-[10px] text-slate-400 line-through">
+                                  {formatRupiah(ord.original_price)}
+                                </div>
+                              )}
+                            </td>
+
+                            <td className="px-4 py-3.5">
+                              {ord.status === "PAID" && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  PAID / LUNAS
+                                </span>
+                              )}
+                              {ord.status === "PENDING" && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                  <Clock className="w-3 h-3 text-amber-600" />
+                                  PENDING
+                                </span>
+                              )}
+                              {ord.status === "EXPIRED" && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                  EXPIRED
+                                </span>
+                              )}
+                              {ord.status === "FAILED" && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                                  FAILED
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="px-4 py-3.5">
+                              {ord.voucher_code ? (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-mono font-black text-teal-700 text-sm">{ord.voucher_code}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => copyToClipboard(ord.voucher_code, ord.id + "_vc")}
+                                    className="p-1 text-slate-400 hover:text-teal-700 cursor-pointer"
+                                    title="Salin Kode Voucher"
+                                  >
+                                    {copiedId === ord.id + "_vc" ? (
+                                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                    ) : (
+                                      <Copy className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+                                </div>
+                              ) : ord.status === "PENDING" ? (
+                                <span className="text-xs text-amber-600 font-medium">Menunggu Bayar</span>
+                              ) : (
+                                <span className="text-xs text-slate-400">-</span>
+                              )}
+                            </td>
+
+                            <td className="px-4 py-3.5">
+                              {ord.agent_name ? (
+                                <div className="space-y-0.5">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                    Ref: {ord.agent_name}
+                                  </span>
+                                  {ord.promo_code && (
+                                    <div className="text-[10px] text-purple-600 font-mono">Kode: {ord.promo_code}</div>
+                                  )}
+                                  {ord.agent_commission > 0 && (
+                                    <div className="text-[10px] text-emerald-600 font-medium">
+                                      Komisi: {formatRupiah(ord.agent_commission)}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
+                                  Direct Portal
+                                </span>
+                              )}
+                            </td>
+
+                            <td className="px-4 py-3.5 text-right space-x-1.5 whitespace-nowrap">
+                              {ord.status === "PENDING" && (
+                                <>
+                                  <button
+                                    type="button"
+                                    disabled={checkingOrderId === ord.order_id}
+                                    onClick={() => handleCheckOrderStatus(ord.order_id)}
+                                    className="px-2.5 py-1 text-xs font-bold text-amber-700 hover:bg-amber-50 rounded border border-amber-300 disabled:opacity-50 cursor-pointer shadow-xs inline-flex items-center gap-1"
+                                    title="Periksa status transaksi ke Midtrans"
+                                  >
+                                    <RefreshCw className={cn("w-3 h-3", checkingOrderId === ord.order_id && "animate-spin")} />
+                                    <span>{checkingOrderId === ord.order_id ? "Memeriksa..." : "Cek Status"}</span>
+                                  </button>
+                                  {ord.payment_url && (
+                                    <a
+                                      href={ord.payment_url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded border border-slate-300 inline-flex items-center gap-1"
+                                      title="Buka halaman pembayaran Midtrans"
+                                    >
+                                      <span>Link Bayar</span>
+                                      <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  )}
+                                </>
+                              )}
+
+                              {ord.status === "PAID" && ord.voucher_code && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => copyToClipboard(ord.voucher_code, ord.id + "_act")}
+                                    className="px-2.5 py-1 text-xs font-medium text-teal-700 hover:bg-teal-50 rounded border border-teal-200 cursor-pointer"
+                                  >
+                                    {copiedId === ord.id + "_act" ? "Tersalin!" : "Salin Kode"}
+                                  </button>
+                                  {ord.customer_phone && (
+                                    <a
+                                      href={`https://wa.me/${ord.customer_phone.replace(/\D/g, "")}?text=${encodeURIComponent(
+                                        `Halo! Berikut kredensial voucher WiFi Anda:\n\nPaket: ${ord.package_name}\nKode Voucher: ${ord.voucher_code}\nOrder ID: ${ord.order_id}\nNominal: ${formatRupiah(ord.amount)}\n\nTerima kasih!`
+                                      )}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-50 rounded border border-emerald-200 inline-flex items-center gap-1"
+                                      title="Kirim kredensial via WhatsApp"
+                                    >
+                                      <span>Kirim WA</span>
+                                      <ArrowRight className="w-3 h-3" />
+                                    </a>
+                                  )}
+                                </>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Orders Pagination */}
+                {ordersTotalPages > 1 && (
+                  <div className="px-5 py-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 bg-slate-50">
+                    <div>
+                      Menampilkan halaman <b>{ordersPage}</b> dari <b>{ordersTotalPages}</b> ({ordersTotalCount} total order)
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        disabled={ordersPage <= 1}
+                        onClick={() => setOrdersPage((p) => Math.max(1, p - 1))}
+                        className="px-2.5 py-1 border border-slate-300 rounded bg-white hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={ordersPage >= ordersTotalPages}
+                        onClick={() => setOrdersPage((p) => Math.min(ordersTotalPages, p + 1))}
+                        className="px-2.5 py-1 border border-slate-300 rounded bg-white hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* SUB-VIEW 2: VOUCHER ONLINE TERBIT */}
+          {onlineSubTab === "vouchers" && (
+            <div className="space-y-6">
+              {/* Summary Stat Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="bg-white p-4 rounded-xl border border-teal-200 shadow-xs bg-teal-50/20">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-teal-700">Total Beli Online</span>
+                  <div className="text-2xl font-black text-teal-800 mt-1">{totalCount}</div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-emerald-200 shadow-xs bg-emerald-50/20">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Aktif Digunakan</span>
+                  <div className="text-2xl font-black text-emerald-700 mt-1">
+                    {vouchers.filter((v) => v.status === "ACTIVE").length}
+                  </div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-blue-200 shadow-xs bg-blue-50/20">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-blue-700">Menunggu Login (UNUSED)</span>
+                  <div className="text-2xl font-black text-blue-700 mt-1">
+                    {vouchers.filter((v) => v.status === "UNUSED").length}
+                  </div>
+                </div>
+                <div className="bg-white p-4 rounded-xl border border-purple-200 shadow-xs bg-purple-50/20">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-purple-700">Via Referral Agen</span>
+                  <div className="text-2xl font-black text-purple-700 mt-1">
+                    {vouchers.filter((v) => !!v.agent_name || !!v.promo_code).length}
+                  </div>
+                </div>
+              </div>
 
           {/* Search & Filter Bar */}
           <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-3 shadow-sm">
@@ -1495,6 +2016,8 @@ export default function VouchersPage() {
           </div>
         </div>
       )}
+    </div>
+  )}
 
       {/* TAB 3: VOUCHER GESEK (BLANKO SERIAL NUMBER & PIN BERPELINDUNG) */}
       {activeTab === "scratch" && (

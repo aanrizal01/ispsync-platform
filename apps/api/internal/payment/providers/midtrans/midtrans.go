@@ -139,7 +139,7 @@ func (p *Provider) CreatePaymentRequest(ctx context.Context, req payment.OnlineP
 
 		finishURL := req.ReturnURL
 		if finishURL == "" && strings.HasPrefix(req.OrderNumber, "ORD-") {
-			finishURL = fmt.Sprintf("https://billing.gogiga.net.id/hotspot/buy?order_id=%s", req.OrderNumber)
+			finishURL = fmt.Sprintf("https://hotspot.gogiga.net.id/hotspot/buy?order_id=%s", req.OrderNumber)
 		}
 		if finishURL != "" {
 			snapPayload["callbacks"] = map[string]interface{}{

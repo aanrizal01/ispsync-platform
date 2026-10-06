@@ -599,3 +599,39 @@ Selamat menikmati internet dari ISPSYNC!`,
 	return nil
 }
 
+func (s *Service) ListHotspotOrders(ctx context.Context, filter ListHotspotOrdersFilter) (*HotspotOrdersResponse, error) {
+	orders, total, err := s.repo.ListHotspotOrders(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	summary, err := s.repo.GetHotspotOrdersSummary(ctx)
+	if err != nil {
+		s.logger.Warn("failed to get hotspot orders summary", "error", err)
+	}
+
+	limit := filter.Limit
+	if limit <= 0 {
+		limit = 20
+	}
+	page := filter.Page
+	if page <= 0 {
+		page = 1
+	}
+
+	totalPages := int(total) / limit
+	if int(total)%limit != 0 || totalPages == 0 {
+		totalPages++
+	}
+
+	return &HotspotOrdersResponse{
+		Data:    orders,
+		Summary: summary,
+		Pagination: pagination.Meta{
+			Page:       page,
+			Limit:      limit,
+			Total:      int(total),
+			TotalPages: totalPages,
+		},
+	}, nil
+}
+

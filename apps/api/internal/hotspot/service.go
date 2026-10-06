@@ -467,6 +467,32 @@ func (s *Service) Purchase(ctx context.Context, req PurchaseRequest) (*PurchaseR
 		}
 	}
 
+	payMethod := req.PaymentMethod
+	if payMethod == "" {
+		payMethod = "MIDTRANS_QRIS"
+	}
+	expiresAt := time.Now().Add(15 * time.Minute)
+
+	const insertOrderQ = `
+		INSERT INTO public.hotspot_orders (
+			id, order_id, template_id, package_name, amount, original_price, discount_amount,
+			customer_phone, payment_method, payment_url, snap_token, client_ip, client_mac,
+			promo_code, agent_id, agent_commission, status, expires_at, created_at, updated_at
+		) VALUES (
+			gen_random_uuid(), $1, $2, $3, $4, $5, $6,
+			$7, $8, $9, $10, $11, $12,
+			$13, $14, $15, 'PENDING', $16, NOW(), NOW()
+		)
+		ON CONFLICT (order_id) DO NOTHING
+	`
+	if _, err := s.db.Exec(ctx, insertOrderQ,
+		orderID, selectedPkg.ID, selectedPkg.Name, finalPrice, selectedPkg.Price, discountAmount,
+		req.Phone, payMethod, paymentURL, snapToken, req.ClientIP, req.ClientMAC,
+		promoCode, agentID, agentCommission, expiresAt,
+	); err != nil {
+		s.logger.Error("failed to record pending hotspot order to database", "order_id", orderID, "error", err)
+	}
+
 	return &PurchaseResponse{
 		OrderID:        orderID,
 		TemplateName:   selectedPkg.Name,
@@ -475,12 +501,12 @@ func (s *Service) Purchase(ctx context.Context, req PurchaseRequest) (*PurchaseR
 		DiscountAmount: discountAmount,
 		PromoCode:      promoCode,
 		AgentName:      agentName,
-		PaymentMethod:  req.PaymentMethod,
+		PaymentMethod:  payMethod,
 		PaymentURL:     paymentURL,
 		SnapToken:      snapToken,
 		QrString:       qrString,
 		QrImageURL:     qrImageURL,
-		ExpiresAt:      time.Now().Add(15 * time.Minute),
+		ExpiresAt:      expiresAt,
 		Status:         "PENDING",
 	}, nil
 }
@@ -500,6 +526,7 @@ func (s *Service) CheckPurchase(ctx context.Context, req ClaimPurchaseRequest) (
 		`
 		if err := s.db.QueryRow(ctx, checkExistingQ, req.OrderID).Scan(&existingCode, &existingPwd, &tplName, &timeLimit); err == nil && existingCode != "" {
 			s.logger.Info("voucher already exists for order, returning existing credentials", "order_id", req.OrderID, "code", existingCode)
+			_, _ = s.db.Exec(ctx, `UPDATE public.hotspot_orders SET status = 'PAID', voucher_code = $1, paid_at = COALESCE(paid_at, NOW()), updated_at = NOW() WHERE order_id = $2 AND status != 'PAID'`, existingCode, req.OrderID)
 			return &ClaimPurchaseResponse{
 				Status:       "PAID",
 				Code:         existingCode,
@@ -675,6 +702,17 @@ func (s *Service) CheckPurchase(ctx context.Context, req ClaimPurchaseRequest) (
 
 	if _, err := s.db.Exec(ctx, insertQ, code, password, templateIDParam, phoneParam, orderIDParam, buyerMACParam, orderAgentID, promoParam, orderDiscountAmount, orderAgentCommission, timeLimitSec, validUntil); err != nil {
 		s.logger.Error("failed to insert online voucher to db", "error", err)
+	}
+
+	if req.OrderID != "" {
+		const updateOrderPaidQ = `
+			UPDATE public.hotspot_orders
+			SET status = 'PAID', voucher_code = $1, paid_at = NOW(), updated_at = NOW()
+			WHERE order_id = $2
+		`
+		if _, err := s.db.Exec(ctx, updateOrderPaidQ, code, req.OrderID); err != nil {
+			s.logger.Error("failed to update hotspot order status to PAID", "order_id", req.OrderID, "error", err)
+		}
 	}
 
 	// Kreditkan komisi agen secara otomatis ke saldo agen

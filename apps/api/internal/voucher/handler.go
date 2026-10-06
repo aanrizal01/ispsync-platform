@@ -37,6 +37,9 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 		r.With(authMW.RequirePermission("vouchers:write")).Post("/generate", h.GenerateBatch)
 		r.With(authMW.RequirePermission("vouchers:write")).Post("/generate-blank", h.GenerateBlankBatch)
 
+		// Orders
+		r.With(authMW.RequirePermission("vouchers:read")).Get("/orders", h.ListOrders)
+
 		// Vouchers
 		r.With(authMW.RequirePermission("vouchers:read")).Get("/", h.ListVouchers)
 		r.With(authMW.RequirePermission("vouchers:read")).Get("/{id}", h.GetByID)
@@ -391,5 +394,24 @@ func (h *Handler) ListAgentActivatedVouchers(w http.ResponseWriter, r *http.Requ
 	}
 
 	middleware.JSONList(w, vouchers, meta)
+}
+
+func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
+	params := pagination.FromRequest(r)
+	status := r.URL.Query().Get("status")
+	search := r.URL.Query().Get("search")
+
+	res, err := h.service.ListHotspotOrders(r.Context(), ListHotspotOrdersFilter{
+		Status: status,
+		Search: search,
+		Page:   params.Page,
+		Limit:  params.Limit,
+	})
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusOK, res)
 }
 

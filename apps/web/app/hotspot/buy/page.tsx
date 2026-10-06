@@ -859,7 +859,7 @@ function HotspotBuyForm() {
               onClick={() => handleConfirmPayment()}
               className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition-colors shadow-md shadow-emerald-500/20 disabled:bg-emerald-400 flex items-center justify-center gap-2"
             >
-              {loading ? "Memverifikasi..." : "âœ“ Cek Status Pembayaran Sekarang"}
+              {loading ? "Memverifikasi..." : "Cek Status Pembayaran Sekarang"}
             </button>
 
             <button
@@ -867,7 +867,7 @@ function HotspotBuyForm() {
               onClick={() => setStep("SELECT")}
               className="text-xs text-slate-400 hover:text-slate-600 block mx-auto pt-1"
             >
-              â† Ganti paket atau batalkan
+              Kembali atau pilih paket lain
             </button>
           </div>
         )}
@@ -939,9 +939,7 @@ function HotspotBuyForm() {
           <span>Ingin jadi agen voucher? Raih cashback 15% &amp; komisi 10%</span>
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
         </Link>
-        <p className="text-[11px] text-slate-500">
-          Â© {new Date().getFullYear()} ISPSYNC â€¢ Layanan Hotspot &amp; Voucher Digital
-        </p>
+        <p className="text-[11px] text-slate-500">&copy; {new Date().getFullYear()} PT. Mitra Usaha Data. All rights reserved.</p>
       </footer>
     </div>
   );

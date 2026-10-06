@@ -859,4 +859,104 @@ func (r *Repository) GetAgentByUserID(ctx context.Context, userID uuid.UUID) (ag
 	return
 }
 
+// Hotspot Orders
+
+func (r *Repository) ListHotspotOrders(ctx context.Context, filter ListHotspotOrdersFilter) ([]HotspotOrder, int64, error) {
+	// Auto expire orders that passed expiration time
+	_, _ = r.db.Exec(ctx, `UPDATE public.hotspot_orders SET status = 'EXPIRED', updated_at = NOW() WHERE status = 'PENDING' AND expires_at < NOW()`)
+
+	var conditions []string
+	var args []interface{}
+	argIdx := 1
+
+	if filter.Status != "" {
+		conditions = append(conditions, fmt.Sprintf("o.status = $%d", argIdx))
+		args = append(args, filter.Status)
+		argIdx++
+	}
+
+	if filter.Search != "" {
+		pattern := "%" + strings.TrimSpace(filter.Search) + "%"
+		conditions = append(conditions, fmt.Sprintf("(o.order_id ILIKE $%d OR o.customer_phone ILIKE $%d OR o.package_name ILIKE $%d OR o.voucher_code ILIKE $%d OR o.promo_code ILIKE $%d)", argIdx, argIdx, argIdx, argIdx, argIdx))
+		args = append(args, pattern)
+		argIdx++
+	}
+
+	whereClause := ""
+	if len(conditions) > 0 {
+		whereClause = "WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	countQ := fmt.Sprintf("SELECT COUNT(*) FROM public.hotspot_orders o %s", whereClause)
+	var total int64
+	if err := r.db.QueryRow(ctx, countQ, args...).Scan(&total); err != nil {
+		return nil, 0, err
+	}
+
+	limit := filter.Limit
+	if limit <= 0 {
+		limit = 20
+	}
+	page := filter.Page
+	if page <= 0 {
+		page = 1
+	}
+	offset := (page - 1) * limit
+
+	query := fmt.Sprintf(`
+		SELECT o.id, o.order_id, o.template_id, o.package_name, o.amount, o.original_price, o.discount_amount,
+		       o.customer_phone, o.payment_method, o.payment_url, o.snap_token, o.client_ip, o.client_mac,
+		       o.promo_code, o.agent_id, COALESCE(a.name, '') as agent_name, o.agent_commission,
+		       o.status, o.voucher_code, o.paid_at, o.expires_at, o.created_at, o.updated_at
+		FROM public.hotspot_orders o
+		LEFT JOIN agents a ON a.id = o.agent_id
+		%s
+		ORDER BY o.created_at DESC
+		LIMIT $%d OFFSET $%d
+	`, whereClause, argIdx, argIdx+1)
+
+	args = append(args, limit, offset)
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var orders []HotspotOrder
+	for rows.Next() {
+		var o HotspotOrder
+		err := rows.Scan(
+			&o.ID, &o.OrderID, &o.TemplateID, &o.PackageName, &o.Amount, &o.OriginalPrice, &o.DiscountAmount,
+			&o.CustomerPhone, &o.PaymentMethod, &o.PaymentURL, &o.SnapToken, &o.ClientIP, &o.ClientMAC,
+			&o.PromoCode, &o.AgentID, &o.AgentName, &o.AgentCommission,
+			&o.Status, &o.VoucherCode, &o.PaidAt, &o.ExpiresAt, &o.CreatedAt, &o.UpdatedAt,
+		)
+		if err != nil {
+			return nil, 0, err
+		}
+		orders = append(orders, o)
+	}
+
+	return orders, total, nil
+}
+
+func (r *Repository) GetHotspotOrdersSummary(ctx context.Context) (HotspotOrdersSummary, error) {
+	// Auto expire first
+	_, _ = r.db.Exec(ctx, `UPDATE public.hotspot_orders SET status = 'EXPIRED', updated_at = NOW() WHERE status = 'PENDING' AND expires_at < NOW()`)
+
+	const q = `
+		SELECT 
+			COUNT(*),
+			COUNT(*) FILTER (WHERE status = 'PAID'),
+			COUNT(*) FILTER (WHERE status = 'PENDING'),
+			COUNT(*) FILTER (WHERE status = 'EXPIRED'),
+			COALESCE(SUM(amount) FILTER (WHERE status = 'PAID'), 0)
+		FROM public.hotspot_orders
+	`
+	var s HotspotOrdersSummary
+	err := r.db.QueryRow(ctx, q).Scan(&s.TotalOrders, &s.TotalPaid, &s.TotalPending, &s.TotalExpired, &s.TotalRevenue)
+	return s, err
+}
+
 
