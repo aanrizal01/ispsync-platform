@@ -407,7 +407,7 @@ export default function ReportsPage() {
                   {financial ? formatRupiah(financial.jartaplok_cogs || 0) : "—"}
                 </div>
                 <p className="mt-1 text-xs text-slate-600">
-                  Biaya sewa port wholesale • <span className="font-mono font-bold text-slate-800">{financial?.jartaplok_active_ports || 0}</span> port aktif ({financial?.jartaplok_partner_name || "PT GNET BIARO DATA"})
+                  Biaya sewa port wholesale • <span className="font-mono font-bold text-slate-800">{financial?.jartaplok_active_ports || 0}</span> port aktif ({financial?.jartaplok_partner_name || "Mitra Jartaplok"})
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">

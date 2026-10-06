@@ -2333,10 +2333,6 @@ func (h *APIHandler) AdminStaffKPI(w http.ResponseWriter, r *http.Request) {
 		switch bCode {
 		case "PYK":
 			branch = "Cabang Payakumbuh"
-		case "PAPUA":
-			branch = "Cabang Papua"
-		case "GNET-BIARO":
-			branch = "Mitra GNET Biaro"
 		default:
 			if bCode != "ALL" {
 				branch = "Cabang " + bCode
@@ -2494,10 +2490,6 @@ func (h *APIHandler) AdminStaffKPI(w http.ResponseWriter, r *http.Request) {
 	branchName := "Nasional"
 	if reqBranch == "PYK" {
 		branchName = "Cabang Payakumbuh"
-	} else if reqBranch == "PAPUA" {
-		branchName = "Cabang Papua"
-	} else if reqBranch == "GNET-BIARO" {
-		branchName = "Mitra GNET Biaro"
 	} else if reqBranch != "" && reqBranch != "ALL" {
 		branchName = "Cabang " + reqBranch
 	}

@@ -707,8 +707,6 @@
             <select id="global-branch-selector" onchange="onGlobalBranchChange(this.value)" class="bg-transparent text-xs font-mono font-bold text-slate-900 outline-none cursor-pointer pr-1">
               <option value="ALL">Semua Wilayah Operasional</option>
               <option value="PYK">Kantor Cabang Payakumbuh (PYK)</option>
-              <option value="PAPUA">Kantor Cabang Papua (PAPUA)</option>
-              <option value="GNET-BIARO">Mitra PT GNET BIARO</option>
             </select>
           </div>
         </div>
@@ -3176,8 +3174,6 @@
             <select id="admin-sidebar-branch-selector" onchange="onGlobalBranchChange(this.value)" class="w-full bg-white border border-slate-300 text-slate-900 text-xs font-mono font-bold rounded-md px-2 py-1.5 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 cursor-pointer shadow-2xs">
               <option value="ALL">Semua Wilayah Operasional</option>
               <option value="PYK">Kantor Cabang Payakumbuh (PYK)</option>
-              <option value="PAPUA">Kantor Cabang Papua (PAPUA)</option>
-              <option value="GNET-BIARO">Mitra PT GNET BIARO</option>
             </select>
           </div>
 
@@ -3293,8 +3289,6 @@
               <select id="admin-table-branch-selector" onchange="onGlobalBranchChange(this.value)" class="bg-transparent text-xs font-mono font-bold text-slate-900 outline-none cursor-pointer">
                 <option value="ALL">Semua Wilayah</option>
                 <option value="PYK">Kantor Cabang Payakumbuh (PYK)</option>
-                <option value="PAPUA">Kantor Cabang Papua (PAPUA)</option>
-                <option value="GNET-BIARO">Mitra PT GNET BIARO</option>
               </select>
             </div>
             <button onclick="loadAdminRegistrations()" class="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 font-mono text-xs font-semibold rounded-md border border-slate-300 flex items-center gap-1.5 transition shadow-2xs cursor-pointer">
@@ -4411,8 +4405,6 @@
                 <select id="staff-table-branch-filter" onchange="onGlobalBranchChange(this.value)" class="text-xs font-mono font-bold bg-transparent text-slate-800 outline-none cursor-pointer">
                   <option value="ALL">Semua Wilayah Penugasan</option>
                   <option value="PYK">Kantor Cabang Payakumbuh (PYK)</option>
-                  <option value="PAPUA">Kantor Cabang Papua (PAPUA)</option>
-                  <option value="GNET-BIARO">Mitra PT GNET BIARO</option>
                 </select>
               </div>
               <button onclick="loadSuperUserStaff()" class="text-xs font-mono text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md border border-slate-200 hover:bg-slate-50 flex items-center gap-1.5 transition shadow-xs">
@@ -7648,8 +7640,6 @@
           <select id="add-staff-branch" class="w-full bg-white border border-slate-300 text-slate-900 rounded-md px-4 py-2 text-sm font-mono outline-none focus:border-slate-900 transition">
             <option value="ALL">Semua Cabang (Nasional)</option>
             <option value="PYK">Kantor Cabang Payakumbuh (PYK)</option>
-            <option value="PAPUA">Kantor Cabang Papua (PAPUA)</option>
-            <option value="GNET-BIARO">Mitra PT GNET BIARO</option>
           </select>
         </div>
 
@@ -23373,11 +23363,11 @@
         return;
       }
 
-      let bCode = 'PAPUA';
+      let bCode = 'PYK';
       if (isBranchManager) {
         try {
           const bData = JSON.parse(localStorage.getItem('branch_manager_auth') || '{}');
-          bCode = bData.branch_code || 'PAPUA';
+          bCode = bData.branch_code || 'PYK';
         } catch(e) {}
       } else {
         bCode = localStorage.getItem('selected_branch_filter') || 'ALL';
@@ -23435,8 +23425,8 @@
       if (isBranchManager) {
         try {
           const bData = JSON.parse(localStorage.getItem('branch_manager_auth') || '{}');
-          partnerBranch = bData.branch_code || 'PAPUA';
-        } catch(e) { partnerBranch = 'PAPUA'; }
+          partnerBranch = bData.branch_code || 'PYK';
+        } catch(e) { partnerBranch = 'PYK'; }
       } else {
         const branchSelect = document.getElementById('add-partner-branch');
         partnerBranch = branchSelect ? branchSelect.value : 'ALL';
@@ -25340,13 +25330,6 @@
             const addr = (reg.address || '').toUpperCase();
             return !odp.includes('PAPUA') && !addr.includes('PAPUA');
           });
-        } else if (tName.includes('papua')) {
-          wos = wos.filter(wo => {
-            const reg = wo.registration || {};
-            const odp = (reg.nearest_odp_code || '').toUpperCase();
-            const addr = (reg.address || '').toUpperCase();
-            return odp.includes('PAPUA') || addr.includes('PAPUA');
-          });
         }
       } else if (activeRole === 'superuser' && branchFilter !== 'ALL') {
         wos = wos.filter(wo => {
@@ -25355,10 +25338,6 @@
           const addr = (reg.address || '').toUpperCase();
           if (branchFilter === 'PYK' || branchFilter === 'HQ') {
             return !odp.includes('PAPUA') && !addr.includes('PAPUA');
-          } else if (branchFilter === 'PAPUA') {
-            return odp.includes('PAPUA') || addr.includes('PAPUA');
-          } else if (branchFilter === 'GNET-BIARO' || branchFilter === 'MITRA-1' || branchFilter.startsWith('MITRA')) {
-            return odp.includes('BIA') || odp.includes('BIO') || addr.includes('BIARO') || odp.includes('MITRA');
           }
           return true;
         });
@@ -27009,7 +26988,7 @@
         localStorage.setItem('finance_auth', JSON.stringify({ role: 'Staf Keuangan & Billing', name: data.full_name, username: data.username }));
       }
       if (isSuper || roles.includes('BRANCH_MANAGER')) {
-        const branchCode = (data.branch_code || (data.branch_id === 2 ? 'PAPUA' : 'HQ')).toUpperCase();
+        const branchCode = (data.branch_code || (data.branch_id === 2 ? 'PYK' : 'HQ')).toUpperCase();
         localStorage.setItem('branch_manager_auth', JSON.stringify({ role: 'Kepala Cabang', name: data.full_name, username: data.username, branch_code: branchCode }));
       }
       if (isSuper || roles.includes('TECHNICIAN')) {
@@ -28625,8 +28604,8 @@
         if (role === 'branch_manager') {
           try {
             const bData = JSON.parse(localStorage.getItem('branch_manager_auth') || '{}');
-            branch = bData.branch_code || 'PAPUA';
-          } catch(e) { branch = 'PAPUA'; }
+            branch = bData.branch_code || 'PYK';
+          } catch(e) { branch = 'PYK'; }
         } else {
           branch = localStorage.getItem('selected_branch_filter') || window.activeBranchCode || 'ALL';
         }
@@ -28742,7 +28721,7 @@
 
       const branchSel = document.getElementById('edit-jp-branch');
       if (branchSel) {
-        branchSel.value = partner.branch_code || (partner.code && partner.code.includes('PAPUA') ? 'PAPUA' : (partner.branch_id ? 'HQ' : 'ALL'));
+        branchSel.value = partner.branch_code || (partner.branch_id ? 'HQ' : 'ALL');
       }
 
       syncServiceTypePlaceholder('edit');
@@ -28857,11 +28836,11 @@
       document.getElementById('jp-phone').value = '';
       document.getElementById('jp-coverage').value = '';
 
-      let bCode = 'PAPUA';
+      let bCode = 'PYK';
       if (isBranchManager) {
         try {
           const bData = JSON.parse(localStorage.getItem('branch_manager_auth') || '{}');
-          bCode = bData.branch_code || 'PAPUA';
+          bCode = bData.branch_code || 'PYK';
         } catch(e) {}
       } else {
         bCode = localStorage.getItem('selected_branch_filter') || 'ALL';
@@ -28875,7 +28854,7 @@
 
       const codeInput = document.getElementById('jp-code');
       if (codeInput) {
-        codeInput.placeholder = isBranchManager ? 'Contoh: PAPUA-FO atau TIF-' + bCode : 'Contoh: TIF atau TELKO-HQ';
+        codeInput.placeholder = isBranchManager ? 'Contoh: PYK-FO atau TIF-' + bCode : 'Contoh: TIF atau TELKO-HQ';
       }
 
       const covInput = document.getElementById('jp-coverage');
@@ -28930,8 +28909,8 @@
       if (isBranchManager) {
         try {
           const bData = JSON.parse(localStorage.getItem('branch_manager_auth') || '{}');
-          partnerBranch = bData.branch_code || 'PAPUA';
-        } catch(e) { partnerBranch = 'PAPUA'; }
+          partnerBranch = bData.branch_code || 'PYK';
+        } catch(e) { partnerBranch = 'PYK'; }
       } else {
         const branchSelect = document.getElementById('jp-branch');
         partnerBranch = branchSelect ? branchSelect.value : 'ALL';
