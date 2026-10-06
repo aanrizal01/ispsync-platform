@@ -207,7 +207,7 @@ services:
     environment:
       PORT: 8082
       DB_DRIVER: postgres
-      DATABASE_URL: postgres://${POSTGRES_USER:-isp_admin}:${POSTGRES_PASSWORD}@postgres:5432/isp_fibergrid?sslmode=disable
+      DATABASE_URL: postgres://${POSTGRES_USER:-isp_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-isp_billing}?sslmode=disable
       ADMIN_API_KEY: ${FTTX_ADMIN_KEY:-gogiga-noc-admin-99a8f27c3d14}
       SUPERUSER_API_KEY: ${FTTX_SUPERUSER_KEY:-gogiga-super-owner-b8417c09e32f}
       INTERNAL_API_KEY: ${FTTX_INTERNAL_KEY:-gogiga-internal-sync-42c8d71e9a55}
@@ -239,8 +239,8 @@ services:
     environment:
       PORT: 8081
       DB_DRIVER: postgres
-      DATABASE_URL: postgres://${POSTGRES_USER:-isp_admin}:${POSTGRES_PASSWORD}@postgres:5432/ispsync?sslmode=disable
-      BILLING_DATABASE_URL: postgres://${POSTGRES_USER:-isp_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-isp_billing}?sslmode=disable
+      DATABASE_URL: postgres://${POSTGRES_USER:-isp_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-isp_billing}?search_path=ispsync,public&sslmode=disable
+      BILLING_DATABASE_URL: postgres://${POSTGRES_USER:-isp_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-isp_billing}?search_path=public&sslmode=disable
       GIGABILL_BASE_URL: http://api:8080
       GIGABILL_API_TOKEN: ${GIGABILL_API_TOKEN:-supersecret-admin-token}
       ADMIN_API_KEY: ${ISP_ADMIN_KEY:-isp-onboarding-admin-key}
