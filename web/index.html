@@ -14851,7 +14851,11 @@
     async function loadAdminLiveRadiusSessions() {
       try {
         const res = await fetch('/api/v1/admin/radius/live-sessions', {
-          headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('auth_session_token') || '') }
+          headers: {
+            'X-Admin-Key': 'isp-onboarding-admin-key',
+            'Authorization': 'Bearer ' + (localStorage.getItem('auth_session_token') || ''),
+            'X-User-Role': localStorage.getItem('active_portal_role') || 'superuser'
+          }
         });
         const json = await res.json();
         if (json.success && json.data) {
@@ -14860,6 +14864,22 @@
       } catch (err) {
         console.warn('Gagal memuat sesi FreeRADIUS live:', err);
       }
+    }
+
+    function findLiveSession(u) {
+      if (!u || !adminLiveRadiusSessionsMap) return null;
+      const clean = String(u).trim();
+      if (!clean) return null;
+      if (adminLiveRadiusSessionsMap[clean]) return adminLiveRadiusSessionsMap[clean];
+      const lower = clean.toLowerCase();
+      if (adminLiveRadiusSessionsMap[lower]) return adminLiveRadiusSessionsMap[lower];
+      const base = clean.split('@')[0].toLowerCase();
+      for (const k of Object.keys(adminLiveRadiusSessionsMap)) {
+        if (k.toLowerCase() === lower || k.split('@')[0].toLowerCase() === base) {
+          return adminLiveRadiusSessionsMap[k];
+        }
+      }
+      return null;
     }
 
     async function kickPPPoESession(username, fullName) {
@@ -15023,7 +15043,7 @@
 
       tbody.innerHTML = filtered.map((r) => {
         const originalIdx = adminRegistrationsList.findIndex(item => item.id === r.id);
-        const liveSess = r.pppoe_username ? adminLiveRadiusSessionsMap[r.pppoe_username] : null;
+        const liveSess = findLiveSession(r.pppoe_username) || findLiveSession(r.upstream_pppoe_username);
         const isOnline = !!(liveSess && liveSess.is_online);
         const planPrice = getPlanDisplayPrice(r);
 
