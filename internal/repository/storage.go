@@ -84,6 +84,12 @@ type Storage interface {
 	GetTenantSettings(ctx context.Context, tenantID string) (*domain.TenantIntegrationSettings, error)
 	UpdateTenantSettings(ctx context.Context, tenantID string, settings *domain.TenantIntegrationSettings) error
 
+	// Cluster SmartOLT Multi-Provider Management
+	ListClusterSmartOLTConfigs(ctx context.Context, tenantID string) ([]domain.ClusterSmartOLTConfig, error)
+	GetClusterSmartOLTConfig(ctx context.Context, tenantID, clusterName string) (*domain.ClusterSmartOLTConfig, error)
+	SaveClusterSmartOLTConfig(ctx context.Context, cfg *domain.ClusterSmartOLTConfig) error
+	DeleteClusterSmartOLTConfig(ctx context.Context, tenantID, clusterName string) error
+
 	// Close
 	Close() error
 }

@@ -265,6 +265,24 @@ func (s *SQLiteStorage) migrate() error {
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	);
 
+	CREATE TABLE IF NOT EXISTS cluster_smartolt_configs (
+		id TEXT PRIMARY KEY,
+		tenant_id TEXT DEFAULT '',
+		cluster_name TEXT NOT NULL,
+		provider_id TEXT DEFAULT '',
+		partner_code TEXT DEFAULT '',
+		integration_type TEXT DEFAULT 'SMARTOLT',
+		smartolt_url TEXT NOT NULL,
+		smartolt_api_key TEXT NOT NULL,
+		olt_id TEXT DEFAULT '',
+		zone_id TEXT DEFAULT '',
+		zone_name TEXT DEFAULT '',
+		is_active BOOLEAN DEFAULT 1,
+		notes TEXT DEFAULT '',
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+
 	CREATE TABLE IF NOT EXISTS jartaplok_agreements (
 		id TEXT PRIMARY KEY,
 		agreement_no TEXT NOT NULL,
@@ -1693,3 +1711,86 @@ func (s *SQLiteStorage) UpdateTenantSettings(ctx context.Context, tenantID strin
 		settings.TaxMode, settings.TaxMode, settings.TaxRatePPN, settings.TaxRatePPN, settings.NPWP, settings.NPWP)
 	return err
 }
+
+// ── Cluster SmartOLT Methods ──────────────────────────────────────────
+
+func (s *SQLiteStorage) ListClusterSmartOLTConfigs(ctx context.Context, tenantID string) ([]domain.ClusterSmartOLTConfig, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT id, tenant_id, cluster_name, provider_id, partner_code, integration_type,
+		       smartolt_url, smartolt_api_key, olt_id, zone_id, zone_name, is_active, notes, created_at, updated_at
+		FROM cluster_smartolt_configs
+		WHERE tenant_id = ? OR tenant_id = '' OR ? = ''
+		ORDER BY cluster_name ASC
+	`, tenantID, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []domain.ClusterSmartOLTConfig
+	for rows.Next() {
+		var c domain.ClusterSmartOLTConfig
+		if err := rows.Scan(
+			&c.ID, &c.TenantID, &c.ClusterName, &c.ProviderID, &c.PartnerCode, &c.IntegrationType,
+			&c.SmartOLTURL, &c.SmartOLTKey, &c.OLTID, &c.ZoneID, &c.ZoneName, &c.IsActive, &c.Notes,
+			&c.CreatedAt, &c.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		list = append(list, c)
+	}
+	return list, nil
+}
+
+func (s *SQLiteStorage) GetClusterSmartOLTConfig(ctx context.Context, tenantID, clusterName string) (*domain.ClusterSmartOLTConfig, error) {
+	var c domain.ClusterSmartOLTConfig
+	err := s.db.QueryRowContext(ctx, `
+		SELECT id, tenant_id, cluster_name, provider_id, partner_code, integration_type,
+		       smartolt_url, smartolt_api_key, olt_id, zone_id, zone_name, is_active, notes, created_at, updated_at
+		FROM cluster_smartolt_configs
+		WHERE LOWER(cluster_name) = LOWER(?)
+		ORDER BY updated_at DESC LIMIT 1
+	`, clusterName).Scan(
+		&c.ID, &c.TenantID, &c.ClusterName, &c.ProviderID, &c.PartnerCode, &c.IntegrationType,
+		&c.SmartOLTURL, &c.SmartOLTKey, &c.OLTID, &c.ZoneID, &c.ZoneName, &c.IsActive, &c.Notes,
+		&c.CreatedAt, &c.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
+}
+
+func (s *SQLiteStorage) SaveClusterSmartOLTConfig(ctx context.Context, cfg *domain.ClusterSmartOLTConfig) error {
+	if cfg.ID == "" {
+		cfg.ID = uuid.New().String()
+	}
+	now := time.Now()
+	_, err := s.db.ExecContext(ctx, `
+		INSERT INTO cluster_smartolt_configs (
+			id, tenant_id, cluster_name, provider_id, partner_code, integration_type,
+			smartolt_url, smartolt_api_key, olt_id, zone_id, zone_name, is_active, notes, created_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(id) DO UPDATE SET
+			provider_id = excluded.provider_id,
+			partner_code = excluded.partner_code,
+			smartolt_url = excluded.smartolt_url,
+			smartolt_api_key = excluded.smartolt_api_key,
+			olt_id = excluded.olt_id,
+			zone_id = excluded.zone_id,
+			zone_name = excluded.zone_name,
+			is_active = excluded.is_active,
+			notes = excluded.notes,
+			updated_at = excluded.updated_at
+	`, cfg.ID, cfg.TenantID, cfg.ClusterName, cfg.ProviderID, cfg.PartnerCode, "SMARTOLT",
+		cfg.SmartOLTURL, cfg.SmartOLTKey, cfg.OLTID, cfg.ZoneID, cfg.ZoneName, cfg.IsActive, cfg.Notes, now, now)
+	return err
+}
+
+func (s *SQLiteStorage) DeleteClusterSmartOLTConfig(ctx context.Context, tenantID, clusterName string) error {
+	_, err := s.db.ExecContext(ctx, `
+		DELETE FROM cluster_smartolt_configs WHERE LOWER(cluster_name) = LOWER(?)
+	`, clusterName)
+	return err
+}
+

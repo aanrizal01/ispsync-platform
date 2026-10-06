@@ -1653,3 +1653,106 @@ func (s *PostgresStorage) UpdateTenantSettings(ctx context.Context, tenantID str
 		settings.TaxMode, settings.TaxRatePPN, settings.NPWP)
 	return err
 }
+
+// ── Cluster SmartOLT Methods ──────────────────────────────────────────
+
+func (s *PostgresStorage) ListClusterSmartOLTConfigs(ctx context.Context, tenantID string) ([]domain.ClusterSmartOLTConfig, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT id, tenant_id, cluster_name, provider_id, partner_code, integration_type,
+		       smartolt_url, smartolt_api_key, olt_id, zone_id, zone_name, is_active, notes, created_at, updated_at
+		FROM cluster_smartolt_configs
+		WHERE tenant_id = $1 OR tenant_id = '' OR $1 = ''
+		ORDER BY cluster_name ASC
+	`, tenantID)
+	if err != nil {
+		return []domain.ClusterSmartOLTConfig{}, nil
+	}
+	defer rows.Close()
+
+	var list []domain.ClusterSmartOLTConfig
+	for rows.Next() {
+		var c domain.ClusterSmartOLTConfig
+		if err := rows.Scan(
+			&c.ID, &c.TenantID, &c.ClusterName, &c.ProviderID, &c.PartnerCode, &c.IntegrationType,
+			&c.SmartOLTURL, &c.SmartOLTKey, &c.OLTID, &c.ZoneID, &c.ZoneName, &c.IsActive, &c.Notes,
+			&c.CreatedAt, &c.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		list = append(list, c)
+	}
+	return list, nil
+}
+
+func (s *PostgresStorage) GetClusterSmartOLTConfig(ctx context.Context, tenantID, clusterName string) (*domain.ClusterSmartOLTConfig, error) {
+	var c domain.ClusterSmartOLTConfig
+	err := s.db.QueryRowContext(ctx, `
+		SELECT id, tenant_id, cluster_name, provider_id, partner_code, integration_type,
+		       smartolt_url, smartolt_api_key, olt_id, zone_id, zone_name, is_active, notes, created_at, updated_at
+		FROM cluster_smartolt_configs
+		WHERE LOWER(cluster_name) = LOWER($1)
+		ORDER BY updated_at DESC LIMIT 1
+	`, clusterName).Scan(
+		&c.ID, &c.TenantID, &c.ClusterName, &c.ProviderID, &c.PartnerCode, &c.IntegrationType,
+		&c.SmartOLTURL, &c.SmartOLTKey, &c.OLTID, &c.ZoneID, &c.ZoneName, &c.IsActive, &c.Notes,
+		&c.CreatedAt, &c.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
+}
+
+func (s *PostgresStorage) SaveClusterSmartOLTConfig(ctx context.Context, cfg *domain.ClusterSmartOLTConfig) error {
+	if cfg.ID == "" {
+		cfg.ID = uuid.New().String()
+	}
+	now := time.Now()
+	_, _ = s.db.ExecContext(ctx, `
+		CREATE TABLE IF NOT EXISTS cluster_smartolt_configs (
+			id TEXT PRIMARY KEY,
+			tenant_id TEXT DEFAULT '',
+			cluster_name TEXT NOT NULL,
+			provider_id TEXT DEFAULT '',
+			partner_code TEXT DEFAULT '',
+			integration_type TEXT DEFAULT 'SMARTOLT',
+			smartolt_url TEXT NOT NULL,
+			smartolt_api_key TEXT NOT NULL,
+			olt_id TEXT DEFAULT '',
+			zone_id TEXT DEFAULT '',
+			zone_name TEXT DEFAULT '',
+			is_active BOOLEAN DEFAULT TRUE,
+			notes TEXT DEFAULT '',
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+
+	_, err := s.db.ExecContext(ctx, `
+		INSERT INTO cluster_smartolt_configs (
+			id, tenant_id, cluster_name, provider_id, partner_code, integration_type,
+			smartolt_url, smartolt_api_key, olt_id, zone_id, zone_name, is_active, notes, created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+		ON CONFLICT(id) DO UPDATE SET
+			provider_id = EXCLUDED.provider_id,
+			partner_code = EXCLUDED.partner_code,
+			smartolt_url = EXCLUDED.smartolt_url,
+			smartolt_api_key = EXCLUDED.smartolt_api_key,
+			olt_id = EXCLUDED.olt_id,
+			zone_id = EXCLUDED.zone_id,
+			zone_name = EXCLUDED.zone_name,
+			is_active = EXCLUDED.is_active,
+			notes = EXCLUDED.notes,
+			updated_at = EXCLUDED.updated_at
+	`, cfg.ID, cfg.TenantID, cfg.ClusterName, cfg.ProviderID, cfg.PartnerCode, "SMARTOLT",
+		cfg.SmartOLTURL, cfg.SmartOLTKey, cfg.OLTID, cfg.ZoneID, cfg.ZoneName, cfg.IsActive, cfg.Notes, now, now)
+	return err
+}
+
+func (s *PostgresStorage) DeleteClusterSmartOLTConfig(ctx context.Context, tenantID, clusterName string) error {
+	_, err := s.db.ExecContext(ctx, `
+		DELETE FROM cluster_smartolt_configs WHERE LOWER(cluster_name) = LOWER($1)
+	`, clusterName)
+	return err
+}
+

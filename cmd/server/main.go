@@ -266,6 +266,18 @@ func main() {
 			adm.Get("/partners", apiH.AdminListPartners)
 			adm.Post("/partners", apiH.AdminCreatePartner)
 			adm.Put("/partners/{id}", apiH.AdminUpdatePartner)
+
+			// SmartOLT Live Monitoring & Auto-Attach
+			adm.Get("/smartolt/onus", apiH.AdminSmartOLTListONUs)
+			adm.Post("/smartolt/sync", apiH.AdminSmartOLTSync)
+			adm.Get("/smartolt/diagnostics/{sn}", apiH.AdminSmartOLTDiagnostics)
+
+			// Cluster SmartOLT Multi-Provider Management
+			adm.Get("/clusters/smartolt-configs", apiH.AdminSmartOLTListConfigs)
+			adm.Get("/clusters/{clusterName}/smartolt-config", apiH.AdminSmartOLTGetConfig)
+			adm.Post("/clusters/smartolt-config", apiH.AdminSmartOLTSaveConfig)
+			adm.Delete("/clusters/{clusterName}/smartolt-config", apiH.AdminSmartOLTDeleteConfig)
+			adm.Post("/clusters/smartolt-test", apiH.AdminSmartOLTTest)
 		})
 
 		api.Route("/technician", func(tech chi.Router) {

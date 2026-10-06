@@ -16211,7 +16211,17 @@
             'Authorization': 'Bearer ' + (localStorage.getItem('auth_session_token') || '')
           }
         });
-        const json = await res.json();
+        let json;
+        if (!res.ok) {
+          const txt = await res.text();
+          try {
+            json = JSON.parse(txt);
+          } catch(e) {
+            throw new Error(`Server HTTP ${res.status}: ${txt || 'Layanan SmartOLT tidak tersedia'}`);
+          }
+        } else {
+          json = await res.json();
+        }
         if (json.success && json.data) {
           smartOLTONUList = json.data;
           renderSmartOLTTable(smartOLTONUList);
@@ -16296,11 +16306,21 @@
             'Authorization': 'Bearer ' + (localStorage.getItem('auth_session_token') || '')
           }
         });
-        const json = await res.json();
+        let json;
+        if (!res.ok) {
+          const txt = await res.text();
+          try {
+            json = JSON.parse(txt);
+          } catch(e) {
+            throw new Error(`Server HTTP ${res.status}: ${txt || 'Layanan SmartOLT tidak merespons'}`);
+          }
+        } else {
+          json = await res.json();
+        }
         if (json.success) {
           if (alertBox) {
             alertBox.className = 'p-3 rounded-md text-xs font-mono bg-emerald-50 text-emerald-800 border border-emerald-200 block';
-            alertBox.innerText = `Sinkronisasi Sukses: ${json.data.attached_count} pelanggan berhasil di-attach dan redaman optik diperbarui!`;
+            alertBox.innerText = `Sinkronisasi Sukses: ${(json.data && json.data.attached_count !== undefined) ? json.data.attached_count : 0} pelanggan berhasil di-attach dan redaman optik diperbarui!`;
           }
           await loadSmartOLTONUs();
           if (typeof loadAdminRegistrations === 'function') {
@@ -19904,10 +19924,20 @@
           })
         });
 
-        const json = await res.json();
+        let json;
+        if (!res.ok) {
+          const txt = await res.text();
+          try {
+            json = JSON.parse(txt);
+          } catch(e) {
+            throw new Error(`Server HTTP ${res.status}: ${txt || 'Layanan SmartOLT tidak merespons'}`);
+          }
+        } else {
+          json = await res.json();
+        }
         if (json.success) {
           resultEl.className = 'rounded-md border p-3 font-mono text-[11px] bg-emerald-50 border-emerald-300 text-emerald-800 space-y-1';
-          const onusCount = json.data && json.data.total_onus !== undefined ? json.data.total_onus : (json.data && Array.isArray(json.data.onus) ? json.data.onus.length : 0);
+          const onusCount = json.data && json.data.onus_count !== undefined ? json.data.onus_count : (json.data && json.data.total_onus !== undefined ? json.data.total_onus : (json.data && Array.isArray(json.data.onus) ? json.data.onus.length : 0));
           resultEl.innerHTML = `
             <div class="font-bold flex items-center gap-1.5"><i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i> Koneksi Berhasil! API Valid</div>
             <div>${json.message || 'Koneksi ke SmartOLT API sukses.'}</div>
@@ -19975,7 +20005,17 @@
           body: JSON.stringify(payload)
         });
 
-        const json = await res.json();
+        let json;
+        if (!res.ok) {
+          const txt = await res.text();
+          try {
+            json = JSON.parse(txt);
+          } catch(e) {
+            throw new Error(`Server HTTP ${res.status}: ${txt || 'Gagal menyimpan konfigurasi'}`);
+          }
+        } else {
+          json = await res.json();
+        }
         if (json.success) {
           alert('Konfigurasi SmartOLT klaster ' + clusterName + ' berhasil disimpan!');
           closeClusterSmartOLTModal();

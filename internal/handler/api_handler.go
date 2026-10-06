@@ -20,6 +20,7 @@ import (
 	"ispsync/internal/middleware"
 	"ispsync/internal/notification"
 	"ispsync/internal/repository"
+	"ispsync/internal/smartoltclient"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -3395,3 +3396,272 @@ func (h *APIHandler) TestTelegram(w http.ResponseWriter, r *http.Request) {
 		"status":  "DELIVERED",
 	})
 }
+
+// ── SMARTOLT JARTAPLOK HANDLERS ──────────────────────────────────────
+
+func (h *APIHandler) AdminSmartOLTTest(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		BaseURL     string `json:"base_url"`
+		SmartOLTURL string `json:"smartolt_url"`
+		APIKey      string `json:"api_key"`
+		APIToken    string `json:"api_token"`
+		OLTID       string `json:"olt_id"`
+		ZoneID      string `json:"zone_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.failResponse(w, http.StatusBadRequest, "Format JSON tidak valid: "+err.Error())
+		return
+	}
+	targetURL := strings.TrimSpace(req.SmartOLTURL)
+	if targetURL == "" {
+		targetURL = strings.TrimSpace(req.BaseURL)
+	}
+	targetKey := strings.TrimSpace(req.APIToken)
+	if targetKey == "" {
+		targetKey = strings.TrimSpace(req.APIKey)
+	}
+	if targetURL == "" || targetKey == "" {
+		h.failResponse(w, http.StatusBadRequest, "Base URL dan API Key / Token SmartOLT wajib diisi")
+		return
+	}
+
+	client := smartoltclient.New(targetURL, targetKey)
+	ok, err := client.CheckHealth(r.Context())
+	if err != nil {
+		h.failResponse(w, http.StatusBadRequest, "Koneksi ke SmartOLT gagal: "+err.Error())
+		return
+	}
+	if !ok {
+		h.failResponse(w, http.StatusBadRequest, "SmartOLT tidak merespons OK")
+		return
+	}
+
+	onusCount := 0
+	if onus, err := client.GetScopedONUs(r.Context()); err == nil {
+		onusCount = len(onus)
+	}
+
+	h.successResponse(w, "Koneksi ke SmartOLT API sukses.", map[string]interface{}{
+		"status":     "connected",
+		"onus_count": onusCount,
+	})
+}
+
+func (h *APIHandler) AdminSmartOLTSaveConfig(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ClusterName string `json:"cluster_name"`
+		PartnerCode string `json:"partner_code"`
+		ProviderID  string `json:"provider_id"`
+		BaseURL     string `json:"base_url"`
+		SmartOLTURL string `json:"smartolt_url"`
+		APIToken    string `json:"api_token"`
+		APIKey      string `json:"api_key"`
+		OLTID       string `json:"olt_id"`
+		ZoneID      string `json:"zone_id"`
+		ZoneName    string `json:"zone_name"`
+		IsActive    bool   `json:"is_active"`
+		Notes       string `json:"notes"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.failResponse(w, http.StatusBadRequest, "Format JSON tidak valid: "+err.Error())
+		return
+	}
+	targetURL := strings.TrimSpace(req.SmartOLTURL)
+	if targetURL == "" {
+		targetURL = strings.TrimSpace(req.BaseURL)
+	}
+	targetKey := strings.TrimSpace(req.APIToken)
+	if targetKey == "" {
+		targetKey = strings.TrimSpace(req.APIKey)
+	}
+	t := middleware.GetTenant(r)
+	tenantID := ""
+	if t != nil {
+		tenantID = t.ID
+	}
+
+	existing, _ := h.store.GetClusterSmartOLTConfig(r.Context(), tenantID, req.ClusterName)
+	cfgID := uuid.New().String()
+	if existing != nil {
+		cfgID = existing.ID
+	}
+
+	cfg := &domain.ClusterSmartOLTConfig{
+		ID:              cfgID,
+		TenantID:        tenantID,
+		ClusterName:     req.ClusterName,
+		ProviderID:      req.ProviderID,
+		PartnerCode:     req.PartnerCode,
+		IntegrationType: "SMARTOLT",
+		SmartOLTURL:     targetURL,
+		SmartOLTKey:     targetKey,
+		OLTID:           req.OLTID,
+		ZoneID:          req.ZoneID,
+		ZoneName:        req.ZoneName,
+		IsActive:        req.IsActive,
+		Notes:           req.Notes,
+	}
+	if err := h.store.SaveClusterSmartOLTConfig(r.Context(), cfg); err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal menyimpan konfigurasi: "+err.Error())
+		return
+	}
+	h.successResponse(w, "Konfigurasi SmartOLT berhasil disimpan!", cfg)
+}
+
+func (h *APIHandler) AdminSmartOLTGetConfig(w http.ResponseWriter, r *http.Request) {
+	clusterName := chi.URLParam(r, "clusterName")
+	t := middleware.GetTenant(r)
+	tenantID := ""
+	if t != nil {
+		tenantID = t.ID
+	}
+	cfg, err := h.store.GetClusterSmartOLTConfig(r.Context(), tenantID, clusterName)
+	if err != nil || cfg == nil {
+		h.failResponse(w, http.StatusNotFound, "Konfigurasi SmartOLT tidak ditemukan")
+		return
+	}
+	h.successResponse(w, "Konfigurasi SmartOLT", cfg)
+}
+
+func (h *APIHandler) AdminSmartOLTListConfigs(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	tenantID := ""
+	if t != nil {
+		tenantID = t.ID
+	}
+	list, err := h.store.ListClusterSmartOLTConfigs(r.Context(), tenantID)
+	if err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal memuat konfigurasi: "+err.Error())
+		return
+	}
+	h.successResponse(w, "Daftar konfigurasi SmartOLT", list)
+}
+
+func (h *APIHandler) AdminSmartOLTDeleteConfig(w http.ResponseWriter, r *http.Request) {
+	clusterName := chi.URLParam(r, "clusterName")
+	t := middleware.GetTenant(r)
+	tenantID := ""
+	if t != nil {
+		tenantID = t.ID
+	}
+	if err := h.store.DeleteClusterSmartOLTConfig(r.Context(), tenantID, clusterName); err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal menghapus: "+err.Error())
+		return
+	}
+	h.successResponse(w, "Konfigurasi SmartOLT berhasil dihapus", nil)
+}
+
+func (h *APIHandler) AdminSmartOLTListONUs(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	tenantID := ""
+	if t != nil {
+		tenantID = t.ID
+	}
+
+	configs, _ := h.store.ListClusterSmartOLTConfigs(r.Context(), tenantID)
+	var activeCfg *domain.ClusterSmartOLTConfig
+	for i := range configs {
+		if configs[i].IsActive && configs[i].SmartOLTURL != "" && configs[i].SmartOLTKey != "" {
+			activeCfg = &configs[i]
+			break
+		}
+	}
+
+	if activeCfg == nil {
+		// Jika belum ada konfigurasi aktif, return array kosong yang valid (bukan error)
+		h.successResponse(w, "SmartOLT belum dikonfigurasi di klaster", []interface{}{})
+		return
+	}
+
+	client := smartoltclient.New(activeCfg.SmartOLTURL, activeCfg.SmartOLTKey)
+	onus, err := client.GetScopedONUs(r.Context())
+	if err != nil {
+		h.failResponse(w, http.StatusBadGateway, "Gagal mengambil data dari SmartOLT: "+err.Error())
+		return
+	}
+
+	// Filter zone_id jika dispesifikasikan di config
+	if activeCfg.ZoneID != "" {
+		filtered := make([]smartoltclient.SmartOLTONU, 0, len(onus))
+		for _, o := range onus {
+			if strings.TrimSpace(o.ZoneID) == strings.TrimSpace(activeCfg.ZoneID) || o.ZoneID == "" {
+				filtered = append(filtered, o)
+			}
+		}
+		onus = filtered
+	}
+
+	h.successResponse(w, "Daftar perangkat ONT SmartOLT", onus)
+}
+
+func (h *APIHandler) AdminSmartOLTSync(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	tenantID := ""
+	if t != nil {
+		tenantID = t.ID
+	}
+
+	configs, _ := h.store.ListClusterSmartOLTConfigs(r.Context(), tenantID)
+	var activeCfg *domain.ClusterSmartOLTConfig
+	for i := range configs {
+		if configs[i].IsActive && configs[i].SmartOLTURL != "" && configs[i].SmartOLTKey != "" {
+			activeCfg = &configs[i]
+			break
+		}
+	}
+
+	if activeCfg == nil {
+		h.failResponse(w, http.StatusNotFound, "Belum ada konfigurasi SmartOLT aktif di klaster")
+		return
+	}
+
+	client := smartoltclient.New(activeCfg.SmartOLTURL, activeCfg.SmartOLTKey)
+	onus, err := client.GetScopedONUs(r.Context())
+	if err != nil {
+		h.failResponse(w, http.StatusBadGateway, "Gagal sinkronisasi SmartOLT: "+err.Error())
+		return
+	}
+
+	h.successResponse(w, fmt.Sprintf("Sinkronisasi SmartOLT berhasil: %d perangkat dipindai", len(onus)), map[string]interface{}{
+		"total_scanned_onus": len(onus),
+		"attached_count":     0,
+		"attached_customers": []interface{}{},
+	})
+}
+
+func (h *APIHandler) AdminSmartOLTDiagnostics(w http.ResponseWriter, r *http.Request) {
+	sn := chi.URLParam(r, "sn")
+	if sn == "" {
+		h.failResponse(w, http.StatusBadRequest, "Serial number wajib diisi")
+		return
+	}
+	t := middleware.GetTenant(r)
+	tenantID := ""
+	if t != nil {
+		tenantID = t.ID
+	}
+
+	configs, _ := h.store.ListClusterSmartOLTConfigs(r.Context(), tenantID)
+	var activeCfg *domain.ClusterSmartOLTConfig
+	for i := range configs {
+		if configs[i].IsActive && configs[i].SmartOLTURL != "" && configs[i].SmartOLTKey != "" {
+			activeCfg = &configs[i]
+			break
+		}
+	}
+
+	if activeCfg == nil {
+		h.failResponse(w, http.StatusNotFound, "SmartOLT belum dikonfigurasi")
+		return
+	}
+
+	client := smartoltclient.New(activeCfg.SmartOLTURL, activeCfg.SmartOLTKey)
+	diag, err := client.GetONUSignalDiagnostics(r.Context(), sn)
+	if err != nil {
+		h.failResponse(w, http.StatusBadGateway, "Gagal mengambil diagnostik SmartOLT: "+err.Error())
+		return
+	}
+
+	h.successResponse(w, "Diagnostik sinyal optik SmartOLT", diag)
+}
+

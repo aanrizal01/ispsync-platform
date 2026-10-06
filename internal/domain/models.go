@@ -342,3 +342,23 @@ type TenantIntegrationSettings struct {
 	NPWP                  string    `json:"npwp"`           // NPWP resmi entitas ISP
 	UpdatedAt             time.Time `json:"updated_at"`
 }
+
+// ClusterSmartOLTConfig konfigurasi SmartOLT per klaster wilayah
+type ClusterSmartOLTConfig struct {
+	ID              string    `json:"id"`
+	TenantID        string    `json:"tenant_id,omitempty"`
+	ClusterName     string    `json:"cluster_name"`
+	ProviderID      string    `json:"provider_id"`
+	PartnerCode     string    `json:"partner_code,omitempty"`
+	IntegrationType string    `json:"integration_type"`
+	SmartOLTURL     string    `json:"smartolt_url"`
+	SmartOLTKey     string    `json:"smartolt_api_key"`
+	OLTID           string    `json:"olt_id"`
+	ZoneID          string    `json:"zone_id"`
+	ZoneName        string    `json:"zone_name"`
+	IsActive        bool      `json:"is_active"`
+	Notes           string    `json:"notes,omitempty"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
