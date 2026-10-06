@@ -362,3 +362,19 @@ type ClusterSmartOLTConfig struct {
 	UpdatedAt       time.Time `json:"updated_at"`
 }
 
+// LiveSessionInfo data sesi aktif PPPoE / Hotspot dari FreeRADIUS / MikroTik
+type LiveSessionInfo struct {
+	RadAcctID        int64     `json:"radacctid"`
+	AcctSessionID    string    `json:"acctsessionid"`
+	Username         string    `json:"username"`
+	GroupName        string    `json:"groupname"`
+	NasIPAddress     string    `json:"nasipaddress"`
+	NasPortID        string    `json:"nasportid"`
+	AcctStartTime    time.Time `json:"acctstarttime"`
+	AcctSessionTime  int64     `json:"acctsessiontime"` // detik
+	CallingStationID string    `json:"callingstationid"` // MAC modem
+	FramedIPAddress  string    `json:"framedipaddress"`  // IP pelanggan
+	IsOnline         bool      `json:"is_online"`
+}
+
+

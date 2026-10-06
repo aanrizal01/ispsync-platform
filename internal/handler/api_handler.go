@@ -2422,7 +2422,17 @@ func (h *APIHandler) AdminStaffKPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *APIHandler) AdminRadiusLiveSessions(w http.ResponseWriter, r *http.Request) {
-	h.successResponse(w, "Live sessions retrieved", []map[string]interface{}{})
+	t := middleware.GetTenant(r)
+	tenantID := ""
+	if t != nil {
+		tenantID = t.ID
+	}
+	sessions, err := h.store.GetLiveRadiusSessions(r.Context(), tenantID)
+	if err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal memuat sesi FreeRADIUS: "+err.Error())
+		return
+	}
+	h.successResponse(w, "Data sesi PPPoE aktif berhasil diambil", sessions)
 }
 
 func (h *APIHandler) TechnicianListWorkOrders(w http.ResponseWriter, r *http.Request) {

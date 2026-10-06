@@ -1794,3 +1794,8 @@ func (s *SQLiteStorage) DeleteClusterSmartOLTConfig(ctx context.Context, tenantI
 	return err
 }
 
+func (s *SQLiteStorage) GetLiveRadiusSessions(ctx context.Context, tenantID string) (map[string]domain.LiveSessionInfo, error) {
+	return make(map[string]domain.LiveSessionInfo), nil
+}
+
+

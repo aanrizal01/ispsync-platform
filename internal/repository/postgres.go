@@ -1756,3 +1756,41 @@ func (s *PostgresStorage) DeleteClusterSmartOLTConfig(ctx context.Context, tenan
 	return err
 }
 
+func (s *PostgresStorage) GetLiveRadiusSessions(ctx context.Context, tenantID string) (map[string]domain.LiveSessionInfo, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT radacctid, acctsessionid, username, COALESCE(groupname, ''),
+		       COALESCE(nasipaddress::TEXT, ''), COALESCE(nasportid, ''),
+		       acctstarttime, COALESCE(acctsessiontime, 0),
+		       COALESCE(callingstationid, ''), COALESCE(framedipaddress::TEXT, '')
+		FROM radius_sessions
+		WHERE acctstoptime IS NULL
+	`)
+	if err != nil {
+		return make(map[string]domain.LiveSessionInfo), nil
+	}
+	defer rows.Close()
+
+	result := make(map[string]domain.LiveSessionInfo)
+	for rows.Next() {
+		var sess domain.LiveSessionInfo
+		var startTime sql.NullTime
+		if err := rows.Scan(
+			&sess.RadAcctID, &sess.AcctSessionID, &sess.Username, &sess.GroupName,
+			&sess.NasIPAddress, &sess.NasPortID,
+			&startTime, &sess.AcctSessionTime,
+			&sess.CallingStationID, &sess.FramedIPAddress,
+		); err != nil {
+			continue
+		}
+		if startTime.Valid {
+			sess.AcctStartTime = startTime.Time
+		}
+		sess.FramedIPAddress = strings.TrimSuffix(sess.FramedIPAddress, "/32")
+		sess.NasIPAddress = strings.TrimSuffix(sess.NasIPAddress, "/32")
+		sess.IsOnline = true
+		result[sess.Username] = sess
+	}
+	return result, nil
+}
+
+
