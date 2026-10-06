@@ -17,7 +17,7 @@ keys/
 # ── Go ────────────────────────────────────────────────────────────
 apps/api/tmp/
 apps/api/vendor/
-apps/api/*.exe
+*.exe
 apps/api/*.test
 
 # ── Node / Next.js / Expo ─────────────────────────────────────────
