@@ -54,9 +54,15 @@ Semua perubahan, penambahan fitur, dan perbaikan bug pada platform ISPSYNC / GoG
 2. **Otentikasi Endpoint Administrasi (`internal/handler/api_handler.go`):**
    - Penyesuaian otorisasi internal admin key (`X-Admin-Key: isp-onboarding-admin-key`) untuk permintaan antar-layanan dan konsol NOC.
 
+3. **Sinkronisasi Otomatis Paket Layanan Internet Ledger (`internal/repository/postgres.go`, `web/index.html`):**
+   - Penambahan auto-fallback sinkronisasi katalog paket master Ledger (`public.plans` dan `public.plan_prices`) ke tabel tenant `ispsync.plans`. Apabila suatu tenant belum memiliki entri paket pada skema `ispsync.plans`, repositori backend secara otomatis menyalin dan meng-upsert paket aktif dari master Ledger sehingga modul NOC selalu terisi untuk setiap tenant.
+   - Penanganan fallback `GetPlanByID` ke tabel master Ledger menggunakan pencarian ID UUID paket.
+   - Pemuatan paket asinkron pada dropdown modal "Upgrade / Ganti Paket Bandwidth" di NOC FO (`populateUpgradePlanSelect`) dengan pengelompokan "Paket Resmi Aktif (Ledger)", informasi kecepatan download/upload Mbps, dan format tarif rupiah per bulan.
+
 ---
 
 ## Riwayat Komit Terkait (Branch `staging`)
+- `b6e2c82` - fix(plans): auto sync ledger master plans to ispsync plans and populate upgrade modal with speeds and pricing
 - `3af9ac1` - feat(noc): add pagination controls to registrations table
 - `f99dc6f` - feat(noc): add table filters and toggle dropdown for operational actions
 - `f0df0c0` - fix: include X-Admin-Key in loadAdminLiveRadiusSessions and use findLiveSession helper

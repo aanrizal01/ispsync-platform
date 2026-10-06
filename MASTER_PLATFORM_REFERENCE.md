@@ -193,3 +193,19 @@ Satu aplikasi resmi untuk Android & iPhone (iOS) yang dapat digunakan bersama ol
 * **Native JavaScript Bridge:** Menyediakan `window.AndroidPrinter` & `window.ISPSYNC_MOBILE` sehingga modul web portal loket kasir langsung kompatibel.
 * **Panduan Penggunaan Lengkap:** Tersedia di [`docs/MANUAL_APLIKASI_MOBILE_UNIVERSAL.md`](docs/MANUAL_APLIKASI_MOBILE_UNIVERSAL.md).
 
+---
+
+## 11. Sinkronisasi Data Lintas Skema: Master Paket Layanan (Ledger ke NOC Nexus)
+
+Untuk menjamin ketersediaan paket internet di seluruh modul multi-tenant tanpa entri data ganda:
+1. **Sumber Kebenaran Data (Source of Truth):**
+   * Data master paket internet, kecepatan bandwidth (download/upload kbps), dan tarif bulanan resmi tersimpan di skema Ledger (`public.plans` dan `public.plan_prices`).
+2. **Skema Operasional NOC / Nexus:**
+   * Modul operasional lapangan dan NOC Command Center membaca dari tabel tenant `ispsync.plans` (`id`, `tenant_id`, `code`, `name`, `speed_down_mbps`, `speed_up_mbps`, `monthly_price`, `description`, `is_active`).
+3. **Mekanisme Otomasi Auto-Fallback Multi-Tenant:**
+   * Diimplementasikan di layer repositori backend (`internal/repository/postgres.go` pada `ListPlans` dan `GetPlanByID`).
+   * Setiap kali endpoint publik `/api/v1/public/plans` diakses untuk tenant mana pun (misal tenant baru atau cabang yang tabel `ispsync.plans`-nya masih kosong), sistem akan otomatis melakukan fallback query ke master Ledger `public.plans` berstatus `ACTIVE` yang di-join dengan `public.plan_prices`.
+   * Sistem secara transparan melakukan `INSERT ... ON CONFLICT (tenant_id, code) DO UPDATE` ke tabel `ispsync.plans` menggunakan `tenant_id` pemanggil.
+   * Hasilnya, seluruh tenant yang baru onboarded atau tenant lain langsung memiliki katalog paket aktif secara instan tanpa perlu menjalankan migrasi atau intervensi query SQL manual.
+
+

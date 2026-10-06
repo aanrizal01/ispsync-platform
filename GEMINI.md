@@ -78,6 +78,12 @@ Whenever creating or modifying frontend interfaces across the ISPSYNC platform (
 4. **Dynamic Favicon Support:**
    * Link to `/web/${tenantSlug}_favicon.svg` when available.
 
+5. **Master Internet Plans & Pricing Synchronization (Ledger to NOC/Nexus):**
+   * Master paket internet dan tarif resmi tersimpan di skema Ledger (`public.plans` dan `public.plan_prices`).
+   * Modul NOC/Nexus (`ispsync.plans`) bertindak sebagai proyeksi operasional untuk masing-masing tenant (`tenant_id`).
+   * Query backend `ListPlans` dan `GetPlanByID` di `internal/repository/postgres.go` wajib mempertahankan mekanisme auto-fallback: jika `ispsync.plans` kosong untuk suatu tenant, backend otomatis menyalin dan meng-upsert paket berstatus `ACTIVE` dari `public.plans` + `public.plan_prices` ke `ispsync.plans` menggunakan ID tenant terkait.
+   * Frontend modal (seperti Upgrade Bandwidth) dan form registrasi wajib memuat daftar paket secara dinamis melalui `/api/v1/public/plans` tanpa melakukan hardcode opsi paket di template HTML.
+
 ---
 
 ## 🚀 3. Deployment & Build Procedures (VPS)
