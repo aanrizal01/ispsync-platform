@@ -246,9 +246,9 @@ https:// {
         }
     }
 
-    # 2. FTTX & FiberGrid Core Engine (fttx.*, fibergrid.*)
+    # 2. FTTX & FiberGrid Core Engine (fttx.*, fibergrid.*, noc-fo.*)
     @fttx {
-        header_regexp Host (^(fttx|fibergrid)\.|\.(fttx|fibergrid)\.)
+        header_regexp Host (^(fttx|fibergrid|noc-fo)\.|\.(fttx|fibergrid|noc-fo)\.)
         not header_regexp Host ^(fttx|fibergrid)\.ispsync\.id$
     }
     handle @fttx {
@@ -260,9 +260,9 @@ https:// {
         }
     }
 
-    # 3. Customer & Field Operational Portals - ISPSYNC Nexus (nexus.*, portal.*, sales.*, teknisi.*, rekan.*, noc.*, noc-fo.*, carrier.*)
+    # 3. Customer & Field Operational Portals - ISPSYNC Nexus (nexus.*, portal.*, sales.*, teknisi.*, rekan.*, noc.*, carrier.*)
     @nexus {
-        header_regexp Host (^(nexus|portal|sales|teknisi|rekan|noc|noc-fo|carrier)\.|\.(nexus|portal|sales|teknisi|rekan|noc|noc-fo|carrier)\.)
+        header_regexp Host (^(nexus|portal|sales|teknisi|rekan|noc|carrier)\.|\.(nexus|portal|sales|teknisi|rekan|noc|carrier)\.)
         not header_regexp Host ^(nexus|portal)\.ispsync\.id$
     }
     handle @nexus {

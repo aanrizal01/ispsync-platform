@@ -250,6 +250,10 @@ func extractTenantSlug(r *http.Request) string {
 
 func (h *Handler) ListODPs(w http.ResponseWriter, r *http.Request) {
 	cluster := r.URL.Query().Get("cluster")
+	scope := r.URL.Query().Get("scope")
+	if scope == "inhouse" && cluster == "" {
+		cluster = "inhouse"
+	}
 	ctx := WithTenantSlug(r.Context(), extractTenantSlug(r))
 	nodes, err := h.service.ListODPs(ctx, cluster)
 	if err != nil {

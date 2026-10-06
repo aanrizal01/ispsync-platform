@@ -107,9 +107,10 @@ export const networkApi = {
     }),
 
   // ODP and FTTX GIS
-  listODPs: (params?: { cluster?: string }) => {
+  listODPs: (params?: { cluster?: string; scope?: string }) => {
     const query = new URLSearchParams();
     if (params?.cluster) query.set("cluster", params.cluster);
+    if (params?.scope) query.set("scope", params.scope);
     return request<{ data: ODPNode[] }>(`/network/odp?${query.toString()}`);
   },
 

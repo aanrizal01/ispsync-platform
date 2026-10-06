@@ -163,11 +163,129 @@ func (r *Repository) fetchFromNexus(ctx context.Context) ([]ODPNode, bool) {
 	return result, true
 }
 
+func (r *Repository) fetchFromFiberGrid(ctx context.Context) ([]ODPNode, bool) {
+	tenantSlug, _ := ctx.Value(tenantCtxKey{}).(string)
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
+
+	apiURL := os.Getenv("FTTX_BASE_URL")
+	if apiURL == "" {
+		apiURL = "http://172.18.0.1:8082"
+	}
+	apiKey := os.Getenv("FTTX_ADMIN_KEY")
+	if apiKey == "" {
+		apiKey = "gogiga-noc-admin-99a8f27c3d14"
+	}
+	targetTenant := tenantSlug
+
+	settingsKey := "fibergrid_integration"
+	if tenantSlug != "" && tenantSlug != "dev" {
+		var exists bool
+		_ = r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM app_settings WHERE key = $1)", "fibergrid_integration_"+tenantSlug).Scan(&exists)
+		if exists {
+			settingsKey = "fibergrid_integration_" + tenantSlug
+		}
+	}
+
+	var valBytes []byte
+	err := r.db.QueryRow(ctx, "SELECT value FROM app_settings WHERE key = $1", settingsKey).Scan(&valBytes)
+	if err == nil {
+		var cfg struct {
+			Enabled    bool   `json:"enabled"`
+			APIURL     string `json:"api_url"`
+			APIKey     string `json:"api_key"`
+			TenantCode string `json:"tenant_code"`
+		}
+		if jsonErr := json.Unmarshal(valBytes, &cfg); jsonErr == nil && cfg.Enabled {
+			if cfg.APIURL != "" {
+				apiURL = cfg.APIURL
+			}
+			if cfg.APIKey != "" {
+				apiKey = cfg.APIKey
+			}
+			if cfg.TenantCode != "" {
+				targetTenant = cfg.TenantCode
+			}
+		}
+	}
+
+	reqURL := strings.TrimRight(apiURL, "/") + "/api/v1/fttx/odp"
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
+	if err != nil {
+		return nil, false
+	}
+
+	if apiKey != "" {
+		req.Header.Set("X-Admin-Key", apiKey)
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+	}
+	if targetTenant != "" {
+		req.Header.Set("X-Tenant-Slug", targetTenant)
+	}
+
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return nil, false
+	}
+	defer resp.Body.Close()
+
+	var fttxResp struct {
+		Success bool `json:"success"`
+		Data    []struct {
+			ID         string  `json:"id"`
+			Code       string  `json:"code"`
+			Name       string  `json:"name"`
+			Latitude   float64 `json:"latitude"`
+			Longitude  float64 `json:"longitude"`
+			TotalPorts int     `json:"total_ports"`
+			UsedPorts  int     `json:"used_ports"`
+			Status     string  `json:"status"`
+			Notes      string  `json:"notes"`
+		} `json:"data"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&fttxResp); err != nil || !fttxResp.Success || len(fttxResp.Data) == 0 {
+		return nil, false
+	}
+
+	result := make([]ODPNode, 0, len(fttxResp.Data))
+	for _, it := range fttxResp.Data {
+		result = append(result, ODPNode{
+			ID:              it.ID,
+			Code:            it.Code,
+			Name:            it.Name,
+			Latitude:        it.Latitude,
+			Longitude:       it.Longitude,
+			TotalPorts:      it.TotalPorts,
+			UsedPorts:       it.UsedPorts,
+			Status:          it.Status,
+			ClusterArea:     "Cluster Harau (FiberGrid In-House)",
+			ProviderID:      targetTenant,
+			ProviderName:    "GOGIGA In-House FO",
+			IsClusterActive: true,
+			SplitterSpec:    fmt.Sprintf("1:%d PLC", it.TotalPorts),
+			OpticalPowerDBM: -17.5 - float64(it.UsedPorts)*0.5,
+			CreatedAt:       time.Now(),
+			UpdatedAt:       time.Now(),
+		})
+	}
+	return result, true
+}
+
 func (r *Repository) ListODPNodes(ctx context.Context, cluster string) ([]ODPNode, error) {
+	// If cluster or scope is inhouse, strictly fetch from FiberGrid engine
+	if cluster == "inhouse" {
+		if fttxNodes, ok := r.fetchFromFiberGrid(ctx); ok {
+			return fttxNodes, nil
+		}
+	}
+
 	// 1. First attempt to fetch from EngineNexus (which aggregates own ODPs + Jartaplok partner ODPs)
 	nexusNodes, ok := r.fetchFromNexus(ctx)
 	if ok {
-		if cluster != "" {
+		if cluster != "" && cluster != "all" {
 			filtered := make([]ODPNode, 0)
 			for _, n := range nexusNodes {
 				if strings.Contains(strings.ToLower(n.ClusterArea), strings.ToLower(cluster)) ||
@@ -181,7 +299,12 @@ func (r *Repository) ListODPNodes(ctx context.Context, cluster string) ([]ODPNod
 		return nexusNodes, nil
 	}
 
-	// 2. Fallback to local PostgreSQL odp_nodes table
+	// 2. Fallback to FiberGrid if Nexus is not configured
+	if fttxNodes, ok := r.fetchFromFiberGrid(ctx); ok {
+		return fttxNodes, nil
+	}
+
+	// 3. Fallback to local PostgreSQL odp_nodes table
 	_ = r.SeedDefaultODPsIfEmpty(ctx)
 
 	query := `
