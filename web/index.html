@@ -3347,12 +3347,12 @@
             <!-- Search Input -->
             <div class="relative flex-1 min-w-[200px]">
               <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-              <input type="text" id="admin-reg-search" oninput="renderAdminRegistrationsTable()" placeholder="Cari no. reg, nama, HP, paket, ODP, PPPoE..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-sans shadow-2xs placeholder:text-slate-400" />
+              <input type="text" id="admin-reg-search" oninput="adminRegCurrentPage = 1; renderAdminRegistrationsTable()" placeholder="Cari no. reg, nama, HP, paket, ODP, PPPoE..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-sans shadow-2xs placeholder:text-slate-400" />
             </div>
 
             <!-- Filter Status Sesi PPPoE -->
             <div class="relative shrink-0">
-              <select id="admin-reg-filter-session" onchange="renderAdminRegistrationsTable()" class="pl-2.5 pr-7 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-mono text-slate-700 shadow-2xs cursor-pointer">
+              <select id="admin-reg-filter-session" onchange="adminRegCurrentPage = 1; renderAdminRegistrationsTable()" class="pl-2.5 pr-7 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-mono text-slate-700 shadow-2xs cursor-pointer">
                 <option value="ALL">⚡ Status Sesi: Semua</option>
                 <option value="ONLINE">🟢 Sesi: Online Saja</option>
                 <option value="OFFLINE">⚪ Sesi: Offline Saja</option>
@@ -3361,14 +3361,14 @@
 
             <!-- Filter Paket Layanan -->
             <div class="relative shrink-0">
-              <select id="admin-reg-filter-plan" onchange="renderAdminRegistrationsTable()" class="pl-2.5 pr-7 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-mono text-slate-700 shadow-2xs cursor-pointer">
+              <select id="admin-reg-filter-plan" onchange="adminRegCurrentPage = 1; renderAdminRegistrationsTable()" class="pl-2.5 pr-7 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-mono text-slate-700 shadow-2xs cursor-pointer">
                 <option value="ALL">📦 Paket: Semua</option>
               </select>
             </div>
 
             <!-- Filter Jenis Jaringan / Kemitraan -->
             <div class="relative shrink-0">
-              <select id="admin-reg-filter-network" onchange="renderAdminRegistrationsTable()" class="pl-2.5 pr-7 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-mono text-slate-700 shadow-2xs cursor-pointer">
+              <select id="admin-reg-filter-network" onchange="adminRegCurrentPage = 1; renderAdminRegistrationsTable()" class="pl-2.5 pr-7 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-mono text-slate-700 shadow-2xs cursor-pointer">
                 <option value="ALL">🌐 Jaringan: Semua</option>
                 <option value="DIRECT">Direct (Internal Retail)</option>
                 <option value="PARTNER">Mitra Jartaplok</option>
@@ -3406,6 +3406,36 @@
               <tr><td colspan="7" class="text-center py-8 text-slate-400 font-mono">Memuat database leads...</td></tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Pagination & Summary Footer for Registrations -->
+        <div id="admin-reg-pagination-container" class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-200 text-xs font-sans text-slate-600">
+          <div id="admin-reg-pagination-info" class="font-mono text-[11px] text-slate-500">
+            Menampilkan 0 dari 0 data
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 text-[11px] mr-2">
+              <span class="text-slate-400 font-mono">Per hal:</span>
+              <select id="admin-reg-pagesize" onchange="onAdminRegPageSizeChange(this.value)" class="bg-white border border-slate-200 rounded px-1.5 py-1 text-xs font-mono font-bold focus:outline-none cursor-pointer">
+                <option value="15">15</option>
+                <option value="25" selected>25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+                <option value="ALL">Semua</option>
+              </select>
+            </div>
+            <button id="admin-reg-prev-btn" type="button" onclick="changeAdminRegPage(-1)" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded-md font-mono text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 shadow-2xs cursor-pointer">
+              <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+              <span>Sebelumnya</span>
+            </button>
+            <span id="admin-reg-page-label" class="px-2 py-1 font-mono text-xs font-bold text-slate-800">
+              Hal 1 / 1
+            </span>
+            <button id="admin-reg-next-btn" type="button" onclick="changeAdminRegPage(1)" class="px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded-md font-mono text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-1 shadow-2xs cursor-pointer">
+              <span>Selanjutnya</span>
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
         </div>
 
         <!-- Floating Context Popover Menu for Row Actions -->
@@ -14979,6 +15009,56 @@
       }
     }
 
+    let adminRegCurrentPage = 1;
+    let adminRegPageSize = 25;
+
+    function onAdminRegPageSizeChange(val) {
+      if (val === 'ALL') {
+        adminRegPageSize = 999999;
+      } else {
+        adminRegPageSize = parseInt(val, 10) || 25;
+      }
+      adminRegCurrentPage = 1;
+      renderAdminRegistrationsTable();
+    }
+
+    function changeAdminRegPage(delta) {
+      adminRegCurrentPage += delta;
+      renderAdminRegistrationsTable();
+    }
+
+    function updateAdminRegPagination(start, end, totalFiltered, totalPages) {
+      const container = document.getElementById('admin-reg-pagination-container');
+      const infoEl = document.getElementById('admin-reg-pagination-info');
+      const pageLabel = document.getElementById('admin-reg-page-label');
+      const prevBtn = document.getElementById('admin-reg-prev-btn');
+      const nextBtn = document.getElementById('admin-reg-next-btn');
+
+      if (!container) return;
+
+      if (totalFiltered === 0) {
+        container.classList.add('hidden');
+        return;
+      }
+      container.classList.remove('hidden');
+
+      if (infoEl) {
+        infoEl.innerText = `Menampilkan ${start} - ${end} dari ${totalFiltered} data`;
+      }
+      if (pageLabel) {
+        pageLabel.innerText = `Hal ${adminRegCurrentPage} / ${totalPages}`;
+      }
+      if (prevBtn) {
+        prevBtn.disabled = adminRegCurrentPage <= 1;
+      }
+      if (nextBtn) {
+        nextBtn.disabled = adminRegCurrentPage >= totalPages;
+      }
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+
     function resetAdminRegFilters() {
       const searchInput = document.getElementById('admin-reg-search');
       const sessionSelect = document.getElementById('admin-reg-filter-session');
@@ -14988,6 +15068,7 @@
       if (sessionSelect) sessionSelect.value = 'ALL';
       if (planSelect) planSelect.value = 'ALL';
       if (networkSelect) networkSelect.value = 'ALL';
+      adminRegCurrentPage = 1;
       renderAdminRegistrationsTable();
     }
 
@@ -15209,6 +15290,7 @@
 
     function setAdminRegFilter(filter) {
       currentAdminRegFilter = filter;
+      adminRegCurrentPage = 1;
       const filterBtns = [
         { id: 'PENDING', badge: 'badge-count-pending', inactiveBadgeClass: 'bg-slate-100 text-slate-700 border border-slate-200' },
         { id: 'WAITING_NOC', badge: 'badge-count-waiting-noc', inactiveBadgeClass: 'bg-amber-50 text-amber-700 border border-amber-200' },
@@ -15367,7 +15449,18 @@
         }
       }
 
+      const totalFiltered = filtered.length;
+      const totalPages = Math.max(1, Math.ceil(totalFiltered / adminRegPageSize));
+
+      if (adminRegCurrentPage > totalPages) {
+        adminRegCurrentPage = totalPages;
+      }
+      if (adminRegCurrentPage < 1) {
+        adminRegCurrentPage = 1;
+      }
+
       if (filtered.length === 0) {
+        updateAdminRegPagination(0, 0, 0, 1);
         const filterNames = {
           'PENDING': 'antrean pasang baru',
           'WAITING_NOC': 'approval NOC',
@@ -15398,7 +15491,13 @@
         return;
       }
 
-      tbody.innerHTML = filtered.map((r) => {
+      const startIndex = (adminRegCurrentPage - 1) * adminRegPageSize;
+      const endIndex = Math.min(startIndex + adminRegPageSize, totalFiltered);
+      const pageRows = filtered.slice(startIndex, endIndex);
+
+      updateAdminRegPagination(startIndex + 1, endIndex, totalFiltered, totalPages);
+
+      tbody.innerHTML = pageRows.map((r) => {
         const originalIdx = adminRegistrationsList.findIndex(item => item.id === r.id);
         const liveSess = findLiveSession(r.pppoe_username) || findLiveSession(r.upstream_pppoe_username);
         const isOnline = !!(liveSess && liveSess.is_online);
