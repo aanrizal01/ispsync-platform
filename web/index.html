@@ -20172,23 +20172,33 @@
 
     async function toggleCluster(clusterName, nextActive) {
       try {
+        const token = localStorage.getItem('auth_session_token') || '';
+        const role = localStorage.getItem('active_portal_role') || '';
         const res = await fetch(`/api/v1/admin/clusters/${encodeURIComponent(clusterName)}/status`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + (localStorage.getItem('auth_session_token') || '')
+            'Authorization': 'Bearer ' + token,
+            'X-Admin-Key': 'isp-onboarding-admin-key',
+            'X-User-Role': role
           },
           body: JSON.stringify({ active: nextActive })
         });
-        const json = await res.json();
+        const text = await res.text();
+        let json;
+        try {
+          json = JSON.parse(text);
+        } catch (e) {
+          throw new Error(text || `Status HTTP ${res.status}`);
+        }
         if (json.success) {
-          loadAdminClusters();
-          loadAdminODPs();
+          if (typeof loadAdminClusters === 'function') loadAdminClusters();
+          if (typeof loadAdminODPs === 'function') loadAdminODPs();
         } else {
-          alert('Gagal mengubah status: ' + json.message);
+          alert('Gagal mengubah status klaster: ' + (json.message || 'Terjadi kesalahan'));
         }
       } catch (err) {
-        alert('Error: ' + err.message);
+        alert('Gagal mengubah status klaster: ' + err.message);
       }
     }
 

@@ -93,6 +93,7 @@ type Storage interface {
 	GetClusterSmartOLTConfig(ctx context.Context, tenantID, clusterName string) (*domain.ClusterSmartOLTConfig, error)
 	SaveClusterSmartOLTConfig(ctx context.Context, cfg *domain.ClusterSmartOLTConfig) error
 	DeleteClusterSmartOLTConfig(ctx context.Context, tenantID, clusterName string) error
+	UpdateClusterStatus(ctx context.Context, tenantID, clusterName, status string) error
 
 	// FreeRADIUS Live Sessions
 	GetLiveRadiusSessions(ctx context.Context, tenantID string) (map[string]domain.LiveSessionInfo, error)

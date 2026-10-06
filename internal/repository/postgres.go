@@ -1014,6 +1014,48 @@ func (s *PostgresStorage) UpsertODP(ctx context.Context, odp *domain.ODP) error 
 	return err
 }
 
+func (s *PostgresStorage) UpdateClusterStatus(ctx context.Context, tenantID, clusterName, status string) error {
+	cleanName := strings.TrimSpace(clusterName)
+	cleanName = strings.TrimPrefix(cleanName, "Cluster ")
+	cleanName = strings.TrimPrefix(cleanName, "cluster ")
+	cleanName = strings.TrimPrefix(cleanName, "ODP-")
+	cleanName = strings.TrimPrefix(cleanName, "odp-")
+
+	if strings.EqualFold(cleanName, "Distribusi Utama") {
+		_, err := s.db.ExecContext(ctx, `
+			UPDATE odps 
+			SET status = $1 
+			WHERE tenant_id = $2 
+			  AND code NOT ILIKE 'ODP-%' 
+			  AND code NOT ILIKE 'OPD-%'
+		`, status, tenantID)
+		return err
+	}
+
+	if strings.HasPrefix(cleanName, "Jartaplok ") {
+		partnerName := strings.TrimSpace(strings.TrimPrefix(cleanName, "Jartaplok "))
+		_, err := s.db.ExecContext(ctx, `
+			UPDATE odps
+			SET status = $1
+			WHERE id IN (
+				SELECT s.odp_id FROM jartaplok_shared_odps s
+				JOIN jartaplok_agreements a ON s.agreement_id = a.id
+				JOIN tenants tp ON a.provider_tenant_id = tp.id
+				WHERE a.client_tenant_id = $2 AND (tp.name ILIKE ('%' || $3 || '%') OR tp.slug ILIKE ('%' || $3 || '%'))
+			)
+		`, status, tenantID, partnerName)
+		return err
+	}
+
+	_, err := s.db.ExecContext(ctx, `
+		UPDATE odps 
+		SET status = $1 
+		WHERE tenant_id = $2 
+		  AND (code ILIKE ('ODP-' || $3 || '%') OR code ILIKE ('OPD-' || $3 || '%') OR code ILIKE ($3 || '%'))
+	`, status, tenantID, cleanName)
+	return err
+}
+
 // ── OLT Methods ────────────────────────────────────────────────────────────────
 
 func (s *PostgresStorage) ListOLTs(ctx context.Context, tenantID string) ([]domain.OLT, error) {

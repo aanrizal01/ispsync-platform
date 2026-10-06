@@ -262,6 +262,8 @@ func main() {
 			adm.Post("/odps/{id}/delete", apiH.AdminDeleteODP)
 			adm.Get("/work-orders", apiH.AdminListWorkOrders)
 			adm.Get("/clusters", apiH.AdminListClusters)
+			adm.Put("/clusters/{clusterName}/status", apiH.AdminUpdateClusterStatus)
+			adm.Post("/clusters/{clusterName}/status", apiH.AdminUpdateClusterStatus)
 			adm.Get("/staff-kpi", apiH.AdminStaffKPI)
 			adm.Get("/radius/live-sessions", apiH.AdminRadiusLiveSessions)
 			adm.Get("/partners", apiH.AdminListPartners)

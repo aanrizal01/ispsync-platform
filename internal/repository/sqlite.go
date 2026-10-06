@@ -979,6 +979,53 @@ func (s *SQLiteStorage) UpsertODP(ctx context.Context, odp *domain.ODP) error {
 	return err
 }
 
+func (s *SQLiteStorage) UpdateClusterStatus(ctx context.Context, tenantID, clusterName, status string) error {
+	cleanName := strings.TrimSpace(clusterName)
+	cleanName = strings.TrimPrefix(cleanName, "Cluster ")
+	cleanName = strings.TrimPrefix(cleanName, "cluster ")
+	cleanName = strings.TrimPrefix(cleanName, "ODP-")
+	cleanName = strings.TrimPrefix(cleanName, "odp-")
+
+	if strings.EqualFold(cleanName, "Distribusi Utama") {
+		_, err := s.db.ExecContext(ctx, `
+			UPDATE odps 
+			SET status = ? 
+			WHERE tenant_id = ? 
+			  AND code NOT LIKE 'ODP-%' 
+			  AND code NOT LIKE 'OPD-%'
+			  AND code NOT LIKE 'odp-%'
+		`, status, tenantID)
+		return err
+	}
+
+	if strings.HasPrefix(cleanName, "Jartaplok ") {
+		partnerName := strings.TrimSpace(strings.TrimPrefix(cleanName, "Jartaplok "))
+		_, err := s.db.ExecContext(ctx, `
+			UPDATE odps
+			SET status = ?
+			WHERE id IN (
+				SELECT s.odp_id FROM jartaplok_shared_odps s
+				JOIN jartaplok_agreements a ON s.agreement_id = a.id
+				JOIN tenants tp ON a.provider_tenant_id = tp.id
+				WHERE a.client_tenant_id = ? AND (tp.name LIKE ('%' || ? || '%') OR tp.slug LIKE ('%' || ? || '%'))
+			)
+		`, status, tenantID, partnerName, partnerName)
+		return err
+	}
+
+	pattern1 := "ODP-" + cleanName + "%"
+	pattern2 := "OPD-" + cleanName + "%"
+	pattern3 := "odp-" + cleanName + "%"
+	pattern4 := cleanName + "%"
+	_, err := s.db.ExecContext(ctx, `
+		UPDATE odps 
+		SET status = ? 
+		WHERE tenant_id = ? 
+		  AND (code LIKE ? OR code LIKE ? OR code LIKE ? OR code LIKE ?)
+	`, status, tenantID, pattern1, pattern2, pattern3, pattern4)
+	return err
+}
+
 // ── OLT Methods ────────────────────────────────────────────────────────────────
 
 func (s *SQLiteStorage) ListOLTs(ctx context.Context, tenantID string) ([]domain.OLT, error) {

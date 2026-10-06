@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -1054,7 +1055,7 @@ func (h *APIHandler) PublicClusters(w http.ResponseWriter, r *http.Request) {
 			"name":        stat.name,
 			"total_odps":  stat.totalODPs,
 			"active_odps": stat.activeODPs,
-			"is_active":   true,
+			"is_active":   stat.activeODPs > 0,
 		})
 	}
 
@@ -2242,6 +2243,55 @@ func (h *APIHandler) AdminListWorkOrders(w http.ResponseWriter, r *http.Request)
 
 func (h *APIHandler) AdminListClusters(w http.ResponseWriter, r *http.Request) {
 	h.PublicClusters(w, r)
+}
+
+func (h *APIHandler) AdminUpdateClusterStatus(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	if t == nil {
+		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
+		return
+	}
+
+	rawClusterName := chi.URLParam(r, "clusterName")
+	if rawClusterName == "" {
+		h.errorResponse(w, http.StatusBadRequest, "Cluster name is required")
+		return
+	}
+	clusterName, err := url.PathUnescape(rawClusterName)
+	if err != nil || clusterName == "" {
+		clusterName = rawClusterName
+	}
+
+	var req struct {
+		Active *bool  `json:"active"`
+		Status string `json:"status"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.errorResponse(w, http.StatusBadRequest, "Invalid JSON payload")
+		return
+	}
+
+	newStatus := "ACTIVE"
+	if req.Active != nil {
+		if !*req.Active {
+			newStatus = "MAINTENANCE"
+		} else {
+			newStatus = "ACTIVE"
+		}
+	} else if req.Status != "" {
+		newStatus = strings.ToUpper(req.Status)
+	}
+
+	if err := h.store.UpdateClusterStatus(r.Context(), t.ID, clusterName, newStatus); err != nil {
+		h.errorResponse(w, http.StatusInternalServerError, "Gagal memperbarui status cluster: "+err.Error())
+		return
+	}
+
+	h.successResponse(w, "Status cluster berhasil diperbarui", map[string]interface{}{
+		"cluster_name": clusterName,
+		"status":       newStatus,
+		"is_active":    newStatus == "ACTIVE" || newStatus == "AVAILABLE",
+	})
 }
 
 func (h *APIHandler) AdminStaffKPI(w http.ResponseWriter, r *http.Request) {
