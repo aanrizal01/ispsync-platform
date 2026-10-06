@@ -3309,40 +3309,83 @@
         </div>
 
         <!-- Filter Status & Search Bar -->
-        <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pb-1">
-          <div class="flex items-center gap-1.5 flex-wrap">
-            <button id="reg-filter-btn-PENDING" type="button" onclick="setAdminRegFilter('PENDING')" class="px-3 py-1.5 rounded-md text-xs font-mono font-bold transition flex items-center gap-1.5 bg-slate-900 text-white shadow-2xs">
-              <span>Antrean Pasang Baru</span>
-              <span id="badge-count-pending" class="px-1.5 py-0.5 rounded text-[10px] bg-white/20 text-white font-mono">0</span>
-            </button>
-            <button id="reg-filter-btn-WAITING_NOC" type="button" onclick="setAdminRegFilter('WAITING_NOC')" class="px-3 py-1.5 rounded-md text-xs font-mono font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
-              <span>Approval NOC</span>
-              <span id="badge-count-waiting-noc" class="px-1.5 py-0.5 rounded text-[10px] bg-amber-50 text-amber-700 border border-amber-200 font-bold font-mono">0</span>
-            </button>
-            <button id="reg-filter-btn-WAITING_DIRECTOR" type="button" onclick="setAdminRegFilter('WAITING_DIRECTOR')" class="px-3 py-1.5 rounded-md text-xs font-mono font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
-              <span>👑 ACC Manager / Direksi</span>
-              <span id="badge-count-waiting-director" class="px-1.5 py-0.5 rounded text-[10px] bg-amber-100 text-amber-900 border border-amber-300 font-bold font-mono">0</span>
-            </button>
-            <button id="reg-filter-btn-ACTIVE" type="button" onclick="setAdminRegFilter('ACTIVE')" class="px-3 py-1.5 rounded-md text-xs font-mono font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
-              <span>Pelanggan Aktif</span>
-              <span id="badge-count-active" class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">0</span>
-            </button>
-            <button id="reg-filter-btn-SUSPENDED" type="button" onclick="setAdminRegFilter('SUSPENDED')" class="px-3 py-1.5 rounded-md text-xs font-mono font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
-              <span>Jeda Layanan</span>
-              <span id="badge-count-suspended" class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-700 border border-slate-200 font-mono">0</span>
-            </button>
-            <button id="reg-filter-btn-UNCOVERED" type="button" onclick="setAdminRegFilter('UNCOVERED')" class="px-3 py-1.5 rounded-md text-xs font-mono font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
-              <span>Wishlist</span>
-              <span id="badge-count-uncovered" class="px-1.5 py-0.5 rounded text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 font-mono">0</span>
-            </button>
-            <button id="reg-filter-btn-ALL" type="button" onclick="setAdminRegFilter('ALL')" class="px-3 py-1.5 rounded-md text-xs font-mono font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
-              <span>Semua Data</span>
-              <span id="badge-count-all" class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-700 border border-slate-200 font-mono">0</span>
+        <!-- Filter Status Tabs Bar -->
+        <div class="flex items-center gap-1.5 flex-wrap pb-1">
+          <button id="reg-filter-btn-PENDING" type="button" onclick="setAdminRegFilter('PENDING')" class="px-3 py-1.5 rounded-md text-xs font-mono font-bold transition flex items-center gap-1.5 bg-slate-900 text-white shadow-2xs">
+            <span>Antrean Pasang Baru</span>
+            <span id="badge-count-pending" class="px-1.5 py-0.5 rounded text-[10px] bg-white/20 text-white font-mono">0</span>
+          </button>
+          <button id="reg-filter-btn-WAITING_NOC" type="button" onclick="setAdminRegFilter('WAITING_NOC')" class="px-3 py-1.5 rounded-md text-xs font-mono font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
+            <span>Approval NOC</span>
+            <span id="badge-count-waiting-noc" class="px-1.5 py-0.5 rounded text-[10px] bg-amber-50 text-amber-700 border border-amber-200 font-bold font-mono">0</span>
+          </button>
+          <button id="reg-filter-btn-WAITING_DIRECTOR" type="button" onclick="setAdminRegFilter('WAITING_DIRECTOR')" class="px-3 py-1.5 rounded-md text-xs font-mono font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
+            <span>👑 ACC Manager / Direksi</span>
+            <span id="badge-count-waiting-director" class="px-1.5 py-0.5 rounded text-[10px] bg-amber-100 text-amber-900 border border-amber-300 font-bold font-mono">0</span>
+          </button>
+          <button id="reg-filter-btn-ACTIVE" type="button" onclick="setAdminRegFilter('ACTIVE')" class="px-3 py-1.5 rounded-md text-xs font-mono font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
+            <span>Pelanggan Aktif</span>
+            <span id="badge-count-active" class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">0</span>
+          </button>
+          <button id="reg-filter-btn-SUSPENDED" type="button" onclick="setAdminRegFilter('SUSPENDED')" class="px-3 py-1.5 rounded-md text-xs font-mono font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
+            <span>Jeda Layanan</span>
+            <span id="badge-count-suspended" class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-700 border border-slate-200 font-mono">0</span>
+          </button>
+          <button id="reg-filter-btn-UNCOVERED" type="button" onclick="setAdminRegFilter('UNCOVERED')" class="px-3 py-1.5 rounded-md text-xs font-mono font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
+            <span>Wishlist</span>
+            <span id="badge-count-uncovered" class="px-1.5 py-0.5 rounded text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 font-mono">0</span>
+          </button>
+          <button id="reg-filter-btn-ALL" type="button" onclick="setAdminRegFilter('ALL')" class="px-3 py-1.5 rounded-md text-xs font-mono font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
+            <span>Semua Data</span>
+            <span id="badge-count-all" class="px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-700 border border-slate-200 font-mono">0</span>
+          </button>
+        </div>
+
+        <!-- Table Filters Toolbar (Search, Live Session Status, Plan, Network) -->
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-2.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shadow-2xs">
+          <div class="flex items-center gap-2 flex-wrap flex-1">
+            <!-- Search Input -->
+            <div class="relative flex-1 min-w-[200px]">
+              <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input type="text" id="admin-reg-search" oninput="renderAdminRegistrationsTable()" placeholder="Cari no. reg, nama, HP, paket, ODP, PPPoE..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-sans shadow-2xs placeholder:text-slate-400" />
+            </div>
+
+            <!-- Filter Status Sesi PPPoE -->
+            <div class="relative shrink-0">
+              <select id="admin-reg-filter-session" onchange="renderAdminRegistrationsTable()" class="pl-2.5 pr-7 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-mono text-slate-700 shadow-2xs cursor-pointer">
+                <option value="ALL">⚡ Status Sesi: Semua</option>
+                <option value="ONLINE">🟢 Sesi: Online Saja</option>
+                <option value="OFFLINE">⚪ Sesi: Offline Saja</option>
+              </select>
+            </div>
+
+            <!-- Filter Paket Layanan -->
+            <div class="relative shrink-0">
+              <select id="admin-reg-filter-plan" onchange="renderAdminRegistrationsTable()" class="pl-2.5 pr-7 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-mono text-slate-700 shadow-2xs cursor-pointer">
+                <option value="ALL">📦 Paket: Semua</option>
+              </select>
+            </div>
+
+            <!-- Filter Jenis Jaringan / Kemitraan -->
+            <div class="relative shrink-0">
+              <select id="admin-reg-filter-network" onchange="renderAdminRegistrationsTable()" class="pl-2.5 pr-7 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-mono text-slate-700 shadow-2xs cursor-pointer">
+                <option value="ALL">🌐 Jaringan: Semua</option>
+                <option value="DIRECT">Direct (Internal Retail)</option>
+                <option value="PARTNER">Mitra Jartaplok</option>
+              </select>
+            </div>
+
+            <!-- Reset Filter Button -->
+            <button type="button" id="admin-reg-filter-reset" onclick="resetAdminRegFilters()" class="hidden px-2.5 py-1.5 text-xs font-mono font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-300 rounded-md transition items-center gap-1 cursor-pointer shadow-2xs" title="Reset filter tabel">
+              <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+              <span>Reset</span>
             </button>
           </div>
-          <div class="relative min-w-[260px]">
-            <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-            <input type="text" id="admin-reg-search" oninput="renderAdminRegistrationsTable()" placeholder="Cari no. reg, nama, HP, paket, tiang ODP..." class="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-sans shadow-2xs placeholder:text-slate-400" />
+
+          <!-- Counter Label -->
+          <div class="text-[11px] font-mono text-slate-500 shrink-0 flex items-center gap-1.5 self-end sm:self-auto">
+            <span>Ditemukan:</span>
+            <span id="admin-reg-filtered-count-badge" class="px-2 py-0.5 rounded bg-white text-slate-900 border border-slate-200 font-bold font-mono">0 data</span>
           </div>
         </div>
 
@@ -3356,13 +3399,20 @@
                 <th class="py-3 px-3.5 whitespace-nowrap">JARAK &amp; ODP</th>
                 <th class="py-3 px-3.5 whitespace-nowrap">WILAYAH / SALES</th>
                 <th class="py-3 px-3.5 whitespace-nowrap">STATUS WO</th>
-                <th class="py-3 px-3.5 text-right whitespace-nowrap min-w-[280px]">AKSI OPERASIONAL</th>
+                <th class="py-3 px-3.5 text-right whitespace-nowrap min-w-[160px]">AKSI OPERASIONAL</th>
               </tr>
             </thead>
             <tbody id="admin-reg-table-body" class="divide-y divide-slate-200 font-sans">
               <tr><td colspan="7" class="text-center py-8 text-slate-400 font-mono">Memuat database leads...</td></tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Floating Context Popover Menu for Row Actions -->
+        <div id="admin-row-action-floating-menu" class="hidden fixed z-[99999] bg-white rounded-lg shadow-2xl border border-slate-200 py-1 min-w-[220px] text-xs font-mono select-none animate-in fade-in zoom-in-95 duration-100">
+          <div id="admin-row-action-floating-content" class="flex flex-col">
+            <!-- Populated dynamically via toggleRowActionMenu -->
+          </div>
         </div>
       </div>
 
@@ -14906,6 +14956,257 @@
       }
     }
 
+    function populatePlanFilterOptions(list) {
+      const sel = document.getElementById('admin-reg-filter-plan');
+      if (!sel) return;
+      const currentVal = sel.value;
+      const plans = new Set();
+      (list || []).forEach(r => {
+        if (r.selected_plan_name) plans.add(r.selected_plan_name.trim());
+      });
+      const sorted = Array.from(plans).filter(Boolean).sort();
+      const existingOptions = Array.from(sel.options).slice(1).map(o => o.value);
+      const isSame = existingOptions.length === sorted.length && existingOptions.every((v, idx) => v === sorted[idx]);
+      if (!isSame) {
+        let html = '<option value="ALL">📦 Paket: Semua</option>';
+        sorted.forEach(p => {
+          html += `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`;
+        });
+        sel.innerHTML = html;
+        if (currentVal && sorted.includes(currentVal)) {
+          sel.value = currentVal;
+        }
+      }
+    }
+
+    function resetAdminRegFilters() {
+      const searchInput = document.getElementById('admin-reg-search');
+      const sessionSelect = document.getElementById('admin-reg-filter-session');
+      const planSelect = document.getElementById('admin-reg-filter-plan');
+      const networkSelect = document.getElementById('admin-reg-filter-network');
+      if (searchInput) searchInput.value = '';
+      if (sessionSelect) sessionSelect.value = 'ALL';
+      if (planSelect) planSelect.value = 'ALL';
+      if (networkSelect) networkSelect.value = 'ALL';
+      renderAdminRegistrationsTable();
+    }
+
+    let currentOpenRowActionId = null;
+    window._activeRowActionCallbacks = [];
+
+    function closeRowActionMenu() {
+      const menu = document.getElementById('admin-row-action-floating-menu');
+      if (menu) {
+        menu.classList.add('hidden');
+        menu.removeAttribute('data-active-id');
+      }
+      currentOpenRowActionId = null;
+    }
+
+    function toggleRowActionMenu(regId, btnEl, event) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      const menu = document.getElementById('admin-row-action-floating-menu');
+      if (!menu) return;
+
+      if (currentOpenRowActionId === regId && !menu.classList.contains('hidden')) {
+        closeRowActionMenu();
+        return;
+      }
+
+      const rawData = adminRegistrationsList || [];
+      const r = rawData.find(item => item.id === regId);
+      if (!r) return;
+
+      const isSuperUser = getActivePortalSession() === 'superuser';
+      const items = [];
+
+      // 1. Detail
+      items.push({
+        label: 'Lihat Detail Lengkap',
+        icon: 'file-text',
+        color: 'text-slate-600',
+        fn: () => openAdminDetailModal(r.id)
+      });
+
+      // 2. BAST
+      if (r.status === 'SUBMITTED' || r.status === 'INSTALLATION_SCHEDULED' || r.status === 'SURVEY_SCHEDULED' || r.status === 'PENDING_SURVEY_OVERDISTANCE') {
+        items.push({
+          label: 'Form BAST & Aktivasi',
+          icon: 'clipboard-check',
+          color: 'text-emerald-600',
+          fn: () => openAdminTechnicianBastModal(r.work_order_id || '', r.id)
+        });
+      }
+
+      // 3. Oper Jartup / Wishlist
+      if (r.status === 'PENDING_SURVEY_OVERDISTANCE' || r.status === 'UNCOVERED_WISHLIST' || !r.nearest_odp_code) {
+        items.push({
+          label: 'Oper ke Mitra Jartup',
+          icon: 'network',
+          color: 'text-indigo-600',
+          fn: () => openAttachPartnerODPModal(r.id, r.registration_no || '', (r.full_name || 'Pelanggan').replace(/['"\\]/g, ' '), r.nearest_odp_code || '', r.distance_to_odp_meters || 50)
+        });
+        items.push({
+          label: 'Tandai Wishlist (Luar Coverage)',
+          icon: 'map-pin-off',
+          color: 'text-rose-600',
+          fn: () => openMarkUncoveredModal(r.id, r.registration_no || '', (r.full_name || 'Pelanggan').replace(/['"\\]/g, ' '), r.phone || '')
+        });
+      }
+
+      // 4. Isolir / Buka Isolir
+      if (r.status === 'ACTIVE') {
+        if (r.partner_suspension_policy === 'DISALLOWED') {
+          items.push({
+            label: 'Isolir (Terkunci Kebijakan Mitra)',
+            icon: 'lock',
+            color: 'text-slate-400',
+            disabled: true
+          });
+        } else {
+          items.push({
+            label: 'Isolir Layanan (Jeda)',
+            icon: 'pause',
+            color: 'text-amber-600',
+            fn: () => toggleCustomerSuspension(r.registration_no, 'ACTIVE', (r.full_name || 'Pelanggan').replace(/['"\\]/g, ' '), r.partner_suspension_policy || '', (r.partner_name || '').replace(/['"\\]/g, ' '))
+          });
+        }
+      } else if (r.status === 'SUSPENDED') {
+        items.push({
+          label: 'Buka Isolir (Pulihkan Koneksi)',
+          icon: 'play',
+          color: 'text-emerald-600',
+          fn: () => toggleCustomerSuspension(r.registration_no, 'SUSPENDED', (r.full_name || 'Pelanggan').replace(/['"\\]/g, ' '))
+        });
+      }
+
+      // 5. Kick PPPoE
+      if (r.pppoe_username) {
+        items.push({
+          label: 'Kick / Reset Sesi PPPoE',
+          icon: 'rotate-ccw',
+          color: 'text-amber-600',
+          fn: () => kickPPPoESession(r.pppoe_username, (r.full_name || 'Pelanggan').replace(/['"\\]/g, ' '))
+        });
+      }
+
+      // 6. Upgrade Paket
+      if (r.status === 'ACTIVE' || r.status === 'SUSPENDED') {
+        items.push({
+          label: 'Ubah / Upgrade Paket',
+          icon: 'zap',
+          color: 'text-blue-600',
+          fn: () => openUpgradePlanModal(r.id)
+        });
+      }
+
+      // 7. Salin Info Ringkas Pelanggan
+      items.push({
+        label: 'Salin Info Pelanggan',
+        icon: 'copy',
+        color: 'text-slate-600',
+        fn: () => {
+          const txt = `No. Reg: ${r.registration_no || '-'}\nNama: ${r.full_name || '-'}\nHP: ${r.phone || '-'}\nPaket: ${r.selected_plan_name || '-'}\nODP: ${r.nearest_odp_code || '-'}\nPPPoE: ${r.pppoe_username || '-'}`;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(txt).then(() => {
+              alert('Ringkasan info pelanggan berhasil disalin!');
+            }).catch(() => {
+              prompt('Salin data pelanggan berikut:', txt);
+            });
+          } else {
+            prompt('Salin data pelanggan berikut:', txt);
+          }
+        }
+      });
+
+      // 8. Superuser Hapus
+      if (isSuperUser) {
+        items.push({ divider: true });
+        items.push({
+          label: 'Hapus Data Registrasi',
+          icon: 'trash-2',
+          color: 'text-rose-600 font-bold',
+          fn: () => confirmDeleteRegistration(r.id, r.registration_no, (r.full_name || 'Pelanggan').replace(/['"\\]/g, ' '), r.status)
+        });
+      }
+
+      // Render items
+      window._activeRowActionCallbacks = items.map(item => item.fn);
+      let contentHtml = '';
+      items.forEach((item, idx) => {
+        if (item.divider) {
+          contentHtml += '<div class="my-1 border-t border-slate-100"></div>';
+        } else if (item.disabled) {
+          contentHtml += `
+            <div class="px-3 py-2 text-xs font-mono text-slate-400 bg-slate-50 flex items-center gap-2 cursor-not-allowed select-none">
+              <i data-lucide="${item.icon}" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>
+              <span>${item.label}</span>
+            </div>
+          `;
+        } else {
+          contentHtml += `
+            <button type="button" onclick="executeRowAction(${idx})" class="w-full text-left px-3 py-2 text-xs font-mono text-slate-700 hover:bg-slate-100 hover:text-slate-900 flex items-center gap-2 transition cursor-pointer select-none">
+              <i data-lucide="${item.icon}" class="w-3.5 h-3.5 ${item.color} shrink-0"></i>
+              <span class="font-sans font-medium text-slate-800">${item.label}</span>
+            </button>
+          `;
+        }
+      });
+
+      const contentEl = document.getElementById('admin-row-action-floating-content');
+      if (contentEl) contentEl.innerHTML = contentHtml;
+      else menu.innerHTML = contentHtml;
+
+      menu.classList.remove('hidden');
+      currentOpenRowActionId = regId;
+      menu.setAttribute('data-active-id', regId);
+
+      // Positioning
+      const rect = btnEl.getBoundingClientRect();
+      const menuWidth = 230;
+      let left = rect.right - menuWidth;
+      if (left < 10) left = 10;
+      if (left + menuWidth > window.innerWidth - 10) {
+        left = window.innerWidth - menuWidth - 10;
+      }
+
+      const menuHeight = menu.offsetHeight || (items.length * 36 + 16);
+      let top = rect.bottom + 4;
+      if (top + menuHeight > window.innerHeight - 10) {
+        top = Math.max(10, rect.top - menuHeight - 4);
+      }
+
+      menu.style.top = `${top}px`;
+      menu.style.left = `${left}px`;
+
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+
+    function executeRowAction(idx) {
+      closeRowActionMenu();
+      if (window._activeRowActionCallbacks && typeof window._activeRowActionCallbacks[idx] === 'function') {
+        window._activeRowActionCallbacks[idx]();
+      }
+    }
+
+    // Global listener to close popover when clicked outside or scrolled
+    document.addEventListener('click', function(e) {
+      const menu = document.getElementById('admin-row-action-floating-menu');
+      if (menu && !menu.classList.contains('hidden')) {
+        if (!menu.contains(e.target) && !e.target.closest('[class*="row-action-btn-"]')) {
+          closeRowActionMenu();
+        }
+      }
+    });
+    window.addEventListener('resize', closeRowActionMenu);
+    window.addEventListener('scroll', closeRowActionMenu, true);
+
     function setAdminRegFilter(filter) {
       currentAdminRegFilter = filter;
       const filterBtns = [
@@ -14936,6 +15237,8 @@
       const tbody = document.getElementById('admin-reg-table-body');
       if (!tbody) return;
 
+      closeRowActionMenu();
+
       const rawData = adminRegistrationsList || [];
       const isSuperUser = getActivePortalSession() === 'superuser';
 
@@ -14956,6 +15259,9 @@
           return true;
         });
       }
+
+      // Populate Dynamic Plan Filter Options
+      populatePlanFilterOptions(data);
 
       // 2. Hitung badge counter berdasarkan data wilayah yang dipilih
       const pendingStatuses = ['SUBMITTED', 'SURVEY_SCHEDULED', 'INSTALLATION_SCHEDULED', 'PENDING_SURVEY_OVERDISTANCE', 'WAITING_APPROVAL_NOC', 'WAITING_DIRECTOR_APPROVAL'];
@@ -15019,6 +15325,48 @@
         );
       }
 
+      // Filter by Session status (Online / Offline)
+      const sessionFilter = document.getElementById('admin-reg-filter-session')?.value || 'ALL';
+      if (sessionFilter !== 'ALL') {
+        filtered = filtered.filter(r => {
+          const liveSess = findLiveSession(r.pppoe_username) || findLiveSession(r.upstream_pppoe_username);
+          const isOnline = !!(liveSess && liveSess.is_online);
+          if (sessionFilter === 'ONLINE') return isOnline;
+          if (sessionFilter === 'OFFLINE') return !isOnline;
+          return true;
+        });
+      }
+
+      // Filter by Plan
+      const planFilter = document.getElementById('admin-reg-filter-plan')?.value || 'ALL';
+      if (planFilter !== 'ALL') {
+        filtered = filtered.filter(r => r.selected_plan_name === planFilter);
+      }
+
+      // Filter by Network (Direct / Partner)
+      const networkFilter = document.getElementById('admin-reg-filter-network')?.value || 'ALL';
+      if (networkFilter === 'DIRECT') {
+        filtered = filtered.filter(r => !r.partner_code);
+      } else if (networkFilter === 'PARTNER') {
+        filtered = filtered.filter(r => !!r.partner_code);
+      }
+
+      // Update Filter Counter Badge & Reset Button Visibility
+      const countBadge = document.getElementById('admin-reg-filtered-count-badge');
+      if (countBadge) countBadge.innerText = `${filtered.length} data`;
+
+      const resetBtn = document.getElementById('admin-reg-filter-reset');
+      if (resetBtn) {
+        const hasActiveFilter = q !== '' || sessionFilter !== 'ALL' || planFilter !== 'ALL' || networkFilter !== 'ALL';
+        if (hasActiveFilter) {
+          resetBtn.classList.remove('hidden');
+          resetBtn.classList.add('inline-flex');
+        } else {
+          resetBtn.classList.add('hidden');
+          resetBtn.classList.remove('inline-flex');
+        }
+      }
+
       if (filtered.length === 0) {
         const filterNames = {
           'PENDING': 'antrean pasang baru',
@@ -15029,14 +15377,23 @@
           'UNCOVERED': 'wishlist / luar jangkauan',
           'ALL': 'database'
         };
+        const hasActiveFilter = q !== '' || sessionFilter !== 'ALL' || planFilter !== 'ALL' || networkFilter !== 'ALL';
+        const resetAction = hasActiveFilter 
+          ? `<div class="mt-2.5">
+               <button type="button" onclick="resetAdminRegFilters()" class="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-mono text-xs font-bold rounded-md border border-slate-300 shadow-2xs transition inline-flex items-center gap-1.5 cursor-pointer">
+                 <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-slate-500"></i>
+                 <span>Reset Filter Pencarian &amp; Status</span>
+               </button>
+             </div>` 
+          : '';
         const branchMsg = branchFilter !== 'ALL' 
           ? `<div class="mt-2 text-slate-500 font-sans">Filter cabang aktif: <strong>${branchFilter}</strong> (Total ${rawData.length} data registrasi berada di wilayah cabang lain).</div>
              <button type="button" onclick="onGlobalBranchChange('ALL')" class="mt-3 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-mono text-xs font-bold rounded-md transition shadow-xs cursor-pointer inline-flex items-center gap-1.5">
                <i data-lucide="globe" class="w-3.5 h-3.5"></i>
                <span>Tampilkan Semua Wilayah (Nasional)</span>
              </button>`
-          : `<div class="mt-1 text-slate-400 font-sans">Belum ada data pendaftaran untuk status ini.</div>`;
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-10 font-mono text-xs"><div class="text-slate-700 font-bold">Tidak ada data untuk kategori ${filterNames[currentAdminRegFilter] || currentAdminRegFilter}</div>${branchMsg}</td></tr>`;
+          : `<div class="mt-1 text-slate-400 font-sans">Belum ada data pendaftaran untuk kriteria filter ini.</div>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-10 font-mono text-xs"><div class="text-slate-700 font-bold">Tidak ada data untuk kategori ${filterNames[currentAdminRegFilter] || currentAdminRegFilter}</div>${branchMsg}${resetAction}</td></tr>`;
         lucide.createIcons();
         return;
       }
@@ -15175,64 +15532,16 @@
             <td class="py-3 px-3.5 whitespace-nowrap align-top">
               <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider border ${statusBadgeClass}">${statusLabel}</span>
             </td>
-            <td class="py-3 px-3.5 font-mono align-top text-right whitespace-nowrap min-w-[280px]">
-              <div class="inline-flex items-center justify-end gap-1 flex-nowrap">
-                <button type="button" onclick="openAdminDetailModal('${r.id}')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white font-mono text-xs font-bold rounded-md shadow-2xs transition active:scale-95 cursor-pointer shrink-0">
-                  <span class="pointer-events-none">Lihat Detail</span>
+            <td class="py-3 px-3.5 font-mono align-top text-right whitespace-nowrap min-w-[160px]">
+              <div class="inline-flex items-center justify-end gap-1.5 flex-nowrap">
+                <button type="button" onclick="openAdminDetailModal('${r.id}')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white font-mono text-xs font-bold rounded-md shadow-2xs transition active:scale-95 cursor-pointer shrink-0 inline-flex items-center gap-1" title="Lihat Detail Lengkap Pelanggan">
+                  <i data-lucide="eye" class="w-3.5 h-3.5 pointer-events-none"></i>
+                  <span class="pointer-events-none">Detail</span>
                 </button>
-                ${(r.status === 'SUBMITTED' || r.status === 'INSTALLATION_SCHEDULED' || r.status === 'SURVEY_SCHEDULED' || r.status === 'PENDING_SURVEY_OVERDISTANCE') ? `
-                  <button type="button" onclick="openAdminTechnicianBastModal('${r.work_order_id || ''}', '${r.id}')" title="Form BAST & Aktivasi Teknisi" class="px-2 py-1 bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 hover:border-emerald-300 rounded-md font-mono text-[11px] font-bold transition flex items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95">
-                    <i data-lucide="clipboard-check" class="w-3.5 h-3.5 text-emerald-600 pointer-events-none"></i>
-                    <span class="pointer-events-none">BAST</span>
-                  </button>
-                ` : ''}
-                ${(r.status === 'PENDING_SURVEY_OVERDISTANCE' || r.status === 'UNCOVERED_WISHLIST' || !r.nearest_odp_code) ? `
-                  <button type="button" onclick="openAttachPartnerODPModal('${r.id}', '${r.registration_no}', '${(r.full_name || 'Pelanggan').replace(/['"\\]/g, ' ')}', '${r.nearest_odp_code || ''}', ${r.distance_to_odp_meters || 50})" title="Oper Order / Alihkan ke Mitra Jartup" class="px-2 py-1 bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 hover:border-indigo-300 rounded-md font-mono text-[11px] font-bold transition flex items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95">
-                    <i data-lucide="network" class="w-3.5 h-3.5 text-indigo-600 pointer-events-none"></i>
-                    <span class="pointer-events-none">Oper Jartup</span>
-                  </button>
-                  <button type="button" onclick="openMarkUncoveredModal('${r.id}', '${r.registration_no}', '${(r.full_name || 'Pelanggan').replace(/['"\\]/g, ' ')}', '${r.phone || ''}')" title="Penanganan Tidak Tercover" class="px-2 py-1 bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 hover:border-rose-300 rounded-md font-mono text-[11px] font-bold transition flex items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95">
-                    <i data-lucide="map-pin-off" class="w-3.5 h-3.5 text-rose-600 pointer-events-none"></i>
-                    <span class="pointer-events-none">Wishlist</span>
-                  </button>
-                ` : ''}
-                ${r.status === 'ACTIVE' ? (
-                  r.partner_suspension_policy === 'DISALLOWED' ? `
-                    <button type="button" disabled title="Jeda dilarang oleh kontrak mitra" class="px-2 py-1 bg-slate-100 text-slate-400 border border-slate-200 rounded-md font-mono text-[11px] font-bold cursor-not-allowed flex items-center gap-1 opacity-70 shrink-0">
-                      <i data-lucide="lock" class="w-3.5 h-3.5 text-slate-400 pointer-events-none"></i>
-                      <span class="pointer-events-none">Isolir</span>
-                    </button>
-                  ` : `
-                    <button type="button" onclick="toggleCustomerSuspension('${r.registration_no}', 'ACTIVE', '${(r.full_name || 'Pelanggan').replace(/['"\\]/g, ' ')}', '${r.partner_suspension_policy || ''}', '${(r.partner_name || '').replace(/['"\\]/g, ' ')}')" title="Isolir Layanan & Putus Koneksi MikroTik" class="px-2 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 hover:border-slate-300 rounded-md font-mono text-[11px] font-bold transition flex items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95">
-                      <i data-lucide="pause" class="w-3.5 h-3.5 text-slate-600 pointer-events-none"></i>
-                      <span class="pointer-events-none">Isolir</span>
-                    </button>
-                  `
-                ) : ''}
-                ${r.status === 'SUSPENDED' ? `
-                  <button type="button" onclick="toggleCustomerSuspension('${r.registration_no}', 'SUSPENDED', '${(r.full_name || 'Pelanggan').replace(/['"\\]/g, ' ')}')" title="Buka Isolir & Pulihkan Koneksi" class="px-2 py-1 bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 hover:border-emerald-300 rounded-md font-mono text-[11px] font-bold transition flex items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95">
-                    <i data-lucide="play" class="w-3.5 h-3.5 text-emerald-600 pointer-events-none"></i>
-                    <span class="pointer-events-none">Buka Isolir</span>
-                  </button>
-                ` : ''}
-                ${r.pppoe_username ? `
-                  <button type="button" onclick="kickPPPoESession('${r.pppoe_username}', '${(r.full_name || 'Pelanggan').replace(/['"\\]/g, ' ')}')" title="Reset / Kick Sesi PPPoE MikroTik" class="px-2 py-1 bg-white hover:bg-amber-50 text-amber-700 border border-amber-200 hover:border-amber-300 rounded-md font-mono text-[11px] font-bold transition flex items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95">
-                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-amber-600 pointer-events-none"></i>
-                    <span class="pointer-events-none">Kick</span>
-                  </button>
-                ` : ''}
-                ${(r.status === 'ACTIVE' || r.status === 'SUSPENDED') ? `
-                  <button type="button" onclick="openUpgradePlanModal('${r.id}')" title="Upgrade / Ganti Paket Bandwidth" class="px-2 py-1 bg-white hover:bg-blue-50 text-blue-700 border border-blue-200 hover:border-blue-300 rounded-md font-mono text-[11px] font-bold transition flex items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95">
-                    <i data-lucide="zap" class="w-3.5 h-3.5 text-blue-600 pointer-events-none"></i>
-                    <span class="pointer-events-none">Upgrade</span>
-                  </button>
-                ` : ''}
-                ${isSuperUser ? `
-                  <button type="button" onclick="confirmDeleteRegistration('${r.id}', '${r.registration_no}', '${(r.full_name || 'Pelanggan').replace(/['"\\]/g, ' ')}', '${r.status}')" title="Hapus Data (Super User)" class="px-2 py-1 bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 hover:border-rose-300 rounded-md font-mono text-[11px] font-bold transition flex items-center gap-1 shadow-2xs cursor-pointer shrink-0 active:scale-95">
-                    <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-600 pointer-events-none"></i>
-                    <span class="pointer-events-none">Hapus</span>
-                  </button>
-                ` : ''}
+                <button type="button" onclick="toggleRowActionMenu('${r.id}', this, event)" class="row-action-btn-${r.id} px-2 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 hover:border-slate-400 rounded-md font-mono text-xs font-bold transition inline-flex items-center gap-1 shadow-2xs cursor-pointer active:scale-95 shrink-0" title="Menu Pilihan Aksi Operasional">
+                  <span class="pointer-events-none">Aksi</span>
+                  <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500 pointer-events-none"></i>
+                </button>
               </div>
             </td>
           </tr>
