@@ -59,6 +59,10 @@ Semua perubahan, penambahan fitur, dan perbaikan bug pada platform ISPSYNC / GoG
    - Penanganan fallback `GetPlanByID` ke tabel master Ledger menggunakan pencarian ID UUID paket.
    - Pemuatan paket asinkron pada dropdown modal "Upgrade / Ganti Paket Bandwidth" di NOC FO (`populateUpgradePlanSelect`) dengan pengelompokan "Paket Resmi Aktif (Ledger)", informasi kecepatan download/upload Mbps, dan format tarif rupiah per bulan.
 
+4. **Validasi Input Tarif Rupiah Fleksibel (`web/index.html`, `web/kontrak.html`):**
+   - Mengubah atribut validasi input HTML5 `step="5000"` menjadi `step="any"` pada modal upgrade paket (`upgrade-plan-price`), input deposit custom (`topup-custom-amount`), input paket korporat, dan kontrak sewa port.
+   - Mengatasi penolakan submit validasi peramban (*Please enter a valid value*) pada nominal paket resmi non-kelipatan 5000 (contohnya Paket Gold 10M seharga Rp 183.150).
+
 ---
 
 ## Riwayat Komit Terkait (Branch `staging`)
