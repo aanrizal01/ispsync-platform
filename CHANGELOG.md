@@ -63,6 +63,12 @@ Semua perubahan, penambahan fitur, dan perbaikan bug pada platform ISPSYNC / GoG
    - Mengubah atribut validasi input HTML5 `step="5000"` menjadi `step="any"` pada modal upgrade paket (`upgrade-plan-price`), input deposit custom (`topup-custom-amount`), input paket korporat, dan kontrak sewa port.
    - Mengatasi penolakan submit validasi peramban (*Please enter a valid value*) pada nominal paket resmi non-kelipatan 5000 (contohnya Paket Gold 10M seharga Rp 183.150).
 
+5. **Sinkronisasi Dua Arah Paket Pelanggan Aktif Ledger & NOC (`internal/repository/postgres.go`):**
+   - Mengintegrasikan pembaruan data pelanggan operasional NOC (`ispsync.subscribers`) secara otomatis dari langganan aktif di Ledger (`public.subscriptions` dan `public.plans`).
+   - Mengoreksi inkonsistensi nama paket di mana Nexus sebelumnya menampilkan draf pendaftaran awal (*Penawaran Khusus Sales* pada Sri Rahayu, atau *Paket Gold* tanpa kapasitas), sedangkan di Ledger telah ditetapkan ke paket resmi (*Paket Gold (10M)* Rp 183.150).
+   - Mengotomatisasi penambahan pelanggan yang dibuat langsung di Ledger (seperti Nando `CUS-2026-10019`) ke tabel operasional NOC.
+   - Menambahkan propagasi balik perubahan paket dari NOC ke tabel langganan Ledger (`public.subscriptions`).
+
 ---
 
 ## Riwayat Komit Terkait (Branch `staging`)

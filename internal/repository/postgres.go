@@ -1052,6 +1052,53 @@ func (s *PostgresStorage) GetOLTByID(ctx context.Context, tenantID, id string) (
 // ── Subscriber Methods ─────────────────────────────────────────────────────────
 
 func (s *PostgresStorage) ListSubscribers(ctx context.Context, tenantID string, status string) ([]domain.Subscriber, error) {
+	// Auto-sinkronisasi paket resmi dari langganan aktif di Ledger (public.subscriptions & public.plans)
+	_, _ = s.db.ExecContext(ctx, `
+		UPDATE subscribers sub
+		SET selected_plan_name = p.name,
+		    selected_plan_id = p.id::text
+		FROM public.customers c
+		JOIN public.subscriptions s ON c.id = s.customer_id
+		JOIN public.plans p ON s.plan_id = p.id
+		WHERE sub.subscriber_no = c.customer_number
+		  AND sub.tenant_id = $1
+		  AND p.name IS NOT NULL
+	`, tenantID)
+
+	// Auto-masukkan pelanggan baru dari Ledger ke subscribers jika belum tercatat di operasional NOC
+	_, _ = s.db.ExecContext(ctx, `
+		INSERT INTO subscribers (
+			id, tenant_id, subscriber_no, full_name, phone, email, address,
+			selected_plan_id, selected_plan_name, nearest_odp_code,
+			pppoe_username, status, billing_type, created_at, updated_at, branch_code
+		)
+		SELECT 
+			c.id::text,
+			$1,
+			c.customer_number,
+			c.full_name,
+			c.phone,
+			COALESCE(c.email, ''),
+			COALESCE(ca.street || ', ' || COALESCE(ca.city, ''), 'Wilayah Operasional'),
+			p.id::text,
+			p.name,
+			'ODP-PYK-0138',
+			acc.identity,
+			CASE WHEN s.status = 'ACTIVE' THEN 'ACTIVE' ELSE 'INSTALLATION_SCHEDULED' END,
+			COALESCE(s.billing_cycle, 'PREPAID'),
+			c.created_at,
+			NOW(),
+			'PYK'
+		FROM public.customers c
+		LEFT JOIN public.customer_addresses ca ON c.id = ca.customer_id
+		JOIN public.subscriptions s ON c.id = s.customer_id
+		JOIN public.plans p ON s.plan_id = p.id
+		LEFT JOIN public.access_accounts acc ON s.id = acc.subscription_id
+		LEFT JOIN subscribers sub ON c.customer_number = sub.subscriber_no
+		WHERE sub.subscriber_no IS NULL
+		ON CONFLICT (tenant_id, subscriber_no) DO NOTHING
+	`, tenantID)
+
 	query := `
 		SELECT id, tenant_id, subscriber_no, full_name, identity_number, email, phone, address,
 		       latitude, longitude, distance_to_odp, selected_plan_id, selected_plan_name,
@@ -1210,7 +1257,27 @@ func (s *PostgresStorage) UpdateSubscriberPricingAndODP(ctx context.Context, ten
 		WHERE tenant_id = $7 AND (id = $8 OR subscriber_no = $8)
 	`, statusClause)
 	_, err := s.db.ExecContext(ctx, query, planID, planName, odpCode, pppoeUser, pppoePass, billingType, tenantID, id)
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Sinkronisasi balik ke Ledger (public.subscriptions) jika planID adalah UUID resmi
+	if planID != "" && planID != "CUSTOM_SPEED" {
+		_, _ = s.db.ExecContext(ctx, `
+			UPDATE public.subscriptions s
+			SET plan_id = $1::uuid,
+			    updated_at = NOW()
+			FROM public.customers c
+			WHERE s.customer_id = c.id
+			  AND c.customer_number = (
+			      SELECT subscriber_no FROM subscribers 
+			      WHERE tenant_id = $2 AND (id = $3 OR subscriber_no = $3) 
+			      LIMIT 1
+			  )
+		`, planID, tenantID, id)
+	}
+
+	return nil
 }
 
 func (s *PostgresStorage) UpdateSubscriberBillingType(ctx context.Context, tenantID, idOrNo, billingType string) error {
