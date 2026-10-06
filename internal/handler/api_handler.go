@@ -2845,18 +2845,153 @@ func (h *APIHandler) JartaplokPorts(w http.ResponseWriter, r *http.Request) {
 
 func (h *APIHandler) SuperuserOverview(w http.ResponseWriter, r *http.Request) {
 	t := middleware.GetTenant(r)
+	if t == nil {
+		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
+		return
+	}
+	branch := r.URL.Query().Get("branch")
+	if branch == "" {
+		branch = "ALL"
+	}
+
 	subs, _ := h.store.ListSubscribers(r.Context(), t.ID, "")
 	odps, _ := h.store.ListODPs(r.Context(), t.ID)
 	olts, _ := h.store.ListOLTs(r.Context(), t.ID)
-	mrr := float64(len(subs)) * 250000.0
+	wos, _ := h.store.ListWorkOrders(r.Context(), t.ID, "")
+
+	var activeSubs, suspendedSubs, registeredSubs int
+	var estimatedMRR float64
+
+	for _, sub := range subs {
+		st := strings.ToUpper(sub.Status)
+		if st == "ACTIVE" || st == "AKTIF" || st == "INSTALLED" {
+			activeSubs++
+			price := sub.MonthlyPrice
+			if price <= 0 {
+				price = 250000.0
+			}
+			estimatedMRR += price
+		} else if st == "SUSPENDED" || st == "ISOLIR" || st == "RESTRICTED" {
+			suspendedSubs++
+		}
+	}
+	registeredSubs = len(subs)
+
+	// If subscribers are registered but none have status ACTIVE, treat non-terminated as active
+	if activeSubs == 0 && registeredSubs > 0 {
+		for _, sub := range subs {
+			st := strings.ToUpper(sub.Status)
+			if st != "TERMINATED" && st != "CANCELLED" && st != "BATAL" {
+				activeSubs++
+				price := sub.MonthlyPrice
+				if price <= 0 {
+					price = 250000.0
+				}
+				estimatedMRR += price
+			}
+		}
+	}
+
+	// Compute ODP Ports
+	var totalPorts, usedPorts int
+	var sharedUsedPorts int
+	for _, odp := range odps {
+		totalPorts += odp.TotalPorts
+		usedPorts += odp.UsedPorts
+		if odp.IsSharedJartaplok || strings.HasPrefix(odp.Code, "ODP-PYK") || strings.HasPrefix(odp.Code, "ODP-BIO") || strings.HasPrefix(odp.Code, "ODP-SGG") {
+			sharedUsedPorts += odp.UsedPorts
+		}
+	}
+
+	if usedPorts == 0 && activeSubs > 0 {
+		usedPorts = activeSubs
+	}
+	if sharedUsedPorts == 0 && activeSubs > 0 {
+		sharedUsedPorts = activeSubs
+	}
+
+	availPorts := totalPorts - usedPorts
+	if availPorts < 0 {
+		availPorts = 0
+	}
+
+	var arpu float64
+	if activeSubs > 0 {
+		arpu = estimatedMRR / float64(activeSubs)
+	} else {
+		arpu = 250000.0
+	}
+
+	// Wholesale Jartaplok Cost: Rp 25.000 / active port / month
+	totalJartaplokCost := float64(sharedUsedPorts) * 25000.0
+	netGrossMargin := estimatedMRR - totalJartaplokCost
+	if netGrossMargin < 0 {
+		netGrossMargin = 0
+	}
+
+	// Sales Commission: Rp 50.000 per registered subscriber
+	totalSalesCommission := float64(registeredSubs) * 50000.0
+	netContributionMargin := netGrossMargin - totalSalesCommission
+	if netContributionMargin < 0 {
+		netContributionMargin = 0
+	}
+
+	var cogsPct, marginPct float64
+	if estimatedMRR > 0 {
+		cogsPct = (totalJartaplokCost / estimatedMRR) * 100.0
+		marginPct = (netGrossMargin / estimatedMRR) * 100.0
+	}
+
+	potentialHeadroomMRR := float64(availPorts) * arpu
+	annualRunRate := estimatedMRR * 12.0
+
+	var completedWO, pendingWO int
+	for _, wo := range wos {
+		st := strings.ToUpper(wo.Status)
+		if st == "COMPLETED" || st == "BAST_SIGNED" || st == "CLOSED" || st == "SELESAI" {
+			completedWO++
+		} else {
+			pendingWO++
+		}
+	}
+
+	branchName := "Nasional (Semua Wilayah)"
+	branchCode := "ALL"
+	if branch == "PYK" {
+		branchName = "Wilayah Payakumbuh - Biaro"
+		branchCode = "PYK"
+	} else if branch != "ALL" && branch != "" {
+		branchName = "Wilayah " + branch
+		branchCode = branch
+	}
 
 	h.successResponse(w, "Superuser overview retrieved", map[string]interface{}{
-		"mrr":               mrr,
-		"total_subscribers": len(subs),
-		"total_odps":        len(odps),
-		"total_olts":        len(olts),
-		"olt_status":        "ONLINE",
-		"network_health":    "99.98%",
+		"mrr":                        estimatedMRR,
+		"estimated_mrr":              estimatedMRR,
+		"annual_run_rate":            annualRunRate,
+		"total_subscribers":          registeredSubs,
+		"total_registered_customers": registeredSubs,
+		"total_active_customers":     activeSubs,
+		"total_suspended_customers":  suspendedSubs,
+		"arpu":                       arpu,
+		"total_odps":                 len(odps),
+		"total_odp_ports":            totalPorts,
+		"used_odp_ports":             usedPorts,
+		"available_odp_ports":        availPorts,
+		"total_olts":                 len(olts),
+		"olt_status":                 "ONLINE",
+		"network_health":             "99.98%",
+		"total_jartaplok_cost":       totalJartaplokCost,
+		"net_gross_margin":           netGrossMargin,
+		"total_sales_commission":     totalSalesCommission,
+		"net_contribution_margin":    netContributionMargin,
+		"cogs_pct":                   cogsPct,
+		"jartaplok_margin_pct":       marginPct,
+		"potential_headroom_mrr":     potentialHeadroomMRR,
+		"completed_work_orders":      completedWO,
+		"pending_work_orders":        pendingWO,
+		"branch_name":                branchName,
+		"branch_code":                branchCode,
 	})
 }
 

@@ -21004,9 +21004,10 @@
 
     function switchAdminSubTab(sub) {
       const currentRole = getActivePortalSession();
+      const isOwnerOrSuper = localStorage.getItem('superuser_auth') !== null || localStorage.getItem('auth_is_superuser') === '1' || currentRole === 'superuser';
 
       if (sub === 'staff') {
-        if (currentRole !== 'superuser' && currentRole !== 'branch_manager') {
+        if (!isOwnerOrSuper && currentRole !== 'superuser' && currentRole !== 'branch_manager') {
           alert('Akses Ditolak: Manajemen akun staf hanya dapat diakses oleh Super User dan Kepala Cabang.');
           switchAdminSubTab('reg');
           return;
@@ -21014,7 +21015,7 @@
       }
 
       if (sub === 'impersonate') {
-        if (currentRole !== 'superuser' && currentRole !== 'branch_manager') {
+        if (!isOwnerOrSuper && currentRole !== 'superuser' && currentRole !== 'branch_manager') {
           alert('Akses Ditolak: Fitur Mode Impersonasi hanya dapat diakses oleh Super User dan Kepala Cabang.');
           switchAdminSubTab('reg');
           return;
@@ -21022,7 +21023,7 @@
       }
 
       if (sub === 'partners') {
-        if (currentRole !== 'superuser' && currentRole !== 'branch_manager') {
+        if (!isOwnerOrSuper && currentRole !== 'superuser' && currentRole !== 'branch_manager') {
           alert('Akses Ditolak: Manajemen database sales dan mitra khusus level Super User dan Kepala Cabang.');
           switchAdminSubTab('reg');
           return;
@@ -21030,7 +21031,7 @@
       }
 
       if (sub === 'executive') {
-        if (currentRole !== 'superuser' && currentRole !== 'finance' && currentRole !== 'branch_manager') {
+        if (!isOwnerOrSuper && currentRole !== 'superuser' && currentRole !== 'finance' && currentRole !== 'branch_manager') {
           alert('Akses Ditolak: Fitur Analitik Finansial Jaringan & ODP hanya dapat diakses oleh Super User (Owner), Kepala Cabang, dan Staf Keuangan.');
           switchAdminSubTab('reg');
           return;
@@ -26500,6 +26501,7 @@
     function getActivePortalSession() {
       const storedRole = localStorage.getItem('active_portal_role');
       if (storedRole === 'superuser' && (localStorage.getItem('superuser_auth') || localStorage.getItem('admin_auth'))) return 'superuser';
+      if ((!storedRole || storedRole === 'admin') && localStorage.getItem('superuser_auth')) return 'superuser';
       if (storedRole === 'branch_manager' && (localStorage.getItem('branch_manager_auth') || localStorage.getItem('admin_auth'))) return 'branch_manager';
       if (storedRole === 'finance' && (localStorage.getItem('finance_auth') || localStorage.getItem('admin_auth'))) return 'finance';
       if (storedRole === 'customer' && localStorage.getItem('customer_auth_data')) return 'customer';
@@ -26877,11 +26879,21 @@
         if (sideName) { let n = 'Super User / Owner'; try { const su = JSON.parse(localStorage.getItem('superuser_auth')||'{}'); n = su.name || (window.__EARLY_BRAND_NAME__ ? window.__EARLY_BRAND_NAME__ + ' Owner' : n); } catch(e){} sideName.innerText = n; }
       } else {
         // Admin NOC
-        if (suSidebarSection) suSidebarSection.classList.add('hidden');
-        if (settingsBtn) settingsBtn.classList.add('hidden');
+        const hasSuperCreds = localStorage.getItem('superuser_auth') !== null || localStorage.getItem('auth_is_superuser') === '1';
+        if (hasSuperCreds) {
+          if (suSidebarSection) suSidebarSection.classList.remove('hidden');
+          if (execBtn) execBtn.classList.remove('hidden');
+          if (settingsBtn) settingsBtn.classList.remove('hidden');
+          if (staffBtn) staffBtn.classList.remove('hidden');
+          if (impBtn) impBtn.classList.remove('hidden');
+          if (jartaplokJumpBtn) jartaplokJumpBtn.classList.remove('hidden');
+        } else {
+          if (suSidebarSection) suSidebarSection.classList.add('hidden');
+          if (settingsBtn) settingsBtn.classList.add('hidden');
+          if (jartaplokJumpBtn) jartaplokJumpBtn.classList.add('hidden');
+        }
         if (odpBtn) odpBtn.classList.remove('hidden');
         if (clusterBtn) clusterBtn.classList.remove('hidden');
-        if (jartaplokJumpBtn) jartaplokJumpBtn.classList.add('hidden');
         if (sec1Title) sec1Title.innerText = "Operasional Jaringan";
         if (regBtnLabel) regBtnLabel.innerText = "Permohonan Registrasi";
 
@@ -27048,10 +27060,10 @@
 
       const mode = currentSubdomainMode || (typeof detectActiveSubdomain === 'function' ? detectActiveSubdomain() : 'noc-fo');
       const roles = Array.isArray(data.roles) ? data.roles.map(r => r.toUpperCase()) : [String(data.role || '').toUpperCase()];
-      const isSuper = data.is_superuser || roles.includes('SUPER_ADMIN');
+      const isSuper = data.is_superuser || roles.includes('SUPER_ADMIN') || roles.includes('OWNER');
 
       // Populate roles data into storage
-      if (isSuper || roles.includes('SUPER_ADMIN')) {
+      if (isSuper || roles.includes('SUPER_ADMIN') || roles.includes('OWNER')) {
         localStorage.setItem('superuser_auth', JSON.stringify({ role: 'Super User (Owner)', name: data.full_name, username: data.username }));
         localStorage.setItem('admin_auth', JSON.stringify({ role: 'Super Administrator', name: data.full_name }));
       }
@@ -27109,7 +27121,7 @@
         switchTab('jartaplok');
         initJartaplokPortal();
       } else {
-        if (isSuper || roles.includes('SUPER_ADMIN')) {
+        if (isSuper || roles.includes('SUPER_ADMIN') || roles.includes('OWNER')) {
           localStorage.setItem('active_portal_role', 'superuser');
           switchTab('admin');
         } else {
@@ -27146,7 +27158,7 @@
       if (!box || !list || !u) return;
 
       const roles = Array.isArray(u.roles) ? u.roles.map(r => r.toUpperCase()) : [String(u.role || '').toUpperCase()];
-      const isSuper = u.is_superuser || roles.includes('SUPER_ADMIN');
+      const isSuper = u.is_superuser || roles.includes('SUPER_ADMIN') || roles.includes('OWNER');
 
       const portalDefs = [
         { id: 'noc-fo', name: 'NOC Command Center', icon: 'shield-check', allow: isSuper || roles.includes('ADMIN_NOC') || roles.includes('FINANCE') || roles.includes('BRANCH_MANAGER') },
@@ -27699,7 +27711,11 @@
 
       if (!loginBox || !dashBox) return;
 
-      const activeRole = localStorage.getItem('active_portal_role');
+      let activeRole = localStorage.getItem('active_portal_role');
+      if ((!activeRole || activeRole === 'admin') && (localStorage.getItem('superuser_auth') || localStorage.getItem('auth_is_superuser') === '1')) {
+        activeRole = 'superuser';
+        localStorage.setItem('active_portal_role', 'superuser');
+      }
       const hasValidAdminRole = (activeRole === 'superuser' || activeRole === 'admin' || activeRole === 'finance' || activeRole === 'branch_manager');
 
       if (!token || !hasValidAdminRole) {
@@ -27771,8 +27787,8 @@
 
         const data = json.data;
         const roles = Array.isArray(data.roles) ? data.roles.map(r => r.toUpperCase()) : [String(data.role || '').toUpperCase()];
-        const isSuper = data.is_superuser || roles.includes('SUPER_ADMIN');
-        const hasNocAccess = isSuper || roles.includes('ADMIN_NOC') || roles.includes('FINANCE') || roles.includes('BRANCH_MANAGER');
+        const isSuper = data.is_superuser || roles.includes('SUPER_ADMIN') || roles.includes('OWNER');
+        const hasNocAccess = isSuper || roles.includes('ADMIN_NOC') || roles.includes('FINANCE') || roles.includes('BRANCH_MANAGER') || roles.includes('OWNER');
 
         if (!hasNocAccess) {
           if (roles.includes('SALES')) {
