@@ -1100,10 +1100,21 @@ func (s *PostgresStorage) ListSubscribers(ctx context.Context, tenantID string, 
 	`, tenantID)
 
 	query := `
-		SELECT id, tenant_id, subscriber_no, full_name, identity_number, email, phone, address,
-		       latitude, longitude, distance_to_odp, selected_plan_id, selected_plan_name,
-		       nearest_odp_id, nearest_odp_code, olt_id, pon_port, onu_id, serial_number, mac_address,
-		       rx_optical_power, pppoe_username, pppoe_password, vlan_id, ip_address, status,
+		SELECT id, tenant_id, subscriber_no, full_name, 
+		       COALESCE(identity_number, ''), 
+		       COALESCE(email, ''), 
+		       COALESCE(phone, ''), 
+		       COALESCE(address, ''),
+		       COALESCE(latitude, 0), 
+		       COALESCE(longitude, 0), 
+		       COALESCE(distance_to_odp, 0), 
+		       COALESCE(selected_plan_id, ''), 
+		       COALESCE(selected_plan_name, ''),
+		       COALESCE(nearest_odp_id, ''), 
+		       COALESCE(nearest_odp_code, ''), 
+		       olt_id, pon_port, onu_id, serial_number, mac_address,
+		       rx_optical_power, pppoe_username, pppoe_password, vlan_id, ip_address, 
+		       COALESCE(status, 'REGISTERED'),
 		       COALESCE(billing_type, 'PREPAID'), activated_at, suspended_at, created_at, updated_at
 		FROM subscribers WHERE tenant_id = $1
 	`
@@ -1139,10 +1150,21 @@ func (s *PostgresStorage) ListSubscribers(ctx context.Context, tenantID string, 
 
 func (s *PostgresStorage) GetSubscriberByID(ctx context.Context, tenantID, id string) (*domain.Subscriber, error) {
 	row := s.db.QueryRowContext(ctx, `
-		SELECT id, tenant_id, subscriber_no, full_name, identity_number, email, phone, address,
-		       latitude, longitude, distance_to_odp, selected_plan_id, selected_plan_name,
-		       nearest_odp_id, nearest_odp_code, olt_id, pon_port, onu_id, serial_number, mac_address,
-		       rx_optical_power, pppoe_username, pppoe_password, vlan_id, ip_address, status,
+		SELECT id, tenant_id, subscriber_no, full_name, 
+		       COALESCE(identity_number, ''), 
+		       COALESCE(email, ''), 
+		       COALESCE(phone, ''), 
+		       COALESCE(address, ''),
+		       COALESCE(latitude, 0), 
+		       COALESCE(longitude, 0), 
+		       COALESCE(distance_to_odp, 0), 
+		       COALESCE(selected_plan_id, ''), 
+		       COALESCE(selected_plan_name, ''),
+		       COALESCE(nearest_odp_id, ''), 
+		       COALESCE(nearest_odp_code, ''), 
+		       olt_id, pon_port, onu_id, serial_number, mac_address,
+		       rx_optical_power, pppoe_username, pppoe_password, vlan_id, ip_address, 
+		       COALESCE(status, 'REGISTERED'),
 		       COALESCE(billing_type, 'PREPAID'), activated_at, suspended_at, created_at, updated_at
 		FROM subscribers WHERE tenant_id = $1 AND (id = $2 OR subscriber_no = $2)
 	`, tenantID, id)
