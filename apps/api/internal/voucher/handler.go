@@ -46,6 +46,7 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 		r.With(authMW.RequirePermission("vouchers:write")).Post("/{id}/resend-wa", h.ResendWhatsApp)
 		r.With(authMW.RequirePermission("vouchers:write")).Post("/{id}/reset-mac", h.ResetMAC)
 		r.With(authMW.RequirePermission("vouchers:revoke")).Post("/{id}/revoke", h.Revoke)
+		r.With(authMW.RequirePermission("vouchers:revoke")).Post("/{id}/restore", h.Restore)
 
 		// Scratch Voucher Blanko Activation (by Agent)
 		r.Route("/agent", func(r chi.Router) {
@@ -220,6 +221,22 @@ func (h *Handler) Revoke(w http.ResponseWriter, r *http.Request) {
 	}
 
 	middleware.JSON(w, http.StatusOK, map[string]string{"message": "Voucher berhasil dibatalkan (REVOKED)"})
+}
+
+func (h *Handler) Restore(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		middleware.JSONError(w, h.logger, apperrors.BadRequest("ID voucher tidak valid"))
+		return
+	}
+
+	if err := h.service.Restore(r.Context(), id); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusOK, map[string]string{"message": "Voucher berhasil diaktifkan kembali"})
 }
 
 func (h *Handler) ResendWhatsApp(w http.ResponseWriter, r *http.Request) {

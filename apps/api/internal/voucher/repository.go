@@ -434,6 +434,16 @@ func (r *Repository) ResetMAC(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+func (r *Repository) Restore(ctx context.Context, id uuid.UUID, targetStatus string) error {
+	const q = `
+		UPDATE vouchers
+		SET status = $1, revoked_at = NULL, revoked_reason = NULL, updated_at = NOW()
+		WHERE id = $2 AND status = 'REVOKED'
+	`
+	_, err := r.db.Exec(ctx, q, targetStatus, id)
+	return err
+}
+
 // ExpireAndCleanupVouchers marks past-due vouchers as EXPIRED, and purges records older than 1 year.
 func (r *Repository) ExpireAndCleanupVouchers(ctx context.Context) (int64, int64, error) {
 	// 1. Tandai voucher UNUSED atau ACTIVE yang telah lewat expires_at menjadi EXPIRED

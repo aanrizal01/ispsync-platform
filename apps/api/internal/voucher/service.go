@@ -21,6 +21,7 @@ type WhatsAppSender interface {
 type RadiusSynchronizer interface {
 	DeleteCredential(ctx context.Context, username string) error
 	DisconnectUserSessions(ctx context.Context, username string) error
+	SyncCredential(ctx context.Context, username, password, groupname string) error
 }
 
 type Service struct {
@@ -290,6 +291,40 @@ func (s *Service) Revoke(ctx context.Context, id uuid.UUID, reason string) error
 	}
 
 	s.logger.Info("voucher revoked and radius session disconnected", "voucher_id", id, "code", v.Code, "reason", reason)
+	return nil
+}
+
+func (s *Service) Restore(ctx context.Context, id uuid.UUID) error {
+	v, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return apperrors.Internal(err)
+	}
+	if v == nil {
+		return apperrors.NotFound("Voucher")
+	}
+	if v.Status != StatusRevoked {
+		return apperrors.BadRequest("Voucher tidak dalam status REVOKED")
+	}
+
+	targetStatus := StatusUnused
+	if v.UsedSeconds > 0 || v.FirstUsedAt != nil {
+		targetStatus = StatusActive
+	}
+
+	if err := s.repo.Restore(ctx, id, string(targetStatus)); err != nil {
+		return apperrors.Internal(err)
+	}
+
+	// Re-sync to FreeRADIUS radcheck
+	if s.radiusSvc != nil && v.Code != "" {
+		pwd := v.Password
+		if pwd == "" {
+			pwd = v.Code
+		}
+		_ = s.radiusSvc.SyncCredential(ctx, v.Code, pwd, "HOTSPOT_VOUCHER")
+	}
+
+	s.logger.Info("voucher restored", "voucher_id", id, "code", v.Code, "status", targetStatus)
 	return nil
 }
 

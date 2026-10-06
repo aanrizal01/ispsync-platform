@@ -169,6 +169,11 @@ export const voucherApi = {
       body: JSON.stringify({ reason }),
     }),
 
+  restore: (id: string) =>
+    request<{ message: string }>(`/vouchers/${id}/restore`, {
+      method: "POST",
+    }),
+
   resendWhatsApp: (id: string) =>
     request<{ message: string }>(`/vouchers/${id}/resend-wa`, {
       method: "POST",

@@ -330,6 +330,7 @@ export default function VouchersPage() {
   const [durationUnit, setDurationUnit] = useState<"MINUTES" | "HOURS" | "DAYS" | "MONTHS">("HOURS");
   const [resendLoadingId, setResendLoadingId] = useState<string | null>(null);
   const [resetMACLoadingId, setResetMACLoadingId] = useState<string | null>(null);
+  const [restoreLoadingId, setRestoreLoadingId] = useState<string | null>(null);
 
   const calculateTotalMinutes = (val: number, unit: "MINUTES" | "HOURS" | "DAYS" | "MONTHS") => {
     switch (unit) {
@@ -595,6 +596,22 @@ export default function VouchersPage() {
       alert(err.message || "Gagal mereset kuncian MAC");
     } finally {
       setResetMACLoadingId(null);
+    }
+  };
+
+  const handleRestore = async (id: string, code: string) => {
+    if (!confirm(`Aktifkan kembali voucher "${code}"? Voucher akan dapat digunakan kembali.`)) {
+      return;
+    }
+    setRestoreLoadingId(id);
+    try {
+      const res = await voucherApi.restore(id);
+      alert(res.message || "Voucher berhasil diaktifkan kembali");
+      loadData();
+    } catch (err: any) {
+      alert(err.message || "Gagal mengaktifkan kembali voucher");
+    } finally {
+      setRestoreLoadingId(null);
     }
   };
 
@@ -1234,6 +1251,17 @@ export default function VouchersPage() {
                                 className="px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50 rounded border border-rose-200"
                               >
                                 Revoke
+                              </button>
+                            )}
+                            {v.status === "REVOKED" && (
+                              <button
+                                type="button"
+                                disabled={restoreLoadingId === v.id}
+                                onClick={() => handleRestore(v.id, v.code)}
+                                className="px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 rounded border border-emerald-300 disabled:opacity-50"
+                                title="Aktifkan kembali voucher ini"
+                              >
+                                {restoreLoadingId === v.id ? "Mengaktifkan..." : "Aktifkan"}
                               </button>
                             )}
                           </td>
@@ -2003,6 +2031,17 @@ export default function VouchersPage() {
                               Revoke
                             </button>
                           )}
+                          {v.status === "REVOKED" && (
+                            <button
+                              type="button"
+                              disabled={restoreLoadingId === v.id}
+                              onClick={() => handleRestore(v.id, v.code)}
+                              className="px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 rounded border border-emerald-300 disabled:opacity-50"
+                              title="Aktifkan kembali voucher ini"
+                            >
+                              {restoreLoadingId === v.id ? "Mengaktifkan..." : "Aktifkan"}
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -2425,6 +2464,17 @@ export default function VouchersPage() {
                                 className="px-2 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50 rounded border border-rose-200"
                               >
                                 Void
+                              </button>
+                            )}
+                            {v.status === "REVOKED" && (
+                              <button
+                                type="button"
+                                disabled={restoreLoadingId === v.id}
+                                onClick={() => handleRestore(v.id, sn)}
+                                className="px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 rounded border border-emerald-300 disabled:opacity-50"
+                                title="Aktifkan kembali kartu voucher ini"
+                              >
+                                {restoreLoadingId === v.id ? "Mengaktifkan..." : "Aktifkan"}
                               </button>
                             )}
                           </td>
