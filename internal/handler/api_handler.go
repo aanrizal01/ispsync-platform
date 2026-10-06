@@ -981,15 +981,59 @@ func (h *APIHandler) PublicODPs(w http.ResponseWriter, r *http.Request) {
 		Status         string  `json:"status"`
 		ClusterArea    string  `json:"cluster_area"`
 		IsShared       bool    `json:"is_shared"`
+		ProviderID     string  `json:"provider_id"`
 		ProviderName   string  `json:"provider_name"`
 	}
 	out := make([]odpOut, 0)
 	for _, o := range odps {
 		clusterArea := "Area Distribusi"
-		parts := strings.Split(o.Code, "-")
-		if len(parts) >= 2 && parts[0] == "ODP" {
-			clusterArea = "Cluster " + strings.Split(parts[1], "/")[0]
+		providerName := "GOGIGA In-House FO"
+		providerID := "GOGIGA"
+		isShared := false
+
+		upperCode := strings.ToUpper(o.Code)
+		if strings.HasPrefix(upperCode, "ODP-PYK") {
+			clusterArea = "Cluster Payakumbuh"
+			providerName = "PT. GNET BIARO DATA"
+			providerID = "GNET-BIARO"
+			isShared = true
+		} else if strings.HasPrefix(upperCode, "ODP-BIO") {
+			clusterArea = "Cluster Biaro"
+			providerName = "PT. GNET BIARO DATA"
+			providerID = "GNET-BIARO"
+			isShared = true
+		} else if strings.HasPrefix(upperCode, "ODP-SGG") {
+			clusterArea = "Cluster Suliki Guguk"
+			providerName = "PT. GNET BIARO DATA"
+			providerID = "GNET-BIARO"
+			isShared = true
+		} else if strings.HasPrefix(upperCode, "ODP-PDG") {
+			clusterArea = "Cluster Padang"
+			providerName = "PT Telkom Infrastruktur Indonesia"
+			providerID = "TELKO-PYK"
+			isShared = true
+		} else if strings.HasPrefix(upperCode, "ODP-BKT") {
+			clusterArea = "Cluster Bukittinggi"
+			providerName = "PT Telkom Infrastruktur Indonesia"
+			providerID = "TELKO-PYK"
+			isShared = true
+		} else if strings.HasPrefix(upperCode, "ODP-HRU") || strings.HasPrefix(upperCode, "OPD-HRU") || strings.HasPrefix(upperCode, "ODP-HR") {
+			clusterArea = "Cluster Harau"
+			providerName = "GOGIGA In-House FO"
+			providerID = "GOGIGA"
+			isShared = false
+		} else if o.OwnerTenantName != "" && o.IsSharedJartaplok {
+			clusterArea = fmt.Sprintf("Jartaplok %s", o.OwnerTenantName)
+			providerName = o.OwnerTenantName
+			providerID = o.OwnerTenantSlug
+			isShared = true
+		} else {
+			parts := strings.Split(o.Code, "-")
+			if len(parts) >= 2 && (parts[0] == "ODP" || parts[0] == "OPD") {
+				clusterArea = "Cluster " + strings.Split(parts[1], "/")[0]
+			}
 		}
+
 		out = append(out, odpOut{
 			ID:             o.ID,
 			Code:           o.Code,
@@ -1001,8 +1045,9 @@ func (h *APIHandler) PublicODPs(w http.ResponseWriter, r *http.Request) {
 			AvailablePorts: o.TotalPorts - o.UsedPorts,
 			Status:         o.Status,
 			ClusterArea:    clusterArea,
-			IsShared:       o.IsSharedJartaplok,
-			ProviderName:   o.OwnerTenantName,
+			IsShared:       isShared,
+			ProviderID:     providerID,
+			ProviderName:   providerName,
 		})
 	}
 	h.successResponse(w, "ODPs retrieved", out)
@@ -1022,25 +1067,68 @@ func (h *APIHandler) PublicClusters(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type clusterStat struct {
-		name       string
-		totalODPs  int
-		activeODPs int
+		name         string
+		providerName string
+		providerID   string
+		isShared     bool
+		totalODPs    int
+		activeODPs   int
 	}
 	clusterMap := make(map[string]*clusterStat)
 
 	for _, o := range odps {
 		cName := "Cluster Distribusi Utama"
-		parts := strings.Split(o.Code, "-")
-		if len(parts) >= 2 && parts[0] == "ODP" {
-			areaCode := strings.Split(parts[1], "/")[0]
-			cName = fmt.Sprintf("Cluster %s", areaCode)
+		provName := "GOGIGA In-House FO"
+		provID := "GOGIGA"
+		isShared := false
+
+		upperCode := strings.ToUpper(o.Code)
+		if strings.HasPrefix(upperCode, "ODP-PYK") {
+			cName = "Cluster PYK"
+			provName = "PT. GNET BIARO DATA"
+			provID = "GNET-BIARO"
+			isShared = true
+		} else if strings.HasPrefix(upperCode, "ODP-BIO") {
+			cName = "Cluster BIO"
+			provName = "PT. GNET BIARO DATA"
+			provID = "GNET-BIARO"
+			isShared = true
+		} else if strings.HasPrefix(upperCode, "ODP-SGG") {
+			cName = "Cluster SGG"
+			provName = "PT. GNET BIARO DATA"
+			provID = "GNET-BIARO"
+			isShared = true
+		} else if strings.HasPrefix(upperCode, "ODP-PDG") {
+			cName = "Cluster PDG"
+			provName = "PT Telkom Infrastruktur Indonesia"
+			provID = "TELKO-PYK"
+			isShared = true
+		} else if strings.HasPrefix(upperCode, "ODP-BKT") {
+			cName = "Cluster BKT"
+			provName = "PT Telkom Infrastruktur Indonesia"
+			provID = "TELKO-PYK"
+			isShared = true
+		} else if strings.HasPrefix(upperCode, "ODP-HRU") || strings.HasPrefix(upperCode, "OPD-HRU") {
+			cName = "Cluster HRU"
+			provName = "GOGIGA In-House FO"
+			provID = "GOGIGA"
+			isShared = false
 		} else if o.OwnerTenantName != "" && o.IsSharedJartaplok {
 			cName = fmt.Sprintf("Jartaplok %s", o.OwnerTenantName)
+			provName = o.OwnerTenantName
+			provID = o.OwnerTenantSlug
+			isShared = true
+		} else {
+			parts := strings.Split(o.Code, "-")
+			if len(parts) >= 2 && (parts[0] == "ODP" || parts[0] == "OPD") {
+				areaCode := strings.Split(parts[1], "/")[0]
+				cName = fmt.Sprintf("Cluster %s", areaCode)
+			}
 		}
 
 		stat, exists := clusterMap[cName]
 		if !exists {
-			stat = &clusterStat{name: cName}
+			stat = &clusterStat{name: cName, providerName: provName, providerID: provID, isShared: isShared}
 			clusterMap[cName] = stat
 		}
 		stat.totalODPs++
@@ -1052,10 +1140,13 @@ func (h *APIHandler) PublicClusters(w http.ResponseWriter, r *http.Request) {
 	var clusters []map[string]interface{}
 	for _, stat := range clusterMap {
 		clusters = append(clusters, map[string]interface{}{
-			"name":        stat.name,
-			"total_odps":  stat.totalODPs,
-			"active_odps": stat.activeODPs,
-			"is_active":   stat.activeODPs > 0,
+			"name":          stat.name,
+			"provider_name": stat.providerName,
+			"provider_id":   stat.providerID,
+			"is_shared":     stat.isShared,
+			"total_odps":    stat.totalODPs,
+			"active_odps":   stat.activeODPs,
+			"is_active":     stat.activeODPs > 0,
 		})
 	}
 

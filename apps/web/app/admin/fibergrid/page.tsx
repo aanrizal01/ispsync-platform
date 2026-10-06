@@ -268,7 +268,11 @@ export default function AdminFibergridPage() {
               <span style="font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; background:${statusBadgeBg}; color:${statusBadgeText};">${odp.status}</span>
             </div>
             <div style="color:#0f172a; font-weight:600; margin-bottom:4px;">${odp.name}</div>
-            <div style="color:#64748b; font-size:11px; margin-bottom:6px;">Cluster: <strong style="color:#0f172a;">${odp.cluster}</strong> | Splitter: <strong style="color:#0f172a;">${odp.splitter_spec}</strong></div>
+            <div style="color:#64748b; font-size:11px; margin-bottom:4px;">Cluster: <strong style="color:#0f172a;">${getClusterName(odp)}</strong> | Splitter: <strong style="color:#0f172a;">${odp.splitter_spec}</strong></div>
+            <div style="font-size:11px; margin-bottom:6px;">
+              Penyedia: <strong style="color:#2563eb;">${(odp as any).provider_name || (odp.code.includes('HRU') ? 'GOGIGA In-House FO' : 'PT. GNET BIARO DATA')}</strong>
+              <span style="margin-left:6px; font-size:9px; font-weight:700; padding:1px 5px; border-radius:3px; background:${odp.code.includes('HRU') ? '#e0f2fe; color:#0369a1' : '#f5f3ff; color:#6d28d9'};">${odp.code.includes('HRU') ? 'IN-HOUSE' : 'JARTAPLOK (jartaplok2026)'}</span>
+            </div>
             
             <div style="background:#f8fafc; border: 1px solid #e2e8f0; padding:6px 8px; border-radius:6px; margin-bottom:8px;">
               <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
@@ -369,11 +373,11 @@ export default function AdminFibergridPage() {
     }
     const code = (odp.code || "").toUpperCase();
     if (code.includes("HRU")) return "Cluster Harau (FiberGrid In-House)";
-    if (code.includes("PYK")) return "Cluster Payakumbuh";
-    if (code.includes("BIO")) return "Cluster Biaro (Golden Net)";
-    if (code.includes("SGG")) return "Cluster Suliki Guguk";
-    if (code.includes("PDG")) return "Cluster Padang";
-    if (code.includes("BKT")) return "Cluster Bukittinggi";
+    if (code.includes("PYK")) return "Cluster Payakumbuh (Jartaplok GNET)";
+    if (code.includes("BIO")) return "Cluster Biaro (Jartaplok GNET)";
+    if (code.includes("SGG")) return "Cluster Suliki Guguk (Jartaplok GNET)";
+    if (code.includes("PDG")) return "Cluster Padang (Jartaplok Telkom)";
+    if (code.includes("BKT")) return "Cluster Bukittinggi (Jartaplok Telkom)";
     return "Cluster Umum";
   };
 
@@ -766,7 +770,20 @@ export default function AdminFibergridPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="font-semibold text-slate-900">{odp.name}</div>
-                        <div className="text-xs text-slate-500">{getClusterName(odp)}</div>
+                        <div className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                            odp.code.includes('HRU') 
+                              ? "bg-cyan-50 text-cyan-700 border border-cyan-200" 
+                              : "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                          }`}>
+                            {odp.code.includes('HRU') ? "IN-HOUSE" : "JARTAPLOK"}
+                          </span>
+                          <span className="font-medium text-slate-700">
+                            {(odp as any).provider_name || (odp.code.includes('HRU') ? 'GOGIGA In-House FO' : 'PT. GNET BIARO DATA')}
+                          </span>
+                          <span className="text-slate-300">•</span>
+                          <span>{getClusterName(odp)}</span>
+                        </div>
                       </td>
                       <td className="px-6 py-4 min-w-[160px]">
                         <div className="flex items-center justify-between text-xs mb-1">

@@ -1021,6 +1021,20 @@ func (s *PostgresStorage) UpdateClusterStatus(ctx context.Context, tenantID, clu
 	cleanName = strings.TrimPrefix(cleanName, "ODP-")
 	cleanName = strings.TrimPrefix(cleanName, "odp-")
 
+	if strings.EqualFold(cleanName, "Payakumbuh") || strings.EqualFold(cleanName, "PYK") {
+		cleanName = "PYK"
+	} else if strings.EqualFold(cleanName, "Biaro") || strings.EqualFold(cleanName, "BIO") {
+		cleanName = "BIO"
+	} else if strings.EqualFold(cleanName, "Suliki Guguk") || strings.EqualFold(cleanName, "SGG") {
+		cleanName = "SGG"
+	} else if strings.EqualFold(cleanName, "Harau") || strings.EqualFold(cleanName, "HRU") {
+		cleanName = "HRU"
+	} else if strings.EqualFold(cleanName, "Padang") || strings.EqualFold(cleanName, "PDG") {
+		cleanName = "PDG"
+	} else if strings.EqualFold(cleanName, "Bukittinggi") || strings.EqualFold(cleanName, "BKT") {
+		cleanName = "BKT"
+	}
+
 	if strings.EqualFold(cleanName, "Distribusi Utama") {
 		_, err := s.db.ExecContext(ctx, `
 			UPDATE odps 

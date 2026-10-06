@@ -129,25 +129,32 @@ func (r *Repository) fetchFromNexus(ctx context.Context) ([]ODPNode, bool) {
 	for _, it := range rawItems {
 		clusterArea := "Lokal"
 		providerName := "Internal ISP"
+		providerID := "GOGIGA"
 		upperCode := strings.ToUpper(it.Code)
 		if strings.HasPrefix(upperCode, "ODP-HRU") || strings.HasPrefix(upperCode, "OPD-HRU") || strings.HasPrefix(upperCode, "ODP-HR") {
 			clusterArea = "Cluster Harau (FiberGrid In-House)"
 			providerName = "GOGIGA In-House FO"
+			providerID = "GOGIGA"
 		} else if strings.HasPrefix(upperCode, "ODP-PYK") {
-			clusterArea = "Cluster Payakumbuh"
-			providerName = "Mitra Rekanan Payakumbuh"
+			clusterArea = "Cluster Payakumbuh (Jartaplok GNET)"
+			providerName = "PT. GNET BIARO DATA"
+			providerID = "GNET-BIARO"
 		} else if strings.HasPrefix(upperCode, "ODP-BIO") {
 			clusterArea = "Cluster Biaro (Golden Net)"
-			providerName = "Mitra Golden Net Biaro"
+			providerName = "PT. GNET BIARO DATA"
+			providerID = "GNET-BIARO"
 		} else if strings.HasPrefix(upperCode, "ODP-SGG") {
 			clusterArea = "Cluster Suliki Guguk"
-			providerName = "Mitra Rekanan 50 Kota"
+			providerName = "PT. GNET BIARO DATA"
+			providerID = "GNET-BIARO"
 		} else if strings.HasPrefix(upperCode, "ODP-PDG") {
 			clusterArea = "Cluster Padang"
-			providerName = "Mitra Rekanan Padang"
+			providerName = "PT Telkom Infrastruktur Indonesia"
+			providerID = "TELKO-PYK"
 		} else if strings.HasPrefix(upperCode, "ODP-BKT") {
 			clusterArea = "Cluster Bukittinggi"
-			providerName = "Mitra Rekanan Bukittinggi"
+			providerName = "PT Telkom Infrastruktur Indonesia"
+			providerID = "TELKO-PYK"
 		}
 		if it.IsSharedJartaplok {
 			clusterArea = "Jartaplok " + strings.ToUpper(it.OwnerTenantSlug)
@@ -155,6 +162,9 @@ func (r *Repository) fetchFromNexus(ctx context.Context) ([]ODPNode, bool) {
 				providerName = it.OwnerTenantName
 			} else {
 				providerName = "Mitra Jartaplok " + it.OwnerTenantSlug
+			}
+			if it.OwnerTenantSlug != "" {
+				providerID = it.OwnerTenantSlug
 			}
 		}
 
@@ -168,7 +178,7 @@ func (r *Repository) fetchFromNexus(ctx context.Context) ([]ODPNode, bool) {
 			UsedPorts:       it.UsedPorts,
 			Status:          it.Status,
 			ClusterArea:     clusterArea,
-			ProviderID:      it.OwnerTenantSlug,
+			ProviderID:      providerID,
 			ProviderName:    providerName,
 			IsClusterActive: true,
 			SplitterSpec:    fmt.Sprintf("1:%d PLC", it.TotalPorts),
