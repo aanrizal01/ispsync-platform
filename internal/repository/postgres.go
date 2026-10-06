@@ -1584,6 +1584,242 @@ func (s *PostgresStorage) CompleteWorkOrderBAST(ctx context.Context, tenantID, i
 	return nil
 }
 
+func (s *PostgresStorage) GetCustomerDocuments(ctx context.Context, tenantID, customerID, phone, email string) (*domain.CustomerDocumentsResponse, error) {
+	resp := &domain.CustomerDocumentsResponse{
+		CustomerID: customerID,
+		Sites:      []domain.CustomerDocumentSite{},
+	}
+
+	normPhone := phone
+	if strings.HasPrefix(normPhone, "+62") {
+		normPhone = "0" + strings.TrimPrefix(normPhone, "+62")
+	} else if strings.HasPrefix(normPhone, "62") {
+		normPhone = "0" + strings.TrimPrefix(normPhone, "62")
+	}
+
+	// 1. Ambil info dasar customer dari public.customers jika ada
+	var custName, custPhone, custEmail, custIDCard string
+	err := s.db.QueryRowContext(ctx, `
+		SELECT full_name, phone, COALESCE(email, ''), COALESCE(id_card_number, '')
+		FROM public.customers
+		WHERE id::text = $1 OR phone = $2 OR phone = $3 OR ($4 != '' AND email = $4)
+		LIMIT 1
+	`, customerID, phone, normPhone, email).Scan(&custName, &custPhone, &custEmail, &custIDCard)
+	if err == nil {
+		resp.FullName = custName
+		resp.Phone = custPhone
+		if custEmail != "" {
+			resp.Email = &custEmail
+		}
+		resp.IDCardNumber = custIDCard
+	}
+
+	// 2. Kueri berkas pendaftaran dari public.registrations
+	regRows, err := s.db.QueryContext(ctx, `
+		SELECT id, registration_no, full_name, COALESCE(id_card_number, ''), COALESCE(tax_id, ''),
+		       phone, COALESCE(email, ''), address, COALESCE(latitude, 0), COALESCE(longitude, 0),
+		       COALESCE(selected_plan_id, ''), COALESCE(selected_plan_name, ''),
+		       nearest_odp_code, COALESCE(distance_to_odp_meters, 0), status,
+		       COALESCE(ktp_photo_url, ''), COALESCE(house_photo_url, ''),
+		       COALESCE(contract_signature_url, ''), contract_signed_at, created_at,
+		       COALESCE(gigabill_customer_id, '')
+		FROM public.registrations
+		WHERE gigabill_customer_id = $1 OR phone = $2 OR phone = $3 OR ($4 != '' AND email = $4)
+		ORDER BY created_at DESC
+	`, customerID, phone, normPhone, email)
+
+	seenRegNos := make(map[string]bool)
+	if err == nil {
+		defer regRows.Close()
+		for regRows.Next() {
+			var site domain.CustomerDocumentSite
+			var nearestODP *string
+			var gCustID string
+			if err := regRows.Scan(
+				&site.RegistrationID, &site.RegistrationNo, &site.FullName, &site.IDCardNumber, &site.TaxID,
+				&site.Phone, &site.Email, &site.Address, &site.Latitude, &site.Longitude,
+				&site.SelectedPlanID, &site.SelectedPlanName,
+				&nearestODP, &site.DistanceToODPMeters, &site.Status,
+				&site.KTPPhotoURL, &site.HousePhotoURL,
+				&site.ContractSignatureURL, &site.ContractSignedAt, &site.CreatedAt,
+				&gCustID,
+			); err != nil {
+				continue
+			}
+			site.NearestODPCode = nearestODP
+			if resp.FullName == "" {
+				resp.FullName = site.FullName
+			}
+			if resp.Phone == "" {
+				resp.Phone = site.Phone
+			}
+			if resp.IDCardNumber == "" {
+				resp.IDCardNumber = site.IDCardNumber
+			}
+			seenRegNos[site.RegistrationNo] = true
+			resp.Sites = append(resp.Sites, site)
+		}
+	}
+
+	// 3. Kueri dari ispsync.subscribers bila belum tercakup
+	subRows, err := s.db.QueryContext(ctx, `
+		SELECT id, subscriber_no, full_name, COALESCE(identity_number, ''),
+		       phone, COALESCE(email, ''), address, COALESCE(latitude, 0), COALESCE(longitude, 0),
+		       COALESCE(selected_plan_id, ''), COALESCE(selected_plan_name, ''),
+		       nearest_odp_code, COALESCE(distance_to_odp, 0), status, created_at
+		FROM subscribers
+		WHERE tenant_id = $1 AND (id = $2 OR phone = $3 OR phone = $4 OR ($5 != '' AND email = $5))
+	`, tenantID, customerID, phone, normPhone, email)
+	if err == nil {
+		defer subRows.Close()
+		for subRows.Next() {
+			var (
+				sID, sNo, sName, sIDCard, sPhone, sEmail, sAddr, sPlanID, sPlanName, sStatus string
+				sLat, sLng, sDist                                                            float64
+				sODP                                                                         *string
+				sCreatedAt                                                                   time.Time
+			)
+			if err := subRows.Scan(
+				&sID, &sNo, &sName, &sIDCard, &sPhone, &sEmail, &sAddr,
+				&sLat, &sLng, &sPlanID, &sPlanName, &sODP, &sDist, &sStatus, &sCreatedAt,
+			); err != nil {
+				continue
+			}
+			if seenRegNos[sNo] {
+				for idx := range resp.Sites {
+					if resp.Sites[idx].RegistrationNo == sNo {
+						if resp.Sites[idx].Address == "" {
+							resp.Sites[idx].Address = sAddr
+						}
+						if resp.Sites[idx].SelectedPlanName == "" {
+							resp.Sites[idx].SelectedPlanName = sPlanName
+						}
+					}
+				}
+				continue
+			}
+			seenRegNos[sNo] = true
+			site := domain.CustomerDocumentSite{
+				RegistrationID:      sID,
+				RegistrationNo:      sNo,
+				FullName:            sName,
+				IDCardNumber:        sIDCard,
+				Phone:               sPhone,
+				Email:               sEmail,
+				Address:             sAddr,
+				Latitude:            sLat,
+				Longitude:           sLng,
+				SelectedPlanID:      sPlanID,
+				SelectedPlanName:    sPlanName,
+				NearestODPCode:      sODP,
+				DistanceToODPMeters: sDist,
+				Status:              sStatus,
+				CreatedAt:           sCreatedAt,
+			}
+			resp.Sites = append(resp.Sites, site)
+		}
+	}
+
+	// 4. Pasangkan Work Order dan BAST untuk setiap site
+	for i := range resp.Sites {
+		site := &resp.Sites[i]
+		var (
+			woID, woNo, subID, woType, techName, woStatus, woNotes string
+			woCreated                                              time.Time
+			woBastTime                                             *time.Time
+			rxPower                                                *float64
+			woSN, woMAC                                            string
+		)
+		errWO := s.db.QueryRowContext(ctx, `
+			SELECT id, order_no, subscriber_id, order_type, technician_name, status, notes,
+			       rx_power_dbm, serial_number, mac_address, bast_completed_at, created_at
+			FROM work_orders
+			WHERE tenant_id = $1 AND (subscriber_id = $2 OR subscriber_no = $3 OR customer_phone = $4)
+			ORDER BY created_at DESC LIMIT 1
+		`, tenantID, site.RegistrationID, site.RegistrationNo, site.Phone).Scan(
+			&woID, &woNo, &subID, &woType, &techName, &woStatus, &woNotes,
+			&rxPower, &woSN, &woMAC, &woBastTime, &woCreated,
+		)
+		if errWO == nil {
+			wo := &domain.CustomerWorkOrder{
+				ID:             woID,
+				OrderNo:        woNo,
+				RegistrationID: subID,
+				Type:           woType,
+				TechnicianName: techName,
+				ScheduledAt:    woCreated,
+				Status:         woStatus,
+				Notes:          woNotes,
+				CreatedAt:      woCreated,
+			}
+
+			// Cari BAST di public.bast_reports
+			var (
+				bastID, bastNotes, bastSN, bastMAC string
+				bastOptPower, spdDown, spdUp       float64
+				bastDropcore                       int
+				bastCustSig, bastProof, bastHouse  *string
+				bastCreated                        time.Time
+			)
+			errBast := s.db.QueryRowContext(ctx, `
+				SELECT id, optical_power_dbm, ont_serial_number, ont_mac_address, dropcore_length_meters,
+				       customer_signature_url, proof_photo_url, house_photo_url,
+				       speedtest_down_mbps, speedtest_up_mbps, COALESCE(notes, ''), created_at
+				FROM public.bast_reports
+				WHERE work_order_id = $1 OR work_order_id = $2
+				ORDER BY created_at DESC LIMIT 1
+			`, woID, woNo).Scan(
+				&bastID, &bastOptPower, &bastSN, &bastMAC, &bastDropcore,
+				&bastCustSig, &bastProof, &bastHouse,
+				&spdDown, &spdUp, &bastNotes, &bastCreated,
+			)
+
+			if errBast == nil {
+				wo.BAST = &domain.CustomerBASTReport{
+					ID:                   bastID,
+					WorkOrderID:          woID,
+					OpticalPowerDBM:      bastOptPower,
+					ONTSerialNumber:      bastSN,
+					ONTMACAddress:        bastMAC,
+					DropcoreLengthMeters: bastDropcore,
+					CustomerSignatureURL: bastCustSig,
+					ProofPhotoURL:        bastProof,
+					HousePhotoURL:        bastHouse,
+					SpeedtestDownMbps:    spdDown,
+					SpeedtestUpMbps:      spdUp,
+					Notes:                bastNotes,
+					CreatedAt:            bastCreated,
+				}
+				if site.HousePhotoURL == "" && bastHouse != nil {
+					site.HousePhotoURL = *bastHouse
+				}
+			} else if woStatus == "COMPLETED" || woBastTime != nil {
+				rx := 0.0
+				if rxPower != nil {
+					rx = *rxPower
+				}
+				bTime := woCreated
+				if woBastTime != nil {
+					bTime = *woBastTime
+				}
+				wo.BAST = &domain.CustomerBASTReport{
+					ID:                   "BAST-" + woNo,
+					WorkOrderID:          woID,
+					OpticalPowerDBM:      rx,
+					ONTSerialNumber:      woSN,
+					ONTMACAddress:        woMAC,
+					DropcoreLengthMeters: 50,
+					Notes:                woNotes,
+					CreatedAt:            bTime,
+				}
+			}
+			site.WorkOrder = wo
+		}
+	}
+
+	return resp, nil
+}
+
 // ── Custom Domain & TLS Check ──────────────────────────────────────────────────
 
 func (s *PostgresStorage) UpdateTenantCustomDomain(ctx context.Context, tenantID, customDomain string) error {

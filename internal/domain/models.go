@@ -394,4 +394,71 @@ type LiveSessionInfo struct {
 	IsOnline         bool      `json:"is_online"`
 }
 
+// CustomerBASTReport laporan BAST digital instalasi teknisi
+type CustomerBASTReport struct {
+	ID                   string    `json:"id"`
+	WorkOrderID          string    `json:"work_order_id"`
+	OpticalPowerDBM      float64   `json:"optical_power_dbm"`
+	ONTSerialNumber      string    `json:"ont_serial_number"`
+	ONTMACAddress        string    `json:"ont_mac_address"`
+	DropcoreLengthMeters int       `json:"dropcore_length_meters"`
+	CustomerSignatureURL *string   `json:"customer_signature_url,omitempty"`
+	ProofPhotoURL        *string   `json:"proof_photo_url,omitempty"`
+	HousePhotoURL        *string   `json:"house_photo_url,omitempty"`
+	SpeedtestDownMbps    float64   `json:"speedtest_down_mbps"`
+	SpeedtestUpMbps      float64   `json:"speedtest_up_mbps"`
+	Notes                string    `json:"notes,omitempty"`
+	CreatedAt            time.Time `json:"created_at"`
+}
+
+// CustomerWorkOrder surat perintah kerja terkait lokasi pelanggan
+type CustomerWorkOrder struct {
+	ID             string              `json:"id"`
+	OrderNo        string              `json:"order_no"`
+	RegistrationID string              `json:"registration_id"`
+	Type           string              `json:"type"`
+	TechnicianName string              `json:"technician_name"`
+	ScheduledAt    time.Time           `json:"scheduled_at"`
+	Status         string              `json:"status"`
+	Notes          string              `json:"notes,omitempty"`
+	CreatedAt      time.Time           `json:"created_at"`
+	BAST           *CustomerBASTReport `json:"bast,omitempty"`
+}
+
+// CustomerDocumentSite berkas identitas, kontrak, dan BAST per lokasi pasang
+type CustomerDocumentSite struct {
+	RegistrationID       string             `json:"registration_id"`
+	RegistrationNo       string             `json:"registration_no"`
+	FullName             string             `json:"full_name"`
+	IDCardNumber         string             `json:"id_card_number"`
+	TaxID                string             `json:"tax_id,omitempty"`
+	Phone                string             `json:"phone"`
+	Email                string             `json:"email"`
+	Address              string             `json:"address"`
+	Latitude             float64            `json:"latitude"`
+	Longitude            float64            `json:"longitude"`
+	SelectedPlanID       string             `json:"selected_plan_id"`
+	SelectedPlanName     string             `json:"selected_plan_name"`
+	NearestODPCode       *string            `json:"nearest_odp_code,omitempty"`
+	DistanceToODPMeters  float64            `json:"distance_to_odp_meters"`
+	Status               string             `json:"status"`
+	KTPPhotoURL          string             `json:"ktp_photo_url,omitempty"`
+	HousePhotoURL        string             `json:"house_photo_url,omitempty"`
+	ContractSignatureURL string             `json:"contract_signature_url,omitempty"`
+	ContractSignedAt     *time.Time         `json:"contract_signed_at,omitempty"`
+	WorkOrder            *CustomerWorkOrder `json:"work_order,omitempty"`
+	CreatedAt            time.Time          `json:"created_at"`
+}
+
+// CustomerDocumentsResponse dokumen lengkap pelanggan untuk Portal Ledger & Admin
+type CustomerDocumentsResponse struct {
+	CustomerID   string                 `json:"customer_id"`
+	FullName     string                 `json:"full_name"`
+	Phone        string                 `json:"phone"`
+	Email        *string                `json:"email,omitempty"`
+	IDCardNumber string                 `json:"id_card_number,omitempty"`
+	Sites        []CustomerDocumentSite `json:"sites"`
+}
+
+
 

@@ -1341,6 +1341,13 @@ func (s *SQLiteStorage) CompleteWorkOrderBAST(ctx context.Context, tenantID, id 
 	return nil
 }
 
+func (s *SQLiteStorage) GetCustomerDocuments(ctx context.Context, tenantID, customerID, phone, email string) (*domain.CustomerDocumentsResponse, error) {
+	return &domain.CustomerDocumentsResponse{
+		CustomerID: customerID,
+		Sites:      []domain.CustomerDocumentSite{},
+	}, nil
+}
+
 // ── Haversine Distance Helper ──────────────────────────────────────────────────
 
 func haversineDistance(lat1, lon1, lat2, lon2 float64) float64 {

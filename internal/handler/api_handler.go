@@ -1821,6 +1821,22 @@ func (h *APIHandler) AdminDeleteRegistration(w http.ResponseWriter, r *http.Requ
 	})
 }
 
+// AdminGetCustomerDocuments mengembalikan berkas pendaftaran, KTP, kontrak, dan BAST untuk detail pelanggan di Ledger
+func (h *APIHandler) AdminGetCustomerDocuments(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	id := chi.URLParam(r, "id")
+	phone := r.URL.Query().Get("phone")
+	email := r.URL.Query().Get("email")
+
+	docs, err := h.store.GetCustomerDocuments(r.Context(), t.ID, id, phone, email)
+	if err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal mengambil dokumen pelanggan: "+err.Error())
+		return
+	}
+
+	h.successResponse(w, "Customer documents retrieved", docs)
+}
+
 func isCommercialApprover(claims *auth.Claims) bool {
 	if claims == nil {
 		return false

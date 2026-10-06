@@ -46,6 +46,9 @@ type Storage interface {
 	CreateWorkOrder(ctx context.Context, wo *domain.WorkOrder) error
 	CompleteWorkOrderBAST(ctx context.Context, tenantID, id string, rxPower float64, sn, mac, notes string) error
 
+	// Customer Documents (Ledger Integration)
+	GetCustomerDocuments(ctx context.Context, tenantID, customerID, phone, email string) (*domain.CustomerDocumentsResponse, error)
+
 	// Custom Domain & TLS Check
 	UpdateTenantCustomDomain(ctx context.Context, tenantID, customDomain string) error
 	UpdateTenantProfile(ctx context.Context, tenantID, logoUrl, brandColor, contactPhone, contactEmail string) error
