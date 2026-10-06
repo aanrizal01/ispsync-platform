@@ -812,7 +812,7 @@ export default function AdminSettingsPage() {
           { id: "billing", label: "Aturan Billing & Pajak", icon: DollarSign },
           { id: "payment", label: "Payment Gateway", icon: CreditCard },
           { id: "domain", label: "Domain & Sub-Brand WiFi", icon: Globe },
-          { id: "fibergrid", label: "Integrasi FiberGrid & GIS", icon: Radio },
+          { id: "fibergrid", label: "Peta Spasial & Google Maps", icon: MapPin },
           { id: "notification", label: "WhatsApp & Telegram Gateway", icon: MessageSquare },
           { id: "security", label: "Keamanan & Jaringan", icon: ShieldCheck },
         ].map((tab) => {
@@ -4291,7 +4291,7 @@ add dst-host=tripay.co.id action=allow comment="Tripay Payment Gateway"`}
         </div>
       )}
 
-      {/* Tab 8: Integrasi FiberGrid & Jartaplok (Custom Integration Rule) */}
+      {/* Tab 8: Peta Spasial & Google Maps Platform (NexusGIS) */}
       {activeTab === "fibergrid" && (
         <div className="space-y-6">
           {/* Header Card / Explanation Banner */}
@@ -4303,207 +4303,126 @@ add dst-host=tripay.co.id action=allow comment="Tripay Payment Gateway"`}
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
-                    Carrier-Grade Network Decoupling
+                    PETA TOPOLOGI &amp; GIS
                   </span>
                   <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700">
-                    Engine 3 FTTX
+                    NexusGIS In-House Engine
                   </span>
                 </div>
                 <h3 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
-                  <Radio className="w-5 h-5 text-cyan-400" />
-                  Integrasi Engine FiberGrid &amp; Wholesale Jartaplok
+                  <MapPin className="w-5 h-5 text-cyan-400" />
+                  Google Maps Platform &amp; Peta Spasial (NexusGIS)
                 </h3>
                 <p className="text-xs text-slate-400 mt-1.5 max-w-3xl leading-relaxed">
-                  Konfigurasikan koneksi API secara manual jika entitas hukum pengelola sistem Ledger berbeda dengan penyelenggara jaringan fisik / Jartaplok yang mengoperasikan Engine FiberGrid. Bila diaktifkan, data rute kabel optik (Feeder &amp; Distribusi) akan ditarik secara live ke modul NexusGIS.
+                  Konfigurasi kunci Google Maps Platform API resmi untuk modul pemetaan spasial NexusGIS. Kunci ini mengaktifkan visualisasi peta satelit/hybrid resolusi tinggi, auto-routing kabel optik mengikuti kontur jalan raya resmi, kalkulasi panjang drop-core, dan geocoding pencarian koordinat pelanggan.
                 </p>
               </div>
 
               <div className="flex items-center gap-3 shrink-0">
                 <div className="text-right hidden sm:block">
-                  <div className="text-[11px] font-semibold text-slate-400">Status Integrasi</div>
-                  <div className={`text-xs font-bold ${fibergridSettings.enabled ? "text-emerald-400" : "text-slate-500"}`}>
-                    {fibergridSettings.enabled ? "● Aktif Terhubung" : "○ Nonaktif"}
+                  <div className="text-[11px] font-semibold text-slate-400">Status Lisensi Google Maps</div>
+                  <div className={`text-xs font-bold ${securitySettings.google_maps_api_key ? "text-emerald-400" : "text-amber-400"}`}>
+                    {securitySettings.google_maps_api_key ? "Kunci API Terpasang" : "Belum Dikonfigurasi"}
                   </div>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={fibergridSettings.enabled}
-                    onChange={(e) => setFibergridSettings({ ...fibergridSettings, enabled: e.target.checked })}
-                  />
-                  <div className="w-12 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-cyan-500 peer-checked:to-blue-600"></div>
-                </label>
+                <div className={`w-3.5 h-3.5 rounded-full ${securitySettings.google_maps_api_key ? "bg-emerald-400 ring-4 ring-emerald-400/20" : "bg-amber-400 ring-4 ring-amber-400/20"}`}></div>
               </div>
             </div>
           </div>
 
           {/* Form Settings Card */}
           <div className="p-6 rounded-3xl bg-white border border-slate-200/90 shadow-xs space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Endpoint API */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                  <span>URL API Endpoint FiberGrid</span>
-                  <span className="text-[10px] text-cyan-600 font-semibold">Wajib Diisi</span>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                  <Key className="w-4 h-4 text-cyan-600" />
+                  <span>Google Maps Platform API Key (Basemap &amp; Geocoding)</span>
                 </label>
-                <div className="relative">
-                  <Server className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                  <input
-                    type="text"
-                    value={fibergridSettings.api_url}
-                    onChange={(e) => setFibergridSettings({ ...fibergridSettings, api_url: e.target.value })}
-                    placeholder="Contoh: http://172.18.0.1:8082 atau https://fibergrid.rekanan-isp.net.id"
-                    className="w-full pl-10 pr-4 py-2.5 text-xs font-mono rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition"
-                  />
-                </div>
-                <p className="text-[11px] text-slate-400">
-                  Target host REST API FiberGrid (Port 8082 untuk engine lokal atau domain kustom entitas rekanan).
-                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowMapsKey(!showMapsKey)}
+                  className="text-[11px] text-cyan-600 hover:text-cyan-700 font-semibold cursor-pointer"
+                >
+                  {showMapsKey ? "Sembunyikan Kunci" : "Tampilkan Kunci"}
+                </button>
               </div>
-
-              {/* API Key / Secret Token */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
-                  <span>API Key / Secret Token (X-Admin-Key)</span>
-                  <span className="text-[10px] text-slate-400 font-normal">Otentikasi Carrier</span>
-                </label>
-                <div className="relative">
-                  <Key className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                  <input
-                    type={showFibergridKey ? "text" : "password"}
-                    value={fibergridSettings.api_key}
-                    onChange={(e) => setFibergridSettings({ ...fibergridSettings, api_key: e.target.value })}
-                    placeholder="Masukkan ADMIN_API_KEY atau Partner Secret Token"
-                    className="w-full pl-10 pr-10 py-2.5 text-xs font-mono rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowFibergridKey(!showFibergridKey)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
-                  >
-                    {showFibergridKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                <p className="text-[11px] text-slate-400">
-                  Digunakan untuk otentikasi header <code>X-Admin-Key</code> atau Bearer Token saat request data rute.
-                </p>
-              </div>
-
-              {/* Kode Tenant / ID Rekanan */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">
-                  Kode Tenant / ID Rekanan di FiberGrid
-                </label>
+              <div className="relative">
                 <input
-                  type="text"
-                  value={fibergridSettings.tenant_code || ""}
-                  onChange={(e) => setFibergridSettings({ ...fibergridSettings, tenant_code: e.target.value })}
-                  placeholder="Contoh: tenant-01, mitra-corp, dev (kosongkan bila mengkoneksikan server mandiri)"
-                  className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition"
+                  type={showMapsKey ? "text" : "password"}
+                  value={securitySettings.google_maps_api_key ?? ""}
+                  onChange={(e) =>
+                    setSecuritySettings({
+                      ...securitySettings,
+                      google_maps_api_key: e.target.value,
+                    })
+                  }
+                  placeholder="Contoh: AIzaSy..."
+                  className="w-full px-4 py-3 text-xs font-mono rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition"
                 />
-                <p className="text-[11px] text-slate-400">
-                  Identifikasi isolasi data bila server FiberGrid menerapkan multi-tenancy wholesale.
-                </p>
               </div>
+              <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                Kunci API ini disinkronkan secara real-time ke modul NexusGIS untuk memuat peta interaktif Google Maps (Roadmap &amp; Satellite), auto-routing tarikan kabel optik via Directions API, serta pencarian koordinat dan validasi radius FAT/ODP pelanggan.
+              </p>
+            </div>
 
-              {/* Auto Sync Toggle */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">
-                  Sinkronisasi Otomatis Rute Kabel Spasial
-                </label>
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between">
-                  <div className="pr-4">
-                    <div className="text-xs font-bold text-slate-800">Tampilkan Jalur Kabel di Peta NexusGIS</div>
-                    <div className="text-[11px] text-slate-400">Tarik koordinat polyline Feeder &amp; Distribusi dari FiberGrid.</div>
+            {/* Feature Capabilities Grid */}
+            <div className="pt-4 border-t border-slate-100">
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">
+                Fitur NexusGIS yang Memerlukan Google Maps API
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-3.5">
+                  <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 flex items-center justify-center shrink-0">
+                    <Globe className="w-4 h-4" />
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={fibergridSettings.auto_sync_routes}
-                      onChange={(e) => setFibergridSettings({ ...fibergridSettings, auto_sync_routes: e.target.checked })}
-                    />
-                    <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-800">Basemap Satelit &amp; Hybrid</h5>
+                    <p className="text-[11px] text-slate-500 leading-normal mt-0.5">
+                      Citra satelit resolusi tinggi untuk memetakan tiang tumpu, ODP, ODC, dan jalur distribusi kabel optik secara presisi.
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Google Maps API Key for GIS & FiberGrid */}
-              <div className="md:col-span-2 pt-4 border-t border-slate-200/80">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-slate-800 flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-cyan-600" />
-                    <span>Google Maps Platform API Key (Peta Topologi GIS &amp; FiberGrid)</span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowMapsKey(!showMapsKey)}
-                    className="text-[10px] text-cyan-600 hover:text-cyan-700 font-semibold cursor-pointer"
-                  >
-                    {showMapsKey ? "Sembunyikan" : "Tampilkan"}
-                  </button>
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-3.5">
+                  <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-600 flex items-center justify-center shrink-0">
+                    <Zap className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-800">Auto-Routing Kontur Jalan Raya</h5>
+                    <p className="text-[11px] text-slate-500 leading-normal mt-0.5">
+                      Kalkulasi jalur tarikan kabel optik secara otomatis mengikuti kontur jalan resmi menggunakan Google Directions API.
+                    </p>
+                  </div>
                 </div>
-                <div className="relative">
-                  <input
-                    type={showMapsKey ? "text" : "password"}
-                    value={securitySettings.google_maps_api_key ?? ""}
-                    onChange={(e) =>
-                      setSecuritySettings({
-                        ...securitySettings,
-                        google_maps_api_key: e.target.value,
-                      })
-                    }
-                    placeholder="Contoh: AIzaSy..."
-                    className="w-full px-3.5 py-2.5 text-xs font-mono rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 outline-none transition"
-                  />
+
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-3.5">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 flex items-center justify-center shrink-0">
+                    <Activity className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-800">Estimasi Panjang Drop-Core</h5>
+                    <p className="text-[11px] text-slate-500 leading-normal mt-0.5">
+                      Pengukuran instan jarak kabel dari FAT/ODP terdekat ke rumah calon pelanggan baru untuk kalkulasi biaya instalasi.
+                    </p>
+                  </div>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Kunci API ini disinkronkan langsung ke modul GIS &amp; FiberGrid untuk peta satelit/hybrid, auto-routing jalan raya, dan pencarian koordinat pelanggan.
-                </p>
+
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-3.5">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center shrink-0">
+                    <MapPin className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-bold text-slate-800">Geocoding &amp; Radius Cover ODP</h5>
+                    <p className="text-[11px] text-slate-500 leading-normal mt-0.5">
+                      Pencarian alamat otomatis ke titik koordinat lintang/bujur dan validasi instan apakah rumah pelanggan berada dalam jangkauan sinyal optik.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Test Result Alert */}
-            {fibergridTestResult && (
-              <div
-                className={`p-4 rounded-2xl border text-xs flex items-start gap-3 animate-in fade-in slide-in-from-top-2 ${
-                  fibergridTestResult.success
-                    ? "bg-emerald-50 border-emerald-200 text-emerald-900"
-                    : "bg-rose-50 border-rose-200 text-rose-900"
-                }`}
-              >
-                {fibergridTestResult.success ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
-                ) : (
-                  <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-                )}
-                <div className="flex-1">
-                  <div className="font-bold mb-0.5">
-                    {fibergridTestResult.success ? "Uji Koneksi Berhasil Terverifikasi" : "Uji Koneksi Gagal"}
-                  </div>
-                  <div>{fibergridTestResult.message}</div>
-                  {fibergridTestResult.latency_ms !== undefined && (
-                    <div className="mt-1 text-[11px] opacity-80 font-mono">
-                      Waktu Respon: {fibergridTestResult.latency_ms.toFixed(1)} ms
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* Action Buttons */}
-            <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={handleTestFiberGrid}
-                disabled={fibergridTesting || !fibergridSettings.api_url}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition disabled:opacity-50 cursor-pointer"
-              >
-                {fibergridTesting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Activity className="w-3.5 h-3.5 text-cyan-600" />}
-                {fibergridTesting ? "Menguji Koneksi..." : "Uji Ping & Tes Koneksi API"}
-              </button>
-
+            <div className="pt-4 border-t border-slate-100 flex items-center justify-end">
               <button
                 type="button"
                 onClick={handleSave}
@@ -4511,7 +4430,7 @@ add dst-host=tripay.co.id action=allow comment="Tripay Payment Gateway"`}
                 className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white text-xs font-extrabold shadow-sm transition disabled:opacity-50 cursor-pointer"
               >
                 {saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                {saving ? "Menyimpan..." : "Simpan Konfigurasi FiberGrid"}
+                {saving ? "Menyimpan..." : "Simpan Pengaturan Google Maps"}
               </button>
             </div>
           </div>
