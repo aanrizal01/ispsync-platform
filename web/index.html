@@ -18972,45 +18972,42 @@
       const select = document.getElementById('upgrade-plan-select');
       if (!select) return;
 
-      const render = () => {
-        let optionsHtml = '<option value="">-- Pilih Paket Internet Baru --</option>';
-        if (availablePlans && availablePlans.length > 0) {
-          availablePlans.forEach(p => {
-            const price = Number(p.price_monthly !== undefined ? p.price_monthly : (p.monthly_price || 0));
-            const speedMbps = p.download_speed_mbps || p.speed_mbps || (p.download_kbps ? Math.round(p.download_kbps / 1024) : 0);
-            const speedStr = speedMbps > 0 ? ` (${speedMbps} Mbps)` : '';
-            const priceFmt = price > 0 ? `Rp ${price.toLocaleString('id-ID')} / bln` : 'Khusus/Nego';
-            const isMatch = (currentPlanId && p.id === currentPlanId);
-            optionsHtml += `<option value="${p.id}" data-speed="${speedMbps}" data-name="${p.name}" data-price="${price}" ${isMatch ? 'selected' : ''}>
-              ${p.name}${speedStr} - ${priceFmt}
-            </option>`;
-          });
-        }
-        optionsHtml += `
-          <optgroup label="Layanan Khusus &amp; B2B">
-            <option value="CUSTOM_SPEED" data-speed="custom" data-name="Custom Bandwidth (On-Demand)" data-price="0">🏢 Custom Bandwidth / Dedicated (Input Bebas)</option>
-          </optgroup>
-        `;
-        select.innerHTML = optionsHtml;
-      };
-
-      render();
-
       if (!availablePlans || availablePlans.length === 0) {
         try {
           const res = await fetch('/api/v1/public/plans');
           const json = await res.json();
-          if (json.success && Array.isArray(json.data)) {
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
             availablePlans = json.data;
-            render();
           }
         } catch (e) {
           console.warn('Gagal memuat paket upgrade dinamis:', e);
         }
       }
+
+      let optionsHtml = '<option value="">-- Pilih Paket Internet Baru --</option>';
+      if (availablePlans && availablePlans.length > 0) {
+        optionsHtml += '<optgroup label="Paket Resmi Aktif (Ledger)">';
+        availablePlans.forEach(p => {
+          const price = Number(p.price_monthly !== undefined ? p.price_monthly : (p.monthly_price || 0));
+          const speedMbps = p.download_speed_mbps || p.speed_mbps || (p.download_kbps ? Math.round(p.download_kbps / 1024) : 0);
+          const speedStr = speedMbps > 0 ? ` (${speedMbps} Mbps)` : '';
+          const priceFmt = price > 0 ? `Rp ${price.toLocaleString('id-ID')} / bln` : 'Khusus/Nego';
+          const isMatch = (currentPlanId && (p.id === currentPlanId || p.name === currentPlanId));
+          optionsHtml += `<option value="${p.id}" data-speed="${speedMbps}" data-name="${escapeHtml(p.name)}" data-price="${price}" ${isMatch ? 'selected' : ''}>
+            ${escapeHtml(p.name)}${speedStr} - ${priceFmt}
+          </option>`;
+        });
+        optionsHtml += '</optgroup>';
+      }
+      optionsHtml += `
+        <optgroup label="Layanan Khusus &amp; B2B">
+          <option value="CUSTOM_SPEED" data-speed="custom" data-name="Custom Bandwidth (On-Demand)" data-price="0">🏢 Custom Bandwidth / Dedicated (Input Bebas)</option>
+        </optgroup>
+      `;
+      select.innerHTML = optionsHtml;
     }
 
-    function openUpgradePlanModal(regId) {
+    async function openUpgradePlanModal(regId) {
       const reg = (adminRegistrationsList || []).find(r => r.id === regId || r.registration_no === regId) || currentDetailRegistration;
       if (!reg) {
         alert('Data registrasi pelanggan tidak ditemukan');
@@ -19043,7 +19040,7 @@
       }
 
       // Pre-fill / reset form
-      populateUpgradePlanSelect(reg.selected_plan_id);
+      await populateUpgradePlanSelect(reg.selected_plan_id);
       document.getElementById('upgrade-plan-price').value = reg.monthly_price || '';
       document.getElementById('upgrade-plan-effective').value = 'SEGERA';
       document.getElementById('upgrade-plan-notes').value = '';

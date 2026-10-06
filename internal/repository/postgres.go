@@ -767,7 +767,7 @@ func (s *PostgresStorage) CreateTenantAddon(ctx context.Context, addon *domain.T
 func (s *PostgresStorage) ListPlans(ctx context.Context, tenantID string) ([]domain.Plan, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT id, tenant_id, code, name, speed_down_mbps, speed_up_mbps, monthly_price, description, is_active
-		FROM plans WHERE tenant_id = $1 AND is_active = 1 ORDER BY monthly_price ASC
+		FROM ispsync.plans WHERE tenant_id = $1 AND is_active = 1 ORDER BY monthly_price ASC
 	`, tenantID)
 	if err != nil {
 		return nil, err
@@ -784,22 +784,77 @@ func (s *PostgresStorage) ListPlans(ctx context.Context, tenantID string) ([]dom
 		p.IsActive = activeInt == 1
 		list = append(list, p)
 	}
+
+	// Auto-fallback sinkronisasi langsung dari master catalog Ledger (public.plans & public.plan_prices)
+	if len(list) == 0 {
+		ledgerRows, err := s.db.QueryContext(ctx, `
+			SELECT DISTINCT ON (p.name)
+				p.id::text,
+				$1 as tenant_id,
+				COALESCE(NULLIF(p.name, ''), 'PLAN-' || SUBSTRING(p.id::text, 1, 8)) as code,
+				p.name,
+				CAST(ROUND(p.download_kbps / 1024.0) AS INT) as speed_down,
+				CAST(ROUND(p.upload_kbps / 1024.0) AS INT) as speed_up,
+				COALESCE(pr.monthly_price, 0) as monthly_price,
+				COALESCE(p.description, 'Paket Internet Fiber') as description
+			FROM public.plans p
+			LEFT JOIN public.plan_prices pr ON p.id = pr.plan_id
+			WHERE p.status = 'ACTIVE'
+			ORDER BY p.name, COALESCE(pr.monthly_price, 0) ASC
+		`, tenantID)
+		if err == nil {
+			defer ledgerRows.Close()
+			for ledgerRows.Next() {
+				var p domain.Plan
+				if err := ledgerRows.Scan(&p.ID, &p.TenantID, &p.Code, &p.Name, &p.SpeedDownMbps, &p.SpeedUpMbps, &p.MonthlyPrice, &p.Description); err == nil {
+					p.IsActive = true
+					list = append(list, p)
+					_, _ = s.db.ExecContext(ctx, `
+						INSERT INTO ispsync.plans (id, tenant_id, code, name, speed_down_mbps, speed_up_mbps, monthly_price, description, is_active)
+						VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 1)
+						ON CONFLICT (tenant_id, code) DO UPDATE 
+						SET monthly_price = EXCLUDED.monthly_price,
+						    speed_down_mbps = EXCLUDED.speed_down_mbps,
+						    speed_up_mbps = EXCLUDED.speed_up_mbps,
+						    name = EXCLUDED.name
+					`, p.ID, p.TenantID, p.Code, p.Name, p.SpeedDownMbps, p.SpeedUpMbps, p.MonthlyPrice, p.Description)
+				}
+			}
+		}
+	}
+
 	return list, nil
 }
 
 func (s *PostgresStorage) GetPlanByID(ctx context.Context, tenantID, id string) (*domain.Plan, error) {
 	row := s.db.QueryRowContext(ctx, `
 		SELECT id, tenant_id, code, name, speed_down_mbps, speed_up_mbps, monthly_price, description, is_active
-		FROM plans WHERE tenant_id = $1 AND id = $2
+		FROM ispsync.plans WHERE tenant_id = $1 AND id = $2
 	`, tenantID, id)
 
 	var p domain.Plan
 	var activeInt int
-	if err := row.Scan(&p.ID, &p.TenantID, &p.Code, &p.Name, &p.SpeedDownMbps, &p.SpeedUpMbps, &p.MonthlyPrice, &p.Description, &activeInt); err != nil {
-		return nil, err
+	err := row.Scan(&p.ID, &p.TenantID, &p.Code, &p.Name, &p.SpeedDownMbps, &p.SpeedUpMbps, &p.MonthlyPrice, &p.Description, &activeInt)
+	if err == nil {
+		p.IsActive = activeInt == 1
+		return &p, nil
 	}
-	p.IsActive = activeInt == 1
-	return &p, nil
+
+	// Fallback to Ledger catalog by UUID
+	ledgerRow := s.db.QueryRowContext(ctx, `
+		SELECT p.id::text, $1 as tenant_id, COALESCE(NULLIF(p.name, ''), 'PLAN-' || SUBSTRING(p.id::text, 1, 8)) as code,
+		       p.name, CAST(ROUND(p.download_kbps / 1024.0) AS INT), CAST(ROUND(p.upload_kbps / 1024.0) AS INT),
+		       COALESCE(pr.monthly_price, 0), COALESCE(p.description, '')
+		FROM public.plans p
+		LEFT JOIN public.plan_prices pr ON p.id = pr.plan_id
+		WHERE p.id::text = $2
+	`, tenantID, id)
+	if err := ledgerRow.Scan(&p.ID, &p.TenantID, &p.Code, &p.Name, &p.SpeedDownMbps, &p.SpeedUpMbps, &p.MonthlyPrice, &p.Description); err == nil {
+		p.IsActive = true
+		return &p, nil
+	}
+
+	return nil, err
 }
 
 // ── ODP Methods ────────────────────────────────────────────────────────────────
