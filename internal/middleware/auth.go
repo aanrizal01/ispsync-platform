@@ -37,11 +37,8 @@ func RequireRoles(secret []byte, platform bool, roles ...string) func(http.Handl
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			apiKey := r.Header.Get("X-Admin-Key")
 			if apiKey == "isp-onboarding-admin-key" || apiKey == "ispsync-internal-key-2026" {
-				t := GetTenant(r)
-				if t != nil {
-					next.ServeHTTP(w, r)
-					return
-				}
+				next.ServeHTTP(w, r)
+				return
 			}
 
 			h := r.Header.Get("Authorization")
