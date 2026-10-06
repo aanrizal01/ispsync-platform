@@ -2022,6 +2022,21 @@ func (s *PostgresStorage) UpdateUserStatus(ctx context.Context, tenantID, userID
 	return err
 }
 
+func (s *PostgresStorage) DeleteUser(ctx context.Context, tenantID, userID string) error {
+	res, err := s.db.ExecContext(ctx, "DELETE FROM users WHERE tenant_id = $1 AND id = $2 AND role != 'SUPER_ADMIN'", tenantID, userID)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return fmt.Errorf("user tidak ditemukan atau tidak dapat dihapus (akun Root dilindungi)")
+	}
+	return nil
+}
+
 func (s *PostgresStorage) ResetUserPassword(ctx context.Context, tenantID, username, newPassword string) error {
 	pwHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {

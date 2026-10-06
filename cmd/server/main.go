@@ -312,6 +312,7 @@ func main() {
 			sup.Get("/staff", apiH.SuperuserListStaff)
 			sup.Post("/staff", apiH.CreateStaffUser)
 			sup.Put("/staff/{id}", apiH.SuperuserUpdateStaff)
+			sup.Delete("/staff/{id}", apiH.SuperuserDeleteStaff)
 			sup.Post("/staff/reset-password", apiH.SuperuserResetStaffPassword)
 			sup.With(platformOwner).Put("/tenants/{slug}/capabilities", apiH.SuperuserSetCapabilities)
 		})

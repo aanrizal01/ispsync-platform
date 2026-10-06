@@ -2803,6 +2803,24 @@ func (h *APIHandler) SuperuserUpdateStaff(w http.ResponseWriter, r *http.Request
 	h.successResponse(w, "Status staf berhasil diperbarui", nil)
 }
 
+func (h *APIHandler) SuperuserDeleteStaff(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	if t == nil {
+		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
+		return
+	}
+	userID := chi.URLParam(r, "id")
+	if userID == "" {
+		h.failResponse(w, http.StatusBadRequest, "ID user wajib disertakan")
+		return
+	}
+	if err := h.store.DeleteUser(r.Context(), t.ID, userID); err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal menghapus user: "+err.Error())
+		return
+	}
+	h.successResponse(w, "Akun user berhasil dihapus secara permanen", nil)
+}
+
 func (h *APIHandler) SuperuserResetStaffPassword(w http.ResponseWriter, r *http.Request) {
 	t := middleware.GetTenant(r)
 	if t == nil {

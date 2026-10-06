@@ -22005,8 +22005,11 @@
                     <button onclick="openAdminResetPasswordModal('${staf.username}')" class="text-xs font-mono font-bold px-2 py-1 rounded-md transition border bg-white hover:bg-slate-100 text-slate-800 border-slate-200 mr-1.5 shadow-xs" title="Reset Kata Sandi Staf">
                       Reset Sandi
                     </button>
-                    <button onclick="toggleStaffStatus('${staf.id}', '${isAct ? 'INACTIVE' : 'ACTIVE'}')" class="text-xs font-mono font-bold px-2.5 py-1 rounded-md transition border shadow-xs ${isAct ? 'bg-white hover:bg-rose-50 text-rose-700 border-slate-200' : 'bg-slate-900 hover:bg-slate-800 text-white border-slate-900'}">
+                    <button onclick="toggleStaffStatus('${staf.id}', '${isAct ? 'INACTIVE' : 'ACTIVE'}')" class="text-xs font-mono font-bold px-2.5 py-1 rounded-md transition border shadow-xs mr-1.5 ${isAct ? 'bg-white hover:bg-amber-50 text-amber-700 border-slate-200' : 'bg-slate-900 hover:bg-slate-800 text-white border-slate-900'}">
                       ${isAct ? 'Nonaktifkan' : 'Aktifkan'}
+                    </button>
+                    <button onclick="deleteStaffUser('${staf.id}', '${staf.username}')" class="text-xs font-mono font-bold px-2 py-1 rounded-md transition border bg-white hover:bg-rose-50 text-rose-600 border-rose-200 hover:border-rose-300 shadow-xs" title="Hapus Akun Staf Permanen">
+                      Hapus
                     </button>
                   ` : '<span class="text-[10px] font-mono text-slate-400">Protected Root</span>'}
                 </td>
@@ -22043,6 +22046,30 @@
         }
       } catch (err) {
         alert('Error: ' + err.message);
+      }
+    }
+
+    async function deleteStaffUser(id, username) {
+      if (!confirm(`PERINGATAN: Hapus akun sub-user @${username} secara permanen? Tindakan ini tidak dapat dibatalkan.`)) return;
+      try {
+        const res = await fetch(`/api/v1/superuser/staff/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Key': 'isp-onboarding-admin-key',
+            'Authorization': 'Bearer ' + (localStorage.getItem('auth_session_token') || ''),
+            'X-User-Role': localStorage.getItem('active_portal_role') || 'superuser',
+            'X-Client-Platform': 'web'
+          }
+        });
+        const json = await res.json();
+        if (json.success) {
+          loadSuperUserStaff();
+        } else {
+          alert('Gagal menghapus staf: ' + (json.message || 'Terjadi kesalahan sistem'));
+        }
+      } catch (err) {
+        alert('Gagal menghubungi server: ' + err.message);
       }
     }
 

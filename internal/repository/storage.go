@@ -81,6 +81,7 @@ type Storage interface {
 	CreateTenantAddon(ctx context.Context, addon *domain.TenantAddon) error
 	CreateUser(ctx context.Context, user *domain.User, rawPassword string) error
 	UpdateUserStatus(ctx context.Context, tenantID, userID, status string) error
+	DeleteUser(ctx context.Context, tenantID, userID string) error
 	ResetUserPassword(ctx context.Context, tenantID, username, newPassword string) error
 
 	// Tenant Integration Settings (Maps & Telegram)
