@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import {
   Banknote,
   ShieldCheck,
@@ -22,11 +23,11 @@ export function LedgerShowcase() {
       <div className="absolute top-1/2 -right-32 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 left-1/4 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 
-      {/* ── Header / Top Navbar (Showcase Only - No CTA) ─────────────── */}
+      {/* ── Header / Top Navbar (Showcase Navigation) ─────────────── */}
       <header className="relative z-10 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-cyan-500/20">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-cyan-500/20 group-hover:scale-105 transition-transform">
               L
             </div>
             <div>
@@ -42,12 +43,32 @@ export function LedgerShowcase() {
                 Financial, Automated Invoicing &amp; AAA Orchestration
               </p>
             </div>
-          </div>
+          </Link>
 
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-slate-900 text-slate-400 border border-slate-800">
-              Specification Showcase
-            </span>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              href="/"
+              className="hidden sm:inline-flex text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition"
+            >
+              &larr; Platform
+            </Link>
+            <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-lg border border-slate-800 text-xs font-bold font-mono">
+              <Link
+                href="/showcase/fibergrid"
+                className="px-2.5 py-1 rounded text-slate-400 hover:text-white transition"
+              >
+                FiberGrid
+              </Link>
+              <Link
+                href="/showcase/nexus"
+                className="px-2.5 py-1 rounded text-slate-400 hover:text-white transition"
+              >
+                Nexus
+              </Link>
+              <span className="px-2.5 py-1 rounded bg-cyan-600/20 text-cyan-300 border border-cyan-500/30">
+                Ledger
+              </span>
+            </div>
           </div>
         </div>
       </header>

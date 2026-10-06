@@ -156,99 +156,132 @@ export default function LandingPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Engine 1: FiberGrid */}
-          <div className="relative group rounded-2xl bg-white border border-gray-200 p-8 hover:border-amber-400 transition-all duration-300 hover:shadow-lg">
-            <div className="w-14 h-14 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 mb-6 group-hover:scale-110 transition-transform">
-              <Server className="w-7 h-7" />
+          <div className="relative group rounded-2xl bg-white border border-gray-200 p-8 hover:border-amber-400 transition-all duration-300 hover:shadow-xl flex flex-col justify-between">
+            <div>
+              <div className="w-14 h-14 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 mb-6 group-hover:scale-110 transition-transform">
+                <Server className="w-7 h-7" />
+              </div>
+              <div className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700 inline-block mb-3 border border-amber-200">
+                ENGINE 1: INFRA &amp; PHYSICAL
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">ISPSYNC FiberGrid</h3>
+              <p className="text-sm text-gray-500 leading-relaxed mb-6">
+                Mesin infrastruktur dan aset fisik. Mengurus semua aset jaringan pasif dan aktif dari tower OLT hingga tiang ODP di jalanan.
+              </p>
+              <ul className="space-y-2.5 text-xs text-gray-600">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  <span>Manajemen Aset OLT / ODC / ODP</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  <span>Pemetaan Fiber GIS (PostGIS spatial)</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  <span>TR-069 Wi-Fi ACS (Zero-Touch Prov)</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  <span>Manajemen Sewa Port Wholesale B2B</span>
+                </li>
+              </ul>
             </div>
-            <div className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700 inline-block mb-3 border border-amber-200">
-              ENGINE 1: INFRA & PHYSICAL
+            <div className="mt-8 pt-6 border-t border-gray-100">
+              <Link
+                href="/showcase/fibergrid"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold border border-amber-200 transition-all group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600 shadow-xs"
+              >
+                <span>Jelajahi Showcase FiberGrid</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">ISPSYNC FiberGrid</h3>
-            <p className="text-sm text-gray-500 leading-relaxed mb-6">
-              Mesin infrastruktur dan aset fisik. Mengurus semua aset jaringan pasif dan aktif dari tower OLT hingga tiang ODP di jalanan.
-            </p>
-            <ul className="space-y-2.5 text-xs text-gray-600">
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <span>Manajemen Aset OLT / ODC / ODP</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <span>Pemetaan Fiber GIS (PostGIS spatial)</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <span>TR-069 Wi-Fi ACS (Zero-Touch Prov)</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <span>Manajemen Sewa Port Wholesale B2B</span>
-              </li>
-            </ul>
           </div>
 
           {/* Engine 2: Nexus */}
-          <div className="relative group rounded-2xl bg-white border border-gray-200 p-8 hover:border-emerald-400 transition-all duration-300 hover:shadow-lg">
-            <div className="w-14 h-14 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mb-6 group-hover:scale-110 transition-transform">
-              <Globe className="w-7 h-7" />
+          <div className="relative group rounded-2xl bg-white border border-gray-200 p-8 hover:border-emerald-400 transition-all duration-300 hover:shadow-xl flex flex-col justify-between">
+            <div>
+              <div className="w-14 h-14 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mb-6 group-hover:scale-110 transition-transform">
+                <Globe className="w-7 h-7" />
+              </div>
+              <div className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 inline-block mb-3 border border-emerald-200">
+                ENGINE 2: RETAIL OPS
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">ISPSYNC Nexus</h3>
+              <p className="text-sm text-gray-500 leading-relaxed mb-6">
+                Mesin operasional ritel dan lapangan. Melayani kebutuhan pelanggan ritel mulai dari prospek, pendaftaran, hingga pemasangan baru.
+              </p>
+              <ul className="space-y-2.5 text-xs text-gray-600">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>Cek Coverage Presisi (Radius 250m)</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>SPK &amp; Tanda Tangan BAST Digital</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>Sales Referral &amp; Klaim Komisi</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>Live NOC Monitoring Dashboard</span>
+                </li>
+              </ul>
             </div>
-            <div className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 inline-block mb-3 border border-emerald-200">
-              ENGINE 2: RETAIL OPS
+            <div className="mt-8 pt-6 border-t border-gray-100">
+              <Link
+                href="/showcase/nexus"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-bold border border-emerald-200 transition-all group-hover:bg-emerald-600 group-hover:text-white group-hover:border-emerald-600 shadow-xs"
+              >
+                <span>Jelajahi Showcase Nexus</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">ISPSYNC Nexus</h3>
-            <p className="text-sm text-gray-500 leading-relaxed mb-6">
-              Mesin operasional ritel dan lapangan. Melayani kebutuhan pelanggan ritel mulai dari prospek, pendaftaran, hingga pemasangan baru.
-            </p>
-            <ul className="space-y-2.5 text-xs text-gray-600">
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                <span>Cek Coverage Presisi (Radius 250m)</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                <span>SPK & Tanda Tangan BAST Digital</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                <span>Sales Referral & Klaim Komisi</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                <span>Live NOC Monitoring Dashboard</span>
-              </li>
-            </ul>
           </div>
 
           {/* Engine 3: Ledger */}
-          <div className="relative group rounded-2xl bg-white border border-gray-200 p-8 hover:border-blue-400 transition-all duration-300 hover:shadow-lg">
-            <div className="w-14 h-14 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform">
-              <Smartphone className="w-7 h-7" />
+          <div className="relative group rounded-2xl bg-white border border-gray-200 p-8 hover:border-blue-400 transition-all duration-300 hover:shadow-xl flex flex-col justify-between">
+            <div>
+              <div className="w-14 h-14 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform">
+                <Smartphone className="w-7 h-7" />
+              </div>
+              <div className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 inline-block mb-3 border border-blue-200">
+                ENGINE 3: FINANCIAL &amp; AAA
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">ISPSYNC Ledger</h3>
+              <p className="text-sm text-gray-500 leading-relaxed mb-6">
+                Mesin finansial dan otentikasi AAA. Mengurus perputaran uang, penagihan, izin akses jaringan, dan bagi hasil Jartaplok secara presisi.
+              </p>
+              <ul className="space-y-2.5 text-xs text-gray-600">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                  <span>Otomasi Invoicing &amp; Tripay QRIS/VA</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                  <span>FreeRADIUS 3.2 AAA Terintegrasi</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                  <span>Auto-Isolir &amp; Auto-Restore (MikroTik CoA)</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                  <span>Ecosystem Revenue Share Settlement</span>
+                </li>
+              </ul>
             </div>
-            <div className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 inline-block mb-3 border border-blue-200">
-              ENGINE 3: FINANCIAL & AAA
+            <div className="mt-8 pt-6 border-t border-gray-100">
+              <Link
+                href="/showcase/ledger"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 text-xs font-bold border border-blue-200 transition-all group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 shadow-xs"
+              >
+                <span>Jelajahi Showcase Ledger</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">ISPSYNC Ledger</h3>
-            <p className="text-sm text-gray-500 leading-relaxed mb-6">
-              Mesin finansial dan otentikasi AAA. Mengurus perputaran uang, penagihan, izin akses jaringan, dan bagi hasil Jartaplok secara presisi.
-            </p>
-            <ul className="space-y-2.5 text-xs text-gray-600">
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                <span>Otomasi Invoicing & Tripay QRIS/VA</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                <span>FreeRADIUS 3.2 AAA Terintegrasi</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                <span>Auto-Isolir & Auto-Restore (MikroTik CoA)</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                <span>Ecosystem Revenue Share Settlement</span>
-              </li>
-            </ul>
           </div>
         </div>
       </section>

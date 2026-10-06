@@ -165,22 +165,34 @@ export default async function InternationalLandingPage() {
 
         {/* Highlight Metrics / Architecture Pill */}
         <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto text-left">
-          <div className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm">
-            <div className="text-blue-600 font-bold text-sm mb-1">Multi-Vendor OLT</div>
+          <Link href="/showcase/fibergrid" className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm hover:border-amber-400 hover:shadow-md transition-all group">
+            <div className="text-amber-600 font-bold text-sm mb-1 group-hover:translate-x-0.5 transition-transform flex items-center justify-between">
+              <span>Multi-Vendor OLT</span>
+              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
             <div className="text-xs text-gray-500">Huawei, ZTE, BDCOM &amp; Fiberhome Auto-Config</div>
-          </div>
-          <div className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm">
-            <div className="text-cyan-600 font-bold text-sm mb-1">Carrier-Grade AAA</div>
+          </Link>
+          <Link href="/showcase/ledger" className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm hover:border-blue-400 hover:shadow-md transition-all group">
+            <div className="text-blue-600 font-bold text-sm mb-1 group-hover:translate-x-0.5 transition-transform flex items-center justify-between">
+              <span>Carrier-Grade AAA</span>
+              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
             <div className="text-xs text-gray-500">FreeRADIUS 3.2 with Dynamic CoA &lt; 5ms</div>
-          </div>
-          <div className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm">
-            <div className="text-indigo-600 font-bold text-sm mb-1">Spatial GIS Mapping</div>
+          </Link>
+          <Link href="/showcase/nexus" className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm hover:border-emerald-400 hover:shadow-md transition-all group">
+            <div className="text-emerald-600 font-bold text-sm mb-1 group-hover:translate-x-0.5 transition-transform flex items-center justify-between">
+              <span>Spatial GIS Mapping</span>
+              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
             <div className="text-xs text-gray-500">PostGIS Fiber Tracing, ODC, ODP &amp; Cables</div>
-          </div>
-          <div className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm">
-            <div className="text-emerald-600 font-bold text-sm mb-1">B2B Wholesale</div>
+          </Link>
+          <Link href="/showcase/fibergrid" className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm hover:border-teal-400 hover:shadow-md transition-all group">
+            <div className="text-teal-600 font-bold text-sm mb-1 group-hover:translate-x-0.5 transition-transform flex items-center justify-between">
+              <span>B2B Wholesale</span>
+              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
             <div className="text-xs text-gray-500">Open-Access Port Sharing &amp; Auto-Settlement</div>
-          </div>
+          </Link>
         </div>
       </section>
 
@@ -202,99 +214,132 @@ export default async function InternationalLandingPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Engine 1: FiberGrid */}
-          <div className="relative group rounded-2xl bg-white border border-gray-200 p-8 hover:border-amber-400 transition-all duration-300 hover:shadow-lg">
-            <div className="w-14 h-14 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 mb-6 group-hover:scale-110 transition-transform">
-              <Layers className="w-7 h-7" />
+          <div className="relative group rounded-2xl bg-white border border-gray-200 p-8 hover:border-amber-400 transition-all duration-300 hover:shadow-xl flex flex-col justify-between">
+            <div>
+              <div className="w-14 h-14 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 mb-6 group-hover:scale-110 transition-transform">
+                <Layers className="w-7 h-7" />
+              </div>
+              <div className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700 inline-block mb-3 border border-amber-200">
+                ENGINE 1: INFRA &amp; PHYSICAL ASSETS
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">ISPSYNC FiberGrid</h3>
+              <p className="text-sm text-gray-500 leading-relaxed mb-6">
+                Infrastructure and physical asset engine. Manages passive and active fiber assets from central OLTs to street-level ODP distribution boxes.
+              </p>
+              <ul className="space-y-2.5 text-xs text-gray-600">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  <span>OLT, ODC &amp; ODP Passive/Active Inventory</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  <span>Spatial PostGIS Fiber Route &amp; Splice Mapping</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  <span>TR-069 / TR-369 Wi-Fi ACS Zero-Touch Provisioning</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                  <span>B2B Wholesale Port Monetization &amp; VNO Sharing</span>
+                </li>
+              </ul>
             </div>
-            <div className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700 inline-block mb-3 border border-amber-200">
-              ENGINE 1: INFRA &amp; PHYSICAL ASSETS
+            <div className="mt-8 pt-6 border-t border-gray-100">
+              <Link
+                href="/showcase/fibergrid"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold border border-amber-200 transition-all group-hover:bg-amber-600 group-hover:text-white group-hover:border-amber-600 shadow-xs"
+              >
+                <span>Explore FiberGrid Showcase</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">ISPSYNC FiberGrid</h3>
-            <p className="text-sm text-gray-500 leading-relaxed mb-6">
-              Infrastructure and physical asset engine. Manages passive and active fiber assets from central OLTs to street-level ODP distribution boxes.
-            </p>
-            <ul className="space-y-2.5 text-xs text-gray-600">
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <span>OLT, ODC &amp; ODP Passive/Active Inventory</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <span>Spatial PostGIS Fiber Route &amp; Splice Mapping</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <span>TR-069 / TR-369 Wi-Fi ACS Zero-Touch Provisioning</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                <span>B2B Wholesale Port Monetization &amp; VNO Sharing</span>
-              </li>
-            </ul>
           </div>
 
           {/* Engine 2: Nexus */}
-          <div className="relative group rounded-2xl bg-white border border-gray-200 p-8 hover:border-emerald-400 transition-all duration-300 hover:shadow-lg">
-            <div className="w-14 h-14 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mb-6 group-hover:scale-110 transition-transform">
-              <Globe className="w-7 h-7" />
+          <div className="relative group rounded-2xl bg-white border border-gray-200 p-8 hover:border-emerald-400 transition-all duration-300 hover:shadow-xl flex flex-col justify-between">
+            <div>
+              <div className="w-14 h-14 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mb-6 group-hover:scale-110 transition-transform">
+                <Globe className="w-7 h-7" />
+              </div>
+              <div className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 inline-block mb-3 border border-emerald-200">
+                ENGINE 2: RETAIL OPS &amp; FIELD DISPATCH
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">ISPSYNC Nexus</h3>
+              <p className="text-sm text-gray-500 leading-relaxed mb-6">
+                Retail operations and field technician engine. Manages subscriber lifecycle from lead generation, installation work orders, to field handovers.
+              </p>
+              <ul className="space-y-2.5 text-xs text-gray-600">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>Sub-250m Precision Coverage Geolocation Engine</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>Mobile Digital Work Orders &amp; E-Signatures</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>Sales Partner Referral Tracking &amp; Auto-Commissions</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span>Live NOC Telemetry, Optical Loss &amp; Incident Dispatch</span>
+                </li>
+              </ul>
             </div>
-            <div className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 inline-block mb-3 border border-emerald-200">
-              ENGINE 2: RETAIL OPS &amp; FIELD DISPATCH
+            <div className="mt-8 pt-6 border-t border-gray-100">
+              <Link
+                href="/showcase/nexus"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-bold border border-emerald-200 transition-all group-hover:bg-emerald-600 group-hover:text-white group-hover:border-emerald-600 shadow-xs"
+              >
+                <span>Explore Nexus Showcase</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">ISPSYNC Nexus</h3>
-            <p className="text-sm text-gray-500 leading-relaxed mb-6">
-              Retail operations and field technician engine. Manages subscriber lifecycle from lead generation, installation work orders, to field handovers.
-            </p>
-            <ul className="space-y-2.5 text-xs text-gray-600">
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                <span>Sub-250m Precision Coverage Geolocation Engine</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                <span>Mobile Digital Work Orders &amp; E-Signatures</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                <span>Sales Partner Referral Tracking &amp; Auto-Commissions</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                <span>Live NOC Telemetry, Optical Loss &amp; Incident Dispatch</span>
-              </li>
-            </ul>
           </div>
 
           {/* Engine 3: Ledger */}
-          <div className="relative group rounded-2xl bg-white border border-gray-200 p-8 hover:border-blue-400 transition-all duration-300 hover:shadow-lg">
-            <div className="w-14 h-14 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform">
-              <Smartphone className="w-7 h-7" />
+          <div className="relative group rounded-2xl bg-white border border-gray-200 p-8 hover:border-blue-400 transition-all duration-300 hover:shadow-xl flex flex-col justify-between">
+            <div>
+              <div className="w-14 h-14 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 mb-6 group-hover:scale-110 transition-transform">
+                <Smartphone className="w-7 h-7" />
+              </div>
+              <div className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 inline-block mb-3 border border-blue-200">
+                ENGINE 3: FINANCIAL &amp; AAA ORCHESTRATION
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">ISPSYNC Ledger</h3>
+              <p className="text-sm text-gray-500 leading-relaxed mb-6">
+                Financial ledger and network authentication engine. Handles recurring billing, RADIUS authentication, CoA disconnection, and open-access settlements.
+              </p>
+              <ul className="space-y-2.5 text-xs text-gray-600">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                  <span>Automated Invoicing &amp; Multi-Gateway Payment</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                  <span>Embedded FreeRADIUS 3.2 High-Throughput AAA</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                  <span>Instant CoA Auto-Suspension &amp; Payment Restoration</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                  <span>Automated B2B Revenue-Share Settlement Engine</span>
+                </li>
+              </ul>
             </div>
-            <div className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 inline-block mb-3 border border-blue-200">
-              ENGINE 3: FINANCIAL &amp; AAA ORCHESTRATION
+            <div className="mt-8 pt-6 border-t border-gray-100">
+              <Link
+                href="/showcase/ledger"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 text-xs font-bold border border-blue-200 transition-all group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 shadow-xs"
+              >
+                <span>Explore Ledger Showcase</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">ISPSYNC Ledger</h3>
-            <p className="text-sm text-gray-500 leading-relaxed mb-6">
-              Financial ledger and network authentication engine. Handles recurring billing, RADIUS authentication, CoA disconnection, and open-access settlements.
-            </p>
-            <ul className="space-y-2.5 text-xs text-gray-600">
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                <span>Automated Invoicing &amp; Multi-Gateway Payment</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                <span>Embedded FreeRADIUS 3.2 High-Throughput AAA</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                <span>Instant CoA Auto-Suspension &amp; Payment Restoration</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                <span>Automated B2B Revenue-Share Settlement Engine</span>
-              </li>
-            </ul>
           </div>
         </div>
       </section>
