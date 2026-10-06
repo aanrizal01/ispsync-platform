@@ -18,10 +18,16 @@ type WhatsAppSender interface {
 	Send(ctx context.Context, recipient string, subject string, body string) error
 }
 
+type RadiusSynchronizer interface {
+	DeleteCredential(ctx context.Context, username string) error
+	DisconnectUserSessions(ctx context.Context, username string) error
+}
+
 type Service struct {
-	repo     *Repository
-	logger   *slog.Logger
-	waSender WhatsAppSender
+	repo      *Repository
+	logger    *slog.Logger
+	waSender  WhatsAppSender
+	radiusSvc RadiusSynchronizer
 }
 
 func NewService(repo *Repository, logger *slog.Logger) *Service {
@@ -30,6 +36,10 @@ func NewService(repo *Repository, logger *slog.Logger) *Service {
 
 func (s *Service) SetWhatsAppSender(sender WhatsAppSender) {
 	s.waSender = sender
+}
+
+func (s *Service) SetRadiusService(radiusSvc RadiusSynchronizer) {
+	s.radiusSvc = radiusSvc
 }
 
 func (s *Service) CreateTemplate(ctx context.Context, req CreateTemplateRequest) (*Template, error) {
@@ -274,7 +284,12 @@ func (s *Service) Revoke(ctx context.Context, id uuid.UUID, reason string) error
 		return apperrors.Internal(err)
 	}
 
-	s.logger.Info("voucher revoked", "voucher_id", id, "code", v.Code, "reason", reason)
+	if s.radiusSvc != nil && v.Code != "" {
+		_ = s.radiusSvc.DeleteCredential(ctx, v.Code)
+		_ = s.radiusSvc.DisconnectUserSessions(ctx, v.Code)
+	}
+
+	s.logger.Info("voucher revoked and radius session disconnected", "voucher_id", id, "code", v.Code, "reason", reason)
 	return nil
 }
 

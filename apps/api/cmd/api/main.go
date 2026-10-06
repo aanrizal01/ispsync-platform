@@ -331,6 +331,7 @@ func main() {
 	paymentSvc.SetSubscriptionService(subscriptionSvc)
 	voucherSvc := voucher.NewService(voucherRepo, log)
 	voucherSvc.SetWhatsAppSender(waProvider)
+	voucherSvc.SetRadiusService(radiusSvc)
 	hotspotSvc := hotspot.NewService(db, radiusSvc, log)
 	hotspotSvc.SetWhatsAppSender(waProvider)
 	hotspotSvc.SetSettingsRepo(settingsRepo)

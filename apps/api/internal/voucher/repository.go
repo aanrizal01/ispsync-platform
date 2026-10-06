@@ -396,13 +396,32 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*Voucher, error
 }
 
 func (r *Repository) Revoke(ctx context.Context, id uuid.UUID, reason string) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	var code string
 	const q = `
 		UPDATE vouchers
 		SET status = 'REVOKED', revoked_at = NOW(), revoked_reason = $1, updated_at = NOW()
 		WHERE id = $2 AND status != 'REVOKED'
+		RETURNING code
 	`
-	_, err := r.db.Exec(ctx, q, reason, id)
-	return err
+	if err := tx.QueryRow(ctx, q, reason, id).Scan(&code); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+
+	if code != "" {
+		_, _ = tx.Exec(ctx, "DELETE FROM radcheck WHERE username = $1", code)
+		_, _ = tx.Exec(ctx, "DELETE FROM radreply WHERE username = $1", code)
+	}
+
+	return tx.Commit(ctx)
 }
 
 func (r *Repository) ResetMAC(ctx context.Context, id uuid.UUID) error {
