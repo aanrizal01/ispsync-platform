@@ -1,10 +1,32 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { voucherApi, type Voucher, type VoucherTemplate, type VoucherBatch, type CreateTemplateInput, type GenerateBatchInput, type HotspotOrder, type HotspotOrdersSummary } from "@/lib/api/vouchers";
+import { voucherApi, type Voucher, type VoucherDetail, type VoucherSessionLog, type VoucherTemplate, type VoucherBatch, type CreateTemplateInput, type GenerateBatchInput, type HotspotOrder, type HotspotOrdersSummary } from "@/lib/api/vouchers";
 import { agentApi, type Agent } from "@/lib/api/agents";
 import { formatDate, formatRupiah, formatBandwidth, cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Search, X, Eye, EyeOff, Copy, Check, Ticket, Globe, Sparkles, Layers, Sliders, RefreshCw, Clock, CheckCircle2, AlertCircle, ExternalLink, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, X, Eye, EyeOff, Copy, Check, Ticket, Globe, Sparkles, Layers, Sliders, RefreshCw, Clock, CheckCircle2, AlertCircle, ExternalLink, ArrowRight, Shield, Wifi, Activity, Power, ArrowUp, ArrowDown, Laptop, Smartphone } from "lucide-react";
+
+function formatBytes(bytes: number): string {
+  if (!bytes || bytes <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let i = 0;
+  let val = bytes;
+  while (val >= 1024 && i < units.length - 1) {
+    val /= 1024;
+    i++;
+  }
+  return `${val.toFixed(1)} ${units[i]}`;
+}
+
+function formatSeconds(sec: number): string {
+  if (!sec || sec <= 0) return "0 detik";
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if (h > 0) return `${h}j ${m}m ${s}d`;
+  if (m > 0) return `${m}m ${s}d`;
+  return `${s} detik`;
+}
 
 function formatDurationHuman(minutes: number): string {
   if (!minutes || minutes <= 0) return "0 Menit";
@@ -332,6 +354,13 @@ export default function VouchersPage() {
   const [resetMACLoadingId, setResetMACLoadingId] = useState<string | null>(null);
   const [restoreLoadingId, setRestoreLoadingId] = useState<string | null>(null);
 
+  // Voucher Detail & Session Inspection Modal State
+  const [selectedDetailVoucherId, setSelectedDetailVoucherId] = useState<string | null>(null);
+  const [detailVoucher, setDetailVoucher] = useState<VoucherDetail | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [kickLoadingId, setKickLoadingId] = useState<string | null>(null);
+
   const calculateTotalMinutes = (val: number, unit: "MINUTES" | "HOURS" | "DAYS" | "MONTHS") => {
     switch (unit) {
       case "MINUTES":
@@ -612,6 +641,39 @@ export default function VouchersPage() {
       alert(err.message || "Gagal mengaktifkan kembali voucher");
     } finally {
       setRestoreLoadingId(null);
+    }
+  };
+
+  const handleOpenDetail = async (id: string) => {
+    setSelectedDetailVoucherId(id);
+    setIsDetailModalOpen(true);
+    setDetailLoading(true);
+    try {
+      const res = await voucherApi.getDetailByID(id);
+      setDetailVoucher(res);
+    } catch (err: any) {
+      alert(err.message || "Gagal memuat rincian voucher");
+      setIsDetailModalOpen(false);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const handleKickSession = async (id: string, code: string) => {
+    if (!confirm(`Putuskan paksa (Kick CoA) sesi login aktif untuk voucher "${code}"? Koneksi internet perangkat terkait akan langsung diputus.`)) {
+      return;
+    }
+    setKickLoadingId(id);
+    try {
+      const res = await voucherApi.disconnect(id);
+      alert(res.message || "Sesi login berhasil diputuskan");
+      const updated = await voucherApi.getDetailByID(id);
+      setDetailVoucher(updated);
+      loadData();
+    } catch (err: any) {
+      alert(err.message || "Gagal memutuskan sesi voucher");
+    } finally {
+      setKickLoadingId(null);
     }
   };
 
@@ -1227,6 +1289,14 @@ export default function VouchersPage() {
                             {v.expires_at ? formatDate(v.expires_at) : "—"}
                           </td>
                           <td className="px-5 py-4 text-right space-x-1.5 whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDetail(v.id)}
+                              className="px-2.5 py-1 text-xs font-semibold text-cyan-700 bg-cyan-50 hover:bg-cyan-100 rounded border border-cyan-200"
+                              title="Periksa Detail Sesi & Riwayat Log Login"
+                            >
+                              Detail
+                            </button>
                             <button
                               onClick={() => handlePrintSingle(v, "modern")}
                               className="px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded border border-slate-200"
@@ -1996,6 +2066,14 @@ export default function VouchersPage() {
                         <td className="px-5 py-4 text-right space-x-1.5 whitespace-nowrap">
                           <button
                             type="button"
+                            onClick={() => handleOpenDetail(v.id)}
+                            className="px-2.5 py-1 text-xs font-semibold text-cyan-700 bg-cyan-50 hover:bg-cyan-100 rounded border border-cyan-200"
+                            title="Periksa Detail Sesi & Riwayat Log Login"
+                          >
+                            Detail
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => copyToClipboard(v.code, v.id)}
                             className="px-2.5 py-1 text-xs font-medium text-teal-700 hover:bg-teal-50 rounded border border-teal-200"
                           >
@@ -2433,6 +2511,14 @@ export default function VouchersPage() {
                             <div className="text-[10px] text-slate-400">{formatDate(v.created_at)}</div>
                           </td>
                           <td className="px-5 py-4 text-right space-x-1 whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDetail(v.id)}
+                              className="px-2 py-1 text-xs font-semibold text-cyan-700 bg-cyan-50 hover:bg-cyan-100 rounded border border-cyan-200"
+                              title="Periksa Detail Sesi & Riwayat Log Login"
+                            >
+                              Detail
+                            </button>
                             <button
                               onClick={() => handlePrintSingle(v, "atm_wifi_id")}
                               className="px-2 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 rounded border border-amber-200"
@@ -4215,6 +4301,350 @@ export default function VouchersPage() {
               )}
             </div>
 
+          </div>
+        </div>
+      {/* Voucher Detail & Session Inspection Modal */}
+      {isDetailModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="relative bg-slate-950 border border-slate-800 rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+            {/* Ambient Aurora Glows */}
+            <div className="absolute -top-32 -left-32 w-80 h-80 bg-cyan-600/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-1/2 -right-32 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+
+            {/* Modal Header */}
+            <div className="relative px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/60 backdrop-blur-sm shrink-0">
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
+                  INSPEKSI SESI VOUCHER
+                </span>
+                {detailVoucher && (
+                  <span className="font-mono text-lg font-black text-white tracking-wide">
+                    {detailVoucher.code}
+                  </span>
+                )}
+                {detailVoucher && (
+                  <span
+                    className={cn(
+                      "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border",
+                      detailVoucher.status === "ACTIVE"
+                        ? "bg-emerald-950/80 text-emerald-400 border-emerald-800"
+                        : detailVoucher.status === "UNUSED"
+                        ? "bg-cyan-950/80 text-cyan-400 border-cyan-800"
+                        : detailVoucher.status === "EXPIRED"
+                        ? "bg-amber-950/80 text-amber-400 border-amber-800"
+                        : "bg-rose-950/80 text-rose-400 border-rose-800"
+                    )}
+                  >
+                    {detailVoucher.status}
+                  </span>
+                )}
+                {detailVoucher && (
+                  detailVoucher.is_currently_online ? (
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-950/80 text-emerald-400 border border-emerald-700 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                      ONLINE SEKARANG
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-900 text-slate-400 border border-slate-800 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+                      OFFLINE
+                    </span>
+                  )
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDetailModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="relative p-6 overflow-y-auto space-y-6 flex-1 text-slate-200">
+              {detailLoading ? (
+                <div className="py-16 text-center">
+                  <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-xs text-slate-400">Memuat status sesi FreeRADIUS & riwayat login...</p>
+                </div>
+              ) : !detailVoucher ? (
+                <div className="py-12 text-center text-slate-400 text-xs">
+                  Data voucher tidak ditemukan.
+                </div>
+              ) : (
+                <>
+                  {/* Grid 3 Kartu Ringkasan Telco */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Kartu 1: Status Sesi & Gateway */}
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <Activity className="w-3.5 h-3.5 text-cyan-400" /> Sesi Koneksi
+                        </span>
+                        {detailVoucher.is_currently_online ? (
+                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-2 py-0.5 rounded">
+                            AKTIF TERHUBUNG
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-medium text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
+                            TIDAK AKTIF
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">IP Client:</span>
+                          <span className="font-mono font-semibold text-slate-100">
+                            {detailVoucher.active_session?.framedipaddress || detailVoucher.sessions[0]?.framedipaddress || "—"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Gateway NAS:</span>
+                          <span className="font-mono text-slate-300">
+                            {detailVoucher.active_session?.nasipaddress || detailVoucher.sessions[0]?.nasipaddress || "—"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Login Terakhir:</span>
+                          <span className="text-slate-200">
+                            {detailVoucher.first_used_at ? formatDate(detailVoucher.first_used_at) : "Belum Pernah"}
+                          </span>
+                        </div>
+                      </div>
+                      {detailVoucher.is_currently_online && (
+                        <button
+                          type="button"
+                          disabled={kickLoadingId === detailVoucher.id}
+                          onClick={() => handleKickSession(detailVoucher.id, detailVoucher.code)}
+                          className="w-full mt-2 py-1.5 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm"
+                        >
+                          <Power className="w-3.5 h-3.5" />
+                          {kickLoadingId === detailVoucher.id ? "Memutuskan Sesi..." : "Putuskan Sesi (Kick CoA)"}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Kartu 2: Kuncian Perangkat (MAC Lock) */}
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <Shield className="w-3.5 h-3.5 text-cyan-400" /> Kuncian Perangkat
+                        </span>
+                        <span
+                          className={cn(
+                            "text-[10px] font-bold px-2 py-0.5 rounded border",
+                            detailVoucher.buyer_mac
+                              ? "bg-cyan-950/60 text-cyan-400 border-cyan-800"
+                              : "bg-slate-800 text-slate-400 border-slate-700"
+                          )}
+                        >
+                          {detailVoucher.buyer_mac ? "TERKUNCI (1 MAC)" : "BELUM TERIKAT"}
+                        </span>
+                      </div>
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">MAC Terikat:</span>
+                          <span className="font-mono font-bold text-cyan-300">
+                            {detailVoucher.buyer_mac || "—"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Proteksi MAC:</span>
+                          <span className="text-slate-200">
+                            {detailVoucher.is_mac_locked ? "Aktif (Terkunci)" : "Nonaktif"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Perangkat Sesi:</span>
+                          <span className="font-mono text-slate-400 text-[11px]">
+                            {detailVoucher.active_session?.callingstationid || detailVoucher.sessions[0]?.callingstationid || "—"}
+                          </span>
+                        </div>
+                      </div>
+                      {detailVoucher.buyer_mac && (
+                        <button
+                          type="button"
+                          disabled={resetMACLoadingId === detailVoucher.id}
+                          onClick={async () => {
+                            await handleResetMAC(detailVoucher.id, detailVoucher.code);
+                            const updated = await voucherApi.getDetailByID(detailVoucher.id);
+                            setDetailVoucher(updated);
+                          }}
+                          className="w-full mt-2 py-1.5 px-3 rounded-lg bg-amber-600/90 hover:bg-amber-600 disabled:opacity-50 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          {resetMACLoadingId === detailVoucher.id ? "Mereset..." : "Reset Kuncian MAC"}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Kartu 3: Penggunaan Kuota & Masa Aktif */}
+                    <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-cyan-400" /> Kuota & Durasi
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-300 bg-slate-800 px-2 py-0.5 rounded">
+                          {detailVoucher.template_name || "Paket Hotspot"}
+                        </span>
+                      </div>
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Durasi Terpakai:</span>
+                          <span className="font-semibold text-slate-100">
+                            {formatSeconds(detailVoucher.used_seconds)} / {formatDurationHuman(detailVoucher.duration_minutes)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Total Traffic:</span>
+                          <span className="font-mono text-cyan-300">
+                            {formatBytes(detailVoucher.used_bytes)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Batas Waktu:</span>
+                          <span className="text-slate-200">
+                            {detailVoucher.expires_at ? formatDate(detailVoucher.expires_at) : "—"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Bandwidth Profil:</span>
+                          <span className="font-mono text-slate-300">
+                            {formatBandwidth(detailVoucher.download_kbps)} DL / {formatBandwidth(detailVoucher.upload_kbps)} UL
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Riwayat Sesi Login (FreeRADIUS Accounting) */}
+                  <div className="space-y-3 pt-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-slate-100">Riwayat Sesi Login</h4>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
+                          {detailVoucher.sessions.length} Sesi Tercatat
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-slate-400">
+                        Sumber data: FreeRADIUS Accounting (`radius_sessions`)
+                      </span>
+                    </div>
+
+                    <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-900/50">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-900 text-slate-400 font-semibold border-b border-slate-800">
+                          <tr>
+                            <th className="px-4 py-2.5">Waktu Mulai</th>
+                            <th className="px-4 py-2.5">Waktu Selesai</th>
+                            <th className="px-4 py-2.5">Durasi</th>
+                            <th className="px-4 py-2.5">IP Client</th>
+                            <th className="px-4 py-2.5">MAC Perangkat</th>
+                            <th className="px-4 py-2.5 text-right">Upload</th>
+                            <th className="px-4 py-2.5 text-right">Download</th>
+                            <th className="px-4 py-2.5">Status / Penyebab Putus</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/60 font-mono">
+                          {detailVoucher.sessions.length === 0 ? (
+                            <tr>
+                              <td colSpan={8} className="px-4 py-8 text-center text-slate-500 font-sans text-xs">
+                                Belum ada riwayat sesi login pada FreeRADIUS untuk voucher ini.
+                              </td>
+                            </tr>
+                          ) : (
+                            detailVoucher.sessions.map((sess) => (
+                              <tr key={sess.radacctid} className="hover:bg-slate-800/40 transition">
+                                <td className="px-4 py-2.5 text-slate-200">
+                                  {formatDate(sess.acctstarttime)}
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  {sess.is_online ? (
+                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800 font-bold text-[10px]">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                      ONLINE
+                                    </span>
+                                  ) : sess.acctstoptime ? (
+                                    <span className="text-slate-400">{formatDate(sess.acctstoptime)}</span>
+                                  ) : (
+                                    <span className="text-slate-500">—</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-2.5 text-slate-300 font-sans">
+                                  {formatSeconds(sess.acctsessiontime)}
+                                </td>
+                                <td className="px-4 py-2.5 text-slate-200">
+                                  {sess.framedipaddress || "—"}
+                                </td>
+                                <td className="px-4 py-2.5 text-cyan-300">
+                                  {sess.callingstationid || "—"}
+                                </td>
+                                <td className="px-4 py-2.5 text-right text-slate-300">
+                                  {formatBytes(sess.upload_bytes)}
+                                </td>
+                                <td className="px-4 py-2.5 text-right text-cyan-400 font-semibold">
+                                  {formatBytes(sess.download_bytes)}
+                                </td>
+                                <td className="px-4 py-2.5 font-sans">
+                                  {sess.is_online ? (
+                                    <span className="text-emerald-400 text-[11px] font-medium">Sesi Berjalan</span>
+                                  ) : sess.terminate_cause ? (
+                                    <span className="text-slate-400 text-[11px]">{sess.terminate_cause}</span>
+                                  ) : (
+                                    <span className="text-slate-500">—</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3.5 border-t border-slate-800 bg-slate-900/80 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                {detailVoucher && detailVoucher.status === "REVOKED" && (
+                  <button
+                    type="button"
+                    disabled={restoreLoadingId === detailVoucher.id}
+                    onClick={async () => {
+                      await handleRestore(detailVoucher.id, detailVoucher.code);
+                      const updated = await voucherApi.getDetailByID(detailVoucher.id);
+                      setDetailVoucher(updated);
+                    }}
+                    className="px-3 py-1.5 text-xs font-semibold text-emerald-400 hover:bg-emerald-950/60 rounded-lg border border-emerald-700 transition"
+                  >
+                    Aktifkan Kembali Voucher
+                  </button>
+                )}
+                {detailVoucher && detailVoucher.status !== "REVOKED" && detailVoucher.status !== "EXPIRED" && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await handleRevoke(detailVoucher.id, detailVoucher.code);
+                      const updated = await voucherApi.getDetailByID(detailVoucher.id);
+                      setDetailVoucher(updated);
+                    }}
+                    className="px-3 py-1.5 text-xs font-medium text-rose-400 hover:bg-rose-950/60 rounded-lg border border-rose-800 transition"
+                  >
+                    Revoke Voucher
+                  </button>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDetailModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition"
+              >
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}

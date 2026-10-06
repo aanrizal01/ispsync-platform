@@ -80,6 +80,30 @@ export interface Voucher {
   updated_at: string;
 }
 
+export interface VoucherSessionLog {
+  radacctid: number;
+  acctsessionid: string;
+  nasipaddress: string;
+  framedipaddress: string;
+  callingstationid: string;
+  acctstarttime: string;
+  acctstoptime?: string;
+  acctsessiontime: number;
+  upload_bytes: number;
+  download_bytes: number;
+  terminate_cause: string;
+  is_online: boolean;
+}
+
+export interface VoucherDetail extends Voucher {
+  download_kbps: number;
+  upload_kbps: number;
+  duration_minutes: number;
+  is_currently_online: boolean;
+  active_session?: VoucherSessionLog;
+  sessions: VoucherSessionLog[];
+}
+
 export interface CreateTemplateInput {
   name: string;
   description?: string;
@@ -162,6 +186,11 @@ export const voucherApi = {
   },
 
   getByID: (id: string) => request<Voucher>(`/vouchers/${id}`),
+  getDetailByID: (id: string) => request<VoucherDetail>(`/vouchers/${id}/detail`),
+  disconnect: (id: string) =>
+    request<{ message: string }>(`/vouchers/${id}/disconnect`, {
+      method: "POST",
+    }),
 
   revoke: (id: string, reason: string) =>
     request<{ message: string }>(`/vouchers/${id}/revoke`, {

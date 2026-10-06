@@ -43,8 +43,10 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 		// Vouchers
 		r.With(authMW.RequirePermission("vouchers:read")).Get("/", h.ListVouchers)
 		r.With(authMW.RequirePermission("vouchers:read")).Get("/{id}", h.GetByID)
+		r.With(authMW.RequirePermission("vouchers:read")).Get("/{id}/detail", h.GetDetailByID)
 		r.With(authMW.RequirePermission("vouchers:write")).Post("/{id}/resend-wa", h.ResendWhatsApp)
 		r.With(authMW.RequirePermission("vouchers:write")).Post("/{id}/reset-mac", h.ResetMAC)
+		r.With(authMW.RequirePermission("vouchers:write")).Post("/{id}/disconnect", h.Disconnect)
 		r.With(authMW.RequirePermission("vouchers:revoke")).Post("/{id}/revoke", h.Revoke)
 		r.With(authMW.RequirePermission("vouchers:revoke")).Post("/{id}/restore", h.Restore)
 
@@ -199,6 +201,39 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	middleware.JSON(w, http.StatusOK, v)
+}
+
+func (h *Handler) GetDetailByID(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		middleware.JSONError(w, h.logger, apperrors.BadRequest("ID voucher tidak valid"))
+		return
+	}
+
+	detail, err := h.service.GetDetailByID(r.Context(), id)
+	if err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusOK, detail)
+}
+
+func (h *Handler) Disconnect(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		middleware.JSONError(w, h.logger, apperrors.BadRequest("ID voucher tidak valid"))
+		return
+	}
+
+	if err := h.service.Disconnect(r.Context(), id); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusOK, map[string]string{"message": "Sesi aktif voucher berhasil diputuskan (CoA Disconnect)"})
 }
 
 func (h *Handler) Revoke(w http.ResponseWriter, r *http.Request) {

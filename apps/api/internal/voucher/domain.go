@@ -93,6 +93,31 @@ type Voucher struct {
 	UpdatedAt           time.Time    `json:"updated_at"`
 }
 
+type VoucherSessionLog struct {
+	RadAcctID        int64      `json:"radacctid"`
+	AcctSessionID    string     `json:"acctsessionid"`
+	NasIPAddress     string     `json:"nasipaddress"`
+	FramedIPAddress  string     `json:"framedipaddress"`
+	CallingStationID string     `json:"callingstationid"`
+	AcctStartTime    time.Time  `json:"acctstarttime"`
+	AcctStopTime     *time.Time `json:"acctstoptime,omitempty"`
+	AcctSessionTime  int64      `json:"acctsessiontime"`
+	UploadBytes      int64      `json:"upload_bytes"`
+	DownloadBytes    int64      `json:"download_bytes"`
+	TerminateCause   string     `json:"terminate_cause"`
+	IsOnline         bool       `json:"is_online"`
+}
+
+type VoucherDetail struct {
+	Voucher
+	DownloadKbps      int64               `json:"download_kbps"`
+	UploadKbps        int64               `json:"upload_kbps"`
+	DurationMinutes   int                 `json:"duration_minutes"`
+	IsCurrentlyOnline bool                `json:"is_currently_online"`
+	ActiveSession     *VoucherSessionLog  `json:"active_session,omitempty"`
+	Sessions          []VoucherSessionLog `json:"sessions"`
+}
+
 // Request / Response DTOs
 
 type CreateTemplateRequest struct {

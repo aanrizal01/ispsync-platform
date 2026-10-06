@@ -395,6 +395,86 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*Voucher, error
 	return &v, nil
 }
 
+func (r *Repository) GetDetailByID(ctx context.Context, id uuid.UUID) (*VoucherDetail, error) {
+	const q = `
+		SELECT v.id, v.code, v.password, v.batch_id, b.batch_number,
+		       v.template_id, t.name, COALESCE(t.price, 0), v.customer_id, v.status,
+		       v.channel, v.buyer_phone, v.order_id,
+		       v.agent_id, a.name, a.code,
+		       v.promo_code, v.discount_amount, v.agent_commission,
+		       v.time_limit_seconds, v.data_limit_bytes, v.used_seconds, v.used_bytes,
+		       v.first_used_at, v.expires_at, v.revoked_at, v.revoked_reason,
+		       v.created_at, v.updated_at,
+		       v.serial_number, v.is_blank, v.activated_by_agent_id, v.activated_at,
+		       v.buyer_mac, COALESCE(v.is_mac_locked, true),
+		       COALESCE(t.download_kbps, 0), COALESCE(t.upload_kbps, 0), COALESCE(t.duration_minutes, 60)
+		FROM vouchers v
+		LEFT JOIN voucher_batches b ON b.id = v.batch_id
+		LEFT JOIN voucher_templates t ON t.id = v.template_id
+		LEFT JOIN agents a ON a.id = v.agent_id
+		WHERE v.id = $1
+	`
+	var d VoucherDetail
+	var price int64
+
+	err := r.db.QueryRow(ctx, q, id).Scan(
+		&d.ID, &d.Code, &d.Password, &d.BatchID, &d.BatchNumber,
+		&d.TemplateID, &d.TemplateName, &price, &d.CustomerID, &d.Status,
+		&d.Channel, &d.BuyerPhone, &d.OrderID,
+		&d.AgentID, &d.AgentName, &d.AgentCode,
+		&d.PromoCode, &d.DiscountAmount, &d.AgentCommission,
+		&d.TimeLimitSeconds, &d.DataLimitBytes, &d.UsedSeconds, &d.UsedBytes,
+		&d.FirstUsedAt, &d.ExpiresAt, &d.RevokedAt, &d.RevokedReason,
+		&d.CreatedAt, &d.UpdatedAt,
+		&d.SerialNumber, &d.IsBlank, &d.ActivatedByAgentID, &d.ActivatedAt,
+		&d.BuyerMAC, &d.IsMACLocked,
+		&d.DownloadKbps, &d.UploadKbps, &d.DurationMinutes,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get voucher detail by id: %w", err)
+	}
+	d.Price = money.Amount(price)
+	d.Sessions = []VoucherSessionLog{}
+
+	// Query session logs from radius_sessions
+	const sq = `
+		SELECT radacctid, acctsessionid, COALESCE(nasipaddress::text, ''), COALESCE(framedipaddress::text, ''),
+		       COALESCE(callingstationid, ''), acctstarttime, acctstoptime,
+		       COALESCE(acctsessiontime, 0), COALESCE(acctinputoctets, 0), COALESCE(acctoutputoctets, 0),
+		       COALESCE(acctterminatecause, '')
+		FROM radius_sessions
+		WHERE username = $1
+		ORDER BY acctstarttime DESC
+		LIMIT 50
+	`
+	rows, err := r.db.Query(ctx, sq, d.Code)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var s VoucherSessionLog
+			if err := rows.Scan(
+				&s.RadAcctID, &s.AcctSessionID, &s.NasIPAddress, &s.FramedIPAddress,
+				&s.CallingStationID, &s.AcctStartTime, &s.AcctStopTime,
+				&s.AcctSessionTime, &s.UploadBytes, &s.DownloadBytes,
+				&s.TerminateCause,
+			); err == nil {
+				s.IsOnline = (s.AcctStopTime == nil)
+				if s.IsOnline && !d.IsCurrentlyOnline {
+					d.IsCurrentlyOnline = true
+					sCopy := s
+					d.ActiveSession = &sCopy
+				}
+				d.Sessions = append(d.Sessions, s)
+			}
+		}
+	}
+
+	return &d, nil
+}
+
 func (r *Repository) Revoke(ctx context.Context, id uuid.UUID, reason string) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {

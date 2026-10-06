@@ -269,6 +269,36 @@ func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*Voucher, error) {
 	return v, nil
 }
 
+func (s *Service) GetDetailByID(ctx context.Context, id uuid.UUID) (*VoucherDetail, error) {
+	d, err := s.repo.GetDetailByID(ctx, id)
+	if err != nil {
+		return nil, apperrors.Internal(err)
+	}
+	if d == nil {
+		return nil, apperrors.NotFound("Voucher")
+	}
+	return d, nil
+}
+
+func (s *Service) Disconnect(ctx context.Context, id uuid.UUID) error {
+	v, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return apperrors.Internal(err)
+	}
+	if v == nil {
+		return apperrors.NotFound("Voucher")
+	}
+
+	if s.radiusSvc != nil && v.Code != "" {
+		if err := s.radiusSvc.DisconnectUserSessions(ctx, v.Code); err != nil {
+			return apperrors.Internal(fmt.Errorf("gagal memutuskan sesi: %w", err))
+		}
+	}
+
+	s.logger.Info("voucher active sessions disconnected by admin", "voucher_id", id, "code", v.Code)
+	return nil
+}
+
 func (s *Service) Revoke(ctx context.Context, id uuid.UUID, reason string) error {
 	v, err := s.repo.GetByID(ctx, id)
 	if err != nil {
