@@ -11401,8 +11401,18 @@
         const res = await fetch(url);
         const json = await res.json();
         if (json.success && json.data) {
-          availablePlans = json.data;
-          renderPlanCards(json.data);
+          // Urutkan paket: paket ritel (harga > 0) dari termurah ke termahal, lalu corporate/custom quote di paling bawah
+          const sorted = json.data.slice().sort((a, b) => {
+            const priceA = Number(a.price_monthly !== undefined ? a.price_monthly : (a.monthly_price || 0));
+            const priceB = Number(b.price_monthly !== undefined ? b.price_monthly : (b.monthly_price || 0));
+            const isCustA = a.id === 'paket-custom-enterprise' || (a.name && a.name.toLowerCase().includes('corporate')) || priceA === 0;
+            const isCustB = b.id === 'paket-custom-enterprise' || (b.name && b.name.toLowerCase().includes('corporate')) || priceB === 0;
+            if (isCustA && !isCustB) return 1;
+            if (!isCustA && isCustB) return -1;
+            return priceA - priceB;
+          });
+          availablePlans = sorted;
+          renderPlanCards(sorted);
         }
       } catch (err) {
         console.error("Gagal memuat paket:", err);
@@ -11475,7 +11485,7 @@
       }
     }
 
-    let isPlanSelectionCollapsed = true; // Auto-hide paket lain agar form data pemasangan langsung naik ke atas
+    let isPlanSelectionCollapsed = false; // Tampilkan seluruh daftar paket secara default agar calon pelanggan dapat langsung memilih
 
     function toggleExpandPlans(e) {
       if (e) e.stopPropagation();
@@ -11500,7 +11510,13 @@
       }
 
       if (!selectedPlanId) {
-        selectedPlanId = activePlans[0] ? activePlans[0].id : null; // Default to Paket Gold
+        const defaultPlan = activePlans.find(p => p.is_popular) || 
+                            activePlans.find(p => (p.name && (p.name.includes('Gold') || p.name.includes('10M')))) ||
+                            activePlans.find(p => {
+                              const pr = Number(p.price_monthly !== undefined ? p.price_monthly : (p.monthly_price || 0));
+                              return pr > 0;
+                            }) || activePlans[0];
+        selectedPlanId = defaultPlan ? defaultPlan.id : null;
       }
 
       const metaMap = {
@@ -11529,13 +11545,13 @@
 
       let html = '';
 
-      // Jika sedang terbuka semua (expanded), tampilkan tombol tutup pilihan
+      // Header indikator pilihan
       if (!isPlanSelectionCollapsed) {
         html += `
           <div class="flex items-center justify-between text-xs text-slate-500 pb-1 mb-1 border-b border-slate-100">
-            <span class="text-[11px] font-medium text-slate-600">Pilih salah satu paket di bawah:</span>
+            <span class="text-[11px] font-medium text-slate-600">Pilih paket sesuai kebutuhan Anda (${activePlans.length} pilihan):</span>
             <button type="button" onclick="toggleExpandPlans(event)" class="text-[11px] font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg flex items-center gap-1 transition shadow-2xs">
-              <span>Tutup Pilihan</span>
+              <span>Ringkas</span>
               <i data-lucide="chevron-up" class="w-3 h-3"></i>
             </button>
           </div>
@@ -11545,7 +11561,8 @@
       html += plansToRender.map((p) => {
         const isCustom = p.id === 'paket-custom-enterprise' || p.id === 'c0020007-0000-0000-0000-000000000007' || (p.name && p.name.toLowerCase().includes('corporate'));
         const isSelected = p.id === selectedPlanId;
-        const speedMbps = Math.round(p.download_kbps / 1024);
+        const speedMbps = p.download_speed_mbps || p.speed_mbps || (p.download_kbps ? Math.round(p.download_kbps / 1024) : (p.speed_down_mbps || 0));
+        const priceNum = Number(p.price_monthly !== undefined ? p.price_monthly : (p.monthly_price !== undefined ? p.monthly_price : 0));
         const meta = metaMap[p.id] || { badge: '', badgeClass: '' };
 
         const cardStyle = isCustom
@@ -11567,7 +11584,7 @@
         const priceHtml = isCustom
           ? `<span class="text-sm sm:text-base font-extrabold text-indigo-700 font-mono">Custom Quote</span>
              <span class="text-[10px] text-slate-500 block font-sans">/ penawaran resmi</span>`
-          : `<span class="text-sm sm:text-base font-extrabold text-slate-900 font-mono">Rp ${p.monthly_price.toLocaleString('id-ID')}</span>
+          : `<span class="text-sm sm:text-base font-extrabold text-slate-900 font-mono">Rp ${priceNum.toLocaleString('id-ID')}</span>
              <span class="text-[10px] text-slate-500 block font-sans">/bulan (Inc. Pajak)</span>`;
 
         return `
@@ -11600,7 +11617,7 @@
                 </span>
                 <button type="button" onclick="toggleExpandPlans(event)" class="text-xs font-bold text-blue-700 hover:text-blue-900 bg-blue-100/70 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition shadow-2xs active:scale-95">
                   <i data-lucide="arrow-down-up" class="w-3.5 h-3.5 text-blue-600"></i>
-                  <span>Ganti Paket Lain</span>
+                  <span>Lihat Semua Paket (${activePlans.length})</span>
                 </button>
               </div>
             ` : ''}
@@ -11674,11 +11691,10 @@
     }
 
     function selectPlan(planId) {
-      if (selectedPlanId === 'paket-custom-enterprise') {
+      if (selectedPlanId === 'paket-custom-enterprise' || (selectedPlanId && selectedPlanId.includes('corporate'))) {
         updateCustomPlanConfig();
       }
       selectedPlanId = planId;
-      isPlanSelectionCollapsed = true; // Auto-hide paket lain saat dipilih!
       renderPlanCards(availablePlans);
     }
 

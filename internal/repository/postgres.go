@@ -767,7 +767,8 @@ func (s *PostgresStorage) CreateTenantAddon(ctx context.Context, addon *domain.T
 func (s *PostgresStorage) ListPlans(ctx context.Context, tenantID string) ([]domain.Plan, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT id, tenant_id, code, name, speed_down_mbps, speed_up_mbps, monthly_price, description, is_active
-		FROM ispsync.plans WHERE tenant_id = $1 AND is_active = 1 ORDER BY monthly_price ASC
+		FROM ispsync.plans WHERE tenant_id = $1 AND is_active = 1 
+		ORDER BY (CASE WHEN monthly_price = 0 THEN 999999999 ELSE monthly_price END) ASC, speed_down_mbps ASC
 	`, tenantID)
 	if err != nil {
 		return nil, err
