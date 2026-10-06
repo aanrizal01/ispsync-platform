@@ -106,7 +106,7 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 		mode = "sales"
 	} else if path == "/teknisi" || strings.HasPrefix(path, "/teknisi/") || path == "/technician" || strings.HasPrefix(path, "/technician/") || r.URL.Query().Get("app") == "teknisi" {
 		mode = "technician"
-	} else if path == "/noc" || strings.HasPrefix(path, "/noc/") || r.URL.Query().Get("app") == "noc" {
+	} else if path == "/noc" || strings.HasPrefix(path, "/noc/") || path == "/nexus" || strings.HasPrefix(path, "/nexus/") || r.URL.Query().Get("app") == "noc" || r.URL.Query().Get("app") == "nexus" {
 		mode = "noc-fo"
 	} else {
 		switch tCtx.AppType {

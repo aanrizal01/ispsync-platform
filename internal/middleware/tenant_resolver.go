@@ -77,9 +77,9 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 					switch appPart {
 					case "billing", "ledger", "admin":
 						appType = domain.AppCMS
-					case "portal", "nexus":
+					case "portal":
 						appType = domain.AppPortal
-					case "noc", "noc-fo":
+					case "nexus", "noc", "noc-fo":
 						appType = domain.AppNOC
 					case "sales":
 						appType = domain.AppSales
@@ -105,9 +105,9 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 						switch p1 {
 						case "cms", "portal", "nexus", "noc", "sales", "teknisi", "wifi", "hotspot", "isolir":
 							switch p1 {
-							case "portal", "nexus":
+							case "portal":
 								appType = domain.AppPortal
-							case "noc":
+							case "nexus", "noc":
 								appType = domain.AppNOC
 							case "sales":
 								appType = domain.AppSales
@@ -125,9 +125,9 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 							// Coba format {tenant}-{app}
 							tenantSlug = p1
 							switch p2 {
-							case "portal", "nexus":
+							case "portal":
 								appType = domain.AppPortal
-							case "noc":
+							case "nexus", "noc":
 								appType = domain.AppNOC
 							case "sales":
 								appType = domain.AppSales
