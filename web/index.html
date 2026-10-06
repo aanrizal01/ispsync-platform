@@ -27623,6 +27623,44 @@
       }
     }
 
+    // Global fetch interceptor untuk menangani sesi hangus (401 Unauthorized) secara otomatis di seluruh menu
+    (function() {
+      if (window.__ispsyncFetchPatched) return;
+      window.__ispsyncFetchPatched = true;
+      const originalFetch = window.fetch;
+      window.fetch = async function(...args) {
+        const response = await originalFetch.apply(this, args);
+        if (response.status === 401) {
+          const url = (typeof args[0] === 'string') ? args[0] : (args[0]?.url || '');
+          if (!url.includes('/api/v1/auth/login')) {
+            try {
+              const clone = response.clone();
+              const body = await clone.json();
+              const errMsg = body?.error || body?.message || '';
+              if (errMsg.includes('Sesi tidak valid') || errMsg.includes('Login diperlukan') || errMsg.includes('berakhir')) {
+                localStorage.removeItem('auth_session_token');
+                sessionStorage.removeItem('auth_session_token');
+                const loginBox = document.getElementById('admin-login-container');
+                const dashBox = document.getElementById('admin-dashboard-container');
+                if (loginBox && dashBox) {
+                  dashBox.classList.add('hidden');
+                  loginBox.classList.remove('hidden');
+                  if (typeof updatePortalAuthChromeVisibility === 'function') updatePortalAuthChromeVisibility();
+                  const loginErr = document.getElementById('admin-login-error');
+                  if (loginErr) {
+                    loginErr.textContent = 'Sesi Anda telah berakhir. Silakan masuk kembali dengan kata sandi Anda.';
+                    loginErr.classList.remove('hidden');
+                  }
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+              }
+            } catch (e) {}
+          }
+        }
+        return response;
+      };
+    })();
+
     function initAdminPortal() {
       applyNocDynamicBranding();
       const token = localStorage.getItem('auth_session_token') || sessionStorage.getItem('auth_session_token');
@@ -27641,6 +27679,25 @@
         lucide.createIcons();
         return;
       }
+
+      // Validasi liveness token ke server di latar belakang
+      fetch('/api/v1/auth/me', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      }).then(r => r.json()).then(res => {
+        if (!res || !res.success) {
+          localStorage.removeItem('auth_session_token');
+          sessionStorage.removeItem('auth_session_token');
+          dashBox.classList.add('hidden');
+          loginBox.classList.remove('hidden');
+          if (typeof updatePortalAuthChromeVisibility === 'function') updatePortalAuthChromeVisibility();
+          const loginErr = document.getElementById('admin-login-error');
+          if (loginErr) {
+            loginErr.textContent = 'Sesi login Anda telah berakhir. Silakan masuk kembali.';
+            loginErr.classList.remove('hidden');
+          }
+          lucide.createIcons();
+        }
+      }).catch(() => {});
 
       loginBox.classList.add('hidden');
       dashBox.classList.remove('hidden');

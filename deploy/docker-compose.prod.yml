@@ -239,6 +239,7 @@ services:
     restart: always
     environment:
       PORT: 8081
+      SESSION_SECRET: ${SESSION_SECRET:-ispsync-carrier-super-secret-key-2026-production-hmac-99a8f27c3d14}
       DB_DRIVER: postgres
       DATABASE_URL: postgres://${POSTGRES_USER:-isp_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-isp_billing}?search_path=ispsync,public&sslmode=disable
       BILLING_DATABASE_URL: postgres://${POSTGRES_USER:-isp_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-isp_billing}?search_path=public&sslmode=disable
