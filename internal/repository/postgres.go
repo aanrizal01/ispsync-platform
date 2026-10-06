@@ -973,6 +973,93 @@ func (s *PostgresStorage) ListJartaplokPartners(ctx context.Context, tenantID, b
 	return list, nil
 }
 
+func (s *PostgresStorage) CreateJartaplokPartner(ctx context.Context, p *domain.JartaplokPartner) error {
+	if p.ID == "" {
+		p.ID = uuid.New().String()
+	}
+	query := `
+		INSERT INTO jartaplok_partners (
+			id, tenant_id, code, name, api_key, contact_phone, coverage_area,
+			service_type, suspension_policy, pricing_model,
+			rate_20m, rate_30m, rate_40m, rate_50m, rate_100m, rate_150m, rate_200m, rate_300m,
+			otc_fee, max_distance_meters, branch_code, is_active, created_at, updated_at
+		) VALUES (
+			$1, $2, $3, $4, $5, $6, $7,
+			$8, $9, $10,
+			$11, $12, $13, $14, $15, $16, $17, $18,
+			$19, $20, $21, $22, NOW(), NOW()
+		)
+		ON CONFLICT (code) DO UPDATE SET
+			name = EXCLUDED.name,
+			api_key = EXCLUDED.api_key,
+			contact_phone = EXCLUDED.contact_phone,
+			coverage_area = EXCLUDED.coverage_area,
+			service_type = EXCLUDED.service_type,
+			suspension_policy = EXCLUDED.suspension_policy,
+			pricing_model = EXCLUDED.pricing_model,
+			rate_20m = EXCLUDED.rate_20m,
+			rate_30m = EXCLUDED.rate_30m,
+			rate_40m = EXCLUDED.rate_40m,
+			rate_50m = EXCLUDED.rate_50m,
+			rate_100m = EXCLUDED.rate_100m,
+			rate_150m = EXCLUDED.rate_150m,
+			rate_200m = EXCLUDED.rate_200m,
+			rate_300m = EXCLUDED.rate_300m,
+			otc_fee = EXCLUDED.otc_fee,
+			max_distance_meters = EXCLUDED.max_distance_meters,
+			branch_code = EXCLUDED.branch_code,
+			is_active = EXCLUDED.is_active,
+			updated_at = NOW()
+	`
+	_, err := s.db.ExecContext(ctx, query,
+		p.ID, p.TenantID, p.Code, p.Name, p.APIKey, p.ContactPhone, p.CoverageArea,
+		p.ServiceType, p.SuspensionPolicy, p.PricingModel,
+		p.Rate20M, p.Rate30M, p.Rate40M, p.Rate50M, p.Rate100M, p.Rate150M, p.Rate200M, p.Rate300M,
+		p.OTCFee, p.MaxDistanceMeters, p.BranchCode, p.IsActive,
+	)
+	return err
+}
+
+func (s *PostgresStorage) UpdateJartaplokPartner(ctx context.Context, p *domain.JartaplokPartner) error {
+	query := `
+		UPDATE jartaplok_partners SET
+			name = $1,
+			api_key = $2,
+			contact_phone = $3,
+			coverage_area = $4,
+			service_type = $5,
+			suspension_policy = $6,
+			pricing_model = $7,
+			rate_20m = $8,
+			rate_30m = $9,
+			rate_40m = $10,
+			rate_50m = $11,
+			rate_100m = $12,
+			rate_150m = $13,
+			rate_200m = $14,
+			rate_300m = $15,
+			otc_fee = $16,
+			max_distance_meters = $17,
+			branch_code = $18,
+			is_active = $19,
+			updated_at = NOW()
+		WHERE (id = $20 OR code = $20) AND (tenant_id = $21 OR tenant_id = '' OR tenant_id IS NULL)
+	`
+	_, err := s.db.ExecContext(ctx, query,
+		p.Name, p.APIKey, p.ContactPhone, p.CoverageArea,
+		p.ServiceType, p.SuspensionPolicy, p.PricingModel,
+		p.Rate20M, p.Rate30M, p.Rate40M, p.Rate50M, p.Rate100M, p.Rate150M, p.Rate200M, p.Rate300M,
+		p.OTCFee, p.MaxDistanceMeters, p.BranchCode, p.IsActive,
+		p.ID, p.TenantID,
+	)
+	return err
+}
+
+func (s *PostgresStorage) DeleteJartaplokPartner(ctx context.Context, tenantID, idOrCode string) error {
+	_, err := s.db.ExecContext(ctx, "DELETE FROM jartaplok_partners WHERE (id = $1 OR code = $1) AND (tenant_id = $2 OR tenant_id = '' OR tenant_id IS NULL)", idOrCode, tenantID)
+	return err
+}
+
 func (s *PostgresStorage) GetNearestODP(ctx context.Context, tenantID string, lat, lng float64) (*domain.ODP, float64, error) {
 	odps, err := s.ListODPs(ctx, tenantID)
 	if err != nil {
@@ -1011,6 +1098,12 @@ func (s *PostgresStorage) UpsertODP(ctx context.Context, odp *domain.ODP) error 
 			used_ports = EXCLUDED.used_ports,
 			status = EXCLUDED.status
 	`, odp.ID, odp.TenantID, odp.Code, odp.Name, odp.Latitude, odp.Longitude, odp.TotalPorts, odp.UsedPorts, odp.Status)
+	return err
+}
+
+func (s *PostgresStorage) DeleteODP(ctx context.Context, tenantID, idOrCode string) error {
+	_, _ = s.db.ExecContext(ctx, "DELETE FROM jartaplok_shared_odps WHERE odp_id = $1 OR odp_id IN (SELECT id FROM odps WHERE code = $1)", idOrCode)
+	_, err := s.db.ExecContext(ctx, "DELETE FROM odps WHERE (id = $1 OR code = $1) AND (tenant_id = $2 OR tenant_id = '' OR tenant_id IS NULL)", idOrCode, tenantID)
 	return err
 }
 

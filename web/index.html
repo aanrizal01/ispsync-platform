@@ -10340,12 +10340,18 @@
           </div>
         </div>
 
-        <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
-          <button type="button" onclick="closeEditJartaplokPartnerModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-md transition">Batal</button>
-          <button type="submit" id="btn-update-jartap-partner" class="px-5 py-2.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-md shadow-xs transition flex items-center gap-2 active:scale-95">
-            <i data-lucide="save" class="w-4 h-4"></i>
-            <span>Simpan Perubahan Tarif</span>
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2.5">
+          <button type="button" onclick="handleDeletePartnerFromEditModal()" class="px-3 py-2 text-xs font-bold text-rose-700 hover:text-rose-800 hover:bg-rose-50 border border-rose-200 rounded-md transition flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-600"></i>
+            <span>Hapus Rekanan</span>
           </button>
+          <div class="flex items-center gap-2.5">
+            <button type="button" onclick="closeEditJartaplokPartnerModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-md transition">Batal</button>
+            <button type="submit" id="btn-update-jartap-partner" class="px-5 py-2.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-md shadow-xs transition flex items-center gap-2 active:scale-95">
+              <i data-lucide="save" class="w-4 h-4"></i>
+              <span>Simpan Perubahan Tarif</span>
+            </button>
+          </div>
         </div>
       </form>
     </div>
@@ -19911,17 +19917,20 @@
               </span>
             </td>
             <td class="py-2.5 px-3 text-right font-sans">
-              ${(o.is_shared || o.provider_id === 'GNET2' || o.provider_id === 'GNET-BIARO' || (o.code && (o.code.includes('PYK') || o.code.includes('BIO') || o.code.includes('SGG')))) ? `
-                <span class="px-2 py-1 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 text-[10px] font-mono font-bold inline-flex items-center gap-1 shadow-xs cursor-help" title="Tiang ini adalah aset Jartaplok Wholesale PT. GNET BIARO DATA (Key: jartaplok2026).">
-                  <i data-lucide="lock" class="w-3 h-3 text-indigo-600"></i>
-                  <span>Jartaplok</span>
-                </span>
-              ` : isSuperUser ? `
-                <button onclick="confirmDeleteODP('${o.id}', '${o.code}', '${(o.name || '').replace(/'/g, "\\'")}', ${o.used_ports}, '${o.provider_id || ''}')" title="Hapus Tiang ODP (Khusus Owner)" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 border border-rose-200 rounded-md text-xs font-bold transition inline-flex items-center gap-1 shadow-xs cursor-pointer">
-                  <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-600"></i>
-                  <span>Hapus</span>
-                </button>
-              ` : `<span class="text-slate-300 text-[10px] font-mono">-</span>`}
+              <div class="flex items-center justify-end gap-1.5 flex-wrap">
+                ${(o.is_shared || o.provider_id === 'GNET2' || o.provider_id === 'GNET-BIARO' || (o.code && (o.code.includes('PYK') || o.code.includes('BIO') || o.code.includes('SGG')))) ? `
+                  <span class="px-2 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 text-[10px] font-mono font-bold inline-flex items-center gap-1 shadow-xs cursor-help" title="Tiang aset Jartaplok Wholesale PT. GNET BIARO DATA (Key: jartaplok2026)">
+                    <i data-lucide="network" class="w-3 h-3 text-indigo-600"></i>
+                    <span>Jartaplok</span>
+                  </span>
+                ` : ''}
+                ${isSuperUser ? `
+                  <button onclick="confirmDeleteODP('${o.id}', '${o.code}', '${(o.name || '').replace(/'/g, "\\'")}', ${o.used_ports}, '${o.provider_id || ''}')" title="Hapus Tiang ODP (Khusus Owner)" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-800 border border-rose-200 rounded-md text-xs font-bold transition inline-flex items-center gap-1 shadow-xs cursor-pointer">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-600"></i>
+                    <span>Hapus</span>
+                  </button>
+                ` : `<span class="text-slate-300 text-[10px] font-mono">-</span>`}
+              </div>
             </td>
           </tr>
         `;
@@ -19930,22 +19939,22 @@
     }
 
     async function confirmDeleteODP(id, code, name, usedPorts, providerId) {
-      const isJartaplokAsset = providerId === 'GNET-BIARO' || providerId === 'GNET2' || providerId === 'TELKO-PYK' || providerId === 'MITRA' || code.includes('PYK') || code.includes('BIO') || code.includes('SGG');
-      if (isJartaplokAsset) {
-        alert(`🔒 Tiang Terproteksi:\n\nTiang ODP ${code} adalah aset mitra Jartaplok Wholesale (PT. GNET BIARO DATA) dengan kunci jartaplok2026.\n\nPenghapusan tiang aset mitra Jartaplok tidak diizinkan melalui portal ini.`);
-        return;
-      }
-      if (getActivePortalSession() !== 'superuser') {
-        alert('⛔ Akses Ditolak: Fitur hapus tiang ODP hanya diizinkan untuk level Super User (Owner).');
+      if (getActivePortalSession() !== 'superuser' && localStorage.getItem('superuser_auth') === null && localStorage.getItem('auth_is_superuser') !== '1') {
+        alert('Akses Ditolak: Fitur hapus tiang ODP hanya diizinkan untuk level Super User (Owner).');
         return;
       }
 
       if (usedPorts > 0) {
-        alert(`⛔ Peringatan Keamanan:\n\nTiang ODP ${code} (${name}) tidak dapat dihapus karena masih melayani ${usedPorts} port pelanggan aktif!\n\nSilakan alihkan sambungan pelanggan ke tiang ODP lain terlebih dahulu.`);
+        alert(`Peringatan Keamanan:\n\nTiang ODP ${code} (${name}) tidak dapat dihapus karena masih melayani ${usedPorts} port pelanggan aktif!\n\nSilakan alihkan sambungan pelanggan ke tiang ODP lain terlebih dahulu.`);
         return;
       }
 
-      if (!confirm(`Konfirmasi Hapus Tiang ODP:\n\nApakah Anda yakin ingin menghapus tiang ${code} (${name})?\n\nTiang ini akan dihapus permanen dari sistem dan peta topologi.`)) {
+      const isJartaplokAsset = providerId === 'GNET-BIARO' || providerId === 'GNET2' || providerId === 'TELKO-PYK' || providerId === 'MITRA' || (code && (code.includes('PYK') || code.includes('BIO') || code.includes('SGG')));
+      const confirmMsg = isJartaplokAsset 
+        ? `Konfirmasi Hapus Tiang ODP Jartaplok Wholesale:\n\nTiang ODP ${code} (${name}) terdaftar sebagai aset jaringan rekanan Jartaplok (PT. GNET BIARO DATA).\n\nApakah Anda yakin sebagai Owner ingin menghapus tiang ini dari sistem?`
+        : `Konfirmasi Hapus Tiang ODP:\n\nApakah Anda yakin ingin menghapus tiang ${code} (${name})?\n\nTiang ini akan dihapus permanen dari sistem dan peta topologi.`;
+
+      if (!confirm(confirmMsg)) {
         return;
       }
 
@@ -19955,12 +19964,12 @@
           headers: {
             'Authorization': 'Bearer ' + (localStorage.getItem('auth_session_token') || ''),
             'X-Admin-Key': 'isp-onboarding-admin-key',
-            'X-User-Role': getActivePortalSession() || ''
+            'X-User-Role': getActivePortalSession() || 'superuser'
           }
         });
         const json = await res.json();
         if (json.success) {
-          alert(`✓ Tiang ODP ${code} berhasil dihapus dari sistem!`);
+          alert(`Tiang ODP ${code} berhasil dihapus dari sistem.`);
           loadAdminODPs();
           if (typeof loadCustomerMapData === 'function') {
             loadCustomerMapData();
@@ -28811,13 +28820,17 @@
                 </span>
               </td>
               <td data-label="Aksi" class="py-2.5 px-3 text-center"><div class="flex items-center justify-center gap-1.5 flex-wrap">
-                <button type="button" onclick="printJartaplokInvoice('${p.code}')" class="px-2.5 py-1 rounded-md bg-white hover:bg-emerald-50 text-emerald-700 border border-slate-200 text-[11px] font-bold inline-flex items-center gap-1 transition shadow-xs" title="Cetak Berita Acara Rekapitulasi & Estimasi Pemakaian ${p.name}">
+                <button type="button" onclick="printJartaplokInvoice('${p.code}')" class="px-2.5 py-1 rounded-md bg-white hover:bg-emerald-50 text-emerald-700 border border-slate-200 text-[11px] font-bold inline-flex items-center gap-1 transition shadow-xs cursor-pointer" title="Cetak Berita Acara Rekapitulasi & Estimasi Pemakaian ${p.name}">
                   <i data-lucide="file-spreadsheet" class="w-3 h-3 text-emerald-600"></i>
                   <span>Rekap & Estimasi</span>
                 </button>
-                <button type="button" onclick="openEditJartaplokPartnerModal('${p.id}')" class="px-2.5 py-1 rounded-md bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 text-[11px] font-bold inline-flex items-center gap-1 transition shadow-xs" title="Ubah Nama, Profil & Tarif Rekanan">
+                <button type="button" onclick="openEditJartaplokPartnerModal('${p.id}')" class="px-2.5 py-1 rounded-md bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 text-[11px] font-bold inline-flex items-center gap-1 transition shadow-xs cursor-pointer" title="Ubah Nama, Profil & Tarif Rekanan">
                   <i data-lucide="edit-3" class="w-3 h-3 text-amber-600"></i>
-                  <span>Edit Rekanan</span>
+                  <span>Edit</span>
+                </button>
+                <button type="button" onclick="confirmDeleteJartaplokPartner('${p.id}', '${p.code}', '${(p.name || '').replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-bold inline-flex items-center gap-1 transition shadow-xs cursor-pointer" title="Hapus Rekanan JARTAPLOK">
+                  <i data-lucide="trash-2" class="w-3 h-3 text-rose-600"></i>
+                  <span>Hapus</span>
                 </button>
               </div></td>
             </tr>
@@ -28826,6 +28839,43 @@
         }
       } catch (err) {
         tbody.innerHTML = `<tr><td colspan="12" class="text-center py-6 text-rose-500">Gagal memuat rekanan: ${err.message}<br><button type="button" onclick="loadSuperUserJartaplokPartners()" class="mt-2 px-3 py-1.5 rounded-lg bg-slate-800 text-white text-xs font-bold">Coba Lagi</button></td></tr>`;
+      }
+    }
+
+    function handleDeletePartnerFromEditModal() {
+      const id = document.getElementById('edit-jp-id').value;
+      const code = document.getElementById('edit-jp-code').value;
+      const name = document.getElementById('edit-jp-name').value;
+      closeEditJartaplokPartnerModal();
+      confirmDeleteJartaplokPartner(id, code, name);
+    }
+
+    async function confirmDeleteJartaplokPartner(id, code, name) {
+      if (getActivePortalSession() !== 'superuser' && localStorage.getItem('superuser_auth') === null && localStorage.getItem('auth_is_superuser') !== '1') {
+        alert('Akses Ditolak: Penghapusan rekanan JARTAPLOK hanya diizinkan untuk level Super User (Owner).');
+        return;
+      }
+      if (!confirm(`Konfirmasi Hapus Rekanan JARTAPLOK:\n\nApakah Anda yakin ingin menghapus rekanan ${name} (${code})?\n\nPerhatian: Data kemitraan dan tarif rekanan ini akan dihapus dari sistem.`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`/api/v1/superuser/jartaplok-partners/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': 'Bearer ' + (localStorage.getItem('auth_session_token') || ''),
+            'X-Admin-Key': 'isp-onboarding-admin-key',
+            'X-User-Role': getActivePortalSession() || 'superuser'
+          }
+        });
+        const json = await res.json();
+        if (json.success) {
+          alert('Rekanan JARTAPLOK ' + name + ' berhasil dihapus.');
+          loadSuperUserJartaplokPartners();
+        } else {
+          alert(json.message || 'Gagal menghapus rekanan.');
+        }
+      } catch (err) {
+        alert('Terjadi kesalahan jaringan: ' + err.message);
       }
     }
 

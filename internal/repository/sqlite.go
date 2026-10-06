@@ -938,6 +938,19 @@ func (s *SQLiteStorage) ListJartaplokPartners(ctx context.Context, tenantID, bra
 	return []domain.JartaplokPartner{}, nil
 }
 
+func (s *SQLiteStorage) CreateJartaplokPartner(ctx context.Context, p *domain.JartaplokPartner) error {
+	return nil
+}
+
+func (s *SQLiteStorage) UpdateJartaplokPartner(ctx context.Context, p *domain.JartaplokPartner) error {
+	return nil
+}
+
+func (s *SQLiteStorage) DeleteJartaplokPartner(ctx context.Context, tenantID, idOrCode string) error {
+	_, err := s.db.ExecContext(ctx, "DELETE FROM jartaplok_partners WHERE (id = ? OR code = ?) AND (tenant_id = ? OR tenant_id = '' OR tenant_id IS NULL)", idOrCode, idOrCode, tenantID)
+	return err
+}
+
 func (s *SQLiteStorage) GetNearestODP(ctx context.Context, tenantID string, lat, lng float64) (*domain.ODP, float64, error) {
 	odps, err := s.ListODPs(ctx, tenantID)
 	if err != nil {
@@ -976,6 +989,12 @@ func (s *SQLiteStorage) UpsertODP(ctx context.Context, odp *domain.ODP) error {
 			used_ports = excluded.used_ports,
 			status = excluded.status
 	`, odp.ID, odp.TenantID, odp.Code, odp.Name, odp.Latitude, odp.Longitude, odp.TotalPorts, odp.UsedPorts, odp.Status)
+	return err
+}
+
+func (s *SQLiteStorage) DeleteODP(ctx context.Context, tenantID, idOrCode string) error {
+	_, _ = s.db.ExecContext(ctx, "DELETE FROM jartaplok_shared_odps WHERE odp_id = ? OR odp_id IN (SELECT id FROM odps WHERE code = ?)", idOrCode, idOrCode)
+	_, err := s.db.ExecContext(ctx, "DELETE FROM odps WHERE (id = ? OR code = ?) AND (tenant_id = ? OR tenant_id = '' OR tenant_id IS NULL)", idOrCode, idOrCode, tenantID)
 	return err
 }
 

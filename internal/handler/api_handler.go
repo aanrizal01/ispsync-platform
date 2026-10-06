@@ -2316,7 +2316,21 @@ func (h *APIHandler) AdminCreateODP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *APIHandler) AdminDeleteODP(w http.ResponseWriter, r *http.Request) {
-	h.successResponse(w, "ODP deleted", nil)
+	t := middleware.GetTenant(r)
+	if t == nil {
+		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
+		return
+	}
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		h.failResponse(w, http.StatusBadRequest, "ID tiang ODP tidak valid")
+		return
+	}
+	if err := h.store.DeleteODP(r.Context(), t.ID, id); err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal menghapus tiang ODP: "+err.Error())
+		return
+	}
+	h.successResponse(w, "Tiang ODP berhasil dihapus", nil)
 }
 
 func (h *APIHandler) AdminListWorkOrders(w http.ResponseWriter, r *http.Request) {
@@ -3012,6 +3026,72 @@ func (h *APIHandler) SuperuserJartaplokPartners(w http.ResponseWriter, r *http.R
 		ags = []domain.JartaplokAgreement{}
 	}
 	h.successResponse(w, "Jartaplok partners retrieved", ags)
+}
+
+func (h *APIHandler) SuperuserCreateJartaplokPartner(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	if t == nil {
+		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
+		return
+	}
+	var p domain.JartaplokPartner
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		h.failResponse(w, http.StatusBadRequest, "Payload tidak valid: "+err.Error())
+		return
+	}
+	p.TenantID = t.ID
+	if p.Code == "" {
+		h.failResponse(w, http.StatusBadRequest, "Kode rekanan wajib diisi")
+		return
+	}
+	if p.Name == "" {
+		h.failResponse(w, http.StatusBadRequest, "Nama rekanan wajib diisi")
+		return
+	}
+	if err := h.store.CreateJartaplokPartner(r.Context(), &p); err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal membuat rekanan: "+err.Error())
+		return
+	}
+	h.successResponse(w, "Rekanan JARTAPLOK berhasil ditambahkan", p)
+}
+
+func (h *APIHandler) SuperuserUpdateJartaplokPartner(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	if t == nil {
+		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
+		return
+	}
+	id := chi.URLParam(r, "id")
+	var p domain.JartaplokPartner
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		h.failResponse(w, http.StatusBadRequest, "Payload tidak valid: "+err.Error())
+		return
+	}
+	p.ID = id
+	p.TenantID = t.ID
+	if err := h.store.UpdateJartaplokPartner(r.Context(), &p); err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal memperbarui rekanan: "+err.Error())
+		return
+	}
+	h.successResponse(w, "Tarif rekanan JARTAPLOK berhasil disimpan", p)
+}
+
+func (h *APIHandler) SuperuserDeleteJartaplokPartner(w http.ResponseWriter, r *http.Request) {
+	t := middleware.GetTenant(r)
+	if t == nil {
+		h.errorResponse(w, http.StatusNotFound, "Tenant context not found")
+		return
+	}
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		h.failResponse(w, http.StatusBadRequest, "ID rekanan tidak valid")
+		return
+	}
+	if err := h.store.DeleteJartaplokPartner(r.Context(), t.ID, id); err != nil {
+		h.failResponse(w, http.StatusInternalServerError, "Gagal menghapus rekanan: "+err.Error())
+		return
+	}
+	h.successResponse(w, "Rekanan JARTAPLOK berhasil dihapus", nil)
 }
 
 func (h *APIHandler) SuperuserListStaff(w http.ResponseWriter, r *http.Request) {
