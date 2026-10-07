@@ -35,11 +35,14 @@ type Session struct {
 }
 
 type AuthLog struct {
-	ID           int64     `json:"id"`
-	Username     string    `json:"username"`
-	Reply        string    `json:"reply"` // Access-Accept / Access-Reject
-	AuthDate     time.Time `json:"authdate"`
-	NasIPAddress *string   `json:"nasipaddress,omitempty"`
+	ID               int64     `json:"id"`
+	Username         string    `json:"username"`
+	Reply            string    `json:"reply"` // Access-Accept / Access-Reject
+	AuthDate         time.Time `json:"authdate"`
+	NasIPAddress     *string   `json:"nasipaddress,omitempty"`
+	NasShortName     *string   `json:"nas_shortname,omitempty"`
+	CallingStationID *string   `json:"callingstationid,omitempty"`
+	Pass             *string   `json:"pass,omitempty"`
 }
 
 // Request / Response DTOs

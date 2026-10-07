@@ -109,8 +109,8 @@ func (s *Service) DeleteCredential(ctx context.Context, username string) error {
 	return s.repo.DeleteUserCredential(ctx, username)
 }
 
-func (s *Service) ListAuthLogs(ctx context.Context, params pagination.Params) ([]AuthLog, pagination.Meta, error) {
-	logs, total, err := s.repo.ListAuthLogs(ctx, params)
+func (s *Service) ListAuthLogs(ctx context.Context, params pagination.Params, search string) ([]AuthLog, pagination.Meta, error) {
+	logs, total, err := s.repo.ListAuthLogs(ctx, params, search)
 	if err != nil {
 		return nil, pagination.Meta{}, apperrors.Internal(err)
 	}

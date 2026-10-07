@@ -225,20 +225,53 @@ func (r *Repository) DeleteUserCredential(ctx context.Context, username string) 
 
 // AUDIT LOGS (RADPOSTAUTH)
 
-func (r *Repository) ListAuthLogs(ctx context.Context, params pagination.Params) ([]AuthLog, int, error) {
+func (r *Repository) ListAuthLogs(ctx context.Context, params pagination.Params, search string) ([]AuthLog, int, error) {
+	where := "WHERE 1=1"
+	args := []any{}
+	argIdx := 1
+
+	if search = strings.TrimSpace(search); search != "" {
+		searchParam := "%" + search + "%"
+		where += fmt.Sprintf(" AND (p.username ILIKE $%d OR COALESCE(p.callingstationid, '') ILIKE $%d OR COALESCE(p.nasipaddress::TEXT, '') ILIKE $%d OR COALESCE(n.shortname, '') ILIKE $%d OR COALESCE(n.description, '') ILIKE $%d OR p.reply ILIKE $%d)", argIdx, argIdx, argIdx, argIdx, argIdx, argIdx)
+		args = append(args, searchParam)
+		argIdx++
+	}
+
+	countQuery := fmt.Sprintf(`
+		SELECT COUNT(*)
+		FROM radpostauth p
+		LEFT JOIN nas n ON n.nasname = p.nasipaddress::TEXT
+		%s
+	`, where)
 	var total int
-	err := r.db.QueryRow(ctx, "SELECT COUNT(*) FROM radpostauth").Scan(&total)
+	err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	const q = `
-		SELECT id, username, reply, authdate, nasipaddress::TEXT
-		FROM radpostauth
-		ORDER BY authdate DESC
-		LIMIT $1 OFFSET $2
-	`
-	rows, err := r.db.Query(ctx, q, params.Limit, params.Offset)
+	dataQuery := fmt.Sprintf(`
+		SELECT p.id, p.username, p.reply, p.authdate, p.nasipaddress::TEXT,
+		       COALESCE(n.shortname, n.nasname, p.nasipaddress::TEXT) AS nas_shortname,
+		       COALESCE(p.callingstationid, (
+		           SELECT s.callingstationid 
+		           FROM radius_sessions s 
+		           WHERE s.username = p.username 
+		           ORDER BY s.acctstarttime DESC LIMIT 1
+		       ), (
+		           SELECT v.buyer_mac 
+		           FROM vouchers v 
+		           WHERE v.code = p.username LIMIT 1
+		       )) AS callingstationid,
+		       p.pass
+		FROM radpostauth p
+		LEFT JOIN nas n ON n.nasname = p.nasipaddress::TEXT
+		%s
+		ORDER BY p.authdate DESC
+		LIMIT $%d OFFSET $%d
+	`, where, argIdx, argIdx+1)
+
+	args = append(args, params.Limit, params.Offset)
+	rows, err := r.db.Query(ctx, dataQuery, args...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -247,7 +280,7 @@ func (r *Repository) ListAuthLogs(ctx context.Context, params pagination.Params)
 	var logs []AuthLog
 	for rows.Next() {
 		var l AuthLog
-		if err := rows.Scan(&l.ID, &l.Username, &l.Reply, &l.AuthDate, &l.NasIPAddress); err != nil {
+		if err := rows.Scan(&l.ID, &l.Username, &l.Reply, &l.AuthDate, &l.NasIPAddress, &l.NasShortName, &l.CallingStationID, &l.Pass); err != nil {
 			return nil, 0, err
 		}
 		logs = append(logs, l)

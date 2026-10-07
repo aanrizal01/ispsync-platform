@@ -95,8 +95,9 @@ func (h *Handler) CreateNAS(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) ListAuthLogs(w http.ResponseWriter, r *http.Request) {
 	params := pagination.FromRequest(r)
+	search := r.URL.Query().Get("search")
 
-	logs, meta, err := h.service.ListAuthLogs(r.Context(), params)
+	logs, meta, err := h.service.ListAuthLogs(r.Context(), params, search)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return

@@ -36,6 +36,9 @@ export interface AuthLog {
   reply: string;
   authdate: string;
   nasipaddress?: string;
+  nas_shortname?: string;
+  callingstationid?: string;
+  pass?: string;
 }
 
 export interface CreateNASInput {
@@ -76,10 +79,11 @@ export const radiusApi = {
       body: JSON.stringify(data),
     }),
 
-  listAuthLogs: (params?: { page?: number; limit?: number }) => {
+  listAuthLogs: (params?: { page?: number; limit?: number; search?: string }) => {
     const query = new URLSearchParams();
     if (params?.page) query.set("page", params.page.toString());
     if (params?.limit) query.set("limit", params.limit.toString());
+    if (params?.search) query.set("search", params.search);
     return request<AuthLog[]>(`/radius/auth-logs?${query.toString()}`);
   },
 };
