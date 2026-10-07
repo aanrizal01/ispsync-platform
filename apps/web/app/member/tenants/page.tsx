@@ -668,25 +668,141 @@ export default function SaaSAdminTenantsPage() {
                       type="text"
                       required
                       value={activeTenant.company || ""}
-                      onChange={(e) => setActiveTenant({ ...activeTenant, company: e.target.value })}
+                      onChange={(e) => {
+                        const comp = e.target.value;
+                        const isShared = (activeTenant.clusterType || "shared") === "shared";
+                        let updatedDomain = activeTenant.domain || "";
+                        let updatedEmail = activeTenant.email || "";
+
+                        if (isShared && modalMode === "create" && (!activeTenant.domain || activeTenant.domain.endsWith(".ispsync.id"))) {
+                          const autoSlug = comp
+                            .replace(/^pt\.?\s*/i, "")
+                            .replace(/[^a-zA-Z0-9]/g, "")
+                            .toLowerCase()
+                            .slice(0, 16);
+                          if (autoSlug) {
+                            updatedDomain = `${autoSlug}.ispsync.id`;
+                            if (!activeTenant.email || activeTenant.email.includes(".ispsync.id")) {
+                              updatedEmail = `admin@${autoSlug}.ispsync.id`;
+                            }
+                          }
+                        }
+
+                        setActiveTenant({
+                          ...activeTenant,
+                          company: comp,
+                          domain: updatedDomain,
+                          email: updatedEmail,
+                        });
+                      }}
                       placeholder="Contoh: PT. Fiber Prima Nusantara"
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                     />
                   </div>
 
-                  {/* Domain */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                      Domain / Subdomain Utama *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={activeTenant.domain || ""}
-                      onChange={(e) => setActiveTenant({ ...activeTenant, domain: e.target.value })}
-                      placeholder="Contoh: primafiber.ispsync.id"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                    />
+                  {/* Subdomain / Domain Configuration */}
+                  <div className="md:col-span-2 bg-slate-50/80 border border-slate-200 rounded-xl p-3.5 space-y-2.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <label className="block text-xs font-bold text-slate-700 uppercase">
+                        Alokasi Subdomain / Domain Tenant *
+                      </label>
+                      <div className="flex items-center gap-3 text-xs">
+                        <label className="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700">
+                          <input
+                            type="radio"
+                            name="clusterTypeRadio"
+                            checked={(activeTenant.clusterType || "shared") === "shared"}
+                            onChange={() => {
+                              const slug = (activeTenant.domain || "").replace(/\.ispsync\.id$/, "").replace(/[^a-z0-9-]/gi, "").toLowerCase();
+                              setActiveTenant({
+                                ...activeTenant,
+                                clusterType: "shared",
+                                clusterNode: "103.179.65.73",
+                                domain: slug ? `${slug}.ispsync.id` : "",
+                              });
+                            }}
+                            className="text-cyan-600 focus:ring-cyan-500"
+                          />
+                          <span>Shared Server (.ispsync.id)</span>
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer font-medium text-slate-700">
+                          <input
+                            type="radio"
+                            name="clusterTypeRadio"
+                            checked={activeTenant.clusterType === "dedicated"}
+                            onChange={() => {
+                              setActiveTenant({
+                                ...activeTenant,
+                                clusterType: "dedicated",
+                                clusterNode: "103.179.65.72",
+                              });
+                            }}
+                            className="text-cyan-600 focus:ring-cyan-500"
+                          />
+                          <span>Dedicated Node</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {(activeTenant.clusterType || "shared") === "shared" ? (
+                      <div>
+                        <div className="flex rounded-xl border border-slate-200 bg-white overflow-hidden focus-within:ring-2 focus-within:ring-cyan-500">
+                          <input
+                            type="text"
+                            required
+                            value={(activeTenant.domain || "").replace(/\.ispsync\.id$/, "")}
+                            onChange={(e) => {
+                              const raw = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "");
+                              const newDomain = raw ? `${raw}.ispsync.id` : "";
+                              setActiveTenant({
+                                ...activeTenant,
+                                domain: newDomain,
+                              });
+                            }}
+                            placeholder="primafiber"
+                            className="flex-1 px-3.5 py-2.5 text-xs font-mono font-semibold focus:outline-none text-slate-900"
+                          />
+                          <span className="bg-slate-100 text-slate-600 px-3.5 py-2.5 text-xs font-mono font-bold border-l border-slate-200 select-none">
+                            .ispsync.id
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-1.5 flex items-center justify-between">
+                          <span>
+                            URL Akses: <strong className="font-mono text-cyan-700 font-bold">{activeTenant.domain ? `https://${activeTenant.domain}` : "https://[subdomain].ispsync.id"}</strong>
+                          </span>
+                          <span className="text-emerald-600 font-medium">✓ Server Shared (103.179.65.73)</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+                            Domain Custom Mandiri *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={activeTenant.domain || ""}
+                            onChange={(e) => setActiveTenant({ ...activeTenant, domain: e.target.value.trim() })}
+                            placeholder="Contoh: gogiga.net.id"
+                            className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-mono focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+                            Host IP Server Node *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={activeTenant.clusterNode || "103.179.65.72"}
+                            onChange={(e) => setActiveTenant({ ...activeTenant, clusterNode: e.target.value.trim() })}
+                            placeholder="103.179.65.72"
+                            className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-mono focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* PIC Name */}
@@ -827,42 +943,6 @@ export default function SaaSAdminTenantsPage() {
                       <option value="active">Aktif (Active)</option>
                       <option value="suspended">Ditangguhkan (Suspended)</option>
                     </select>
-                  </div>
-
-                  {/* Cluster Type */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                      Arsitektur Klaster
-                    </label>
-                    <select
-                      value={activeTenant.clusterType || "shared"}
-                      onChange={(e) => {
-                        const cType = e.target.value as "shared" | "dedicated";
-                        setActiveTenant({
-                          ...activeTenant,
-                          clusterType: cType,
-                          clusterNode: cType === "shared" ? "103.179.65.73" : (activeTenant.clusterNode === "103.179.65.73" ? "103.179.65.72" : activeTenant.clusterNode || "103.179.65.72"),
-                        });
-                      }}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                    >
-                      <option value="shared">Shared Cloud Cluster (103.179.65.73)</option>
-                      <option value="dedicated">Dedicated Private Cluster (Node Server Mandiri)</option>
-                    </select>
-                  </div>
-
-                  {/* Cluster Host Node */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                      Host IP / Node Server Klaster
-                    </label>
-                    <input
-                      type="text"
-                      value={activeTenant.clusterNode || "103.179.65.73"}
-                      onChange={(e) => setActiveTenant({ ...activeTenant, clusterNode: e.target.value })}
-                      placeholder="Contoh: 103.179.65.73 atau 103.179.65.72"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                    />
                   </div>
                 </div>
 
