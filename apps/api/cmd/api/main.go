@@ -50,6 +50,7 @@ import (
 	"github.com/gigabill/isp/internal/radius"
 	"github.com/gigabill/isp/internal/report"
 	"github.com/gigabill/isp/internal/shared/config"
+	apperrors "github.com/gigabill/isp/internal/shared/errors"
 	"github.com/gigabill/isp/internal/shared/logger"
 	"github.com/gigabill/isp/internal/shared/middleware"
 	"github.com/gigabill/isp/internal/settings"
@@ -869,19 +870,19 @@ func handlePurgeTenant(db *pgxpool.Pool, cfg *config.Config, log *slog.Logger) h
 			expectedKey = "isp-onboarding-admin-key"
 		}
 		if adminKey != expectedKey && adminKey != "ispsync-carrier-super-secret-key-2026-production-hmac-99a8f27c3d14" {
-			middleware.JSONError(w, log, fmt.Errorf("unauthorized: invalid X-Admin-Key"))
+			middleware.JSONError(w, log, apperrors.Unauthorized("Invalid X-Admin-Key"))
 			return
 		}
 
 		var req PurgeTenantRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			middleware.JSONError(w, log, fmt.Errorf("invalid request body: %w", err))
+			middleware.JSONError(w, log, apperrors.BadRequest("Invalid request body"))
 			return
 		}
 
 		slug := strings.TrimSpace(strings.ToLower(req.TenantSlug))
 		if slug == "" || slug == "dev" || slug == "superadmin" || slug == "gogiga" {
-			middleware.JSONError(w, log, fmt.Errorf("tenant slug tidak valid atau merupakan tenant inti yang dilindungi"))
+			middleware.JSONError(w, log, apperrors.BadRequest("Tenant slug tidak valid atau merupakan tenant inti yang dilindungi"))
 			return
 		}
 
