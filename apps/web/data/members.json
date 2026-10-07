@@ -20,6 +20,7 @@
       "expiresAt": "2099-12-31",
       "autoRenew": true,
       "domain": "ispsync.id",
+      "role": "SUPERADMIN",
       "note": "Pelanggan #001 \u2014 Pendiri & Pemilik Platform ISPSYNC. On-premise di server sendiri.",
       "invoices": [
         {
@@ -53,6 +54,7 @@
       "expiresAt": "2026-01-15",
       "autoRenew": true,
       "domain": "cms.demo.ispsync.id",
+      "role": "TENANT",
       "invoices": [
         {
           "id": "INV-2025-001",
@@ -107,6 +109,7 @@
       "expiresAt": "2027-02-01",
       "autoRenew": true,
       "domain": "ispku.ispsync.id",
+      "role": "TENANT",
       "note": "Tenant Resmi Demo 1 — Jartaplok Partner ISPSYNC",
       "invoices": [
         {
@@ -142,6 +145,7 @@
       "expiresAt": "2027-03-01",
       "autoRenew": true,
       "domain": "ispmu.ispsync.id",
+      "role": "TENANT",
       "note": "Tenant Resmi Demo 2 — Jartaplok Client ISPSYNC",
       "invoices": [
         {
@@ -177,6 +181,7 @@
       "expiresAt": "2099-12-31",
       "autoRenew": true,
       "domain": "dev.ispsync.id",
+      "role": "TENANT",
       "note": "Lingkungan Pengujian & QA Internal Staging",
       "invoices": [],
       "tickets": []

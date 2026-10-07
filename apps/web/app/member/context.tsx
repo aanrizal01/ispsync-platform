@@ -4,6 +4,7 @@ import { useRouter, usePathname } from "next/navigation";
 
 type Member = {
   id: string; email: string; company: string; picName: string;
+  role?: string;
   phone?: string; address?: string; npwp?: string;
   plan: string; planName: string; planPrice: string;
   planCapacity: string; status: string; subscribedAt: string; expiresAt: string;

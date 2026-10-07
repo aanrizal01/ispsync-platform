@@ -52,6 +52,36 @@ export default function MemberDashboard() {
           <p className="text-gray-500 text-sm mt-1">{member.company}</p>
         </div>
 
+        {/* Superadmin Quick Access Banner */}
+        {(member.role === "SUPERADMIN" || member.email === "admin@ispsync.id" || member.id === "mbr_001") && (
+          <div className="mb-6 p-4 sm:p-5 bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 text-white rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm border border-slate-800">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-sm flex-shrink-0 border border-cyan-400/30 font-mono">
+                SAAS
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-sm text-white">Konsol Master Superadmin Platform</span>
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 uppercase tracking-wider">
+                    SaaS Management
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Anda masuk sebagai Pemilik Platform ISPSYNC. Anda memiliki wewenang untuk memantau seluruh tenant ISP, paket aktif, dan status lisensi.
+                </p>
+              </div>
+            </div>
+
+            <Link
+              href="/member/tenants"
+              className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm shadow-cyan-900/50 flex-shrink-0"
+            >
+              <span>Kelola Pelanggan SaaS</span>
+              <span>&rarr;</span>
+            </Link>
+          </div>
+        )}
+
         {/* Alert: pending invoice */}
         {pendingInvoice && (
           <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between gap-4">

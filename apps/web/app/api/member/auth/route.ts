@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     authAttempts.delete(ip);
     const sessionToken = crypto.randomBytes(32).toString("hex");
     sessions.set(sessionToken, { memberId: member.id, expiresAt: Date.now() + 24 * 60 * 60 * 1000 });
-    const res = NextResponse.json({ success: true, token: sessionToken, member: { id: member.id, email: member.email, company: member.company, picName: member.picName } });
+    const res = NextResponse.json({ success: true, token: sessionToken, member: { id: member.id, email: member.email, company: member.company, picName: member.picName, role: member.role || (member.email === "admin@ispsync.id" ? "SUPERADMIN" : "TENANT") } });
     return res;
   }
 

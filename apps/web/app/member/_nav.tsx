@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useMember } from "./context";
+import { Building2 } from "lucide-react";
 
 const mainNavItems = [
   { href: "/member/dashboard", label: "Dashboard", icon: "▦" },
@@ -63,6 +64,9 @@ export default function MemberNav({ children }: { children: React.ReactNode }) {
   const daysLeft = Math.ceil((expires.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   const urls = getEngineUrls(member.domain);
 
+  const isSuperadmin =
+    member?.role === "SUPERADMIN" || member?.email === "admin@ispsync.id" || member?.id === "mbr_001";
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
@@ -76,21 +80,52 @@ export default function MemberNav({ children }: { children: React.ReactNode }) {
           />
           <div>
             <div className="font-black text-gray-900 text-sm tracking-wider">ISPSYNC</div>
-            <div className="text-[10px] text-gray-400 font-medium">Member Portal</div>
+            <div className="text-[10px] text-gray-400 font-medium">
+              {isSuperadmin ? "Platform Console" : "Member Portal"}
+            </div>
           </div>
         </div>
 
         {/* Plan badge */}
         <div className="mx-4 mt-3 mb-2 p-3 bg-blue-50/70 rounded-xl border border-blue-100/70">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-blue-500 mb-0.5">Paket Aktif</div>
-          <div className="font-black text-blue-700 text-xs truncate">{member.planName}</div>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-blue-500 mb-0.5">
+            {isSuperadmin ? "Peran Platform" : "Paket Aktif"}
+          </div>
+          <div className="font-black text-blue-700 text-xs truncate">
+            {isSuperadmin ? "Master Superadmin" : member.planName}
+          </div>
           <div className="text-[10px] text-blue-500 mt-0.5">
-            {daysLeft > 0 ? `${daysLeft} hari tersisa` : "Sudah expired"}
+            {isSuperadmin ? "Kedaulatan Sistem Penuh" : daysLeft > 0 ? `${daysLeft} hari tersisa` : "Sudah expired"}
           </div>
         </div>
 
         {/* Nav Container with Scroll */}
         <div className="flex-1 overflow-y-auto px-3 py-2 space-y-4">
+          {/* Section 0: Superadmin Management (Master only) */}
+          {isSuperadmin && (
+            <div>
+              <div className="px-2 mb-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-cyan-600">
+                <span>Manajemen Platform</span>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-cyan-100 text-cyan-800 border border-cyan-200">
+                  ROOT
+                </span>
+              </div>
+              <div className="space-y-0.5">
+                <Link
+                  href="/member/tenants"
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    pathname === "/member/tenants"
+                      ? "bg-slate-900 text-cyan-400 shadow-sm"
+                      : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
+                >
+                  <Building2 className="w-4 h-4 text-cyan-600 shrink-0" />
+                  <span>Daftar Pelanggan SaaS</span>
+                </Link>
+              </div>
+            </div>
+          )}
+
           {/* Section 1: Main */}
           <div>
             <div className="px-2 mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
