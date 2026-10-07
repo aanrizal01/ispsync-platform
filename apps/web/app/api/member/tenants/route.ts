@@ -148,7 +148,41 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Gagal menyimpan data ke disk." }, { status: 500 });
       }
 
-      return NextResponse.json({ success: true, message: "Tenant berhasil ditambahkan", tenant: newMember });
+      // Execute Auto-Provision on database server
+      let provSlug = "";
+      if (newMember.domain) {
+        const cleanDomain = newMember.domain.replace(/^https?:\/\//, "").trim();
+        const parts = cleanDomain.split(".");
+        provSlug = parts.length >= 4 ? parts[1] : parts[0];
+      }
+
+      if (provSlug && provSlug !== "ispsync") {
+        try {
+          const apiBaseUrl = process.env.API_BASE_URL || (process.env.NODE_ENV === "production" ? "http://api:8080" : "http://localhost:8080");
+          await fetch(`${apiBaseUrl}/api/v1/internal/tenants/provision`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Admin-Key": "isp-onboarding-admin-key",
+            },
+            body: JSON.stringify({
+              tenant_slug: provSlug,
+              company: newMember.company,
+              short_name: provSlug.toUpperCase(),
+              email: newMember.email,
+              password: password.trim(),
+              pic_name: newMember.picName,
+              phone: newMember.phone,
+              address: newMember.address,
+              plan: newMember.plan,
+            }),
+          });
+        } catch (provErr) {
+          console.error("Auto-provision error during tenant creation:", provErr);
+        }
+      }
+
+      return NextResponse.json({ success: true, message: "Tenant berhasil ditambahkan dan diprovisioning", tenant: newMember });
     }
 
     if (action === "update") {

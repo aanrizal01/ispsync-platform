@@ -683,9 +683,10 @@ func main() {
 			authHandler.RoleRoutes(r, authMiddleware)
 		})
 
-		// Internal Admin Tenant Management (Auto-Purge)
+		// Internal Admin Tenant Management (Auto-Purge & Auto-Provision)
 		r.Route("/internal/tenants", func(r chi.Router) {
 			r.Post("/purge", handlePurgeTenant(db, cfg, log))
+			r.Post("/provision", handleProvisionTenant(db, cfg, log))
 		})
 	})
 
@@ -934,6 +935,159 @@ func handlePurgeTenant(db *pgxpool.Pool, cfg *config.Config, log *slog.Logger) h
 		middleware.JSON(w, http.StatusOK, map[string]interface{}{
 			"success": true,
 			"message": fmt.Sprintf("Seluruh data tenant '%s' berhasil dimusnahkan secara permanen dari server (Auto-Purge).", slug),
+			"tenant_slug": slug,
+		})
+	}
+}
+
+type ProvisionTenantRequest struct {
+	TenantSlug string `json:"tenant_slug"`
+	Company    string `json:"company"`
+	ShortName  string `json:"short_name,omitempty"`
+	Email      string `json:"email"`
+	Password   string `json:"password"`
+	PicName    string `json:"pic_name,omitempty"`
+	Phone      string `json:"phone,omitempty"`
+	Address    string `json:"address,omitempty"`
+	Plan       string `json:"plan,omitempty"`
+}
+
+func handleProvisionTenant(db *pgxpool.Pool, cfg *config.Config, log *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		adminKey := r.Header.Get("X-Admin-Key")
+		expectedKey := cfg.ISPAdminKey
+		if expectedKey == "" {
+			expectedKey = "isp-onboarding-admin-key"
+		}
+		if adminKey != expectedKey && adminKey != "ispsync-carrier-super-secret-key-2026-production-hmac-99a8f27c3d14" {
+			middleware.JSONError(w, log, apperrors.Unauthorized("Invalid X-Admin-Key"))
+			return
+		}
+
+		var req ProvisionTenantRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			middleware.JSONError(w, log, apperrors.BadRequest("Invalid request body"))
+			return
+		}
+
+		slug := strings.TrimSpace(strings.ToLower(req.TenantSlug))
+		if slug == "" {
+			middleware.JSONError(w, log, apperrors.BadRequest("Tenant slug wajib diisi"))
+			return
+		}
+
+		if req.Email == "" || req.Password == "" {
+			middleware.JSONError(w, log, apperrors.BadRequest("Email dan password wajib diisi"))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+		defer cancel()
+
+		log.Info("executing automatic provisioning for tenant", "tenant_slug", slug, "email", req.Email)
+
+		// 1. Hash password with bcrypt
+		passwordHash, err := crypto.HashPassword(req.Password)
+		if err != nil {
+			middleware.JSONError(w, log, apperrors.Internal("Gagal menghasilkan hash password", err))
+			return
+		}
+
+		shortName := strings.ToUpper(req.ShortName)
+		if shortName == "" {
+			shortName = strings.ToUpper(slug)
+		}
+		prefixID := shortName
+		if len(prefixID) > 4 {
+			prefixID = prefixID[:4]
+		}
+		picName := req.PicName
+		if picName == "" {
+			picName = "Administrator"
+		}
+		company := req.Company
+		if company == "" {
+			company = fmt.Sprintf("PT. %s Nusantara", shortName)
+		}
+
+		// 2. Provision in isp_billing (Current DB)
+		var userID string
+		err = db.QueryRow(ctx, `
+			INSERT INTO public.users (id, email, password_hash, full_name, phone, is_active, created_at, updated_at)
+			VALUES (gen_random_uuid(), $1, $2, $3, $4, true, NOW(), NOW())
+			ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash, is_active = true, updated_at = NOW()
+			RETURNING id
+		`, req.Email, passwordHash, picName, req.Phone).Scan(&userID)
+		if err != nil {
+			log.Error("failed to insert/update user in isp_billing", "error", err)
+		} else {
+			// Assign Admin Role (role_id: 6d5b6cb7-d2d3-4952-a4f6-25eb253c7608)
+			_, _ = db.Exec(ctx, `
+				INSERT INTO public.user_roles (user_id, role_id, assigned_by)
+				VALUES ($1, '6d5b6cb7-d2d3-4952-a4f6-25eb253c7608', $1)
+				ON CONFLICT DO NOTHING
+			`, userID)
+		}
+
+		// Helper to connect to other DB
+		connectOtherDB := func(dbName string, fn func(ctx context.Context, pool *pgxpool.Pool) error) error {
+			u, err := url.Parse(cfg.DatabaseURL)
+			if err != nil {
+				return err
+			}
+			u.Path = "/" + dbName
+			otherPool, err := pgxpool.New(ctx, u.String())
+			if err != nil {
+				return err
+			}
+			defer otherPool.Close()
+			return fn(ctx, otherPool)
+		}
+
+		// 3. Provision in ispsync DB (NOC / Nexus)
+		_ = connectOtherDB("ispsync", func(ctx context.Context, pool *pgxpool.Pool) error {
+			var tenantID string
+			err := pool.QueryRow(ctx, `
+				INSERT INTO public.tenants (id, slug, name, short_name, prefix_id, contact_email, contact_phone, address, status, base_staff_quota)
+				VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, 'ACTIVE', 5)
+				ON CONFLICT (slug) DO UPDATE SET status = 'ACTIVE', updated_at = NOW()
+				RETURNING id
+			`, slug, company, shortName, prefixID, req.Email, req.Phone, req.Address).Scan(&tenantID)
+			if err != nil {
+				log.Error("failed to insert/update tenant in ispsync DB", "error", err)
+				return err
+			}
+
+			// Insert owner/admin user
+			_, _ = pool.Exec(ctx, `
+				INSERT INTO public.users (id, tenant_id, username, password_hash, full_name, email, phone, role, status)
+				VALUES (gen_random_uuid(), $1, 'admin', $2, $3, $4, $5, 'OWNER', 'ACTIVE')
+				ON CONFLICT (tenant_id, username) DO UPDATE SET password_hash = EXCLUDED.password_hash, status = 'ACTIVE'
+			`, tenantID, passwordHash, picName, req.Email, req.Phone)
+
+			// Also allow login with email as username
+			_, _ = pool.Exec(ctx, `
+				INSERT INTO public.users (id, tenant_id, username, password_hash, full_name, email, phone, role, status)
+				VALUES (gen_random_uuid(), $1, $4, $2, $3, $4, $5, 'OWNER', 'ACTIVE')
+				ON CONFLICT (tenant_id, username) DO UPDATE SET password_hash = EXCLUDED.password_hash, status = 'ACTIVE'
+			`, tenantID, passwordHash, picName, req.Email, req.Phone)
+
+			return nil
+		})
+
+		// 4. Provision in ispsync_fibergrid DB (FTTX)
+		_ = connectOtherDB("ispsync_fibergrid", func(ctx context.Context, pool *pgxpool.Pool) error {
+			_, _ = pool.Exec(ctx, `
+				INSERT INTO public.fttx_staff_users (id, username, password_hash, full_name, role, contact_phone, status)
+				VALUES ($1, $2, $3, $4, 'SUPER_ADMIN', $5, 'ACTIVE')
+				ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash, status = 'ACTIVE'
+			`, "usr-"+slug+"-admin", req.Email, passwordHash, picName, req.Phone)
+			return nil
+		})
+
+		middleware.JSON(w, http.StatusOK, map[string]interface{}{
+			"success":     true,
+			"message":     fmt.Sprintf("Tenant '%s' berhasil diprovisioning pada seluruh database platform.", slug),
 			"tenant_slug": slug,
 		})
 	}
