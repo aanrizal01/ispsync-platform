@@ -34,25 +34,29 @@ func (r *Repository) DB() *pgxpool.Pool {
 // ──────────────────────────────────────────
 
 func (r *Repository) CreateAgent(ctx context.Context, a *Agent) error {
+	tenantSlug := a.TenantSlug
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
 	const q = `
 		INSERT INTO agents (
-			id, user_id, code, name, company_name, phone, email,
+			id, tenant_slug, user_id, code, name, company_name, phone, email,
 			balance, offline_cashback_pct, online_cashback_pct, online_discount_pct,
 			bank_name, bank_account_number, bank_account_holder,
 			status, notes, address, id_card_number, ktp_url, business_photo_url,
 			is_master, parent_agent_id, override_pct,
 			created_at, updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7,
-			$8, $9, $10, $11,
-			$12, $13, $14,
-			$15, $16, $17, $18, $19, $20,
-			$21, $22, $23,
-			$24, $25
+			$1, $2, $3, $4, $5, $6, $7, $8,
+			$9, $10, $11, $12,
+			$13, $14, $15,
+			$16, $17, $18, $19, $20, $21,
+			$22, $23, $24,
+			$25, $26
 		)
 	`
 	_, err := r.db.Exec(ctx, q,
-		a.ID, a.UserID, a.Code, a.Name, a.CompanyName, a.Phone, a.Email,
+		a.ID, tenantSlug, a.UserID, a.Code, a.Name, a.CompanyName, a.Phone, a.Email,
 		a.Balance, a.OfflineCashbackPct, a.OnlineCashbackPct, a.OnlineDiscountPct,
 		a.BankName, a.BankAccountNumber, a.BankAccountHolder,
 		a.Status, a.Notes, a.Address, a.IDCardNumber, a.KtpURL, a.BusinessPhotoURL,
@@ -65,7 +69,7 @@ func (r *Repository) CreateAgent(ctx context.Context, a *Agent) error {
 func (r *Repository) GetAgentByID(ctx context.Context, id uuid.UUID) (*Agent, error) {
 	const q = `
 		SELECT 
-			a.id, a.user_id, u.email as user_email, a.code, a.name, a.company_name, a.phone, a.email,
+			a.id, COALESCE(a.tenant_slug, 'dev'), a.user_id, u.email as user_email, a.code, a.name, a.company_name, a.phone, a.email,
 			a.balance, a.offline_cashback_pct, a.online_cashback_pct, a.online_discount_pct,
 			COALESCE(a.loket_admin_fee, 2500),
 			a.bank_name, a.bank_account_number, a.bank_account_holder,
@@ -84,7 +88,7 @@ func (r *Repository) GetAgentByID(ctx context.Context, id uuid.UUID) (*Agent, er
 	var a Agent
 	var balance, totalComm int64
 	err := r.db.QueryRow(ctx, q, id).Scan(
-		&a.ID, &a.UserID, &a.UserEmail, &a.Code, &a.Name, &a.CompanyName, &a.Phone, &a.Email,
+		&a.ID, &a.TenantSlug, &a.UserID, &a.UserEmail, &a.Code, &a.Name, &a.CompanyName, &a.Phone, &a.Email,
 		&balance, &a.OfflineCashbackPct, &a.OnlineCashbackPct, &a.OnlineDiscountPct,
 		&a.LoketAdminFee,
 		&a.BankName, &a.BankAccountNumber, &a.BankAccountHolder,
@@ -109,7 +113,7 @@ func (r *Repository) GetAgentByID(ctx context.Context, id uuid.UUID) (*Agent, er
 func (r *Repository) GetAgentByUserID(ctx context.Context, userID uuid.UUID) (*Agent, error) {
 	const q = `
 		SELECT 
-			a.id, a.user_id, u.email as user_email, a.code, a.name, a.company_name, a.phone, a.email,
+			a.id, COALESCE(a.tenant_slug, 'dev'), a.user_id, u.email as user_email, a.code, a.name, a.company_name, a.phone, a.email,
 			a.balance, a.offline_cashback_pct, a.online_cashback_pct, a.online_discount_pct,
 			COALESCE(a.loket_admin_fee, 2500),
 			a.bank_name, a.bank_account_number, a.bank_account_holder,
@@ -128,7 +132,7 @@ func (r *Repository) GetAgentByUserID(ctx context.Context, userID uuid.UUID) (*A
 	var a Agent
 	var balance, totalComm int64
 	err := r.db.QueryRow(ctx, q, userID).Scan(
-		&a.ID, &a.UserID, &a.UserEmail, &a.Code, &a.Name, &a.CompanyName, &a.Phone, &a.Email,
+		&a.ID, &a.TenantSlug, &a.UserID, &a.UserEmail, &a.Code, &a.Name, &a.CompanyName, &a.Phone, &a.Email,
 		&balance, &a.OfflineCashbackPct, &a.OnlineCashbackPct, &a.OnlineDiscountPct,
 		&a.LoketAdminFee,
 		&a.BankName, &a.BankAccountNumber, &a.BankAccountHolder,
@@ -163,10 +167,16 @@ func (r *Repository) GetAgentByCode(ctx context.Context, code string) (*Agent, e
 	return r.GetAgentByID(ctx, id)
 }
 
-func (r *Repository) ListAgents(ctx context.Context, params pagination.Params, search, status string) ([]Agent, pagination.Meta, error) {
+func (r *Repository) ListAgents(ctx context.Context, tenantSlug string, params pagination.Params, search, status string) ([]Agent, pagination.Meta, error) {
 	var conditions []string
 	var args []interface{}
 	argIdx := 1
+
+	if tenantSlug != "" && tenantSlug != "superadmin" {
+		conditions = append(conditions, fmt.Sprintf("a.tenant_slug = $%d", argIdx))
+		args = append(args, tenantSlug)
+		argIdx++
+	}
 
 	if search != "" {
 		conditions = append(conditions, fmt.Sprintf("(a.name ILIKE $%d OR a.code ILIKE $%d OR a.phone ILIKE $%d OR a.company_name ILIKE $%d)", argIdx, argIdx, argIdx, argIdx))
@@ -192,7 +202,7 @@ func (r *Repository) ListAgents(ctx context.Context, params pagination.Params, s
 
 	listQ := fmt.Sprintf(`
 		SELECT 
-			a.id, a.user_id, u.email as user_email, a.code, a.name, a.company_name, a.phone, a.email,
+			a.id, COALESCE(a.tenant_slug, 'dev'), a.user_id, u.email as user_email, a.code, a.name, a.company_name, a.phone, a.email,
 			a.balance, a.offline_cashback_pct, a.online_cashback_pct, a.online_discount_pct,
 			COALESCE(a.loket_admin_fee, 2500),
 			a.bank_name, a.bank_account_number, a.bank_account_holder,
@@ -223,7 +233,7 @@ func (r *Repository) ListAgents(ctx context.Context, params pagination.Params, s
 		var a Agent
 		var balance, totalComm int64
 		err := rows.Scan(
-			&a.ID, &a.UserID, &a.UserEmail, &a.Code, &a.Name, &a.CompanyName, &a.Phone, &a.Email,
+			&a.ID, &a.TenantSlug, &a.UserID, &a.UserEmail, &a.Code, &a.Name, &a.CompanyName, &a.Phone, &a.Email,
 			&balance, &a.OfflineCashbackPct, &a.OnlineCashbackPct, &a.OnlineDiscountPct,
 			&a.LoketAdminFee,
 			&a.BankName, &a.BankAccountNumber, &a.BankAccountHolder,
@@ -273,7 +283,7 @@ func (r *Repository) UpdateAgent(ctx context.Context, a *Agent) error {
 func (r *Repository) ListSubAgents(ctx context.Context, masterAgentID uuid.UUID) ([]Agent, error) {
 	const q = `
 		SELECT 
-			a.id, a.user_id, u.email as user_email, a.code, a.name, a.company_name, a.phone, a.email,
+			a.id, COALESCE(a.tenant_slug, 'dev'), a.user_id, u.email as user_email, a.code, a.name, a.company_name, a.phone, a.email,
 			a.balance, a.offline_cashback_pct, a.online_cashback_pct, a.online_discount_pct,
 			COALESCE(a.loket_admin_fee, 2500),
 			a.bank_name, a.bank_account_number, a.bank_account_holder,
@@ -300,7 +310,7 @@ func (r *Repository) ListSubAgents(ctx context.Context, masterAgentID uuid.UUID)
 		var a Agent
 		var balance, totalComm int64
 		err := rows.Scan(
-			&a.ID, &a.UserID, &a.UserEmail, &a.Code, &a.Name, &a.CompanyName, &a.Phone, &a.Email,
+			&a.ID, &a.TenantSlug, &a.UserID, &a.UserEmail, &a.Code, &a.Name, &a.CompanyName, &a.Phone, &a.Email,
 			&balance, &a.OfflineCashbackPct, &a.OnlineCashbackPct, &a.OnlineDiscountPct,
 			&a.LoketAdminFee,
 			&a.BankName, &a.BankAccountNumber, &a.BankAccountHolder,
@@ -457,10 +467,16 @@ func (r *Repository) DebitBalance(ctx context.Context, agentID uuid.UUID, amount
 	}, nil
 }
 
-func (r *Repository) ListMutations(ctx context.Context, agentID *uuid.UUID, mutationType *string, startDate *time.Time, endDate *time.Time, params pagination.Params) ([]AgentMutation, pagination.Meta, error) {
+func (r *Repository) ListMutations(ctx context.Context, tenantSlug string, agentID *uuid.UUID, mutationType *string, startDate *time.Time, endDate *time.Time, params pagination.Params) ([]AgentMutation, pagination.Meta, error) {
 	var conditions []string
 	var args []interface{}
 	argIdx := 1
+
+	if tenantSlug != "" && tenantSlug != "superadmin" {
+		conditions = append(conditions, fmt.Sprintf("a.tenant_slug = $%d", argIdx))
+		args = append(args, tenantSlug)
+		argIdx++
+	}
 
 	if agentID != nil {
 		conditions = append(conditions, fmt.Sprintf("m.agent_id = $%d", argIdx))
@@ -491,7 +507,7 @@ func (r *Repository) ListMutations(ctx context.Context, agentID *uuid.UUID, muta
 		whereClause = "WHERE " + strings.Join(conditions, " AND ")
 	}
 
-	countQ := fmt.Sprintf("SELECT COUNT(*) FROM agent_balance_mutations m %s", whereClause)
+	countQ := fmt.Sprintf("SELECT COUNT(*) FROM agent_balance_mutations m JOIN agents a ON a.id = m.agent_id %s", whereClause)
 	var total int
 	if err := r.db.QueryRow(ctx, countQ, args...).Scan(&total); err != nil {
 		return nil, pagination.Meta{}, fmt.Errorf("count mutations: %w", err)
@@ -500,7 +516,7 @@ func (r *Repository) ListMutations(ctx context.Context, agentID *uuid.UUID, muta
 	listQ := fmt.Sprintf(`
 		SELECT m.id, m.agent_id, a.name as agent_name, a.code as agent_code, m.mutation_type, m.amount, m.balance_before, m.balance_after, m.reference_id, m.description, m.created_at
 		FROM agent_balance_mutations m
-		LEFT JOIN agents a ON a.id = m.agent_id
+		JOIN agents a ON a.id = m.agent_id
 		%s
 		ORDER BY m.created_at DESC
 		LIMIT $%d OFFSET $%d
@@ -583,10 +599,16 @@ func (r *Repository) GetTopupRequestByID(ctx context.Context, id uuid.UUID) (*To
 	return &t, nil
 }
 
-func (r *Repository) ListTopupRequests(ctx context.Context, params pagination.Params, agentID *uuid.UUID, status string) ([]TopupRequest, pagination.Meta, error) {
+func (r *Repository) ListTopupRequests(ctx context.Context, tenantSlug string, params pagination.Params, agentID *uuid.UUID, status string) ([]TopupRequest, pagination.Meta, error) {
 	var conditions []string
 	var args []interface{}
 	argIdx := 1
+
+	if tenantSlug != "" && tenantSlug != "superadmin" {
+		conditions = append(conditions, fmt.Sprintf("a.tenant_slug = $%d", argIdx))
+		args = append(args, tenantSlug)
+		argIdx++
+	}
 
 	if agentID != nil {
 		conditions = append(conditions, fmt.Sprintf("tr.agent_id = $%d", argIdx))
@@ -604,7 +626,7 @@ func (r *Repository) ListTopupRequests(ctx context.Context, params pagination.Pa
 		whereClause = "WHERE " + strings.Join(conditions, " AND ")
 	}
 
-	countQ := fmt.Sprintf("SELECT COUNT(*) FROM agent_topup_requests tr %s", whereClause)
+	countQ := fmt.Sprintf("SELECT COUNT(*) FROM agent_topup_requests tr JOIN agents a ON a.id = tr.agent_id %s", whereClause)
 	var total int
 	if err := r.db.QueryRow(ctx, countQ, args...).Scan(&total); err != nil {
 		return nil, pagination.Meta{}, fmt.Errorf("count topup requests: %w", err)
@@ -727,23 +749,39 @@ func (r *Repository) GetOrCreateDailyPromo(ctx context.Context, agentID uuid.UUI
 	return nil, fmt.Errorf("failed to generate unique daily promo code")
 }
 
-func (r *Repository) ValidatePromoCode(ctx context.Context, promoCode string) (*ValidatePromoResponse, *Agent, error) {
+func (r *Repository) ValidatePromoCode(ctx context.Context, tenantSlug string, promoCode string) (*ValidatePromoResponse, *Agent, error) {
 	cleaned := strings.ToUpper(strings.TrimSpace(promoCode))
-	const q = `
-		SELECT 
-			a.id, a.code, a.name, a.online_discount_pct, a.online_cashback_pct, a.status
-		FROM agents a
-		LEFT JOIN agent_daily_promos p ON p.agent_id = a.id AND p.valid_date = CURRENT_DATE
-		WHERE UPPER(a.code) = $1 OR UPPER(p.promo_code) = $1
-		ORDER BY (CASE WHEN UPPER(p.promo_code) = $1 THEN 1 ELSE 2 END)
-		LIMIT 1
-	`
+	var q string
+	var row pgx.Row
+	if tenantSlug != "" && tenantSlug != "superadmin" {
+		q = `
+			SELECT 
+				a.id, a.code, a.name, a.online_discount_pct, a.online_cashback_pct, a.status
+			FROM agents a
+			LEFT JOIN agent_daily_promos p ON p.agent_id = a.id AND p.valid_date = CURRENT_DATE
+			WHERE (UPPER(a.code) = $1 OR UPPER(p.promo_code) = $1) AND a.tenant_slug = $2
+			ORDER BY (CASE WHEN UPPER(p.promo_code) = $1 THEN 1 ELSE 2 END)
+			LIMIT 1
+		`
+		row = r.db.QueryRow(ctx, q, cleaned, tenantSlug)
+	} else {
+		q = `
+			SELECT 
+				a.id, a.code, a.name, a.online_discount_pct, a.online_cashback_pct, a.status
+			FROM agents a
+			LEFT JOIN agent_daily_promos p ON p.agent_id = a.id AND p.valid_date = CURRENT_DATE
+			WHERE UPPER(a.code) = $1 OR UPPER(p.promo_code) = $1
+			ORDER BY (CASE WHEN UPPER(p.promo_code) = $1 THEN 1 ELSE 2 END)
+			LIMIT 1
+		`
+		row = r.db.QueryRow(ctx, q, cleaned)
+	}
 	var (
 		agentID                                     uuid.UUID
 		agentCode, agentName, status                string
 		onlineDiscountPct, onlineCashbackPct        float64
 	)
-	err := r.db.QueryRow(ctx, q, cleaned).Scan(
+	err := row.Scan(
 		&agentID, &agentCode, &agentName, &onlineDiscountPct, &onlineCashbackPct, &status,
 	)
 	if err != nil {

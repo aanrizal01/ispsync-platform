@@ -3,6 +3,8 @@ package agent
 import (
 	"log/slog"
 	"net/http"
+	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -109,6 +111,40 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 // Admin Handlers
 // ──────────────────────────────────────────
 
+func extractTenantSlug(r *http.Request) string {
+	if s := r.Header.Get("X-Tenant-Slug"); s != "" {
+		return s
+	}
+	host := r.Header.Get("X-Forwarded-Host")
+	if host == "" {
+		host = r.Host
+	}
+	if host == "" {
+		if ref := r.Header.Get("Referer"); ref != "" {
+			if u, err := url.Parse(ref); err == nil {
+				host = u.Host
+			}
+		}
+	}
+	if host == "" {
+		if orig := r.Header.Get("Origin"); orig != "" {
+			if u, err := url.Parse(orig); err == nil {
+				host = u.Host
+			}
+		}
+	}
+	if idx := strings.Index(host, ":"); idx != -1 {
+		host = host[:idx]
+	}
+	parts := strings.Split(host, ".")
+	if len(parts) >= 4 {
+		return parts[1] // e.g. ledger.gbd.ispsync.id -> gbd
+	} else if len(parts) == 3 && parts[1] == "ispsync" {
+		return parts[0] // e.g. gbd.ispsync.id -> gbd
+	}
+	return "dev"
+}
+
 func getUserIDFromContext(r *http.Request) *uuid.UUID {
 	claims := auth.ClaimsFromContext(r.Context())
 	if claims == nil {
@@ -125,7 +161,8 @@ func (h *Handler) CreateAgent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	adminID := getUserIDFromContext(r)
-	a, err := h.service.CreateAgent(r.Context(), req, adminID)
+	tenantSlug := extractTenantSlug(r)
+	a, err := h.service.CreateAgent(r.Context(), tenantSlug, req, adminID)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -147,7 +184,8 @@ func (h *Handler) RegisterAgent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a, err := h.service.RegisterAgent(r.Context(), req)
+	tenantSlug := extractTenantSlug(r)
+	a, err := h.service.RegisterAgent(r.Context(), tenantSlug, req)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -219,7 +257,7 @@ func (h *Handler) ListAgents(w http.ResponseWriter, r *http.Request) {
 	search := r.URL.Query().Get("search")
 	status := r.URL.Query().Get("status")
 
-	agents, meta, err := h.service.ListAgents(r.Context(), params, search, status)
+	agents, meta, err := h.service.ListAgents(r.Context(), extractTenantSlug(r), params, search, status)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -333,7 +371,7 @@ func (h *Handler) ListAllMutations(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	mutations, meta, err := h.service.ListMutations(r.Context(), agentID, mutationType, startDate, endDate, params)
+	mutations, meta, err := h.service.ListMutations(r.Context(), extractTenantSlug(r), agentID, mutationType, startDate, endDate, params)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -375,7 +413,7 @@ func (h *Handler) ListAgentMutations(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	mutations, meta, err := h.service.ListMutations(r.Context(), &id, mutationType, startDate, endDate, params)
+	mutations, meta, err := h.service.ListMutations(r.Context(), extractTenantSlug(r), &id, mutationType, startDate, endDate, params)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -395,7 +433,7 @@ func (h *Handler) ListTopupRequests(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	items, meta, err := h.service.ListTopupRequests(r.Context(), params, agentID, status)
+	items, meta, err := h.service.ListTopupRequests(r.Context(), extractTenantSlug(r), params, agentID, status)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -504,7 +542,7 @@ func (h *Handler) ListMyTopupRequests(w http.ResponseWriter, r *http.Request) {
 
 	params := pagination.FromRequest(r)
 	status := r.URL.Query().Get("status")
-	items, meta, err := h.service.ListTopupRequests(r.Context(), params, &agent.ID, status)
+	items, meta, err := h.service.ListTopupRequests(r.Context(), agent.TenantSlug, params, &agent.ID, status)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -545,7 +583,7 @@ func (h *Handler) ListMyMutations(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	mutations, meta, err := h.service.ListMutations(r.Context(), &agent.ID, mutationType, startDate, endDate, params)
+	mutations, meta, err := h.service.ListMutations(r.Context(), agent.TenantSlug, &agent.ID, mutationType, startDate, endDate, params)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -606,7 +644,7 @@ func (h *Handler) ValidatePromoCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, _, err := h.service.ValidatePromo(r.Context(), code)
+	res, _, err := h.service.ValidatePromo(r.Context(), extractTenantSlug(r), code)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return

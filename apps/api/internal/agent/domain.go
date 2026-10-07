@@ -43,6 +43,7 @@ const (
 
 type Agent struct {
 	ID                 uuid.UUID    `json:"id"`
+	TenantSlug         string       `json:"tenant_slug,omitempty"`
 	UserID             *uuid.UUID   `json:"user_id,omitempty"`
 	UserEmail          *string      `json:"user_email,omitempty"`
 	Code               string       `json:"code"`

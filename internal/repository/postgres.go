@@ -2218,7 +2218,7 @@ func (s *PostgresStorage) GetTenantSettings(ctx context.Context, tenantID string
 	if err == sql.ErrNoRows {
 		return &domain.TenantIntegrationSettings{
 			TenantID:              tenantID,
-			GoogleMapsAPIKey:      "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA",
+			GoogleMapsAPIKey:      "",
 			TelegramBotToken:      "",
 			TelegramChatID:        "",
 			NotifyNewRegistration: true,
@@ -2239,9 +2239,6 @@ func (s *PostgresStorage) GetTenantSettings(ctx context.Context, tenantID string
 	}
 	if err != nil {
 		return nil, err
-	}
-	if st.GoogleMapsAPIKey == "" {
-		st.GoogleMapsAPIKey = "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA"
 	}
 	if st.PPPoEPrefix == "" && st.PPPoEIdSource == "" {
 		st.PPPoEPrefix = "sub-"

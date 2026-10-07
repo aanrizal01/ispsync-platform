@@ -3792,7 +3792,11 @@ func (h *APIHandler) GetTenantSettings(w http.ResponseWriter, r *http.Request) {
 		h.failResponse(w, http.StatusInternalServerError, "Gagal mengambil pengaturan: "+err.Error())
 		return
 	}
-	h.successResponse(w, "Pengaturan integrasi berhasil dimuat", st)
+	res := *st
+	if res.GoogleMapsAPIKey == "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA" {
+		res.GoogleMapsAPIKey = ""
+	}
+	h.successResponse(w, "Pengaturan integrasi berhasil dimuat", &res)
 }
 
 // UpdateTenantSettings memperbarui pengaturan integrasi tenant

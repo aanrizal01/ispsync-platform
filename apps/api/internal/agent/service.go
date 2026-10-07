@@ -66,7 +66,7 @@ func (s *Service) Repo() *Repository {
 // Agent CRUD
 // ──────────────────────────────────────────
 
-func (s *Service) CreateAgent(ctx context.Context, req CreateAgentRequest, adminID *uuid.UUID) (*Agent, error) {
+func (s *Service) CreateAgent(ctx context.Context, tenantSlug string, req CreateAgentRequest, adminID *uuid.UUID) (*Agent, error) {
 	// Check existing code
 	existing, err := s.repo.GetAgentByCode(ctx, req.Code)
 	if err != nil {
@@ -129,8 +129,13 @@ func (s *Service) CreateAgent(ctx context.Context, req CreateAgentRequest, admin
 		}
 	}
 
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
+
 	agent := &Agent{
 		ID:                 agentID,
+		TenantSlug:         tenantSlug,
 		UserID:             userID,
 		Code:               req.Code,
 		Name:               req.Name,
@@ -200,8 +205,8 @@ func (s *Service) GetAgentByUserID(ctx context.Context, userID uuid.UUID) (*Agen
 	return a, nil
 }
 
-func (s *Service) ListAgents(ctx context.Context, params pagination.Params, search, status string) ([]Agent, pagination.Meta, error) {
-	return s.repo.ListAgents(ctx, params, search, status)
+func (s *Service) ListAgents(ctx context.Context, tenantSlug string, params pagination.Params, search, status string) ([]Agent, pagination.Meta, error) {
+	return s.repo.ListAgents(ctx, tenantSlug, params, search, status)
 }
 
 func (s *Service) UpdateAgent(ctx context.Context, id uuid.UUID, req UpdateAgentRequest) (*Agent, error) {
@@ -274,7 +279,7 @@ func (s *Service) UpdateAgent(ctx context.Context, id uuid.UUID, req UpdateAgent
 	return s.repo.GetAgentByID(ctx, id)
 }
 
-func (s *Service) RegisterAgent(ctx context.Context, req RegisterAgentRequest) (*Agent, error) {
+func (s *Service) RegisterAgent(ctx context.Context, tenantSlug string, req RegisterAgentRequest) (*Agent, error) {
 	// Check existing email
 	var count int
 	_ = s.repo.DB().QueryRow(ctx, "SELECT COUNT(*) FROM users WHERE LOWER(email) = LOWER($1)", req.Email).Scan(&count)
@@ -347,8 +352,13 @@ func (s *Service) RegisterAgent(ctx context.Context, req RegisterAgentRequest) (
 		}
 	}
 
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
+
 	agent := &Agent{
 		ID:                 agentID,
+		TenantSlug:         tenantSlug,
 		UserID:             &uID,
 		Code:               code,
 		Name:               req.Name,
@@ -529,8 +539,8 @@ func (s *Service) SubmitTopupRequest(ctx context.Context, agentID uuid.UUID, req
 	return s.repo.GetTopupRequestByID(ctx, topup.ID)
 }
 
-func (s *Service) ListTopupRequests(ctx context.Context, params pagination.Params, agentID *uuid.UUID, status string) ([]TopupRequest, pagination.Meta, error) {
-	return s.repo.ListTopupRequests(ctx, params, agentID, status)
+func (s *Service) ListTopupRequests(ctx context.Context, tenantSlug string, params pagination.Params, agentID *uuid.UUID, status string) ([]TopupRequest, pagination.Meta, error) {
+	return s.repo.ListTopupRequests(ctx, tenantSlug, params, agentID, status)
 }
 
 func (s *Service) ProcessTopupRequest(ctx context.Context, reqID uuid.UUID, req ProcessTopupRequest, adminID *uuid.UUID) (*TopupRequest, error) {
@@ -565,8 +575,8 @@ func (s *Service) ProcessTopupRequest(ctx context.Context, reqID uuid.UUID, req 
 	return s.repo.GetTopupRequestByID(ctx, reqID)
 }
 
-func (s *Service) ListMutations(ctx context.Context, agentID *uuid.UUID, mutationType *string, startDate *time.Time, endDate *time.Time, params pagination.Params) ([]AgentMutation, pagination.Meta, error) {
-	return s.repo.ListMutations(ctx, agentID, mutationType, startDate, endDate, params)
+func (s *Service) ListMutations(ctx context.Context, tenantSlug string, agentID *uuid.UUID, mutationType *string, startDate *time.Time, endDate *time.Time, params pagination.Params) ([]AgentMutation, pagination.Meta, error) {
+	return s.repo.ListMutations(ctx, tenantSlug, agentID, mutationType, startDate, endDate, params)
 }
 
 // ──────────────────────────────────────────
@@ -577,8 +587,8 @@ func (s *Service) GetTodayPromo(ctx context.Context, agentID uuid.UUID) (*DailyP
 	return s.repo.GetOrCreateDailyPromo(ctx, agentID)
 }
 
-func (s *Service) ValidatePromo(ctx context.Context, promoCode string) (*ValidatePromoResponse, *Agent, error) {
-	return s.repo.ValidatePromoCode(ctx, promoCode)
+func (s *Service) ValidatePromo(ctx context.Context, tenantSlug string, promoCode string) (*ValidatePromoResponse, *Agent, error) {
+	return s.repo.ValidatePromoCode(ctx, tenantSlug, promoCode)
 }
 
 // ──────────────────────────────────────────
@@ -764,7 +774,7 @@ func (s *Service) GetAgentDashboard(ctx context.Context, agentID uuid.UUID) (*Ag
 	var pendingTopups int
 	_ = s.repo.DB().QueryRow(ctx, `SELECT COUNT(*) FROM agent_topup_requests WHERE agent_id = $1 AND status = 'PENDING'`, agentID).Scan(&pendingTopups)
 
-	mutations, _, _ := s.repo.ListMutations(ctx, &agentID, nil, nil, nil, pagination.Params{Limit: 5, Offset: 0})
+	mutations, _, _ := s.repo.ListMutations(ctx, agent.TenantSlug, &agentID, nil, nil, nil, pagination.Params{Limit: 5, Offset: 0})
 
 	summary := &AgentDashboardSummary{
 		Agent:             *agent,
