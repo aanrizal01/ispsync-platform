@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useMember } from "./context";
-import { Building2 } from "lucide-react";
+import { Building2, SlidersHorizontal } from "lucide-react";
 
 const mainNavItems = [
   { href: "/member/dashboard", label: "Dashboard", icon: "▦" },
@@ -50,7 +50,10 @@ export default function MemberNav({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading && !member) router.replace("/member/login");
-  }, [member, loading]);
+    if (!loading && (member?.role === "SUPERADMIN" || member?.email === "admin@ispsync.id" || member?.id === "mbr_001") && pathname.startsWith("/member/engine")) {
+      router.replace("/member/tenants");
+    }
+  }, [member, loading, pathname, router]);
 
   if (loading || !member) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -122,6 +125,17 @@ export default function MemberNav({ children }: { children: React.ReactNode }) {
                   <Building2 className="w-4 h-4 text-cyan-600 shrink-0" />
                   <span>Daftar Pelanggan SaaS</span>
                 </Link>
+                <Link
+                  href="/cms-9x7k2"
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    pathname === "/cms-9x7k2"
+                      ? "bg-slate-900 text-cyan-400 shadow-sm"
+                      : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
+                >
+                  <SlidersHorizontal className="w-4 h-4 text-cyan-600 shrink-0" />
+                  <span>CMS &amp; Paket Langganan</span>
+                </Link>
               </div>
             </div>
           )}
@@ -132,69 +146,84 @@ export default function MemberNav({ children }: { children: React.ReactNode }) {
               Menu Utama
             </div>
             <div className="space-y-0.5">
-              {mainNavItems.map(item => (
-                <Link key={item.href} href={item.href}
+              <Link
+                href="/member/dashboard"
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                  pathname === "/member/dashboard"
+                    ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
+              >
+                <span className="text-sm">▦</span>
+                <span>Dashboard</span>
+              </Link>
+              {!isSuperadmin && (
+                <Link
+                  href="/member/invoices"
                   className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    pathname === item.href
+                    pathname === "/member/invoices"
                       ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}>
-                  <span className="text-sm">{item.icon}</span>
-                  <span>{item.label}</span>
+                  }`}
+                >
+                  <span className="text-sm">🧾</span>
+                  <span>Invoice &amp; Billing</span>
                 </Link>
-              ))}
+              )}
             </div>
           </div>
 
-          {/* Section 2: 3 Engine Tenant Settings */}
-          <div>
-            <div className="px-2 mb-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400">
-              <span>Pengaturan 3 Engine</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            </div>
-            <div className="space-y-1">
-              {engineNavItems.map(eng => {
-                const isActive = pathname.startsWith(eng.href);
-                const liveUrl = urls[eng.key];
-                return (
-                  <div key={eng.href} className="group relative">
-                    <Link
-                      href={eng.href}
-                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                        isActive
-                          ? "bg-slate-900 text-white shadow-sm"
-                          : "text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="text-sm">{eng.icon}</span>
-                        <div className="truncate">
-                          <div className="truncate">{eng.label}</div>
-                          <div className={`text-[10px] font-normal ${isActive ? "text-slate-300" : "text-gray-400"}`}>
-                            {eng.sub}
-                          </div>
-                        </div>
-                      </div>
-                      <a
-                        href={liveUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={e => e.stopPropagation()}
-                        title="Buka engine di tab baru"
-                        className={`p-1 rounded-lg text-[11px] transition-colors ${
+          {/* Section 2: 3 Engine Tenant Settings (Hanya untuk Tenant Klien) */}
+          {!isSuperadmin && (
+            <div>
+              <div className="px-2 mb-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                <span>Pengaturan 3 Engine</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              </div>
+              <div className="space-y-1">
+                {engineNavItems.map(eng => {
+                  const isActive = pathname.startsWith(eng.href);
+                  const liveUrl = urls[eng.key];
+                  return (
+                    <div key={eng.href} className="group relative">
+                      <Link
+                        href={eng.href}
+                        className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                           isActive
-                            ? "text-slate-400 hover:text-white hover:bg-slate-800"
-                            : "text-gray-400 hover:text-blue-600 hover:bg-gray-200"
+                            ? "bg-slate-900 text-white shadow-sm"
+                            : "text-gray-700 hover:bg-gray-100"
                         }`}
                       >
-                        ↗
-                      </a>
-                    </Link>
-                  </div>
-                );
-              })}
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="text-sm">{eng.icon}</span>
+                          <div className="truncate">
+                            <div className="truncate">{eng.label}</div>
+                            <div className={`text-[10px] font-normal ${isActive ? "text-slate-300" : "text-gray-400"}`}>
+                              {eng.sub}
+                            </div>
+                          </div>
+                        </div>
+                        <a
+                          href={liveUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={e => e.stopPropagation()}
+                          title="Buka engine di tab baru"
+                          className={`p-1 rounded-lg text-[11px] transition-colors ${
+                            isActive
+                              ? "text-slate-400 hover:text-white hover:bg-slate-800"
+                              : "text-gray-400 hover:text-blue-600 hover:bg-gray-200"
+                          }`}
+                        >
+                          ↗
+                        </a>
+                      </Link>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Section 3: Account */}
           <div>
