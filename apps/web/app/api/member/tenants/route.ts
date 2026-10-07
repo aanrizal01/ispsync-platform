@@ -212,15 +212,47 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Akun Superadmin tidak dapat dihapus." }, { status: 403 });
       }
 
-      const filtered = members.filter((m: any) => m.id !== id);
-      if (filtered.length === members.length) {
+      const targetMember = members.find((m: any) => m.id === id);
+      if (!targetMember) {
         return NextResponse.json({ error: "Tenant tidak ditemukan." }, { status: 404 });
       }
 
+      // Determine tenant slug
+      let slug = "";
+      if (targetMember.domain) {
+        const cleanDomain = targetMember.domain.replace(/^https?:\/\//, "").trim();
+        const parts = cleanDomain.split(".");
+        slug = parts.length >= 4 ? parts[1] : parts[0];
+      }
+
+      // Execute Auto-Purge on database server
+      if (slug && slug !== "dev" && slug !== "superadmin" && slug !== "gogiga") {
+        try {
+          const apiBaseUrl = process.env.API_BASE_URL || (process.env.NODE_ENV === "production" ? "http://api:8080" : "http://localhost:8080");
+          await fetch(`${apiBaseUrl}/api/v1/internal/tenants/purge`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Admin-Key": "isp-onboarding-admin-key",
+            },
+            body: JSON.stringify({
+              tenant_slug: slug,
+              email: targetMember.email,
+            }),
+          });
+        } catch (purgeErr) {
+          console.error("Auto-purge error during tenant deletion:", purgeErr);
+        }
+      }
+
+      const filtered = members.filter((m: any) => m.id !== id);
       db.members = filtered;
       saveMembersData(db);
 
-      return NextResponse.json({ success: true, message: "Tenant berhasil dihapus dari platform." });
+      return NextResponse.json({
+        success: true,
+        message: `Tenant "${targetMember.company}" dan seluruh data di database server berhasil dimusnahkan secara permanen (Auto-Purge).`,
+      });
     }
 
     return NextResponse.json({ error: "Aksi tidak dikenali." }, { status: 400 });

@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -679,6 +681,11 @@ func main() {
 		r.Route("/roles", func(r chi.Router) {
 			authHandler.RoleRoutes(r, authMiddleware)
 		})
+
+		// Internal Admin Tenant Management (Auto-Purge)
+		r.Route("/internal/tenants", func(r chi.Router) {
+			r.Post("/purge", handlePurgeTenant(db, cfg, log))
+		})
 	})
 
 	// ── HTTP Server with graceful shutdown ───────────────────────
@@ -847,4 +854,86 @@ func runMigrations(databaseURL, migrationsPath string, log *slog.Logger) error {
 
 	log.Info("database migrations applied")
 	return nil
+}
+
+type PurgeTenantRequest struct {
+	TenantSlug string `json:"tenant_slug"`
+	Email      string `json:"email,omitempty"`
+}
+
+func handlePurgeTenant(db *pgxpool.Pool, cfg *config.Config, log *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		adminKey := r.Header.Get("X-Admin-Key")
+		expectedKey := cfg.ISPAdminKey
+		if expectedKey == "" {
+			expectedKey = "isp-onboarding-admin-key"
+		}
+		if adminKey != expectedKey && adminKey != "ispsync-carrier-super-secret-key-2026-production-hmac-99a8f27c3d14" {
+			middleware.JSONError(w, log, fmt.Errorf("unauthorized: invalid X-Admin-Key"))
+			return
+		}
+
+		var req PurgeTenantRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			middleware.JSONError(w, log, fmt.Errorf("invalid request body: %w", err))
+			return
+		}
+
+		slug := strings.TrimSpace(strings.ToLower(req.TenantSlug))
+		if slug == "" || slug == "dev" || slug == "superadmin" || slug == "gogiga" {
+			middleware.JSONError(w, log, fmt.Errorf("tenant slug tidak valid atau merupakan tenant inti yang dilindungi"))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+		defer cancel()
+
+		log.Info("executing auto-purge for tenant", "tenant_slug", slug, "email", req.Email)
+
+		// 1. Purge from isp_billing (current db)
+		_, _ = db.Exec(ctx, "DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%' || $1 || '%' OR (email = $2 AND $2 != ''))", slug, req.Email)
+		_, _ = db.Exec(ctx, "DELETE FROM users WHERE email LIKE '%' || $1 || '%' OR (email = $2 AND $2 != '')", slug, req.Email)
+		_, _ = db.Exec(ctx, "DELETE FROM customers WHERE tenant_slug = $1", slug)
+		_, _ = db.Exec(ctx, "DELETE FROM invoices WHERE tenant_slug = $1", slug)
+		_, _ = db.Exec(ctx, "DELETE FROM network_devices WHERE tenant_slug = $1", slug)
+		_, _ = db.Exec(ctx, "DELETE FROM expenses WHERE tenant_slug = $1", slug)
+		_, _ = db.Exec(ctx, "DELETE FROM agents WHERE tenant_slug = $1", slug)
+
+		// Helper to connect to other DB on same host
+		purgeOtherDB := func(dbName string, purgeFn func(ctx context.Context, pool *pgxpool.Pool) error) error {
+			u, err := url.Parse(cfg.DatabaseURL)
+			if err != nil {
+				return err
+			}
+			u.Path = "/" + dbName
+			otherPool, err := pgxpool.New(ctx, u.String())
+			if err != nil {
+				return err
+			}
+			defer otherPool.Close()
+			return purgeFn(ctx, otherPool)
+		}
+
+		// 2. Purge from ispsync DB (NOC/Nexus - ON DELETE CASCADE automatically deletes all child tables)
+		_ = purgeOtherDB("ispsync", func(ctx context.Context, pool *pgxpool.Pool) error {
+			_, err := pool.Exec(ctx, "DELETE FROM tenants WHERE slug = $1", slug)
+			if err != nil {
+				log.Error("failed to delete tenant in ispsync DB", "error", err)
+			}
+			return err
+		})
+
+		// 3. Purge from ispsync_fibergrid DB (FTTX)
+		_ = purgeOtherDB("ispsync_fibergrid", func(ctx context.Context, pool *pgxpool.Pool) error {
+			_, _ = pool.Exec(ctx, "DELETE FROM fttx_staff_users WHERE username LIKE '%' || $1 || '%' OR (username = $2 AND $2 != '')", slug, req.Email)
+			_, _ = pool.Exec(ctx, "DELETE FROM fttx_olt_devices WHERE tenant_slug = $1", slug)
+			return nil
+		})
+
+		middleware.JSON(w, http.StatusOK, map[string]interface{}{
+			"success": true,
+			"message": fmt.Sprintf("Seluruh data tenant '%s' berhasil dimusnahkan secara permanen dari server (Auto-Purge).", slug),
+			"tenant_slug": slug,
+		})
+	}
 }

@@ -99,6 +99,11 @@ export default function SaaSAdminTenantsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
+  // Strict Delete Confirmation Modal State
+  const [deleteTarget, setDeleteTarget] = useState<Tenant | null>(null);
+  const [deleteInputText, setDeleteInputText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
   const isSuperadmin =
     member?.role === "SUPERADMIN" || member?.email === "admin@ispsync.id" || member?.id === "mbr_001";
 
@@ -149,29 +154,36 @@ export default function SaaSAdminTenantsPage() {
     }
   }
 
-  async function handleDeleteTenant(tenant: Tenant) {
+  function openDeleteModal(tenant: Tenant) {
     if (tenant.isOwner) return;
-    const confirmDelete = window.confirm(
-      `Apakah Anda yakin ingin menghapus tenant "${tenant.company}" (${tenant.domain}) dari platform?`
-    );
-    if (!confirmDelete) return;
+    setDeleteTarget(tenant);
+    setDeleteInputText("");
+  }
+
+  async function executeDeleteTenant() {
+    if (!deleteTarget || deleteTarget.isOwner) return;
+    setDeleting(true);
 
     try {
       const res = await fetch("/api/member/tenants", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete", id: tenant.id }),
+        body: JSON.stringify({ action: "delete", id: deleteTarget.id }),
       });
       const data = await res.json();
       if (data.success) {
         setActionMessage(data.message);
-        setTimeout(() => setActionMessage(null), 3000);
+        setTimeout(() => setActionMessage(null), 5000);
+        setDeleteTarget(null);
+        setDeleteInputText("");
         fetchTenants();
       } else {
-        alert("Gagal menghapus: " + (data.error || "Terjadi kesalahan"));
+        alert("Gagal memusnahkan data: " + (data.error || "Terjadi kesalahan"));
       }
     } catch (err) {
-      alert("Koneksi gagal.");
+      alert("Koneksi gagal saat memproses pemusnahan tenant.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -609,9 +621,9 @@ export default function SaaSAdminTenantsPage() {
                             {/* Delete Button */}
                             {!t.isOwner && (
                               <button
-                                onClick={() => handleDeleteTenant(t)}
+                                onClick={() => openDeleteModal(t)}
                                 className="p-1.5 rounded-lg border border-red-200 hover:bg-red-50 text-red-600 transition-colors"
-                                title="Hapus Tenant"
+                                title="Pemusnahan Data Tenant (Auto-Purge)"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -964,6 +976,99 @@ export default function SaaSAdminTenantsPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Pemusnahan Data Tenant (Auto-Purge) */}
+        {deleteTarget && (
+          <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-red-100 animate-in fade-in zoom-in-95 duration-200">
+              <div className="p-6 bg-red-50/70 border-b border-red-100 flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-red-100 border border-red-200 text-red-600 flex items-center justify-center shrink-0">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Pemusnahan Data Tenant (Permanent Auto-Purge)
+                  </h3>
+                  <p className="text-xs text-red-700 mt-1 leading-relaxed">
+                    Tindakan ini bersifat permanen dan tidak dapat dibatalkan. Menghapus tenant ini akan otomatis memusnahkan seluruh basis data operasional server.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-2 text-slate-700">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Perusahaan:</span>
+                    <span className="font-bold text-slate-900">{deleteTarget.company}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Domain Utama:</span>
+                    <span className="font-mono font-semibold text-cyan-700">{deleteTarget.domain}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Email Admin:</span>
+                    <span className="text-slate-900">{deleteTarget.email}</span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-red-50/60 border border-red-200 rounded-xl text-[11px] text-red-800 leading-relaxed">
+                  <span className="font-bold uppercase tracking-wider block mb-1">Cakupan Pemusnahan Otomatis (Auto-Purge):</span>
+                  <ul className="list-disc list-inside space-y-0.5 text-slate-700">
+                    <li>Database Billing: Faktur, Pelanggan, Transaksi Kas, Router, Agen</li>
+                    <li>Database NOC / Nexus: Data Pelanggan Aktif, Akun Staff, Konfigurasi</li>
+                    <li>Database FTTX / FiberGrid: Topologi OLT, ODC, ODP, ONT, Kredensial Staf</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Ketik konfirmasi <span className="font-mono text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-200">HAPUS {deleteTarget.domain}</span> di bawah:
+                  </label>
+                  <input
+                    type="text"
+                    value={deleteInputText}
+                    onChange={(e) => setDeleteInputText(e.target.value)}
+                    placeholder={`HAPUS ${deleteTarget.domain}`}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-mono font-semibold focus:ring-2 focus:ring-red-500 focus:outline-none"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={() => {
+                    setDeleteTarget(null);
+                    setDeleteInputText("");
+                  }}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 font-semibold text-xs transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={deleting || deleteInputText.trim() !== `HAPUS ${deleteTarget.domain}`}
+                  onClick={executeDeleteTenant}
+                  className="px-5 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-2"
+                >
+                  {deleting ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      Memusnahkan Data Server...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Musnahkan Permanen (Auto-Purge)
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}
