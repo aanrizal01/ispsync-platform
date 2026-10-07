@@ -139,6 +139,10 @@ func (s *Service) IssueCredential(ctx context.Context, customerID uuid.UUID, req
 		return nil, apperrors.Internal(err)
 	}
 
+	tSlug := cust.TenantSlug
+	if tSlug == "" {
+		tSlug = "gogiga"
+	}
 	now := time.Now()
 	cred := &Credential{
 		ID:             uuid.New(),
@@ -150,6 +154,7 @@ func (s *Service) IssueCredential(ctx context.Context, customerID uuid.UUID, req
 		Username:       username,
 		Password:       password,
 		Status:         "ACTIVE",
+		TenantSlug:     &tSlug,
 		CreatedAt:      now,
 		UpdatedAt:      now,
 	}
@@ -219,8 +224,8 @@ func (s *Service) ListCustomerCredentials(ctx context.Context, customerID uuid.U
 	return creds, nil
 }
 
-func (s *Service) ListCredentials(ctx context.Context, limit, offset int) ([]Credential, int64, error) {
-	return s.repo.ListCredentials(ctx, limit, offset)
+func (s *Service) ListCredentials(ctx context.Context, tenantSlug string, limit, offset int) ([]Credential, int64, error) {
+	return s.repo.ListCredentials(ctx, tenantSlug, limit, offset)
 }
 
 func (s *Service) GenerateAppleProfile(ctx context.Context, credID uuid.UUID) ([]byte, string, error) {
@@ -378,7 +383,10 @@ func (s *Service) DeletePackage(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *Service) Purchase(ctx context.Context, req PasspointPurchaseRequest) (*PasspointPurchaseResponse, error) {
+func (s *Service) Purchase(ctx context.Context, tenantSlug string, req PasspointPurchaseRequest) (*PasspointPurchaseResponse, error) {
+	if tenantSlug == "" {
+		tenantSlug = "gogiga"
+	}
 	pkgs, _ := s.GetPackages(ctx)
 	var selectedPkg *PasspointPackage
 	for _, p := range pkgs {
@@ -470,6 +478,7 @@ func (s *Service) Purchase(ctx context.Context, req PasspointPurchaseRequest) (*
 		AgentCommission: agentCommission,
 		PaymentMethod:   req.PaymentMethod,
 		Status:          "PENDING",
+		TenantSlug:      tenantSlug,
 		ExpiresAt:       expiresAt,
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now(),
@@ -553,24 +562,13 @@ func (s *Service) CheckPurchase(ctx context.Context, req PasspointCheckRequest) 
 		realm = prof.Realm
 		domain = prof.DomainName
 
-		// Resolve or create customer in DB
-		customerID, _ := s.repo.ResolveOrCreateCustomer(ctx, "Pelanggan Passpoint", "", "")
-		now := time.Now()
-		cred := &Credential{
-			ID:         credID,
-			CustomerID: customerID,
-			ProfileID:  prof.ID,
-			Username:   username,
-			Password:   password,
-			Status:     "ACTIVE",
-			CreatedAt:  now,
-			UpdatedAt:  now,
-		}
-		_ = s.repo.CreateCredential(ctx, cred)
-
-		// Determine speed limit from order package
+		// Determine speed limit and customer details from order package
 		speedLimit := "15M/15M"
 		var currentOrder *PasspointOrder
+		custName := "Pelanggan Passpoint"
+		custPhone := ""
+		custEmail := ""
+		tSlug := "gogiga"
 		if req.OrderID != "" {
 			if ord, _ := s.repo.GetOrderByOrderID(ctx, req.OrderID); ord != nil {
 				currentOrder = ord
@@ -579,8 +577,32 @@ func (s *Service) CheckPurchase(ctx context.Context, req PasspointCheckRequest) 
 						speedLimit = pkg.SpeedLimit
 					}
 				}
+				if ord.CustomerName != "" {
+					custName = ord.CustomerName
+				}
+				custPhone = ord.CustomerPhone
+				custEmail = ord.CustomerEmail
+				if ord.TenantSlug != "" {
+					tSlug = ord.TenantSlug
+				}
 			}
 		}
+
+		// Resolve or create customer in DB with tenant isolation
+		customerID, _ := s.repo.ResolveOrCreateCustomer(ctx, custName, custEmail, custPhone, tSlug)
+		now := time.Now()
+		cred := &Credential{
+			ID:         credID,
+			CustomerID: customerID,
+			ProfileID:  prof.ID,
+			Username:   username,
+			Password:   password,
+			Status:     "ACTIVE",
+			TenantSlug: &tSlug,
+			CreatedAt:  now,
+			UpdatedAt:  now,
+		}
+		_ = s.repo.CreateCredential(ctx, cred)
 
 		// Sync to FreeRADIUS with Simultaneous-Use := 1 and Mikrotik-Rate-Limit
 		_ = s.radiusSvc.SyncPasspointCredential(ctx, username, password, speedLimit, 1)
@@ -608,7 +630,10 @@ func (s *Service) CheckPurchase(ctx context.Context, req PasspointCheckRequest) 
 	}, nil
 }
 
-func (s *Service) Renew(ctx context.Context, req PasspointRenewRequest) (*PasspointRenewResponse, error) {
+func (s *Service) Renew(ctx context.Context, tenantSlug string, req PasspointRenewRequest) (*PasspointRenewResponse, error) {
+	if tenantSlug == "" {
+		tenantSlug = "gogiga"
+	}
 	pkgs, _ := s.GetPackages(ctx)
 	var selectedPkg *PasspointPackage
 	for _, p := range pkgs {
@@ -684,6 +709,7 @@ func (s *Service) Renew(ctx context.Context, req PasspointRenewRequest) (*Passpo
 		AgentCommission: agentCommission,
 		PaymentMethod:   req.PaymentMethod,
 		Status:          "PENDING",
+		TenantSlug:      tenantSlug,
 		ExpiresAt:       expiresAt,
 		CreatedAt:       time.Now(),
 		UpdatedAt:       time.Now(),
@@ -934,8 +960,8 @@ func (s *Service) RunPasspointReminderJob(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) GetActiveSessions(ctx context.Context, limit, offset int) ([]PasspointActiveSession, int64, error) {
-	return s.repo.GetActiveSessions(ctx, limit, offset)
+func (s *Service) GetActiveSessions(ctx context.Context, tenantSlug string, limit, offset int) ([]PasspointActiveSession, int64, error) {
+	return s.repo.GetActiveSessions(ctx, tenantSlug, limit, offset)
 }
 
 func (s *Service) DisconnectSession(ctx context.Context, req DisconnectSessionRequest) error {
@@ -959,12 +985,12 @@ func (s *Service) CheckCustomerStatus(ctx context.Context, query string) (*Passp
 	return st, nil
 }
 
-func (s *Service) GetAnalytics(ctx context.Context) (*PasspointAnalytics, error) {
-	return s.repo.GetFinancialAnalytics(ctx)
+func (s *Service) GetAnalytics(ctx context.Context, tenantSlug string) (*PasspointAnalytics, error) {
+	return s.repo.GetFinancialAnalytics(ctx, tenantSlug)
 }
 
-func (s *Service) ExportOrdersCSV(ctx context.Context) ([]byte, error) {
-	orders, err := s.repo.GetPaidOrdersForExport(ctx)
+func (s *Service) ExportOrdersCSV(ctx context.Context, tenantSlug string) ([]byte, error) {
+	orders, err := s.repo.GetPaidOrdersForExport(ctx, tenantSlug)
 	if err != nil {
 		return nil, apperrors.Internal(err)
 	}

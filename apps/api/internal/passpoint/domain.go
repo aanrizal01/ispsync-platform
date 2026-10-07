@@ -39,6 +39,7 @@ type Credential struct {
 	PackageName         *string    `json:"package_name,omitempty"`
 	IssuerName          *string    `json:"issuer_name,omitempty"`
 	IssuerType          *string    `json:"issuer_type,omitempty"`
+	TenantSlug          *string    `json:"tenant_slug,omitempty"`
 	CreatedAt           time.Time  `json:"created_at"`
 	UpdatedAt           time.Time  `json:"updated_at"`
 }
@@ -129,6 +130,7 @@ type PasspointOrder struct {
 	CredentialID    *uuid.UUID `json:"credential_id,omitempty"`
 	PaidByAgentID   *uuid.UUID `json:"paid_by_agent_id,omitempty"`
 	PaidAt          *time.Time `json:"paid_at,omitempty"`
+	TenantSlug      string     `json:"tenant_slug"`
 	ExpiresAt       time.Time  `json:"expires_at"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`

@@ -107,17 +107,21 @@ func (r *Repository) ListProfiles(ctx context.Context) ([]Profile, error) {
 }
 
 func (r *Repository) CreateCredential(ctx context.Context, c *Credential) error {
+	tSlug := "gogiga"
+	if c.TenantSlug != nil && *c.TenantSlug != "" {
+		tSlug = *c.TenantSlug
+	}
 	const q = `
 		INSERT INTO passpoint_credentials (
 			id, customer_id, profile_id, username, password, status,
-			last_authenticated_at, created_at, updated_at
+			last_authenticated_at, tenant_slug, created_at, updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 		)
 	`
 	_, err := r.db.Exec(ctx, q,
 		c.ID, c.CustomerID, c.ProfileID, c.Username, c.Password, c.Status,
-		c.LastAuthenticatedAt, c.CreatedAt, c.UpdatedAt,
+		c.LastAuthenticatedAt, tSlug, c.CreatedAt, c.UpdatedAt,
 	)
 	return err
 }
@@ -229,10 +233,15 @@ func (r *Repository) ListCredentialsByCustomer(ctx context.Context, customerID u
 	return creds, nil
 }
 
-func (r *Repository) ListCredentials(ctx context.Context, limit, offset int) ([]Credential, int64, error) {
-	const countQ = `SELECT COUNT(*) FROM passpoint_credentials`
+func (r *Repository) ListCredentials(ctx context.Context, tenantSlug string, limit, offset int) ([]Credential, int64, error) {
+	const countQ = `
+		SELECT COUNT(*)
+		FROM passpoint_credentials c
+		JOIN customers cust ON cust.id = c.customer_id
+		WHERE ($1 = '' OR $1 = 'superadmin' OR c.tenant_slug = $1 OR cust.tenant_slug = $1)
+	`
 	var total int64
-	if err := r.db.QueryRow(ctx, countQ).Scan(&total); err != nil {
+	if err := r.db.QueryRow(ctx, countQ, tenantSlug).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count credentials: %w", err)
 	}
 
@@ -254,7 +263,8 @@ func (r *Repository) ListCredentials(ctx context.Context, limit, offset int) ([]
 		           WHEN a.name IS NOT NULL OR po.paid_by_agent_id IS NOT NULL OR po.payment_method = 'MANUAL_COUNTER' THEN 'AGENT'
 		           WHEN po.order_id IS NOT NULL THEN 'ONLINE'
 		           ELSE 'ADMIN'
-		       END AS issuer_type
+		       END AS issuer_type,
+		       c.tenant_slug
 		FROM passpoint_credentials c
 		JOIN customers cust ON cust.id = c.customer_id
 		JOIN passpoint_profiles p ON p.id = c.profile_id
@@ -266,10 +276,11 @@ func (r *Repository) ListCredentials(ctx context.Context, limit, offset int) ([]
 			LIMIT 1
 		) po ON true
 		LEFT JOIN agents a ON a.id = COALESCE(po.paid_by_agent_id, po.agent_id)
+		WHERE ($1 = '' OR $1 = 'superadmin' OR c.tenant_slug = $1 OR cust.tenant_slug = $1)
 		ORDER BY c.created_at DESC
-		LIMIT $1 OFFSET $2
+		LIMIT $2 OFFSET $3
 	`
-	rows, err := r.db.Query(ctx, q, limit, offset)
+	rows, err := r.db.Query(ctx, q, tenantSlug, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list credentials: %w", err)
 	}
@@ -284,6 +295,7 @@ func (r *Repository) ListCredentials(ctx context.Context, limit, offset int) ([]
 			&cred.LastAuthenticatedAt, &cred.CreatedAt, &cred.UpdatedAt,
 			&cred.ExpiresAt, &cred.PackageName,
 			&cred.IssuerName, &cred.IssuerType,
+			&cred.TenantSlug,
 		); err != nil {
 			return nil, 0, fmt.Errorf("scan credential: %w", err)
 		}
@@ -319,11 +331,14 @@ func (r *Repository) ValidateAgentReferral(ctx context.Context, code string) (uu
 	return aID, aName, discPct, cashPct, err
 }
 
-func (r *Repository) ResolveOrCreateCustomer(ctx context.Context, name, phone, email string) (uuid.UUID, error) {
+func (r *Repository) ResolveOrCreateCustomer(ctx context.Context, name, phone, email, tenantSlug string) (uuid.UUID, error) {
+	if tenantSlug == "" {
+		tenantSlug = "gogiga"
+	}
 	phone = strings.TrimSpace(phone)
 	if phone != "" {
 		var existingID uuid.UUID
-		err := r.db.QueryRow(ctx, "SELECT id FROM customers WHERE phone = $1 LIMIT 1", phone).Scan(&existingID)
+		err := r.db.QueryRow(ctx, "SELECT id FROM customers WHERE phone = $1 AND tenant_slug = $2 LIMIT 1", phone, tenantSlug).Scan(&existingID)
 		if err == nil {
 			return existingID, nil
 		}
@@ -345,11 +360,11 @@ func (r *Repository) ResolveOrCreateCustomer(ctx context.Context, name, phone, e
 	}
 
 	const q = `
-		INSERT INTO customers (id, customer_number, full_name, email, phone, status, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, 'ACTIVE', NOW(), NOW())
+		INSERT INTO customers (id, customer_number, full_name, email, phone, status, tenant_slug, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, 'ACTIVE', $6, NOW(), NOW())
 		ON CONFLICT (id) DO NOTHING
 	`
-	_, err := r.db.Exec(ctx, q, custID, custNum, name, email, phone)
+	_, err := r.db.Exec(ctx, q, custID, custNum, name, email, phone, tenantSlug)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("create customer for passpoint: %w", err)
 	}
@@ -357,24 +372,28 @@ func (r *Repository) ResolveOrCreateCustomer(ctx context.Context, name, phone, e
 }
 
 func (r *Repository) CreateOrder(ctx context.Context, order *PasspointOrder) error {
+	tSlug := order.TenantSlug
+	if tSlug == "" {
+		tSlug = "gogiga"
+	}
 	const q = `
 		INSERT INTO passpoint_orders (
 			id, order_id, cashier_code, order_type, package_id, package_name, duration_days,
 			customer_name, customer_phone, customer_email, original_price, discount_amount,
 			admin_fee, final_price, agent_id, promo_code, agent_commission, payment_method,
-			status, expires_at, created_at, updated_at
+			status, tenant_slug, expires_at, created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7,
 			$8, $9, $10, $11, $12,
 			$13, $14, $15, $16, $17, $18,
-			$19, $20, $21, $22
+			$19, $20, $21, $22, $23
 		)
 	`
 	_, err := r.db.Exec(ctx, q,
 		order.ID, order.OrderID, order.CashierCode, order.OrderType, order.PackageID, order.PackageName, order.DurationDays,
 		order.CustomerName, order.CustomerPhone, order.CustomerEmail, order.OriginalPrice, order.DiscountAmount,
 		order.AdminFee, order.FinalPrice, order.AgentID, order.PromoCode, order.AgentCommission, order.PaymentMethod,
-		order.Status, order.ExpiresAt, order.CreatedAt, order.UpdatedAt,
+		order.Status, tSlug, order.ExpiresAt, order.CreatedAt, order.UpdatedAt,
 	)
 	return err
 }
@@ -384,7 +403,7 @@ func (r *Repository) GetOrderByOrderID(ctx context.Context, orderID string) (*Pa
 		SELECT id, order_id, cashier_code, order_type, package_id, package_name, duration_days,
 		       customer_name, customer_phone, customer_email, original_price, discount_amount,
 		       admin_fee, final_price, agent_id, promo_code, agent_commission, payment_method,
-		       status, credential_id, paid_by_agent_id, paid_at, expires_at, created_at, updated_at
+		       status, credential_id, paid_by_agent_id, paid_at, expires_at, COALESCE(tenant_slug, 'gogiga'), created_at, updated_at
 		FROM passpoint_orders
 		WHERE order_id = $1
 		LIMIT 1
@@ -394,7 +413,7 @@ func (r *Repository) GetOrderByOrderID(ctx context.Context, orderID string) (*Pa
 		&o.ID, &o.OrderID, &o.CashierCode, &o.OrderType, &o.PackageID, &o.PackageName, &o.DurationDays,
 		&o.CustomerName, &o.CustomerPhone, &o.CustomerEmail, &o.OriginalPrice, &o.DiscountAmount,
 		&o.AdminFee, &o.FinalPrice, &o.AgentID, &o.PromoCode, &o.AgentCommission, &o.PaymentMethod,
-		&o.Status, &o.CredentialID, &o.PaidByAgentID, &o.PaidAt, &o.ExpiresAt, &o.CreatedAt, &o.UpdatedAt,
+		&o.Status, &o.CredentialID, &o.PaidByAgentID, &o.PaidAt, &o.ExpiresAt, &o.TenantSlug, &o.CreatedAt, &o.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -539,17 +558,17 @@ func (r *Repository) PayOrderWithAgentBalance(
 
 	// 2. Lock and fetch agent
 	const agentQ = `
-		SELECT balance, code, name, COALESCE(loket_admin_fee, 2500), status
+		SELECT balance, code, name, COALESCE(loket_admin_fee, 2500), status, COALESCE(tenant_slug, 'gogiga')
 		FROM agents
 		WHERE id = $1
 		FOR UPDATE
 	`
 	var (
 		agentBalance, agentAdminFee int64
-		agentCode, agentName, agentStatus string
+		agentCode, agentName, agentStatus, agentTenantSlug string
 	)
 	err = tx.QueryRow(ctx, agentQ, agentID).Scan(
-		&agentBalance, &agentCode, &agentName, &agentAdminFee, &agentStatus,
+		&agentBalance, &agentCode, &agentName, &agentAdminFee, &agentStatus, &agentTenantSlug,
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("query agen: %w", err)
@@ -598,7 +617,7 @@ func (r *Repository) PayOrderWithAgentBalance(
 
 	// 5. Resolve / Create customer
 	var custID uuid.UUID
-	err = tx.QueryRow(ctx, "SELECT id FROM customers WHERE phone = $1 LIMIT 1", customerPhone).Scan(&custID)
+	err = tx.QueryRow(ctx, "SELECT id FROM customers WHERE phone = $1 AND tenant_slug = $2 LIMIT 1", customerPhone, agentTenantSlug).Scan(&custID)
 	if err != nil || custID == uuid.Nil {
 		custID = uuid.New()
 		var seqVal int64
@@ -612,9 +631,9 @@ func (r *Repository) PayOrderWithAgentBalance(
 			cName = fmt.Sprintf("Pelanggan Passpoint (%s)", customerPhone)
 		}
 		_, err = tx.Exec(ctx, `
-			INSERT INTO customers (id, customer_number, full_name, email, phone, status, created_at, updated_at)
-			VALUES ($1, $2, $3, $4, $5, 'ACTIVE', NOW(), NOW())
-		`, custID, custNum, cName, customerEmail, customerPhone)
+			INSERT INTO customers (id, customer_number, full_name, email, phone, status, tenant_slug, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, $5, 'ACTIVE', $6, NOW(), NOW())
+		`, custID, custNum, cName, customerEmail, customerPhone, agentTenantSlug)
 		if err != nil {
 			return nil, nil, fmt.Errorf("buat data customer: %w", err)
 		}
@@ -630,20 +649,21 @@ func (r *Repository) PayOrderWithAgentBalance(
 		Username:   username,
 		Password:   password,
 		Status:     "ACTIVE",
+		TenantSlug: &agentTenantSlug,
 		CreatedAt:  now,
 		UpdatedAt:  now,
 	}
 	const credQ = `
 		INSERT INTO passpoint_credentials (
 			id, customer_id, profile_id, username, password, status,
-			last_authenticated_at, created_at, updated_at
+			last_authenticated_at, tenant_slug, created_at, updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 		)
 	`
 	_, err = tx.Exec(ctx, credQ,
 		cred.ID, cred.CustomerID, cred.ProfileID, cred.Username, cred.Password, cred.Status,
-		cred.LastAuthenticatedAt, cred.CreatedAt, cred.UpdatedAt,
+		cred.LastAuthenticatedAt, agentTenantSlug, cred.CreatedAt, cred.UpdatedAt,
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("buat kredensial passpoint: %w", err)
@@ -657,10 +677,11 @@ func (r *Repository) PayOrderWithAgentBalance(
 			paid_by_agent_id = $2,
 			paid_at = NOW(),
 			admin_fee = $3,
+			tenant_slug = $4,
 			updated_at = NOW()
-		WHERE id = $4
+		WHERE id = $5
 	`
-	_, err = tx.Exec(ctx, updOrderQ, credID, agentID, adminFee, orderUUID)
+	_, err = tx.Exec(ctx, updOrderQ, credID, agentID, adminFee, agentTenantSlug, orderUUID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("update status pesanan: %w", err)
 	}
@@ -713,7 +734,7 @@ func (r *Repository) IssueManualPasspoint(
 
 	// 1. Lock and fetch agent
 	const agentQ = `
-		SELECT balance, code, name, COALESCE(offline_cashback_pct, 15.0), status
+		SELECT balance, code, name, COALESCE(offline_cashback_pct, 15.0), status, COALESCE(tenant_slug, 'gogiga')
 		FROM agents
 		WHERE id = $1
 		FOR UPDATE
@@ -721,10 +742,10 @@ func (r *Repository) IssueManualPasspoint(
 	var (
 		agentBalance int64
 		agentCashback float64
-		agentCode, agentName, agentStatus string
+		agentCode, agentName, agentStatus, agentTenantSlug string
 	)
 	err = tx.QueryRow(ctx, agentQ, agentID).Scan(
-		&agentBalance, &agentCode, &agentName, &agentCashback, &agentStatus,
+		&agentBalance, &agentCode, &agentName, &agentCashback, &agentStatus, &agentTenantSlug,
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("query agen: %w", err)
@@ -768,7 +789,7 @@ func (r *Repository) IssueManualPasspoint(
 
 	// 4. Resolve / Create customer
 	var custID uuid.UUID
-	err = tx.QueryRow(ctx, "SELECT id FROM customers WHERE phone = $1 LIMIT 1", req.Phone).Scan(&custID)
+	err = tx.QueryRow(ctx, "SELECT id FROM customers WHERE phone = $1 AND tenant_slug = $2 LIMIT 1", req.Phone, agentTenantSlug).Scan(&custID)
 	if err != nil || custID == uuid.Nil {
 		custID = uuid.New()
 		var seqVal int64
@@ -782,9 +803,9 @@ func (r *Repository) IssueManualPasspoint(
 			cName = fmt.Sprintf("Pelanggan Passpoint (%s)", req.Phone)
 		}
 		_, err = tx.Exec(ctx, `
-			INSERT INTO customers (id, customer_number, full_name, email, phone, status, created_at, updated_at)
-			VALUES ($1, $2, $3, $4, $5, 'ACTIVE', NOW(), NOW())
-		`, custID, custNum, cName, req.Email, req.Phone)
+			INSERT INTO customers (id, customer_number, full_name, email, phone, status, tenant_slug, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, $5, 'ACTIVE', $6, NOW(), NOW())
+		`, custID, custNum, cName, req.Email, req.Phone, agentTenantSlug)
 		if err != nil {
 			return nil, nil, fmt.Errorf("buat data customer: %w", err)
 		}
@@ -800,20 +821,21 @@ func (r *Repository) IssueManualPasspoint(
 		Username:   username,
 		Password:   password,
 		Status:     "ACTIVE",
+		TenantSlug: &agentTenantSlug,
 		CreatedAt:  now,
 		UpdatedAt:  now,
 	}
 	const credQ = `
 		INSERT INTO passpoint_credentials (
 			id, customer_id, profile_id, username, password, status,
-			last_authenticated_at, created_at, updated_at
+			last_authenticated_at, tenant_slug, created_at, updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 		)
 	`
 	_, err = tx.Exec(ctx, credQ,
 		cred.ID, cred.CustomerID, cred.ProfileID, cred.Username, cred.Password, cred.Status,
-		cred.LastAuthenticatedAt, cred.CreatedAt, cred.UpdatedAt,
+		cred.LastAuthenticatedAt, agentTenantSlug, cred.CreatedAt, cred.UpdatedAt,
 	)
 	if err != nil {
 		return nil, nil, fmt.Errorf("buat kredensial passpoint: %w", err)
@@ -827,18 +849,18 @@ func (r *Repository) IssueManualPasspoint(
 			id, order_id, cashier_code, order_type, package_id, package_name, duration_days,
 			customer_name, customer_phone, customer_email, original_price, discount_amount,
 			admin_fee, final_price, agent_id, promo_code, agent_commission, payment_method,
-			status, credential_id, paid_by_agent_id, paid_at, expires_at, created_at, updated_at
+			status, credential_id, paid_by_agent_id, paid_at, expires_at, tenant_slug, created_at, updated_at
 		) VALUES (
 			gen_random_uuid(), $1, $2, 'NEW_ACCESS', $3, $4, $5,
 			$6, $7, $8, $9, 0,
 			0, $9, $10, '', $11, 'MANUAL_COUNTER',
-			'PAID', $12, $10, NOW(), NOW() + INTERVAL '30 days', NOW(), NOW()
+			'PAID', $12, $10, NOW(), NOW() + INTERVAL '30 days', $13, NOW(), NOW()
 		)
 	`
 	_, _ = tx.Exec(ctx, insOrderQ,
 		orderID, randCode, pkg.ID, pkg.Name, pkg.DurationDays,
 		req.CustomerName, req.Phone, req.Email, pkg.Price,
-		agentID, commission, credID,
+		agentID, commission, credID, agentTenantSlug,
 	)
 
 	if err := tx.Commit(ctx); err != nil {
@@ -1140,15 +1162,17 @@ func (r *Repository) MarkReminderSent(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
-func (r *Repository) GetActiveSessions(ctx context.Context, limit, offset int) ([]PasspointActiveSession, int64, error) {
+func (r *Repository) GetActiveSessions(ctx context.Context, tenantSlug string, limit, offset int) ([]PasspointActiveSession, int64, error) {
 	const countQ = `
 		SELECT COUNT(*)
 		FROM radacct ra
 		JOIN passpoint_credentials c ON c.username = ra.username
+		JOIN customers cust ON cust.id = c.customer_id
 		WHERE ra.acctstoptime IS NULL
+		  AND ($1 = '' OR $1 = 'superadmin' OR c.tenant_slug = $1 OR cust.tenant_slug = $1)
 	`
 	var total int64
-	if err := r.db.QueryRow(ctx, countQ).Scan(&total); err != nil {
+	if err := r.db.QueryRow(ctx, countQ, tenantSlug).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count active sessions: %w", err)
 	}
 
@@ -1164,10 +1188,11 @@ func (r *Repository) GetActiveSessions(ctx context.Context, limit, offset int) (
 		JOIN customers cust ON cust.id = c.customer_id
 		JOIN passpoint_profiles p ON p.id = c.profile_id
 		WHERE ra.acctstoptime IS NULL
+		  AND ($1 = '' OR $1 = 'superadmin' OR c.tenant_slug = $1 OR cust.tenant_slug = $1)
 		ORDER BY ra.acctstarttime DESC
-		LIMIT $1 OFFSET $2
+		LIMIT $2 OFFSET $3
 	`
-	rows, err := r.db.Query(ctx, q, limit, offset)
+	rows, err := r.db.Query(ctx, q, tenantSlug, limit, offset)
 	if err != nil {
 		return nil, 0, fmt.Errorf("query active sessions: %w", err)
 	}
@@ -1271,7 +1296,7 @@ func (r *Repository) FindCustomerStatus(ctx context.Context, query string) (*Pas
 	}, nil
 }
 
-func (r *Repository) GetFinancialAnalytics(ctx context.Context) (*PasspointAnalytics, error) {
+func (r *Repository) GetFinancialAnalytics(ctx context.Context, tenantSlug string) (*PasspointAnalytics, error) {
 	var a PasspointAnalytics
 
 	// 1. All-time, Month, Today Revenue & Orders
@@ -1286,8 +1311,9 @@ func (r *Repository) GetFinancialAnalytics(ctx context.Context) (*PasspointAnaly
 			COALESCE(SUM(agent_commission), 0) AS total_comm
 		FROM passpoint_orders
 		WHERE status = 'PAID'
+		  AND ($1 = '' OR $1 = 'superadmin' OR tenant_slug = $1)
 	`
-	if err := r.db.QueryRow(ctx, revQ).Scan(
+	if err := r.db.QueryRow(ctx, revQ, tenantSlug).Scan(
 		&a.TotalRevenueToday,
 		&a.TotalRevenueMonth,
 		&a.TotalRevenueAllTime,
@@ -1302,11 +1328,13 @@ func (r *Repository) GetFinancialAnalytics(ctx context.Context) (*PasspointAnaly
 	// 2. Active & Expired credentials count
 	const credQ = `
 		SELECT 
-			COUNT(CASE WHEN status = 'ACTIVE' THEN 1 END),
-			COUNT(CASE WHEN status != 'ACTIVE' THEN 1 END)
-		FROM passpoint_credentials
+			COUNT(CASE WHEN c.status = 'ACTIVE' THEN 1 END),
+			COUNT(CASE WHEN c.status != 'ACTIVE' THEN 1 END)
+		FROM passpoint_credentials c
+		JOIN customers cust ON cust.id = c.customer_id
+		WHERE ($1 = '' OR $1 = 'superadmin' OR c.tenant_slug = $1 OR cust.tenant_slug = $1)
 	`
-	_ = r.db.QueryRow(ctx, credQ).Scan(&a.ActiveCredentials, &a.ExpiredCredentials)
+	_ = r.db.QueryRow(ctx, credQ, tenantSlug).Scan(&a.ActiveCredentials, &a.ExpiredCredentials)
 
 	// 3. Channel breakdown
 	const chanQ = `
@@ -1318,8 +1346,9 @@ func (r *Repository) GetFinancialAnalytics(ctx context.Context) (*PasspointAnaly
 			COALESCE(SUM(CASE WHEN paid_by_agent_id IS NOT NULL OR payment_method = 'MANUAL_COUNTER' THEN agent_commission ELSE 0 END), 0) AS agent_comm
 		FROM passpoint_orders
 		WHERE status = 'PAID'
+		  AND ($1 = '' OR $1 = 'superadmin' OR tenant_slug = $1)
 	`
-	_ = r.db.QueryRow(ctx, chanQ).Scan(
+	_ = r.db.QueryRow(ctx, chanQ, tenantSlug).Scan(
 		&a.ChannelBreakdown.OnlineCount,
 		&a.ChannelBreakdown.OnlineRevenue,
 		&a.ChannelBreakdown.AgentCount,
@@ -1333,11 +1362,11 @@ func (r *Repository) GetFinancialAnalytics(ctx context.Context) (*PasspointAnaly
 		       COALESCE(SUM(po.final_price), 0) AS daily_rev,
 		       COUNT(po.id) AS daily_orders
 		FROM generate_series(CURRENT_DATE - INTERVAL '6 days', CURRENT_DATE, INTERVAL '1 day') AS d(day)
-		LEFT JOIN passpoint_orders po ON po.created_at::date = d.day::date AND po.status = 'PAID'
+		LEFT JOIN passpoint_orders po ON po.created_at::date = d.day::date AND po.status = 'PAID' AND ($1 = '' OR $1 = 'superadmin' OR po.tenant_slug = $1)
 		GROUP BY d.day
 		ORDER BY d.day ASC
 	`
-	rows, err := r.db.Query(ctx, dailyQ)
+	rows, err := r.db.Query(ctx, dailyQ, tenantSlug)
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
@@ -1351,18 +1380,19 @@ func (r *Repository) GetFinancialAnalytics(ctx context.Context) (*PasspointAnaly
 	return &a, nil
 }
 
-func (r *Repository) GetPaidOrdersForExport(ctx context.Context) ([]PasspointOrder, error) {
+func (r *Repository) GetPaidOrdersForExport(ctx context.Context, tenantSlug string) ([]PasspointOrder, error) {
 	const q = `
 		SELECT id, order_id, cashier_code, order_type, package_id, package_name, duration_days,
 		       customer_name, customer_phone, customer_email, original_price, discount_amount,
 		       admin_fee, final_price, agent_id, promo_code, agent_commission, payment_method,
-		       status, credential_id, paid_by_agent_id, paid_at, expires_at, created_at, updated_at
+		       status, credential_id, paid_by_agent_id, paid_at, expires_at, COALESCE(tenant_slug, 'gogiga'), created_at, updated_at
 		FROM passpoint_orders
 		WHERE status = 'PAID'
+		  AND ($1 = '' OR $1 = 'superadmin' OR tenant_slug = $1)
 		ORDER BY created_at DESC
 		LIMIT 1000
 	`
-	rows, err := r.db.Query(ctx, q)
+	rows, err := r.db.Query(ctx, q, tenantSlug)
 	if err != nil {
 		return nil, err
 	}
@@ -1375,7 +1405,7 @@ func (r *Repository) GetPaidOrdersForExport(ctx context.Context) ([]PasspointOrd
 			&o.ID, &o.OrderID, &o.CashierCode, &o.OrderType, &o.PackageID, &o.PackageName, &o.DurationDays,
 			&o.CustomerName, &o.CustomerPhone, &o.CustomerEmail, &o.OriginalPrice, &o.DiscountAmount,
 			&o.AdminFee, &o.FinalPrice, &o.AgentID, &o.PromoCode, &o.AgentCommission, &o.PaymentMethod,
-			&o.Status, &o.CredentialID, &o.PaidByAgentID, &o.PaidAt, &o.ExpiresAt, &o.CreatedAt, &o.UpdatedAt,
+			&o.Status, &o.CredentialID, &o.PaidByAgentID, &o.PaidAt, &o.ExpiresAt, &o.TenantSlug, &o.CreatedAt, &o.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
