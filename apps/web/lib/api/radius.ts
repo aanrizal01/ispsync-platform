@@ -1,4 +1,4 @@
-import { request } from "./client";
+import { request, requestPaginated } from "./client";
 
 export interface RadiusSession {
   radacctid: number;
@@ -62,7 +62,7 @@ export const radiusApi = {
     if (params?.page) query.set("page", params.page.toString());
     if (params?.limit) query.set("limit", params.limit.toString());
     if (params?.search) query.set("search", params.search);
-    return request<RadiusSession[]>(`/radius/sessions?${query.toString()}`);
+    return requestPaginated<RadiusSession>(`/radius/sessions?${query.toString()}`);
   },
 
   disconnectSession: (data: DisconnectSessionInput) =>
@@ -84,6 +84,6 @@ export const radiusApi = {
     if (params?.page) query.set("page", params.page.toString());
     if (params?.limit) query.set("limit", params.limit.toString());
     if (params?.search) query.set("search", params.search);
-    return request<AuthLog[]>(`/radius/auth-logs?${query.toString()}`);
+    return requestPaginated<AuthLog>(`/radius/auth-logs?${query.toString()}`);
   },
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Terminal, Search, X, Copy, Check, RefreshCw } from "lucide-react";
+import { Terminal, Search, X, Copy, Check, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { radiusApi, type RadiusSession, type NAS, type AuthLog, type CreateNASInput } from "@/lib/api/radius";
 import { networkApi } from "@/lib/api/network";
 import { formatDate, cn } from "@/lib/utils";
@@ -34,6 +34,18 @@ export default function RadiusPage() {
   const [logSearch, setLogSearch] = useState("");
   const [copiedMac, setCopiedMac] = useState<string | null>(null);
 
+  // Pagination State - Sesi Online
+  const [sessionPage, setSessionPage] = useState(1);
+  const [sessionLimit, setSessionLimit] = useState(25);
+  const [sessionTotal, setSessionTotal] = useState(0);
+  const [sessionTotalPages, setSessionTotalPages] = useState(1);
+
+  // Pagination State - Log Autentikasi
+  const [logPage, setLogPage] = useState(1);
+  const [logLimit, setLogLimit] = useState(25);
+  const [logTotal, setLogTotal] = useState(0);
+  const [logTotalPages, setLogTotalPages] = useState(1);
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedMac(text);
@@ -64,23 +76,90 @@ export default function RadiusPage() {
     try {
       setLoading(true);
       const [sessRes, nRes, logRes] = await Promise.all([
-        radiusApi.listSessions({ search: search || undefined }),
+        radiusApi.listSessions({ page: sessionPage, limit: sessionLimit, search: search || undefined }),
         radiusApi.listNAS(),
-        radiusApi.listAuthLogs({ limit: 100, search: logSearch || undefined }),
+        radiusApi.listAuthLogs({ page: logPage, limit: logLimit, search: logSearch || undefined }),
       ]);
-      setSessions(sessRes || []);
+      setSessions(sessRes.data || []);
+      if (sessRes.meta) {
+        setSessionTotal(sessRes.meta.total);
+        setSessionTotalPages(sessRes.meta.total_pages);
+      }
       setNasList(nRes || []);
-      setAuthLogs(logRes || []);
+      setAuthLogs(logRes.data || []);
+      if (logRes.meta) {
+        setLogTotal(logRes.meta.total);
+        setLogTotalPages(logRes.meta.total_pages);
+      }
     } catch (err) {
       console.error("Failed to load RADIUS data:", err);
     } finally {
       setLoading(false);
     }
-  }, [search, logSearch]);
+  }, [search, sessionPage, sessionLimit, logSearch, logPage, logLimit]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const renderPagination = (
+    currPage: number,
+    currLimit: number,
+    total: number,
+    totalPages: number,
+    onPageChange: (p: number) => void,
+    onLimitChange: (l: number) => void,
+    label: string
+  ) => (
+    <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="text-xs text-slate-500">
+        Menampilkan{" "}
+        <span className="font-semibold text-slate-700">
+          {total > 0 ? (currPage - 1) * currLimit + 1 : 0}
+        </span>{" "}
+        -{" "}
+        <span className="font-semibold text-slate-700">
+          {Math.min(currPage * currLimit, total)}
+        </span>{" "}
+        dari <span className="font-semibold text-slate-700">{total}</span> {label}
+        {totalPages > 1 && ` (Halaman ${currPage} dari ${totalPages})`}
+      </div>
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+          <span>Baris:</span>
+          <select
+            value={currLimit}
+            onChange={(e) => onLimitChange(Number(e.target.value))}
+            className="px-2 py-1 border border-slate-200 rounded-md bg-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onPageChange(Math.max(1, currPage - 1))}
+            disabled={currPage <= 1 || loading}
+            className="p-1.5 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
+            title="Halaman Sebelumnya"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="text-xs font-semibold px-2.5 py-1 bg-white border border-slate-200 rounded-md text-slate-700">
+            {currPage} / {Math.max(1, totalPages)}
+          </span>
+          <button
+            type="button"
+            onClick={() => onPageChange(Math.min(totalPages, currPage + 1))}
+            disabled={currPage >= totalPages || loading}
+            className="p-1.5 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-40 transition-colors cursor-pointer"
+            title="Halaman Selanjutnya"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   const handleDisconnect = async (s: RadiusSession) => {
     if (!confirm(`Kirim permintaan pemutusan sesi (CoA Disconnect) untuk pengguna "${s.username}"?`)) return;
@@ -185,20 +264,20 @@ export default function RadiusPage() {
         <button
           onClick={() => setActiveTab("sessions")}
           className={cn(
-            "pb-3 text-sm font-medium border-b-2 transition-colors",
+            "pb-3 text-sm font-medium border-b-2 transition-colors cursor-pointer",
             activeTab === "sessions"
-              ? "border-blue-600 text-blue-600"
+              ? "border-blue-600 text-blue-600 font-semibold"
               : "border-transparent text-slate-500 hover:text-slate-800"
           )}
         >
-          Sesi Online Aktif ({sessions.length})
+          Sesi Online Aktif ({sessionTotal || sessions.length})
         </button>
         <button
           onClick={() => setActiveTab("nas")}
           className={cn(
-            "pb-3 text-sm font-medium border-b-2 transition-colors",
+            "pb-3 text-sm font-medium border-b-2 transition-colors cursor-pointer",
             activeTab === "nas"
-              ? "border-blue-600 text-blue-600"
+              ? "border-blue-600 text-blue-600 font-semibold"
               : "border-transparent text-slate-500 hover:text-slate-800"
           )}
         >
@@ -207,13 +286,13 @@ export default function RadiusPage() {
         <button
           onClick={() => setActiveTab("logs")}
           className={cn(
-            "pb-3 text-sm font-medium border-b-2 transition-colors",
+            "pb-3 text-sm font-medium border-b-2 transition-colors cursor-pointer",
             activeTab === "logs"
-              ? "border-blue-600 text-blue-600"
+              ? "border-blue-600 text-blue-600 font-semibold"
               : "border-transparent text-slate-500 hover:text-slate-800"
           )}
         >
-          Log Autentikasi ({authLogs.length})
+          Log Autentikasi ({logTotal || authLogs.length})
         </button>
       </div>
 
@@ -223,16 +302,30 @@ export default function RadiusPage() {
           {/* Search bar */}
           <div className="bg-white p-4 rounded-xl border border-slate-200 mb-6 shadow-sm">
             <div className="relative">
-              <svg className="w-5 h-5 absolute left-3 top-2.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+              <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
               <input
                 type="text"
                 placeholder="Cari username, IP client, atau MAC address..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setSessionPage(1);
+                }}
+                className="w-full pl-10 pr-10 py-2 rounded-lg border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch("");
+                    setSessionPage(1);
+                  }}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  title="Hapus pencarian"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
 
@@ -297,6 +390,18 @@ export default function RadiusPage() {
                 </tbody>
               </table>
             </div>
+            {renderPagination(
+              sessionPage,
+              sessionLimit,
+              sessionTotal,
+              sessionTotalPages,
+              setSessionPage,
+              (l) => {
+                setSessionLimit(l);
+                setSessionPage(1);
+              },
+              "sesi aktif"
+            )}
           </div>
         </div>
       )}
@@ -512,6 +617,18 @@ export default function RadiusPage() {
                 </tbody>
               </table>
             </div>
+            {renderPagination(
+              logPage,
+              logLimit,
+              logTotal,
+              logTotalPages,
+              setLogPage,
+              (l) => {
+                setLogLimit(l);
+                setLogPage(1);
+              },
+              "log autentikasi"
+            )}
           </div>
         </div>
       )}
