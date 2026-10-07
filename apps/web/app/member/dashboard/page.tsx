@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import MemberNav from "../_nav";
 import { useMember } from "../context";
@@ -85,7 +86,8 @@ function getEngineUrls(domain?: string) {
 }
 
 export default function MemberDashboard() {
-  const { member } = useMember();
+  const { member, loading } = useMember();
+  const router = useRouter();
   const [copiedEmail, setCopiedEmail] = useState(false);
 
   // Superadmin SaaS stats & tenants list
@@ -103,6 +105,12 @@ export default function MemberDashboard() {
     member?.role === "SUPERADMIN" || member?.email === "admin@ispsync.id" || member?.id === "mbr_001";
 
   useEffect(() => {
+    if (!loading && !member) {
+      router.replace("/member/login");
+    }
+  }, [loading, member, router]);
+
+  useEffect(() => {
     if (isSuperadmin) {
       setLoadingStats(true);
       fetch("/api/member/tenants")
@@ -118,7 +126,38 @@ export default function MemberDashboard() {
     }
   }, [isSuperadmin]);
 
-  if (!member) return null;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-cyan-600 animate-spin" />
+          <div className="text-slate-400 text-xs font-mono animate-pulse">Memuat konsol platform...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!member) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center space-y-4 shadow-xl">
+          <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mx-auto">
+            <Lock className="w-6 h-6" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-100">Sesi Akses Diperlukan</h2>
+          <p className="text-xs text-slate-400">
+            Sesi masuk Anda belum terverifikasi atau telah berakhir. Mengarahkan ke halaman masuk...
+          </p>
+          <Link
+            href="/member/login"
+            className="block w-full py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs rounded-xl shadow-sm transition-all"
+          >
+            Masuk ke Konsol Member
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   // ══════════════════════════════════════════════════════════════════════════
   // VIEW 1: SUPERADMIN SAAS MASTER OVERVIEW
