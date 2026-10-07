@@ -191,6 +191,8 @@ export default function SaaSAdminTenantsPage() {
       planName: "Professional",
       planPrice: "6500000",
       planCapacity: "5.000 Pelanggan",
+      clusterType: "shared",
+      clusterNode: "103.179.65.73",
       expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
     });
     setFormPassword("");
@@ -825,6 +827,42 @@ export default function SaaSAdminTenantsPage() {
                       <option value="active">Aktif (Active)</option>
                       <option value="suspended">Ditangguhkan (Suspended)</option>
                     </select>
+                  </div>
+
+                  {/* Cluster Type */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                      Arsitektur Klaster
+                    </label>
+                    <select
+                      value={activeTenant.clusterType || "shared"}
+                      onChange={(e) => {
+                        const cType = e.target.value as "shared" | "dedicated";
+                        setActiveTenant({
+                          ...activeTenant,
+                          clusterType: cType,
+                          clusterNode: cType === "shared" ? "103.179.65.73" : (activeTenant.clusterNode === "103.179.65.73" ? "103.179.65.72" : activeTenant.clusterNode || "103.179.65.72"),
+                        });
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                    >
+                      <option value="shared">Shared Cloud Cluster (103.179.65.73)</option>
+                      <option value="dedicated">Dedicated Private Cluster (Node Server Mandiri)</option>
+                    </select>
+                  </div>
+
+                  {/* Cluster Host Node */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                      Host IP / Node Server Klaster
+                    </label>
+                    <input
+                      type="text"
+                      value={activeTenant.clusterNode || "103.179.65.73"}
+                      onChange={(e) => setActiveTenant({ ...activeTenant, clusterNode: e.target.value })}
+                      placeholder="Contoh: 103.179.65.73 atau 103.179.65.72"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                    />
                   </div>
                 </div>
 

@@ -134,6 +134,9 @@ export async function POST(req: NextRequest) {
         autoRenew: true,
         domain: domain.trim().replace(/^https?:\/\//, ""),
         role: "TENANT",
+        clusterType: body.clusterType || "shared",
+        clusterNode: body.clusterNode || (body.clusterType === "dedicated" ? "Custom Node" : "103.179.65.73"),
+        engineUrls: body.engineUrls || undefined,
         invoices: [],
         tickets: [],
       };
