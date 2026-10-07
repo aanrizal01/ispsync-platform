@@ -3,7 +3,9 @@ package report
 import (
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -11,6 +13,40 @@ import (
 	"github.com/gigabill/isp/internal/auth"
 	"github.com/gigabill/isp/internal/shared/middleware"
 )
+
+func extractTenantSlug(r *http.Request) string {
+	if s := r.Header.Get("X-Tenant-Slug"); s != "" {
+		return s
+	}
+	host := r.Header.Get("X-Forwarded-Host")
+	if host == "" {
+		host = r.Host
+	}
+	if host == "" {
+		if ref := r.Header.Get("Referer"); ref != "" {
+			if u, err := url.Parse(ref); err == nil {
+				host = u.Host
+			}
+		}
+	}
+	if host == "" {
+		if orig := r.Header.Get("Origin"); orig != "" {
+			if u, err := url.Parse(orig); err == nil {
+				host = u.Host
+			}
+		}
+	}
+	if idx := strings.Index(host, ":"); idx != -1 {
+		host = host[:idx]
+	}
+	parts := strings.Split(host, ".")
+	if len(parts) >= 4 {
+		return parts[1]
+	} else if len(parts) == 3 && parts[1] == "ispsync" {
+		return parts[0]
+	}
+	return "dev"
+}
 
 type Handler struct {
 	service *Service
@@ -37,7 +73,8 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 }
 
 func (h *Handler) GetFinancialSummary(w http.ResponseWriter, r *http.Request) {
-	summary, err := h.service.GetFinancialSummary(r.Context())
+	tenantSlug := extractTenantSlug(r)
+	summary, err := h.service.GetFinancialSummary(r.Context(), tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -46,7 +83,8 @@ func (h *Handler) GetFinancialSummary(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetPlanRevenue(w http.ResponseWriter, r *http.Request) {
-	plans, err := h.service.GetRevenueByPlan(r.Context())
+	tenantSlug := extractTenantSlug(r)
+	plans, err := h.service.GetRevenueByPlan(r.Context(), tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -62,7 +100,8 @@ func (h *Handler) GetRevenueTrends(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	trends, err := h.service.GetRevenueTrends(r.Context(), months)
+	tenantSlug := extractTenantSlug(r)
+	trends, err := h.service.GetRevenueTrends(r.Context(), tenantSlug, months)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -71,7 +110,8 @@ func (h *Handler) GetRevenueTrends(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetTrafficStats(w http.ResponseWriter, r *http.Request) {
-	stats, err := h.service.GetTrafficStats(r.Context())
+	tenantSlug := extractTenantSlug(r)
+	stats, err := h.service.GetTrafficStats(r.Context(), tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -83,7 +123,8 @@ func (h *Handler) ExportCSV(w http.ResponseWriter, r *http.Request) {
 	from := r.URL.Query().Get("from")
 	to := r.URL.Query().Get("to")
 
-	csvData, err := h.service.ExportInvoicesCSV(r.Context(), from, to)
+	tenantSlug := extractTenantSlug(r)
+	csvData, err := h.service.ExportInvoicesCSV(r.Context(), tenantSlug, from, to)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -100,7 +141,8 @@ func (h *Handler) ExportVoucherTaxCSV(w http.ResponseWriter, r *http.Request) {
 	from := r.URL.Query().Get("from")
 	to := r.URL.Query().Get("to")
 
-	csvData, err := h.service.ExportVoucherTaxCSV(r.Context(), from, to)
+	tenantSlug := extractTenantSlug(r)
+	csvData, err := h.service.ExportVoucherTaxCSV(r.Context(), tenantSlug, from, to)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -121,7 +163,8 @@ func (h *Handler) GetBHPUSOReport(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	report, err := h.service.GetBHPUSOReport(r.Context(), year)
+	tenantSlug := extractTenantSlug(r)
+	report, err := h.service.GetBHPUSOReport(r.Context(), tenantSlug, year)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -137,7 +180,8 @@ func (h *Handler) ExportBHPUSOCSV(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	csvData, err := h.service.ExportBHPUSOCSV(r.Context(), year)
+	tenantSlug := extractTenantSlug(r)
+	csvData, err := h.service.ExportBHPUSOCSV(r.Context(), tenantSlug, year)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -149,4 +193,3 @@ func (h *Handler) ExportBHPUSOCSV(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(csvData)
 }
-

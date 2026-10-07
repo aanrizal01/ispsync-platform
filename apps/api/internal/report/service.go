@@ -30,14 +30,14 @@ func (s *Service) SetISPIntegration(baseURL, jartaplokKey string) {
 	s.ispJartaplokKey = jartaplokKey
 }
 
-func (s *Service) GetFinancialSummary(ctx context.Context) (*FinancialSummary, error) {
-	summary, err := s.repo.GetFinancialSummary(ctx)
+func (s *Service) GetFinancialSummary(ctx context.Context, tenantSlug string) (*FinancialSummary, error) {
+	summary, err := s.repo.GetFinancialSummary(ctx, tenantSlug)
 	if err != nil {
 		return nil, err
 	}
 
 	// Fetch Jartaplok Wholesale COGS from ISP service
-	s.fetchJartaplokCOGS(ctx, summary)
+	s.fetchJartaplokCOGS(ctx, tenantSlug, summary)
 
 	// Hitung Laba Kotor (Gross Profit): (Total Pembayaran Diterima - Pajak PPN) - Beban Jartaplok (HPP) - Komisi Agen
 	summary.GrossProfit = (summary.TotalCollected - summary.TotalTaxCollected) - summary.JartaplokCOGS - summary.TotalAgentCommission
@@ -61,7 +61,7 @@ type jartaplokBillingAPIResponse struct {
 	} `json:"data"`
 }
 
-func (s *Service) fetchJartaplokCOGS(ctx context.Context, summary *FinancialSummary) {
+func (s *Service) fetchJartaplokCOGS(ctx context.Context, tenantSlug string, summary *FinancialSummary) {
 	if s.ispBaseURL == "" {
 		return
 	}
@@ -75,6 +75,9 @@ func (s *Service) fetchJartaplokCOGS(ctx context.Context, summary *FinancialSumm
 		key = "jartaplok2026"
 	}
 	req.Header.Set("X-Partner-Key", key)
+	if tenantSlug != "" {
+		req.Header.Set("X-Tenant-Slug", tenantSlug)
+	}
 
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
@@ -98,23 +101,23 @@ func (s *Service) fetchJartaplokCOGS(ctx context.Context, summary *FinancialSumm
 	}
 }
 
-func (s *Service) GetRevenueByPlan(ctx context.Context) ([]PlanRevenue, error) {
-	return s.repo.GetRevenueByPlan(ctx)
+func (s *Service) GetRevenueByPlan(ctx context.Context, tenantSlug string) ([]PlanRevenue, error) {
+	return s.repo.GetRevenueByPlan(ctx, tenantSlug)
 }
 
-func (s *Service) GetRevenueTrends(ctx context.Context, months int) ([]RevenueTrend, error) {
+func (s *Service) GetRevenueTrends(ctx context.Context, tenantSlug string, months int) ([]RevenueTrend, error) {
 	if months <= 0 {
 		months = 6
 	}
-	return s.repo.GetRevenueTrends(ctx, months)
+	return s.repo.GetRevenueTrends(ctx, tenantSlug, months)
 }
 
-func (s *Service) GetTrafficStats(ctx context.Context) (*TrafficStats, error) {
-	return s.repo.GetTrafficStats(ctx)
+func (s *Service) GetTrafficStats(ctx context.Context, tenantSlug string) (*TrafficStats, error) {
+	return s.repo.GetTrafficStats(ctx, tenantSlug)
 }
 
-func (s *Service) ExportInvoicesCSV(ctx context.Context, from, to string) ([]byte, error) {
-	txs, err := s.repo.GetInvoiceTransactions(ctx, from, to)
+func (s *Service) ExportInvoicesCSV(ctx context.Context, tenantSlug, from, to string) ([]byte, error) {
+	txs, err := s.repo.GetInvoiceTransactions(ctx, tenantSlug, from, to)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch transactions: %w", err)
 	}
@@ -173,8 +176,8 @@ func FormatInvoicesCSV(txs []InvoiceTransaction) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (s *Service) ExportVoucherTaxCSV(ctx context.Context, from, to string) ([]byte, error) {
-	txs, err := s.repo.GetVoucherTaxTransactions(ctx, from, to)
+func (s *Service) ExportVoucherTaxCSV(ctx context.Context, tenantSlug, from, to string) ([]byte, error) {
+	txs, err := s.repo.GetVoucherTaxTransactions(ctx, tenantSlug, from, to)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch voucher tax transactions: %w", err)
 	}
@@ -233,12 +236,12 @@ func FormatVoucherTaxCSV(txs []VoucherTaxTransaction) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (s *Service) GetBHPUSOReport(ctx context.Context, year int) (*BHPUSOReport, error) {
+func (s *Service) GetBHPUSOReport(ctx context.Context, tenantSlug string, year int) (*BHPUSOReport, error) {
 	if year <= 2000 || year > 2100 {
 		year = time.Now().Year()
 	}
 
-	rawMonths, err := s.repo.GetMonthlyRevenueData(ctx, year)
+	rawMonths, err := s.repo.GetMonthlyRevenueData(ctx, tenantSlug, year)
 	if err != nil {
 		return nil, fmt.Errorf("get monthly revenue for bhp/uso: %w", err)
 	}
@@ -417,8 +420,8 @@ func daysInMonth(year, month int) int {
 	return time.Date(year, time.Month(month)+1, 0, 0, 0, 0, 0, time.UTC).Day()
 }
 
-func (s *Service) ExportBHPUSOCSV(ctx context.Context, year int) ([]byte, error) {
-	report, err := s.GetBHPUSOReport(ctx, year)
+func (s *Service) ExportBHPUSOCSV(ctx context.Context, tenantSlug string, year int) ([]byte, error) {
+	report, err := s.GetBHPUSOReport(ctx, tenantSlug, year)
 	if err != nil {
 		return nil, err
 	}
