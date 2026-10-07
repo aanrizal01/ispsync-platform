@@ -125,11 +125,15 @@ func (r *Repository) fetchFromNexus(ctx context.Context) ([]ODPNode, bool) {
 		return nil, false
 	}
 
+	if len(rawItems) == 0 {
+		return []ODPNode{}, true
+	}
+
 	result := make([]ODPNode, 0, len(rawItems))
 	for _, it := range rawItems {
 		clusterArea := "Lokal"
-		providerName := "Internal ISP"
-		providerID := "GOGIGA"
+		providerName := fmt.Sprintf("%s In-House FO", strings.ToUpper(tenantSlug))
+		providerID := tenantSlug
 		upperCode := strings.ToUpper(it.Code)
 		if strings.HasPrefix(upperCode, "ODP-HRU") || strings.HasPrefix(upperCode, "OPD-HRU") || strings.HasPrefix(upperCode, "ODP-HR") {
 			clusterArea = "Cluster Harau (FiberGrid In-House)"
@@ -206,13 +210,10 @@ func (r *Repository) fetchFromFiberGrid(ctx context.Context) ([]ODPNode, bool) {
 	}
 	targetTenant := tenantSlug
 
-	settingsKey := "fibergrid_integration"
-	if tenantSlug != "" && tenantSlug != "dev" {
-		var exists bool
-		_ = r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM app_settings WHERE key = $1)", "fibergrid_integration_"+tenantSlug).Scan(&exists)
-		if exists {
-			settingsKey = "fibergrid_integration_" + tenantSlug
-		}
+	// Per-tenant FiberGrid integration key in app_settings
+	settingsKey := "fibergrid_integration_" + tenantSlug
+	if tenantSlug == "dev" {
+		settingsKey = "fibergrid_integration"
 	}
 
 	var valBytes []byte
@@ -224,7 +225,11 @@ func (r *Repository) fetchFromFiberGrid(ctx context.Context) ([]ODPNode, bool) {
 			APIKey     string `json:"api_key"`
 			TenantCode string `json:"tenant_code"`
 		}
-		if jsonErr := json.Unmarshal(valBytes, &cfg); jsonErr == nil && cfg.Enabled {
+		if jsonErr := json.Unmarshal(valBytes, &cfg); jsonErr == nil {
+			if !cfg.Enabled {
+				// Tenant has explicitly disabled FiberGrid
+				return []ODPNode{}, true
+			}
 			if cfg.APIURL != "" {
 				apiURL = cfg.APIURL
 			}
@@ -235,6 +240,9 @@ func (r *Repository) fetchFromFiberGrid(ctx context.Context) ([]ODPNode, bool) {
 				targetTenant = cfg.TenantCode
 			}
 		}
+	} else if tenantSlug != "dev" && tenantSlug != "gogiga" {
+		// New tenant without custom fibergrid settings: strictly use tenantSlug
+		targetTenant = tenantSlug
 	}
 
 	reqURL := strings.TrimRight(apiURL, "/") + "/api/v1/fttx/odp"
@@ -273,12 +281,23 @@ func (r *Repository) fetchFromFiberGrid(ctx context.Context) ([]ODPNode, bool) {
 		} `json:"data"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&fttxResp); err != nil || !fttxResp.Success || len(fttxResp.Data) == 0 {
+	if err := json.NewDecoder(resp.Body).Decode(&fttxResp); err != nil || !fttxResp.Success {
 		return nil, false
+	}
+
+	// FTTX engine successfully responded: if 0 nodes, return empty slice
+	if len(fttxResp.Data) == 0 {
+		return []ODPNode{}, true
 	}
 
 	result := make([]ODPNode, 0, len(fttxResp.Data))
 	for _, it := range fttxResp.Data {
+		clusterArea := it.Notes
+		if clusterArea == "" {
+			clusterArea = fmt.Sprintf("Cluster %s (In-House FO)", strings.ToUpper(targetTenant))
+		}
+		providerName := fmt.Sprintf("%s In-House FO", strings.ToUpper(targetTenant))
+
 		result = append(result, ODPNode{
 			ID:              it.ID,
 			Code:            it.Code,
@@ -288,9 +307,9 @@ func (r *Repository) fetchFromFiberGrid(ctx context.Context) ([]ODPNode, bool) {
 			TotalPorts:      it.TotalPorts,
 			UsedPorts:       it.UsedPorts,
 			Status:          it.Status,
-			ClusterArea:     "Cluster Harau (FiberGrid In-House)",
+			ClusterArea:     clusterArea,
 			ProviderID:      targetTenant,
-			ProviderName:    "GOGIGA In-House FO",
+			ProviderName:    providerName,
 			IsClusterActive: true,
 			SplitterSpec:    fmt.Sprintf("1:%d PLC", it.TotalPorts),
 			OpticalPowerDBM: -17.5 - float64(it.UsedPorts)*0.5,
@@ -302,6 +321,11 @@ func (r *Repository) fetchFromFiberGrid(ctx context.Context) ([]ODPNode, bool) {
 }
 
 func (r *Repository) ListODPNodes(ctx context.Context, cluster string) ([]ODPNode, error) {
+	tenantSlug, _ := ctx.Value(tenantCtxKey{}).(string)
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
+
 	// If cluster or scope is inhouse, strictly fetch from FiberGrid engine
 	if cluster == "inhouse" {
 		if fttxNodes, ok := r.fetchFromFiberGrid(ctx); ok {
@@ -341,27 +365,37 @@ func (r *Repository) ListODPNodes(ctx context.Context, cluster string) ([]ODPNod
 
 	// 2. Fallback to FiberGrid if Nexus is not configured
 	if fttxNodes, ok := r.fetchFromFiberGrid(ctx); ok {
+		if cluster != "" && cluster != "all" {
+			filtered := make([]ODPNode, 0)
+			for _, n := range fttxNodes {
+				if strings.Contains(strings.ToLower(n.ClusterArea), strings.ToLower(cluster)) ||
+					strings.Contains(strings.ToLower(n.Name), strings.ToLower(cluster)) ||
+					strings.Contains(strings.ToLower(n.Code), strings.ToLower(cluster)) {
+					filtered = append(filtered, n)
+				}
+			}
+			return filtered, nil
+		}
 		return fttxNodes, nil
 	}
 
-	// 3. Fallback to local PostgreSQL odp_nodes table
-	_ = r.SeedDefaultODPsIfEmpty(ctx)
-
+	// 3. Fallback to local PostgreSQL odp_nodes table filtered by tenant
 	query := `
 		SELECT id, code, name, latitude, longitude, total_ports, used_ports,
 		       status, cluster_area, provider_id, provider_name, is_cluster_active,
 		       splitter_spec, created_at, updated_at
 		FROM odp_nodes
+		WHERE ($1 = '' OR $1 = 'superadmin' OR tenant_slug = $1)
 	`
 	var rows pgx.Rows
 	var err error
 
-	if cluster != "" {
-		query += ` WHERE cluster_area ILIKE $1 ORDER BY code ASC`
-		rows, err = r.db.Query(ctx, query, "%"+cluster+"%")
+	if cluster != "" && cluster != "all" {
+		query += ` AND cluster_area ILIKE $2 ORDER BY code ASC`
+		rows, err = r.db.Query(ctx, query, tenantSlug, "%"+cluster+"%")
 	} else {
 		query += ` ORDER BY code ASC`
-		rows, err = r.db.Query(ctx, query)
+		rows, err = r.db.Query(ctx, query, tenantSlug)
 	}
 
 	if err != nil {
@@ -402,16 +436,22 @@ func (r *Repository) CreateODPNode(ctx context.Context, req CreateODPRequest) (*
 		req.ClusterArea = "Cluster Utama"
 	}
 
+	tenantSlug, _ := ctx.Value(tenantCtxKey{}).(string)
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
+
 	id := "odp_" + uuid.New().String()[:8]
 	now := time.Now()
+	providerName := fmt.Sprintf("%s In-House FO", strings.ToUpper(tenantSlug))
 
 	const q = `
 		INSERT INTO odp_nodes (
 			id, code, name, latitude, longitude, total_ports, used_ports,
 			status, cluster_area, provider_id, provider_name, is_cluster_active,
-			splitter_spec, created_at, updated_at
+			splitter_spec, created_at, updated_at, tenant_slug
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, 0, 'AVAILABLE', $7, 'ISPSYNC-CORE', 'PT Inovasi Sistem Pintar', TRUE, $8, $9, $9
+			$1, $2, $3, $4, $5, $6, 0, 'AVAILABLE', $7, $8, $9, TRUE, $10, $11, $11, $12
 		)
 		RETURNING id, code, name, latitude, longitude, total_ports, used_ports,
 		          status, cluster_area, provider_id, provider_name, is_cluster_active,
@@ -420,7 +460,7 @@ func (r *Repository) CreateODPNode(ctx context.Context, req CreateODPRequest) (*
 	var n ODPNode
 	err := r.db.QueryRow(ctx, q,
 		id, req.Code, req.Name, req.Latitude, req.Longitude,
-		req.TotalPorts, req.ClusterArea, req.SplitterSpec, now,
+		req.TotalPorts, req.ClusterArea, tenantSlug, providerName, req.SplitterSpec, now, tenantSlug,
 	).Scan(
 		&n.ID, &n.Code, &n.Name, &n.Latitude, &n.Longitude,
 		&n.TotalPorts, &n.UsedPorts, &n.Status, &n.ClusterArea,
@@ -436,8 +476,9 @@ func (r *Repository) CreateODPNode(ctx context.Context, req CreateODPRequest) (*
 }
 
 func (r *Repository) DeleteODPNode(ctx context.Context, id string) error {
-	const q = `DELETE FROM odp_nodes WHERE id = $1 OR code = $1`
-	_, err := r.db.Exec(ctx, q, id)
+	tenantSlug, _ := ctx.Value(tenantCtxKey{}).(string)
+	const q = `DELETE FROM odp_nodes WHERE (id = $1 OR code = $1) AND ($2 = '' OR $2 = 'superadmin' OR tenant_slug = $2)`
+	_, err := r.db.Exec(ctx, q, id, tenantSlug)
 	return err
 }
 
@@ -447,15 +488,21 @@ func (r *Repository) ListFiberRoutes(ctx context.Context) ([]FiberRoute, error) 
 		tenantSlug = "dev"
 	}
 
-	// 1. Check custom FiberGrid integration settings in app_settings
-	settingsKey := "fibergrid_integration"
-	if tenantSlug != "" && tenantSlug != "dev" {
-		var exists bool
-		_ = r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM app_settings WHERE key = $1)", "fibergrid_integration_"+tenantSlug).Scan(&exists)
-		if exists {
-			settingsKey = "fibergrid_integration_" + tenantSlug
-		}
+	// Check per-tenant FiberGrid integration settings
+	settingsKey := "fibergrid_integration_" + tenantSlug
+	if tenantSlug == "dev" {
+		settingsKey = "fibergrid_integration"
 	}
+
+	apiURL := os.Getenv("FTTX_BASE_URL")
+	if apiURL == "" {
+		apiURL = "http://172.18.0.1:8082"
+	}
+	apiKey := os.Getenv("FTTX_ADMIN_KEY")
+	if apiKey == "" {
+		apiKey = "gogiga-noc-admin-99a8f27c3d14"
+	}
+	targetTenant := tenantSlug
 
 	var valBytes []byte
 	err := r.db.QueryRow(ctx, "SELECT value FROM app_settings WHERE key = $1", settingsKey).Scan(&valBytes)
@@ -467,84 +514,100 @@ func (r *Repository) ListFiberRoutes(ctx context.Context) ([]FiberRoute, error) 
 			TenantCode     string `json:"tenant_code"`
 			AutoSyncRoutes bool   `json:"auto_sync_routes"`
 		}
-		if jsonErr := json.Unmarshal(valBytes, &cfg); jsonErr == nil && cfg.Enabled && cfg.APIURL != "" {
-			reqURL := strings.TrimRight(cfg.APIURL, "/") + "/api/v1/fttx/routes"
-			req, reqErr := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
-			if reqErr == nil {
-				if cfg.APIKey != "" {
-					req.Header.Set("X-Admin-Key", cfg.APIKey)
-					req.Header.Set("Authorization", "Bearer "+cfg.APIKey)
-				}
-				targetTenant := strings.TrimSpace(cfg.TenantCode)
-				if targetTenant == "" {
-					targetTenant = tenantSlug
-				}
-				if targetTenant != "" {
-					req.Header.Set("X-Tenant-Slug", targetTenant)
-				}
-				client := &http.Client{Timeout: 3 * time.Second}
-				resp, doErr := client.Do(req)
-				if doErr == nil && resp.StatusCode == http.StatusOK {
-					defer resp.Body.Close()
-					var fttxResp struct {
-						Success bool `json:"success"`
-						Data    []struct {
-							ID          string `json:"id"`
-							Code        string `json:"code"`
-							CableType   string `json:"cable_type"`
-							LengthMeters int   `json:"length_meters"`
-							CoreCount   int    `json:"core_count"`
-							Status      string `json:"status"`
-							Coordinates string `json:"coordinates"` // JSON string "[[-0.17, 100.65], ...]"
-							Notes       string `json:"notes"`
-						} `json:"data"`
-					}
-					if decodeErr := json.NewDecoder(resp.Body).Decode(&fttxResp); decodeErr == nil && fttxResp.Success {
-						routes := make([]FiberRoute, 0, len(fttxResp.Data))
-						for _, item := range fttxResp.Data {
-							var coords [][]float64
-							_ = json.Unmarshal([]byte(item.Coordinates), &coords)
-							if len(coords) < 2 {
-								continue
-							}
+		if jsonErr := json.Unmarshal(valBytes, &cfg); jsonErr == nil {
+			if !cfg.Enabled {
+				return []FiberRoute{}, nil
+			}
+			if cfg.APIURL != "" {
+				apiURL = cfg.APIURL
+			}
+			if cfg.APIKey != "" {
+				apiKey = cfg.APIKey
+			}
+			if cfg.TenantCode != "" {
+				targetTenant = cfg.TenantCode
+			}
+		}
+	} else if tenantSlug != "dev" && tenantSlug != "gogiga" {
+		targetTenant = tenantSlug
+	}
 
-							color := "#10b981" // emerald green (distribution)
-							cableType := "DISTRIBUTION"
-							upType := strings.ToUpper(item.CableType)
-							if strings.Contains(upType, "24C") || strings.Contains(upType, "48C") || strings.Contains(upType, "FEEDER") {
-								color = "#06b6d4" // cyan (feeder)
-								cableType = "FEEDER"
-							}
-							if strings.Contains(strings.ToUpper(item.Code), "OLT") {
-								color = "#3b82f6" // blue (backbone)
-								cableType = "BACKBONE"
-							}
-
-							routes = append(routes, FiberRoute{
-								ID:          item.ID,
-								RouteCode:   item.Code,
-								RouteName:   item.Code,
-								CableType:   cableType,
-								CoreCount:   item.CoreCount,
-								ClusterArea: "FiberGrid",
-								Status:      item.Status,
-								ColorHex:    color,
-								Coordinates: coords,
-								CreatedAt:   time.Now(),
-							})
-						}
-						return routes, nil
+	reqURL := strings.TrimRight(apiURL, "/") + "/api/v1/fttx/routes"
+	req, reqErr := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
+	if reqErr == nil {
+		if apiKey != "" {
+			req.Header.Set("X-Admin-Key", apiKey)
+			req.Header.Set("Authorization", "Bearer "+apiKey)
+		}
+		if targetTenant != "" {
+			req.Header.Set("X-Tenant-Slug", targetTenant)
+		}
+		client := &http.Client{Timeout: 3 * time.Second}
+		resp, doErr := client.Do(req)
+		if doErr == nil && resp.StatusCode == http.StatusOK {
+			defer resp.Body.Close()
+			var fttxResp struct {
+				Success bool `json:"success"`
+				Data    []struct {
+					ID           string `json:"id"`
+					Code         string `json:"code"`
+					CableType    string `json:"cable_type"`
+					LengthMeters int    `json:"length_meters"`
+					CoreCount    int    `json:"core_count"`
+					Status       string `json:"status"`
+					Coordinates  string `json:"coordinates"` // JSON string "[[-0.17, 100.65], ...]"
+					Notes        string `json:"notes"`
+				} `json:"data"`
+			}
+			if decodeErr := json.NewDecoder(resp.Body).Decode(&fttxResp); decodeErr == nil && fttxResp.Success {
+				routes := make([]FiberRoute, 0, len(fttxResp.Data))
+				for _, item := range fttxResp.Data {
+					var coords [][]float64
+					_ = json.Unmarshal([]byte(item.Coordinates), &coords)
+					if len(coords) < 2 {
+						continue
 					}
+
+					color := "#10b981" // emerald green (distribution)
+					cableType := "DISTRIBUTION"
+					upType := strings.ToUpper(item.CableType)
+					if strings.Contains(upType, "24C") || strings.Contains(upType, "48C") || strings.Contains(upType, "FEEDER") {
+						color = "#06b6d4" // cyan (feeder)
+						cableType = "FEEDER"
+					}
+					if strings.Contains(strings.ToUpper(item.Code), "OLT") {
+						color = "#3b82f6" // blue (backbone)
+						cableType = "BACKBONE"
+					}
+
+					routes = append(routes, FiberRoute{
+						ID:          item.ID,
+						RouteCode:   item.Code,
+						RouteName:   item.Code,
+						CableType:   cableType,
+						CoreCount:   item.CoreCount,
+						ClusterArea: fmt.Sprintf("Cluster %s", strings.ToUpper(targetTenant)),
+						Status:      item.Status,
+						ColorHex:    color,
+						Coordinates: coords,
+						CreatedAt:   time.Now(),
+					})
 				}
+				return routes, nil
 			}
 		}
 	}
 
-	// 2. Fallback: if not integrated, return empty (clean state)
 	return []FiberRoute{}, nil
 }
 
 func (r *Repository) GetFTTXStats(ctx context.Context) (*FTTXStats, error) {
+	tenantSlug, _ := ctx.Value(tenantCtxKey{}).(string)
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
+
+	// 1. Try Nexus first
 	nexusNodes, ok := r.fetchFromNexus(ctx)
 	if ok {
 		var totalPorts, usedPorts int
@@ -571,16 +634,52 @@ func (r *Repository) GetFTTXStats(ctx context.Context) (*FTTXStats, error) {
 		}, nil
 	}
 
+	// 2. Try FiberGrid
+	if fttxNodes, fttxOk := r.fetchFromFiberGrid(ctx); fttxOk {
+		var totalPorts, usedPorts int
+		for _, n := range fttxNodes {
+			totalPorts += n.TotalPorts
+			usedPorts += n.UsedPorts
+		}
+		avail := totalPorts - usedPorts
+		if avail < 0 {
+			avail = 0
+		}
+		rate := 0.0
+		if totalPorts > 0 {
+			rate = float64(usedPorts) / float64(totalPorts) * 100.0
+		}
+		return &FTTXStats{
+			TotalODP:        len(fttxNodes),
+			TotalPorts:      totalPorts,
+			UsedPorts:       usedPorts,
+			AvailablePorts:  avail,
+			UtilizationRate: rate,
+			TotalRoutes:     0,
+			TotalCableKm:    0.0,
+		}, nil
+	}
+
+	// 3. Fallback to local PostgreSQL odp_nodes
 	const q = `
 		SELECT COUNT(*),
 		       COALESCE(SUM(total_ports), 0),
 		       COALESCE(SUM(used_ports), 0)
 		FROM odp_nodes
+		WHERE ($1 = '' OR $1 = 'superadmin' OR tenant_slug = $1)
 	`
 	var totalODP, totalPorts, usedPorts int
-	err := r.db.QueryRow(ctx, q).Scan(&totalODP, &totalPorts, &usedPorts)
+	err := r.db.QueryRow(ctx, q, tenantSlug).Scan(&totalODP, &totalPorts, &usedPorts)
 	if err != nil {
-		return nil, err
+		return &FTTXStats{
+			TotalODP:        0,
+			TotalPorts:      0,
+			UsedPorts:       0,
+			AvailablePorts:  0,
+			UtilizationRate: 0.0,
+			TotalRoutes:     0,
+			TotalCableKm:    0.0,
+		}, nil
 	}
 
 	avail := totalPorts - usedPorts

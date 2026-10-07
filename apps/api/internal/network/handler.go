@@ -270,7 +270,8 @@ func (h *Handler) CreateODP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	node, err := h.service.CreateODP(r.Context(), req)
+	ctx := WithTenantSlug(r.Context(), extractTenantSlug(r))
+	node, err := h.service.CreateODP(ctx, req)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -286,7 +287,8 @@ func (h *Handler) DeleteODP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.DeleteODP(r.Context(), id); err != nil {
+	ctx := WithTenantSlug(r.Context(), extractTenantSlug(r))
+	if err := h.service.DeleteODP(ctx, id); err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
 	}
