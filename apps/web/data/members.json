@@ -185,6 +185,42 @@
       "note": "Lingkungan Pengujian & QA Internal Staging",
       "invoices": [],
       "tickets": []
+    },
+    {
+      "id": "mbr_006",
+      "email": "admin@gogiga.net.id",
+      "password": "Gogiga2026!",
+      "company": "PT. GOGIGA MEDIA TEKNOLOGI",
+      "picName": "Aan Rizal",
+      "phone": "081166012345",
+      "address": "Depan kantor Wali, Jl. Pulutan, Koto Tuo, Kec. Harau, Kab. 50 Kota, Sumatera Barat 26271",
+      "npwp": "03.992.812.1-014.000",
+      "nib": "0220309988776",
+      "sklo": "No. 154/TEL.04.02/KOMINFO",
+      "plan": "enterprise",
+      "planName": "Carrier-Grade Enterprise",
+      "planPrice": "14500000",
+      "planCapacity": "15.000 Pelanggan",
+      "status": "active",
+      "subscribedAt": "2024-01-01",
+      "expiresAt": "2099-12-31",
+      "autoRenew": true,
+      "domain": "gogiga.net.id",
+      "role": "TENANT",
+      "note": "ISP Operasional Utama Harau & Payakumbuh — PT GOGIGA MEDIA TEKNOLOGI",
+      "invoices": [
+        {
+          "id": "INV-2026-GOGIGA-01",
+          "date": "2026-01-01",
+          "dueDate": "2026-01-05",
+          "period": "Carrier-Grade Enterprise License",
+          "amount": "14500000",
+          "status": "paid",
+          "paymentDate": "2026-01-02",
+          "paymentMethod": "Corporate Transfer"
+        }
+      ],
+      "tickets": []
     }
   ]
 }
