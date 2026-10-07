@@ -23725,7 +23725,7 @@
           brandName = injected.short_name.toUpperCase();
         }
 
-        const legalName = injected.company_name || legalMap[slug] || ('PT. ' + brandName + ' Data Nusantara');
+        const legalName = injected.company_name || injected.name || legalMap[slug] || ('PT. ' + brandName + ' Data Nusantara');
         const copyrightText = '© 2026 ' + legalName + '. All rights reserved.';
         const supportEmail = injected.contact_email || injected.email || ('sales@' + (slug || 'dev') + '.ispsync.id');
         const logoSrc = '/web/' + (slug || 'dev') + '_logo.svg';
@@ -27618,7 +27618,7 @@
           brandName = injected.short_name.toUpperCase();
         }
 
-        const legalName = injected.company_name || legalMap[slug] || ('PT. ' + brandName + ' Data Nusantara');
+        const legalName = injected.company_name || injected.name || legalMap[slug] || ('PT. ' + brandName + ' Data Nusantara');
         const copyrightText = '© 2026 ' + legalName + '. All rights reserved.';
         const supportEmail = injected.contact_email || injected.email || ('noc@' + (slug || 'dev') + '.ispsync.id');
         const logoSrc = '/web/' + (slug || 'dev') + '_logo.svg';

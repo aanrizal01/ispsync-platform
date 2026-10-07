@@ -193,8 +193,11 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 			}
 
 			if err != nil || tenant == nil {
-				// Fallback coba ambil tenant 'ispku' agar halaman dev tetap dapat dibuka dengan lancar
-				tenant, _ = store.GetTenantBySlug(r.Context(), "ispku")
+				// Fallback HANYA untuk root platform, localhost, atau dev environment.
+				// Jangan pernah bocorkan tenant 'ispku' jika request memiliki subdomain tenant spesifik!
+				if tenantSlug == "" || tenantSlug == "localhost" || tenantSlug == "dev" {
+					tenant, _ = store.GetTenantBySlug(r.Context(), "ispku")
+				}
 			}
 
 			if tenant == nil {
