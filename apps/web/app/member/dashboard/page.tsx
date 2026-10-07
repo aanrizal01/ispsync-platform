@@ -38,6 +38,14 @@ type Tenant = {
   domain: string;
   daysLeft: number;
   isOwner?: boolean;
+  clusterType?: "shared" | "dedicated";
+  clusterNode?: string;
+  engineUrls?: {
+    ledger?: string;
+    nexus?: string;
+    fibergrid?: string;
+    portal?: string;
+  };
 };
 
 type Stats = {
