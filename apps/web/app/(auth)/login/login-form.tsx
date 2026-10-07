@@ -63,6 +63,7 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
         ispmu: "PT. Mitra Usaha Data",
         ispku: "PT. ISP Kita Nusantara",
         gogiga: "PT. GOGIGA MEDIA TEKNOLOGI",
+        gbd: "PT GNET BIARO DATA",
         dev: "Laboratorium ISPSYNC R&D",
       };
 

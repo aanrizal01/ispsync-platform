@@ -1,10 +1,14 @@
 import { headers } from "next/headers";
 import LoginForm, { type TenantInfo } from "./login-form";
 
+import fs from "fs";
+import path from "path";
+
 const TENANT_LEGAL_MAP: Record<string, string> = {
   ispmu: "PT. Mitra Usaha Data",
   ispku: "PT. ISP Kita Nusantara",
   gogiga: "PT. GOGIGA MEDIA TEKNOLOGI",
+  gbd: "PT GNET BIARO DATA",
   dev: "Laboratorium ISPSYNC R&D",
 };
 
@@ -24,9 +28,25 @@ export default async function LoginPage() {
 
   const isTenant = !!slug && slug !== "ispsync";
   const upper = slug ? slug.toUpperCase() : "ISPSYNC";
+
+  let legalName = TENANT_LEGAL_MAP[slug] || "";
+  if (!legalName && slug) {
+    try {
+      const p = path.join(process.cwd(), "data", "members.json");
+      if (fs.existsSync(p)) {
+        const d = JSON.parse(fs.readFileSync(p, "utf-8"));
+        const found = d.members?.find((m: any) => m.domain && m.domain.toLowerCase().includes(slug));
+        if (found && found.company) legalName = found.company;
+      }
+    } catch {}
+  }
+  if (!legalName && isTenant) {
+    legalName = `PT. ${upper} Data Nusantara`;
+  }
+
   const initialTenant: TenantInfo = {
     name: upper,
-    legalName: TENANT_LEGAL_MAP[slug] || (isTenant ? `PT. ${upper} Data Nusantara` : ""),
+    legalName: legalName,
     slug: slug || "",
     logo: isTenant ? `/web/${slug}_logo.svg` : "",
     isTenant: isTenant,
