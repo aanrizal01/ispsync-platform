@@ -291,6 +291,10 @@ export default function MemberDashboard() {
                         /^(ledger|billing|nexus|portal|fibergrid|fttx)\./,
                         ""
                       );
+                      const ledgerUrl = t.engineUrls?.ledger || `https://ledger.${baseDomain}`;
+                      const nexusUrl = t.engineUrls?.nexus || `https://nexus.${baseDomain}`;
+                      const fibergridUrl = t.engineUrls?.fibergrid || `https://fibergrid.${baseDomain}`;
+
                       return (
                         <tr key={t.id} className="hover:bg-slate-50/70 transition-colors">
                           <td className="py-3.5 px-4 font-bold text-slate-900">
@@ -301,14 +305,25 @@ export default function MemberDashboard() {
                           </td>
                           <td className="py-3.5 px-4 font-mono text-cyan-700">
                             <a
-                              href={`https://${cleanDomain}`}
+                              href={ledgerUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="hover:underline flex items-center gap-1"
+                              className="hover:underline flex items-center gap-1 font-semibold"
                             >
                               <span>{cleanDomain}</span>
                               <ExternalLink className="w-2.5 h-2.5" />
                             </a>
+                            <div className="mt-1">
+                              {t.clusterType === "dedicated" ? (
+                                <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                  Dedicated Cluster ({t.clusterNode || "Node Mandiri"})
+                                </span>
+                              ) : (
+                                <span className="inline-block text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                                  Shared Cloud ({t.clusterNode || "103.179.65.73"})
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3.5 px-4">
                             <div className="font-bold text-slate-900">{t.planName}</div>
@@ -338,29 +353,29 @@ export default function MemberDashboard() {
                           <td className="py-3.5 px-4 text-right">
                             <div className="inline-flex items-center gap-1 border border-slate-200 rounded-lg p-0.5 bg-slate-50 text-[10px]">
                               <a
-                                href={`https://ledger.${baseDomain}`}
+                                href={ledgerUrl}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="px-2 py-1 rounded hover:bg-blue-600 hover:text-white text-slate-600 font-bold transition-colors"
-                                title="Buka Ledger Tenant"
+                                title={t.engineUrls?.ledger ? `Buka Ledger (${t.engineUrls.ledger})` : "Buka Ledger Tenant"}
                               >
                                 Ledger
                               </a>
                               <a
-                                href={`https://nexus.${baseDomain}`}
+                                href={nexusUrl}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="px-2 py-1 rounded hover:bg-purple-600 hover:text-white text-slate-600 font-bold transition-colors"
-                                title="Buka Nexus Tenant"
+                                title={t.engineUrls?.nexus ? `Buka Nexus (${t.engineUrls.nexus})` : "Buka Nexus Tenant"}
                               >
                                 Nexus
                               </a>
                               <a
-                                href={`https://fibergrid.${baseDomain}`}
+                                href={fibergridUrl}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="px-2 py-1 rounded hover:bg-emerald-600 hover:text-white text-slate-600 font-bold transition-colors"
-                                title="Buka FiberGrid Tenant"
+                                title={t.engineUrls?.fibergrid ? `Buka FiberGrid (${t.engineUrls.fibergrid})` : "Buka FiberGrid Tenant"}
                               >
                                 FiberGrid
                               </a>

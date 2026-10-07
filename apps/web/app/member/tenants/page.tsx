@@ -51,6 +51,14 @@ type Tenant = {
   isExpiringSoon: boolean;
   isExpired: boolean;
   isOwner?: boolean;
+  clusterType?: "shared" | "dedicated";
+  clusterNode?: string;
+  engineUrls?: {
+    ledger?: string;
+    nexus?: string;
+    fibergrid?: string;
+    portal?: string;
+  };
 };
 
 type Stats = {
@@ -424,9 +432,10 @@ export default function SaaSAdminTenantsPage() {
                 ) : (
                   filteredTenants.map((t) => {
                     const cleanDomain = t.domain.replace(/^https?:\/\//, "");
-                    const ledgerUrl = `https://ledger.${cleanDomain.replace(/^(ledger|billing|nexus|portal|fibergrid|fttx)\./, "")}`;
-                    const nexusUrl = `https://nexus.${cleanDomain.replace(/^(ledger|billing|nexus|portal|fibergrid|fttx)\./, "")}`;
-                    const fibergridUrl = `https://fibergrid.${cleanDomain.replace(/^(ledger|billing|nexus|portal|fibergrid|fttx)\./, "")}`;
+                    const baseDomain = cleanDomain.replace(/^(ledger|billing|nexus|portal|fibergrid|fttx)\./, "");
+                    const ledgerUrl = t.engineUrls?.ledger || `https://ledger.${baseDomain}`;
+                    const nexusUrl = t.engineUrls?.nexus || `https://nexus.${baseDomain}`;
+                    const fibergridUrl = t.engineUrls?.fibergrid || `https://fibergrid.${baseDomain}`;
 
                     return (
                       <tr key={t.id} className="hover:bg-slate-50/70 transition-colors">
@@ -449,7 +458,7 @@ export default function SaaSAdminTenantsPage() {
                                 <span>{t.id}</span>
                                 <span>&bull;</span>
                                 <a
-                                  href={`https://${cleanDomain}`}
+                                  href={ledgerUrl}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="text-cyan-700 hover:text-cyan-900 hover:underline flex items-center gap-1"
@@ -457,6 +466,17 @@ export default function SaaSAdminTenantsPage() {
                                   <span>{cleanDomain}</span>
                                   <ExternalLink className="w-2.5 h-2.5" />
                                 </a>
+                              </div>
+                              <div className="mt-1">
+                                {t.clusterType === "dedicated" ? (
+                                  <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                    Dedicated Cluster ({t.clusterNode || "Node Mandiri"})
+                                  </span>
+                                ) : (
+                                  <span className="inline-block text-[9px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                                    Shared Cloud ({t.clusterNode || "103.179.65.73"})
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>

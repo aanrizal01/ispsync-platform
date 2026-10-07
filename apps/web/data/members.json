@@ -55,6 +55,8 @@
       "autoRenew": true,
       "domain": "cms.demo.ispsync.id",
       "role": "TENANT",
+      "clusterType": "shared",
+      "clusterNode": "103.179.65.73",
       "invoices": [
         {
           "id": "INV-2025-001",
@@ -110,6 +112,8 @@
       "autoRenew": true,
       "domain": "ispku.ispsync.id",
       "role": "TENANT",
+      "clusterType": "shared",
+      "clusterNode": "103.179.65.73",
       "note": "Tenant Resmi Demo 1 — Jartaplok Partner ISPSYNC",
       "invoices": [
         {
@@ -146,6 +150,8 @@
       "autoRenew": true,
       "domain": "ispmu.ispsync.id",
       "role": "TENANT",
+      "clusterType": "shared",
+      "clusterNode": "103.179.65.73",
       "note": "Tenant Resmi Demo 2 — Jartaplok Client ISPSYNC",
       "invoices": [
         {
@@ -182,6 +188,8 @@
       "autoRenew": true,
       "domain": "dev.ispsync.id",
       "role": "TENANT",
+      "clusterType": "shared",
+      "clusterNode": "103.179.65.73",
       "note": "Lingkungan Pengujian & QA Internal Staging",
       "invoices": [],
       "tickets": []
@@ -207,7 +215,15 @@
       "autoRenew": true,
       "domain": "gogiga.net.id",
       "role": "TENANT",
-      "note": "ISP Operasional Utama Harau & Payakumbuh — PT GOGIGA MEDIA TEKNOLOGI",
+      "clusterType": "dedicated",
+      "clusterNode": "103.179.65.72",
+      "engineUrls": {
+        "ledger": "https://billing.gogiga.net.id",
+        "nexus": "https://nexus.gogiga.net.id",
+        "fibergrid": "https://fttx.gogiga.net.id",
+        "portal": "https://portal.gogiga.net.id"
+      },
+      "note": "Dedicated Private Cluster Payakumbuh & Harau — Node 103.179.65.72",
       "invoices": [
         {
           "id": "INV-2026-GOGIGA-01",
