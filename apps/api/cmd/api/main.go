@@ -57,6 +57,7 @@ import (
 	"github.com/gigabill/isp/internal/subscription"
 	"github.com/gigabill/isp/internal/system"
 	"github.com/gigabill/isp/internal/voucher"
+	"github.com/gigabill/isp/pkg/crypto"
 	"github.com/gigabill/isp/pkg/money"
 )
 
@@ -989,7 +990,7 @@ func handleProvisionTenant(db *pgxpool.Pool, cfg *config.Config, log *slog.Logge
 		// 1. Hash password with bcrypt
 		passwordHash, err := crypto.HashPassword(req.Password)
 		if err != nil {
-			middleware.JSONError(w, log, apperrors.Internal("Gagal menghasilkan hash password", err))
+			middleware.JSONError(w, log, apperrors.Internal(err))
 			return
 		}
 
