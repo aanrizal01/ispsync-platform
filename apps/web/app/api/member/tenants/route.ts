@@ -6,7 +6,34 @@ const MEMBERS_PATH = path.join(process.cwd(), "data", "members.json");
 
 function getMembersData() {
   try {
-    return JSON.parse(fs.readFileSync(MEMBERS_PATH, "utf-8"));
+    const data = JSON.parse(fs.readFileSync(MEMBERS_PATH, "utf-8"));
+    const members = data.members || [];
+
+    // Auto-fix any duplicate or missing IDs
+    const seenIds = new Set<string>();
+    let maxIdNum = 0;
+    for (const m of members) {
+      const match = String(m.id || "").match(/\d+/);
+      if (match) {
+        const n = parseInt(match[0], 10);
+        if (n > maxIdNum) maxIdNum = n;
+      }
+    }
+
+    let modified = false;
+    for (const m of members) {
+      if (!m.id || seenIds.has(m.id)) {
+        maxIdNum++;
+        m.id = `mbr_${String(maxIdNum).padStart(3, "0")}`;
+        modified = true;
+      }
+      seenIds.add(m.id);
+    }
+
+    if (modified) {
+      saveMembersData(data);
+    }
+    return data;
   } catch {
     return { members: [] };
   }
@@ -105,9 +132,20 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Generate new ID
-      const nextNum = members.length + 1;
-      const newId = `mbr_${String(nextNum).padStart(3, "0")}`;
+      // Generate new strictly unique ID based on max existing ID number
+      const existingNums = members
+        .map((m: any) => {
+          const match = String(m.id || "").match(/\d+/);
+          return match ? parseInt(match[0], 10) : 0;
+        })
+        .filter((n: number) => !isNaN(n));
+      const maxNum = existingNums.length > 0 ? Math.max(...existingNums) : 0;
+      let candidateNum = maxNum + 1;
+      let newId = `mbr_${String(candidateNum).padStart(3, "0")}`;
+      while (members.some((m: any) => m.id === newId)) {
+        candidateNum++;
+        newId = `mbr_${String(candidateNum).padStart(3, "0")}`;
+      }
       const nowStr = new Date().toISOString().split("T")[0];
       const defaultExpires = new Date();
       defaultExpires.setFullYear(defaultExpires.getFullYear() + 1);
@@ -241,15 +279,20 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "delete") {
-      const { id } = body;
+      const { id, domain } = body;
       if (id === "mbr_001") {
         return NextResponse.json({ error: "Akun Superadmin tidak dapat dihapus." }, { status: 403 });
       }
 
-      const targetMember = members.find((m: any) => m.id === id);
-      if (!targetMember) {
+      // Find the specific target member by id or domain
+      const targetIdx = members.findIndex(
+        (m: any) => m.id === id || (domain && m.domain && m.domain.toLowerCase() === domain.toLowerCase())
+      );
+      if (targetIdx === -1) {
         return NextResponse.json({ error: "Tenant tidak ditemukan." }, { status: 404 });
       }
+
+      const targetMember = members[targetIdx];
 
       // Determine tenant slug
       let slug = "";
@@ -279,8 +322,9 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      const filtered = members.filter((m: any) => m.id !== id);
-      db.members = filtered;
+      // Safely delete ONLY the single target tenant at targetIdx
+      members.splice(targetIdx, 1);
+      db.members = members;
       saveMembersData(db);
 
       return NextResponse.json({

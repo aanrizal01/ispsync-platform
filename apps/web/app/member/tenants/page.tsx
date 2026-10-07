@@ -216,7 +216,7 @@ export default function SaaSAdminTenantsPage() {
 
     // Optimistically mark status in table
     setTenants((prev) =>
-      prev.map((t) => (t.id === deleteTarget.id ? { ...t, status: "purging" } : t))
+      prev.map((t) => (t.id === deleteTarget.id && t.domain === deleteTarget.domain ? { ...t, status: "purging" } : t))
     );
 
     try {
@@ -231,7 +231,7 @@ export default function SaaSAdminTenantsPage() {
       const apiPromise = fetch("/api/member/tenants", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete", id: deleteTarget.id }),
+        body: JSON.stringify({ action: "delete", id: deleteTarget.id, domain: deleteTarget.domain }),
       }).then((r) => r.json());
 
       await sleep(750);
