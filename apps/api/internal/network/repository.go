@@ -26,17 +26,22 @@ func (r *Repository) Create(ctx context.Context, d *Device) error {
 		metaJSON = []byte("{}")
 	}
 
+	tenantSlug := d.TenantSlug
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
+
 	const q = `
 		INSERT INTO network_devices (
-			id, name, vendor, model, ip_address, api_port, auth_type,
+			id, tenant_slug, name, vendor, model, ip_address, api_port, auth_type,
 			username, password_encrypted, use_tls, is_active, status,
 			last_seen_at, metadata, created_at, updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
 		)
 	`
 	_, err = r.db.Exec(ctx, q,
-		d.ID, d.Name, d.Vendor, d.Model, d.IPAddress, d.APIPort, d.AuthType,
+		d.ID, tenantSlug, d.Name, d.Vendor, d.Model, d.IPAddress, d.APIPort, d.AuthType,
 		d.Username, d.PasswordEncrypted, d.UseTLS, d.IsActive, d.Status,
 		d.LastSeenAt, metaJSON, d.CreatedAt, d.UpdatedAt,
 	)
@@ -45,7 +50,7 @@ func (r *Repository) Create(ctx context.Context, d *Device) error {
 
 func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*Device, error) {
 	const q = `
-		SELECT id, name, vendor, model, HOST(ip_address), api_port, auth_type,
+		SELECT id, COALESCE(tenant_slug, 'dev'), name, vendor, model, HOST(ip_address), api_port, auth_type,
 		       username, password_encrypted, use_tls, is_active, status,
 		       last_seen_at, metadata, created_at, updated_at
 		FROM network_devices
@@ -54,7 +59,7 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*Device, error)
 	var d Device
 	var metaJSON []byte
 	err := r.db.QueryRow(ctx, q, id).Scan(
-		&d.ID, &d.Name, &d.Vendor, &d.Model, &d.IPAddress, &d.APIPort, &d.AuthType,
+		&d.ID, &d.TenantSlug, &d.Name, &d.Vendor, &d.Model, &d.IPAddress, &d.APIPort, &d.AuthType,
 		&d.Username, &d.PasswordEncrypted, &d.UseTLS, &d.IsActive, &d.Status,
 		&d.LastSeenAt, &metaJSON, &d.CreatedAt, &d.UpdatedAt,
 	)
@@ -71,10 +76,16 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*Device, error)
 	return &d, nil
 }
 
-func (r *Repository) List(ctx context.Context, vendor *Vendor, isActive *bool) ([]Device, error) {
+func (r *Repository) List(ctx context.Context, tenantSlug string, vendor *Vendor, isActive *bool) ([]Device, error) {
 	where := "WHERE 1=1"
 	args := []any{}
 	argIdx := 1
+
+	if tenantSlug != "" && tenantSlug != "superadmin" {
+		where += fmt.Sprintf(" AND tenant_slug = $%d", argIdx)
+		args = append(args, tenantSlug)
+		argIdx++
+	}
 
 	if vendor != nil && *vendor != "" {
 		where += fmt.Sprintf(" AND vendor = $%d", argIdx)
@@ -89,7 +100,7 @@ func (r *Repository) List(ctx context.Context, vendor *Vendor, isActive *bool) (
 	}
 
 	q := fmt.Sprintf(`
-		SELECT id, name, vendor, model, HOST(ip_address), api_port, auth_type,
+		SELECT id, COALESCE(tenant_slug, 'dev'), name, vendor, model, HOST(ip_address), api_port, auth_type,
 		       username, password_encrypted, use_tls, is_active, status,
 		       last_seen_at, metadata, created_at, updated_at
 		FROM network_devices
@@ -108,7 +119,7 @@ func (r *Repository) List(ctx context.Context, vendor *Vendor, isActive *bool) (
 		var d Device
 		var metaJSON []byte
 		if err := rows.Scan(
-			&d.ID, &d.Name, &d.Vendor, &d.Model, &d.IPAddress, &d.APIPort, &d.AuthType,
+			&d.ID, &d.TenantSlug, &d.Name, &d.Vendor, &d.Model, &d.IPAddress, &d.APIPort, &d.AuthType,
 			&d.Username, &d.PasswordEncrypted, &d.UseTLS, &d.IsActive, &d.Status,
 			&d.LastSeenAt, &metaJSON, &d.CreatedAt, &d.UpdatedAt,
 		); err != nil {

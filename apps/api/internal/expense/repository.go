@@ -42,19 +42,23 @@ func (r *Repository) GenerateExpenseNumber(ctx context.Context, dateStr string) 
 }
 
 func (r *Repository) Create(ctx context.Context, exp *Expense) error {
+	tenantSlug := exp.TenantSlug
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
 	const q = `
 		INSERT INTO expenses (
-			id, expense_number, category, title, amount, expense_date,
+			id, tenant_slug, expense_number, category, title, amount, expense_date,
 			vendor_name, payment_method, bank_account, reference_number,
 			is_bhp_deductible, notes, recorded_by, created_at, updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6,
-			$7, $8, $9, $10,
-			$11, $12, $13, $14, $15
+			$1, $2, $3, $4, $5, $6, $7,
+			$8, $9, $10, $11,
+			$12, $13, $14, $15, $16
 		)
 	`
 	_, err := r.db.Exec(ctx, q,
-		exp.ID, exp.ExpenseNumber, exp.Category, exp.Title, exp.Amount, exp.ExpenseDate,
+		exp.ID, tenantSlug, exp.ExpenseNumber, exp.Category, exp.Title, exp.Amount, exp.ExpenseDate,
 		exp.VendorName, exp.PaymentMethod, exp.BankAccount, exp.ReferenceNumber,
 		exp.IsBHPDeductible, exp.Notes, exp.RecordedBy, exp.CreatedAt, exp.UpdatedAt,
 	)
@@ -64,7 +68,7 @@ func (r *Repository) Create(ctx context.Context, exp *Expense) error {
 func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*Expense, error) {
 	const q = `
 		SELECT 
-			e.id, e.expense_number, e.category, e.title, e.amount, to_char(e.expense_date, 'YYYY-MM-DD'),
+			e.id, COALESCE(e.tenant_slug, 'dev'), e.expense_number, e.category, e.title, e.amount, to_char(e.expense_date, 'YYYY-MM-DD'),
 			e.vendor_name, e.payment_method, e.bank_account, e.reference_number,
 			e.is_bhp_deductible, e.notes, e.recorded_by, u.full_name as recorded_by_name,
 			e.created_at, e.updated_at
@@ -74,7 +78,7 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*Expense, error
 	`
 	var exp Expense
 	err := r.db.QueryRow(ctx, q, id).Scan(
-		&exp.ID, &exp.ExpenseNumber, &exp.Category, &exp.Title, &exp.Amount, &exp.ExpenseDate,
+		&exp.ID, &exp.TenantSlug, &exp.ExpenseNumber, &exp.Category, &exp.Title, &exp.Amount, &exp.ExpenseDate,
 		&exp.VendorName, &exp.PaymentMethod, &exp.BankAccount, &exp.ReferenceNumber,
 		&exp.IsBHPDeductible, &exp.Notes, &exp.RecordedBy, &exp.RecordedByName,
 		&exp.CreatedAt, &exp.UpdatedAt,
@@ -136,6 +140,12 @@ func (r *Repository) List(ctx context.Context, filter ExpenseFilter) ([]Expense,
 	var args []any
 	argIdx := 1
 
+	if filter.TenantSlug != "" && filter.TenantSlug != "superadmin" {
+		whereConditions = append(whereConditions, fmt.Sprintf("e.tenant_slug = $%d", argIdx))
+		args = append(args, filter.TenantSlug)
+		argIdx++
+	}
+
 	if filter.StartDate != "" {
 		whereConditions = append(whereConditions, fmt.Sprintf("e.expense_date >= $%d", argIdx))
 		args = append(args, filter.StartDate)
@@ -196,7 +206,7 @@ func (r *Repository) List(ctx context.Context, filter ExpenseFilter) ([]Expense,
 
 	dataQuery := fmt.Sprintf(`
 		SELECT 
-			e.id, e.expense_number, e.category, e.title, e.amount, to_char(e.expense_date, 'YYYY-MM-DD'),
+			e.id, COALESCE(e.tenant_slug, 'dev'), e.expense_number, e.category, e.title, e.amount, to_char(e.expense_date, 'YYYY-MM-DD'),
 			e.vendor_name, e.payment_method, e.bank_account, e.reference_number,
 			e.is_bhp_deductible, e.notes, e.recorded_by, u.full_name as recorded_by_name,
 			e.created_at, e.updated_at
@@ -219,7 +229,7 @@ func (r *Repository) List(ctx context.Context, filter ExpenseFilter) ([]Expense,
 	for rows.Next() {
 		var exp Expense
 		err := rows.Scan(
-			&exp.ID, &exp.ExpenseNumber, &exp.Category, &exp.Title, &exp.Amount, &exp.ExpenseDate,
+			&exp.ID, &exp.TenantSlug, &exp.ExpenseNumber, &exp.Category, &exp.Title, &exp.Amount, &exp.ExpenseDate,
 			&exp.VendorName, &exp.PaymentMethod, &exp.BankAccount, &exp.ReferenceNumber,
 			&exp.IsBHPDeductible, &exp.Notes, &exp.RecordedBy, &exp.RecordedByName,
 			&exp.CreatedAt, &exp.UpdatedAt,
@@ -233,7 +243,7 @@ func (r *Repository) List(ctx context.Context, filter ExpenseFilter) ([]Expense,
 	return expenses, total, nil
 }
 
-func (r *Repository) GetSummary(ctx context.Context, year int, month int) (*ExpenseSummary, error) {
+func (r *Repository) GetSummary(ctx context.Context, tenantSlug string, year int, month int) (*ExpenseSummary, error) {
 	if year <= 0 {
 		year = time.Now().Year()
 	}
@@ -254,12 +264,19 @@ func (r *Repository) GetSummary(ctx context.Context, year int, month int) (*Expe
 		monthEnd = fmt.Sprintf("%04d-%02d-01", year, month+1)
 	}
 
-	qMonth := `
+	tenantFilter := ""
+	argsMonth := []interface{}{monthStart, monthEnd}
+	if tenantSlug != "" && tenantSlug != "superadmin" {
+		tenantFilter = " AND tenant_slug = $3"
+		argsMonth = append(argsMonth, tenantSlug)
+	}
+
+	qMonth := fmt.Sprintf(`
 		SELECT COALESCE(SUM(amount), 0), COUNT(*) 
 		FROM expenses 
-		WHERE expense_date >= $1 AND expense_date < $2
-	`
-	err := r.db.QueryRow(ctx, qMonth, monthStart, monthEnd).Scan(&summary.TotalExpensesMonth, &summary.CountMonth)
+		WHERE expense_date >= $1 AND expense_date < $2 %s
+	`, tenantFilter)
+	err := r.db.QueryRow(ctx, qMonth, argsMonth...).Scan(&summary.TotalExpensesMonth, &summary.CountMonth)
 	if err != nil {
 		return nil, err
 	}
@@ -267,28 +284,32 @@ func (r *Repository) GetSummary(ctx context.Context, year int, month int) (*Expe
 	// 2. Total this year & total BHP deductible this year
 	yearStart := fmt.Sprintf("%04d-01-01", year)
 	yearEnd := fmt.Sprintf("%04d-01-01", year+1)
+	argsYear := []interface{}{yearStart, yearEnd}
+	if tenantSlug != "" && tenantSlug != "superadmin" {
+		argsYear = append(argsYear, tenantSlug)
+	}
 
-	qYear := `
+	qYear := fmt.Sprintf(`
 		SELECT 
 			COALESCE(SUM(amount), 0),
 			COALESCE(SUM(CASE WHEN is_bhp_deductible = true THEN amount ELSE 0 END), 0)
 		FROM expenses 
-		WHERE expense_date >= $1 AND expense_date < $2
-	`
-	err = r.db.QueryRow(ctx, qYear, yearStart, yearEnd).Scan(&summary.TotalExpensesYear, &summary.TotalBHPDeductible)
+		WHERE expense_date >= $1 AND expense_date < $2 %s
+	`, tenantFilter)
+	err = r.db.QueryRow(ctx, qYear, argsYear...).Scan(&summary.TotalExpensesYear, &summary.TotalBHPDeductible)
 	if err != nil {
 		return nil, err
 	}
 
 	// 3. Category breakdown this month
-	qCat := `
+	qCat := fmt.Sprintf(`
 		SELECT category, COALESCE(SUM(amount), 0)
 		FROM expenses
-		WHERE expense_date >= $1 AND expense_date < $2
+		WHERE expense_date >= $1 AND expense_date < $2 %s
 		GROUP BY category
 		ORDER BY SUM(amount) DESC
-	`
-	rows, err := r.db.Query(ctx, qCat, monthStart, monthEnd)
+	`, tenantFilter)
+	rows, err := r.db.Query(ctx, qCat, argsMonth...)
 	if err != nil {
 		return nil, err
 	}

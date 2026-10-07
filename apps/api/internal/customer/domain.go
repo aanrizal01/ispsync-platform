@@ -17,6 +17,7 @@ const (
 
 type Customer struct {
 	ID             uuid.UUID         `json:"id"`
+	TenantSlug     string            `json:"tenant_slug,omitempty"`
 	PartnerID      *uuid.UUID        `json:"partner_id,omitempty"`
 	CustomerNumber string            `json:"customer_number"`
 	FullName       string            `json:"full_name"`

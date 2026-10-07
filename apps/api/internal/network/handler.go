@@ -61,7 +61,7 @@ func (h *Handler) ListDevices(w http.ResponseWriter, r *http.Request) {
 		activePtr = &b
 	}
 
-	devices, err := h.service.ListDevices(r.Context(), vendorPtr, activePtr)
+	devices, err := h.service.ListDevices(r.Context(), extractTenantSlug(r), vendorPtr, activePtr)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -77,7 +77,7 @@ func (h *Handler) CreateDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dev, err := h.service.CreateDevice(r.Context(), req)
+	dev, err := h.service.CreateDevice(r.Context(), extractTenantSlug(r), req)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return

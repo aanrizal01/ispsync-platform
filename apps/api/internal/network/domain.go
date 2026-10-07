@@ -26,6 +26,7 @@ const (
 
 type Device struct {
 	ID                uuid.UUID      `json:"id"`
+	TenantSlug        string         `json:"tenant_slug,omitempty"`
 	Name              string         `json:"name"`
 	Vendor            Vendor         `json:"vendor"`
 	Model             *string        `json:"model,omitempty"`

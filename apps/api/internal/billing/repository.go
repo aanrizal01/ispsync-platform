@@ -50,21 +50,26 @@ func (r *Repository) Create(ctx context.Context, inv *Invoice) error {
 	}
 	defer tx.Rollback(ctx)
 
+	tenantSlug := inv.TenantSlug
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
+
 	const insertInvoice = `
 		INSERT INTO invoices (
-			id, invoice_number, customer_id, subscription_id, plan_price_id,
+			id, tenant_slug, invoice_number, customer_id, subscription_id, plan_price_id,
 			status, billing_period_start, billing_period_end, issue_date, due_date,
 			subtotal, tax_amount, discount_amount, late_fee_amount, credit_applied,
 			total_amount, amount_paid, amount_due, currency, notes, issued_by,
 			created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-			$11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21,
-			$22, $23
+			$11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22,
+			$23, $24
 		)
 	`
 	_, err = tx.Exec(ctx, insertInvoice,
-		inv.ID, inv.InvoiceNumber, inv.CustomerID, inv.SubscriptionID, inv.PlanPriceID,
+		inv.ID, tenantSlug, inv.InvoiceNumber, inv.CustomerID, inv.SubscriptionID, inv.PlanPriceID,
 		inv.Status, inv.BillingPeriodStart, inv.BillingPeriodEnd, inv.IssueDate, inv.DueDate,
 		inv.Subtotal.Int64(), inv.TaxAmount.Int64(), inv.DiscountAmount.Int64(),
 		inv.LateFeeAmount.Int64(), inv.CreditApplied.Int64(), inv.TotalAmount.Int64(),
@@ -97,7 +102,7 @@ func (r *Repository) Create(ctx context.Context, inv *Invoice) error {
 
 func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*Invoice, error) {
 	const q = `
-		SELECT i.id, i.invoice_number, i.customer_id, c.customer_number, c.full_name, c.phone,
+		SELECT i.id, COALESCE(i.tenant_slug, 'dev'), i.invoice_number, i.customer_id, c.customer_number, c.full_name, c.phone,
 		       i.subscription_id, i.plan_price_id, i.status,
 		       i.billing_period_start, i.billing_period_end, i.issue_date, i.due_date,
 		       i.subtotal, i.tax_amount, i.discount_amount, i.late_fee_amount, i.credit_applied,
@@ -111,7 +116,7 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*Invoice, error
 	var subtotal, tax, discount, lateFee, credit, total, paid, due int64
 
 	err := r.db.QueryRow(ctx, q, id).Scan(
-		&inv.ID, &inv.InvoiceNumber, &inv.CustomerID, &inv.CustomerNumber, &inv.CustomerName, &inv.CustomerPhone,
+		&inv.ID, &inv.TenantSlug, &inv.InvoiceNumber, &inv.CustomerID, &inv.CustomerNumber, &inv.CustomerName, &inv.CustomerPhone,
 		&inv.SubscriptionID, &inv.PlanPriceID, &inv.Status,
 		&inv.BillingPeriodStart, &inv.BillingPeriodEnd, &inv.IssueDate, &inv.DueDate,
 		&subtotal, &tax, &discount, &lateFee, &credit,
@@ -231,10 +236,16 @@ func (r *Repository) GetByNumber(ctx context.Context, invoiceNumber string) (*In
 	return &inv, nil
 }
 
-func (r *Repository) List(ctx context.Context, params pagination.Params, customerID *uuid.UUID, status string) ([]Invoice, int, error) {
+func (r *Repository) List(ctx context.Context, tenantSlug string, params pagination.Params, customerID *uuid.UUID, status string) ([]Invoice, int, error) {
 	where := "WHERE 1=1"
 	args := []interface{}{}
 	argIdx := 1
+
+	if tenantSlug != "" && tenantSlug != "superadmin" {
+		where += fmt.Sprintf(" AND i.tenant_slug = $%d", argIdx)
+		args = append(args, tenantSlug)
+		argIdx++
+	}
 
 	if customerID != nil {
 		where += fmt.Sprintf(" AND i.customer_id = $%d", argIdx)
@@ -261,7 +272,7 @@ func (r *Repository) List(ctx context.Context, params pagination.Params, custome
 	}
 
 	dataQuery := fmt.Sprintf(`
-		SELECT i.id, i.invoice_number, i.customer_id, c.customer_number, c.full_name, c.phone,
+		SELECT i.id, COALESCE(i.tenant_slug, 'dev'), i.invoice_number, i.customer_id, c.customer_number, c.full_name, c.phone,
 		       i.subscription_id, i.plan_price_id, i.status,
 		       i.billing_period_start, i.billing_period_end, i.issue_date, i.due_date,
 		       i.subtotal, i.tax_amount, i.discount_amount, i.late_fee_amount, i.credit_applied,
@@ -288,7 +299,7 @@ func (r *Repository) List(ctx context.Context, params pagination.Params, custome
 		var subtotal, tax, discount, lateFee, credit, totalAmount, paid, due int64
 
 		err := rows.Scan(
-			&inv.ID, &inv.InvoiceNumber, &inv.CustomerID, &inv.CustomerNumber, &inv.CustomerName, &inv.CustomerPhone,
+			&inv.ID, &inv.TenantSlug, &inv.InvoiceNumber, &inv.CustomerID, &inv.CustomerNumber, &inv.CustomerName, &inv.CustomerPhone,
 			&inv.SubscriptionID, &inv.PlanPriceID, &inv.Status,
 			&inv.BillingPeriodStart, &inv.BillingPeriodEnd, &inv.IssueDate, &inv.DueDate,
 			&subtotal, &tax, &discount, &lateFee, &credit,
@@ -334,8 +345,20 @@ func (r *Repository) Void(ctx context.Context, id uuid.UUID, reason string) erro
 	return err
 }
 
-func (r *Repository) PublicLookup(ctx context.Context, query string) ([]Invoice, error) {
-	const q = `
+func (r *Repository) PublicLookup(ctx context.Context, tenantSlug string, query string) ([]Invoice, error) {
+	where := `WHERE (
+			c.customer_number ILIKE $1 
+			OR c.phone ILIKE $1 
+			OR i.invoice_number ILIKE $1
+		)
+		AND i.status IN ('ISSUED', 'OVERDUE', 'PARTIALLY_PAID', 'PAID')`
+	args := []interface{}{"%" + query + "%"}
+	if tenantSlug != "" && tenantSlug != "superadmin" {
+		where += " AND i.tenant_slug = $2"
+		args = append(args, tenantSlug)
+	}
+
+	q := fmt.Sprintf(`
 		SELECT i.id, i.invoice_number, i.customer_id, c.customer_number, c.full_name, c.phone,
 		       i.subscription_id, i.plan_price_id, i.status,
 		       i.billing_period_start, i.billing_period_end, i.issue_date, i.due_date,
@@ -344,16 +367,11 @@ func (r *Repository) PublicLookup(ctx context.Context, query string) ([]Invoice,
 		       i.voided_at, i.void_reason, i.created_at, i.updated_at
 		FROM invoices i
 		JOIN customers c ON c.id = i.customer_id
-		WHERE (
-			c.customer_number ILIKE $1 
-			OR c.phone ILIKE $1 
-			OR i.invoice_number ILIKE $1
-		)
-		AND i.status IN ('ISSUED', 'OVERDUE', 'PARTIALLY_PAID', 'PAID')
+		%s
 		ORDER BY i.created_at DESC
 		LIMIT 10
-	`
-	rows, err := r.db.Query(ctx, q, "%"+query+"%")
+	`, where)
+	rows, err := r.db.Query(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}

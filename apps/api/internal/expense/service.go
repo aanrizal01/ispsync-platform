@@ -17,7 +17,7 @@ func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) CreateExpense(ctx context.Context, input CreateExpenseInput, recordedBy *uuid.UUID) (*Expense, error) {
+func (s *Service) CreateExpense(ctx context.Context, tenantSlug string, input CreateExpenseInput, recordedBy *uuid.UUID) (*Expense, error) {
 	if input.Amount <= 0 {
 		return nil, errors.New("nominal pengeluaran harus lebih dari 0")
 	}
@@ -40,9 +40,14 @@ func (s *Service) CreateExpense(ctx context.Context, input CreateExpenseInput, r
 		isBHPDeductible = true
 	}
 
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
+
 	now := time.Now().UTC()
 	exp := &Expense{
 		ID:              uuid.New(),
+		TenantSlug:      tenantSlug,
 		ExpenseNumber:   expenseNumber,
 		Category:        input.Category,
 		Title:           strings.TrimSpace(input.Title),
@@ -119,6 +124,6 @@ func (s *Service) ListExpenses(ctx context.Context, filter ExpenseFilter) ([]Exp
 	return s.repo.List(ctx, filter)
 }
 
-func (s *Service) GetExpenseSummary(ctx context.Context, year int, month int) (*ExpenseSummary, error) {
-	return s.repo.GetSummary(ctx, year, month)
+func (s *Service) GetExpenseSummary(ctx context.Context, tenantSlug string, year int, month int) (*ExpenseSummary, error) {
+	return s.repo.GetSummary(ctx, tenantSlug, year, month)
 }

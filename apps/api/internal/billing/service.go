@@ -88,8 +88,13 @@ func (s *Service) CreateManual(ctx context.Context, req CreateManualInvoiceReque
 	}
 
 	now := time.Now()
+	tenantSlug := cust.TenantSlug
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
 	inv := &Invoice{
 		ID:             uuid.New(),
+		TenantSlug:     tenantSlug,
 		InvoiceNumber:  invNum,
 		CustomerID:     req.CustomerID,
 		SubscriptionID: req.SubscriptionID,
@@ -139,8 +144,8 @@ func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*Invoice, error) {
 	return inv, nil
 }
 
-func (s *Service) List(ctx context.Context, params pagination.Params, customerID *uuid.UUID, status string) ([]Invoice, pagination.Meta, error) {
-	invoices, total, err := s.repo.List(ctx, params, customerID, status)
+func (s *Service) List(ctx context.Context, tenantSlug string, params pagination.Params, customerID *uuid.UUID, status string) ([]Invoice, pagination.Meta, error) {
+	invoices, total, err := s.repo.List(ctx, tenantSlug, params, customerID, status)
 	if err != nil {
 		return nil, pagination.Meta{}, apperrors.Internal(err)
 	}
@@ -191,8 +196,8 @@ func (s *Service) Void(ctx context.Context, id uuid.UUID, reason string) error {
 	return nil
 }
 
-func (s *Service) PublicLookup(ctx context.Context, query string) (*PublicInvoiceLookupResponse, error) {
-	invoices, err := s.repo.PublicLookup(ctx, query)
+func (s *Service) PublicLookup(ctx context.Context, tenantSlug string, query string) (*PublicInvoiceLookupResponse, error) {
+	invoices, err := s.repo.PublicLookup(ctx, tenantSlug, query)
 	if err != nil {
 		return nil, apperrors.Internal(err)
 	}

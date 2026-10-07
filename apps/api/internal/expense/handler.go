@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -15,6 +17,40 @@ import (
 	apperrors "github.com/gigabill/isp/internal/shared/errors"
 	"github.com/gigabill/isp/internal/shared/middleware"
 )
+
+func extractTenantSlug(r *http.Request) string {
+	if s := r.Header.Get("X-Tenant-Slug"); s != "" {
+		return s
+	}
+	host := r.Header.Get("X-Forwarded-Host")
+	if host == "" {
+		host = r.Host
+	}
+	if host == "" {
+		if ref := r.Header.Get("Referer"); ref != "" {
+			if u, err := url.Parse(ref); err == nil {
+				host = u.Host
+			}
+		}
+	}
+	if host == "" {
+		if orig := r.Header.Get("Origin"); orig != "" {
+			if u, err := url.Parse(orig); err == nil {
+				host = u.Host
+			}
+		}
+	}
+	if idx := strings.Index(host, ":"); idx != -1 {
+		host = host[:idx]
+	}
+	parts := strings.Split(host, ".")
+	if len(parts) >= 4 {
+		return parts[1]
+	} else if len(parts) == 3 && parts[1] == "ispsync" {
+		return parts[0]
+	}
+	return "dev"
+}
 
 type Handler struct {
 	service *Service
@@ -55,7 +91,7 @@ func (h *Handler) CreateExpense(w http.ResponseWriter, r *http.Request) {
 	}
 
 	recordedBy := getUserIDFromContext(r)
-	exp, err := h.service.CreateExpense(r.Context(), input, recordedBy)
+	exp, err := h.service.CreateExpense(r.Context(), extractTenantSlug(r), input, recordedBy)
 	if err != nil {
 		middleware.JSONError(w, h.logger, apperrors.BadRequest(err.Error()))
 		return
@@ -134,11 +170,12 @@ func (h *Handler) ListExpenses(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filter := ExpenseFilter{
-		StartDate: q.Get("start_date"),
-		EndDate:   q.Get("end_date"),
-		Search:    q.Get("search"),
-		Page:      page,
-		Limit:     limit,
+		TenantSlug: extractTenantSlug(r),
+		StartDate:  q.Get("start_date"),
+		EndDate:    q.Get("end_date"),
+		Search:     q.Get("search"),
+		Page:       page,
+		Limit:      limit,
 	}
 
 	if cat := q.Get("category"); cat != "" {
@@ -184,7 +221,7 @@ func (h *Handler) GetExpenseSummary(w http.ResponseWriter, r *http.Request) {
 		month = int(time.Now().Month())
 	}
 
-	summary, err := h.service.GetExpenseSummary(r.Context(), year, month)
+	summary, err := h.service.GetExpenseSummary(r.Context(), extractTenantSlug(r), year, month)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -196,11 +233,12 @@ func (h *Handler) GetExpenseSummary(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ExportCSV(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	filter := ExpenseFilter{
-		StartDate: q.Get("start_date"),
-		EndDate:   q.Get("end_date"),
-		Search:    q.Get("search"),
-		Page:      1,
-		Limit:     10000,
+		TenantSlug: extractTenantSlug(r),
+		StartDate:  q.Get("start_date"),
+		EndDate:    q.Get("end_date"),
+		Search:     q.Get("search"),
+		Page:       1,
+		Limit:      10000,
 	}
 
 	if cat := q.Get("category"); cat != "" {

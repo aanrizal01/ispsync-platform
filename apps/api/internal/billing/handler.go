@@ -3,6 +3,8 @@ package billing
 import (
 	"log/slog"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -12,6 +14,40 @@ import (
 	"github.com/gigabill/isp/internal/shared/middleware"
 	"github.com/gigabill/isp/internal/shared/pagination"
 )
+
+func extractTenantSlug(r *http.Request) string {
+	if s := r.Header.Get("X-Tenant-Slug"); s != "" {
+		return s
+	}
+	host := r.Header.Get("X-Forwarded-Host")
+	if host == "" {
+		host = r.Host
+	}
+	if host == "" {
+		if ref := r.Header.Get("Referer"); ref != "" {
+			if u, err := url.Parse(ref); err == nil {
+				host = u.Host
+			}
+		}
+	}
+	if host == "" {
+		if orig := r.Header.Get("Origin"); orig != "" {
+			if u, err := url.Parse(orig); err == nil {
+				host = u.Host
+			}
+		}
+	}
+	if idx := strings.Index(host, ":"); idx != -1 {
+		host = host[:idx]
+	}
+	parts := strings.Split(host, ".")
+	if len(parts) >= 4 {
+		return parts[1]
+	} else if len(parts) == 3 && parts[1] == "ispsync" {
+		return parts[0]
+	}
+	return "dev"
+}
 
 type Handler struct {
 	service *Service
@@ -59,7 +95,8 @@ func (h *Handler) PublicLookup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := h.service.PublicLookup(r.Context(), req.Query)
+	tenantSlug := extractTenantSlug(r)
+	res, err := h.service.PublicLookup(r.Context(), tenantSlug, req.Query)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -136,7 +173,8 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	invoices, meta, err := h.service.List(r.Context(), params, custID, status)
+	tenantSlug := extractTenantSlug(r)
+	invoices, meta, err := h.service.List(r.Context(), tenantSlug, params, custID, status)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return

@@ -68,15 +68,20 @@ func (s *Service) recordAudit(ctx context.Context, action, entityID, description
 }
 
 
-func (s *Service) Create(ctx context.Context, req CreateCustomerRequest) (*Customer, error) {
+func (s *Service) Create(ctx context.Context, tenantSlug string, req CreateCustomerRequest) (*Customer, error) {
 	custNum, err := s.repo.GenerateCustomerNumber(ctx)
 	if err != nil {
 		return nil, apperrors.Internal(err)
 	}
 
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
+
 	now := time.Now()
 	cust := &Customer{
 		ID:             uuid.New(),
+		TenantSlug:     tenantSlug,
 		PartnerID:      req.PartnerID,
 		CustomerNumber: custNum,
 		FullName:       req.FullName,
@@ -124,8 +129,8 @@ func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*Customer, error) 
 	return cust, nil
 }
 
-func (s *Service) List(ctx context.Context, params pagination.Params, search, status string) ([]Customer, pagination.Meta, error) {
-	customers, total, err := s.repo.List(ctx, params, search, status)
+func (s *Service) List(ctx context.Context, tenantSlug string, params pagination.Params, search, status string) ([]Customer, pagination.Meta, error) {
+	customers, total, err := s.repo.List(ctx, tenantSlug, params, search, status)
 	if err != nil {
 		return nil, pagination.Meta{}, apperrors.Internal(err)
 	}

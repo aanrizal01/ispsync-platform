@@ -38,12 +38,17 @@ func (r *Repository) Create(ctx context.Context, c *Customer, initialAddr *Addre
 	}
 	defer tx.Rollback(ctx)
 
+	tenantSlug := c.TenantSlug
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
+
 	const insertCustomer = `
-		INSERT INTO customers (id, partner_id, customer_number, full_name, email, phone, status, notes, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO customers (id, tenant_slug, partner_id, customer_number, full_name, email, phone, status, notes, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 	`
 	_, err = tx.Exec(ctx, insertCustomer,
-		c.ID, c.PartnerID, c.CustomerNumber, c.FullName, c.Email, c.Phone, c.Status, c.Notes, c.CreatedAt, c.UpdatedAt,
+		c.ID, tenantSlug, c.PartnerID, c.CustomerNumber, c.FullName, c.Email, c.Phone, c.Status, c.Notes, c.CreatedAt, c.UpdatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("insert customer: %w", err)
@@ -69,13 +74,13 @@ func (r *Repository) Create(ctx context.Context, c *Customer, initialAddr *Addre
 
 func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*Customer, error) {
 	const q = `
-		SELECT id, partner_id, customer_number, full_name, email, phone, status, notes, created_at, updated_at, deleted_at
+		SELECT id, COALESCE(tenant_slug, 'dev'), partner_id, customer_number, full_name, email, phone, status, notes, created_at, updated_at, deleted_at
 		FROM customers
 		WHERE id = $1 AND deleted_at IS NULL
 	`
 	var c Customer
 	err := r.db.QueryRow(ctx, q, id).Scan(
-		&c.ID, &c.PartnerID, &c.CustomerNumber, &c.FullName, &c.Email, &c.Phone, &c.Status,
+		&c.ID, &c.TenantSlug, &c.PartnerID, &c.CustomerNumber, &c.FullName, &c.Email, &c.Phone, &c.Status,
 		&c.Notes, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt,
 	)
 
@@ -149,10 +154,16 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*Customer, erro
 	return &c, nil
 }
 
-func (r *Repository) List(ctx context.Context, params pagination.Params, search string, status string) ([]Customer, int, error) {
+func (r *Repository) List(ctx context.Context, tenantSlug string, params pagination.Params, search string, status string) ([]Customer, int, error) {
 	where := "WHERE deleted_at IS NULL"
 	args := []interface{}{}
 	argIdx := 1
+
+	if tenantSlug != "" && tenantSlug != "superadmin" {
+		where += fmt.Sprintf(" AND tenant_slug = $%d", argIdx)
+		args = append(args, tenantSlug)
+		argIdx++
+	}
 
 	if search != "" {
 		where += fmt.Sprintf(" AND (full_name ILIKE $%d OR customer_number ILIKE $%d OR phone ILIKE $%d OR email ILIKE $%d)", argIdx, argIdx, argIdx, argIdx)
@@ -179,7 +190,7 @@ func (r *Repository) List(ctx context.Context, params pagination.Params, search 
 	}
 
 	dataQuery := fmt.Sprintf(`
-		SELECT id, customer_number, full_name, email, phone, status, notes, created_at, updated_at
+		SELECT id, COALESCE(tenant_slug, 'dev'), customer_number, full_name, email, phone, status, notes, created_at, updated_at
 		FROM customers
 		%s
 		%s
@@ -198,7 +209,7 @@ func (r *Repository) List(ctx context.Context, params pagination.Params, search 
 	for rows.Next() {
 		var c Customer
 		if err := rows.Scan(
-			&c.ID, &c.CustomerNumber, &c.FullName, &c.Email, &c.Phone, &c.Status,
+			&c.ID, &c.TenantSlug, &c.CustomerNumber, &c.FullName, &c.Email, &c.Phone, &c.Status,
 			&c.Notes, &c.CreatedAt, &c.UpdatedAt,
 		); err != nil {
 			return nil, 0, err

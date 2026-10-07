@@ -26,10 +26,14 @@ func NewService(repo *Repository, radiusSvc *radius.Service, logger *slog.Logger
 	}
 }
 
-func (s *Service) CreateDevice(ctx context.Context, req CreateDeviceRequest) (*Device, error) {
+func (s *Service) CreateDevice(ctx context.Context, tenantSlug string, req CreateDeviceRequest) (*Device, error) {
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
 	now := time.Now()
 	dev := &Device{
 		ID:                uuid.New(),
+		TenantSlug:        tenantSlug,
 		Name:              req.Name,
 		Vendor:            req.Vendor,
 		Model:             req.Model,
@@ -95,8 +99,8 @@ func (s *Service) GetDevice(ctx context.Context, id uuid.UUID) (*Device, error) 
 	return dev, nil
 }
 
-func (s *Service) ListDevices(ctx context.Context, vendor *Vendor, isActive *bool) ([]Device, error) {
-	return s.repo.List(ctx, vendor, isActive)
+func (s *Service) ListDevices(ctx context.Context, tenantSlug string, vendor *Vendor, isActive *bool) ([]Device, error) {
+	return s.repo.List(ctx, tenantSlug, vendor, isActive)
 }
 
 func (s *Service) UpdateDevice(ctx context.Context, id uuid.UUID, req UpdateDeviceRequest) (*Device, error) {

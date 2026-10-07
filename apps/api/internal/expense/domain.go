@@ -31,6 +31,7 @@ const (
 
 type Expense struct {
 	ID              uuid.UUID       `json:"id"`
+	TenantSlug      string          `json:"tenant_slug,omitempty"`
 	ExpenseNumber   string          `json:"expense_number"`
 	Category        ExpenseCategory `json:"category"`
 	Title           string          `json:"title"`
@@ -75,6 +76,7 @@ type UpdateExpenseInput struct {
 }
 
 type ExpenseFilter struct {
+	TenantSlug      string           `json:"tenant_slug,omitempty"`
 	StartDate       string           `json:"start_date,omitempty"` // YYYY-MM-DD
 	EndDate         string           `json:"end_date,omitempty"`   // YYYY-MM-DD
 	Category        *ExpenseCategory `json:"category,omitempty"`

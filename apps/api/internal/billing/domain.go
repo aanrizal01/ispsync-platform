@@ -35,6 +35,7 @@ const (
 
 type Invoice struct {
 	ID                 uuid.UUID     `json:"id"`
+	TenantSlug         string        `json:"tenant_slug,omitempty"`
 	InvoiceNumber      string        `json:"invoice_number"`
 	CustomerID         uuid.UUID     `json:"customer_id"`
 	CustomerNumber     *string       `json:"customer_number,omitempty"`
