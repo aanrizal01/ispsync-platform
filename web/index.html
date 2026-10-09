@@ -223,6 +223,7 @@
     }
     #admin-login-container.hidden,
     #sales-login-container.hidden,
+    #technician-login-container.hidden,
     #customer-login-container.hidden {
       display: none !important;
     }
@@ -2280,9 +2281,11 @@
             <!-- Top: Brand Header (Uniform with Ledger, NOC & Nexus) -->
             <div class="relative z-10">
               <div class="flex items-center gap-3.5">
-                <img id="sales-login-brand-logo" src="" alt="Logo" class="h-10 w-auto brightness-0 invert object-contain shrink-0" onerror="this.style.display='none'; var fb = document.getElementById('sales-login-fallback-logo'); if (fb) fb.classList.remove('hidden');" />
-                <div id="sales-login-fallback-logo" class="hidden w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 ring-1 ring-white/20 shrink-0">
-                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <div class="w-11 h-11 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-center p-2 shrink-0 shadow-sm backdrop-blur-sm">
+                  <img id="sales-login-brand-logo" src="" alt="Logo" class="w-full h-full object-contain shrink-0" onerror="this.style.display='none'; var fb = document.getElementById('sales-login-fallback-logo'); if (fb) fb.classList.remove('hidden');" />
+                  <div id="sales-login-fallback-logo" class="hidden w-full h-full rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shrink-0">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  </div>
                 </div>
                 <div>
                   <div class="flex items-center gap-2.5">
@@ -2308,8 +2311,8 @@
                 (function() {
                   try {
                     var s = window.__EARLY_TENANT_SLUG__ || 'dev';
-                    var b = window.__EARLY_BRAND_NAME__ || 'ISPSYNC';
-                    var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_logo.svg');
+                    var b = window.__EARLY_BRAND_NAME__ || (s === 'dev' ? 'DEV LAB' : s.toUpperCase());
+                    var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_favicon.svg');
                     var img = document.getElementById('sales-login-brand-logo'); if (img) img.src = logo;
                     var h2 = document.getElementById('sales-login-brand-name'); if (h2) h2.textContent = b;
                     var hl = document.getElementById('sales-login-brand-highlight'); if (hl) hl.textContent = 'Mitra Sales ' + b;
@@ -2373,9 +2376,11 @@
 
               <!-- Mobile Header Brand (lg:hidden) -->
               <div class="lg:hidden flex items-center gap-3 mb-8 pb-6 border-b border-slate-200">
-                <img id="sales-mobile-brand-logo" src="" alt="Logo" class="h-9 w-auto object-contain shrink-0" onerror="this.style.display='none'; var mfb = document.getElementById('sales-mobile-fallback-logo'); if (mfb) mfb.classList.remove('hidden');" />
-                <div id="sales-mobile-fallback-logo" class="hidden w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-sm text-white shrink-0">
-                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center p-1.5 shrink-0 shadow-sm">
+                  <img id="sales-mobile-brand-logo" src="" alt="Logo" class="w-full h-full object-contain shrink-0" onerror="this.style.display='none'; var mfb = document.getElementById('sales-mobile-fallback-logo'); if (mfb) mfb.classList.remove('hidden');" />
+                  <div id="sales-mobile-fallback-logo" class="hidden w-full h-full rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-sm text-white shrink-0">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  </div>
                 </div>
                 <div>
                   <div class="flex items-center gap-2">
@@ -2391,8 +2396,8 @@
                 (function() {
                   try {
                     var s = window.__EARLY_TENANT_SLUG__ || 'dev';
-                    var b = window.__EARLY_BRAND_NAME__ || 'ISPSYNC';
-                    var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_logo.svg');
+                    var b = window.__EARLY_BRAND_NAME__ || (s === 'dev' ? 'DEV LAB' : s.toUpperCase());
+                    var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_favicon.svg');
                     var mImg = document.getElementById('sales-mobile-brand-logo'); if (mImg) mImg.src = logo;
                     var mH2 = document.getElementById('sales-mobile-brand-name'); if (mH2) mH2.textContent = b;
                     var mDesc = document.getElementById('sales-mobile-brand-desc'); if (mDesc) mDesc.textContent = 'Portal Agen & Account Executive ' + b;
@@ -4880,107 +4885,187 @@
     <!-- ══════════════════════════════════════════════════════════ -->
     <section id="tab-technician" class="hidden space-y-6">
 
-      <!-- 1. TECHNICIAN LOGIN CONTAINER (Shown when unauthenticated) -->
-      <div id="technician-login-container" class="max-w-4xl mx-auto my-4 sm:my-8 overflow-hidden rounded-lg bg-white border border-slate-200 shadow-sm">
-        <div class="grid grid-cols-1 lg:grid-cols-12 min-h-[520px]">
-          
-          <!-- LEFT HERO BRANDING PANEL (lg:col-span-5) -->
-          <div class="lg:col-span-5 bg-slate-900 text-white p-6 sm:p-8 flex flex-col justify-between">
-            <div class="space-y-6">
-              <!-- Brand Header -->
-              <div class="space-y-3">
-                <div class="flex items-center gap-3">
-                  <img src="/logo.png" alt="GOGIGA" class="h-10 w-auto object-contain" />
-                  <div>
-                    <h2 class="text-xl font-bold tracking-tight text-white">GOGIGANET</h2>
-                    <p class="text-xs text-blue-400 font-mono font-semibold">Portal Teknisi &amp; BAST Digital</p>
+      <!-- 1. TECHNICIAN LOGIN CONTAINER (Shown when unauthenticated - Polished with Linear Telco Dark Split Aesthetic) -->
+      <div id="technician-login-container" class="fixed inset-0 z-[9999999] overflow-y-auto bg-slate-50 font-sans selection:bg-blue-600 selection:text-white">
+        <div class="min-h-screen w-full flex flex-col lg:flex-row">
+
+          <!-- LEFT SHOWCASE / HERO PANEL (lg:flex) -->
+          <div class="hidden lg:flex lg:w-1/2 xl:w-7/12 relative flex-col justify-between p-12 xl:p-16 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/40 text-white overflow-hidden border-r border-slate-800">
+            <!-- Ambient decorative blur glows -->
+            <div class="absolute -top-32 -left-32 w-96 h-96 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute top-1/2 -right-32 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-32 left-1/4 w-80 h-80 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+            <!-- Top: Brand Header (Uniform with Ledger, NOC & Nexus) -->
+            <div class="relative z-10">
+              <div class="flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-center p-2 shrink-0 shadow-sm backdrop-blur-sm">
+                  <img id="technician-login-brand-logo" src="" alt="Logo" class="w-full h-full object-contain shrink-0" onerror="this.style.display='none'; var fb = document.getElementById('technician-login-fallback-logo'); if (fb) fb.classList.remove('hidden');" />
+                  <div id="technician-login-fallback-logo" class="hidden w-full h-full rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shrink-0">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                   </div>
                 </div>
-                <p class="text-xs text-slate-300 leading-relaxed font-sans pt-1">
-                  Akses operasional resmi tim teknisi lapangan untuk penyelesaian Surat Perintah Kerja (SPK), uji redaman OPM, dan tanda tangan BAST digital.
-                </p>
+                <div>
+                  <div class="flex items-center gap-2.5">
+                    <h2 id="technician-login-brand-name" class="text-2xl font-black tracking-tight text-white uppercase cust-brand-name-dynamic"></h2>
+                    <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700 shrink-0 whitespace-nowrap">
+                      FIELD TECHNICIAN
+                    </span>
+                  </div>
+                  <p id="technician-login-brand-desc" class="text-xs text-slate-400 font-sans mt-0.5"></p>
+                </div>
               </div>
+            </div>
 
-              <!-- Feature Highlights -->
-              <div class="space-y-2.5 pt-1">
-                <div class="flex items-start gap-3 p-3 rounded-md bg-white/5 border border-white/10">
-                  <div class="w-8 h-8 rounded-md bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+            <!-- Hero Central Headline -->
+            <div class="relative z-10 my-10 max-w-xl space-y-6">
+              <h1 class="text-3xl xl:text-4xl font-extrabold tracking-tight text-white leading-tight">
+                Portal Tugas Teknisi &amp; <span id="technician-login-brand-highlight" class="bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-400 bg-clip-text text-transparent"></span>.
+              </h1>
+              <p id="technician-login-hero-sub" class="text-slate-300 text-sm leading-relaxed"></p>
+
+              <!-- Synchronous Zero-FOUC Brand Resolver for Technician Hero -->
+              <script>
+                (function() {
+                  try {
+                    var s = window.__EARLY_TENANT_SLUG__ || 'dev';
+                    var b = window.__EARLY_BRAND_NAME__ || (s === 'dev' ? 'DEV LAB' : s.toUpperCase());
+                    var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_favicon.svg');
+                    var img = document.getElementById('technician-login-brand-logo'); if (img) img.src = logo;
+                    var h2 = document.getElementById('technician-login-brand-name'); if (h2) h2.textContent = b;
+                    var hl = document.getElementById('technician-login-brand-highlight'); if (hl) hl.textContent = 'Operasional Lapangan ' + b;
+                    var desc = document.getElementById('technician-login-brand-desc'); if (desc) desc.textContent = 'Portal Penugasan Teknisi Lapangan & BAST Digital ' + b;
+                    var sub = document.getElementById('technician-login-hero-sub'); if (sub) sub.textContent = 'Akses operasional resmi tim teknisi lapangan ' + b + ' untuk penyelesaian Surat Perintah Kerja (SPK), uji redaman OPM, scan barcode SN/MAC ONT, dan tanda tangan BAST digital pelanggan.';
+                    var legalMap = { ispmu: 'PT. Mitra Usaha Data', ispku: 'PT. ISP Kita Nusantara', dev: 'Laboratorium ISPSYNC R&D' };
+                    var leg = (window.__ISPSYNC_TENANT__ && (window.__ISPSYNC_TENANT__.company_name || window.__ISPSYNC_TENANT__.name)) || legalMap[s] || ('PT. ' + b + ' Data Nusantara');
+                    var c = document.getElementById('technician-login-copyright'); if (c) c.textContent = '© 2026 ' + leg + '. All rights reserved.';
+                    var sp = document.getElementById('technician-support-brand'); if (sp) sp.textContent = b;
+                  } catch(e) {}
+                })();
+              </script>
+
+              <!-- 3 Feature Highlight Cards (Dark Glassmorphism) -->
+              <div class="mt-8 space-y-3.5">
+                <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                  <div class="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
                   </div>
                   <div>
-                    <h4 class="text-xs font-semibold text-white">Daftar Tugas SPK Terjadwal</h4>
-                    <p class="text-[11px] text-slate-300">Survei lokasi ODP baru, penarikan kabel dropcore, dan penanganan gangguan.</p>
+                    <h4 class="text-xs font-bold text-slate-100">Daftar Tugas SPK Terjadwal</h4>
+                    <p class="text-[11px] text-slate-400 leading-normal">Survei lokasi tiang ODP baru, penarikan kabel dropcore, dan penanganan tiket gangguan cepat.</p>
                   </div>
                 </div>
 
-                <div class="flex items-start gap-3 p-3 rounded-md bg-white/5 border border-white/10">
-                  <div class="w-8 h-8 rounded-md bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <i data-lucide="gauge" class="w-4 h-4"></i>
+                <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                  <div class="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                   </div>
                   <div>
-                    <h4 class="text-xs font-semibold text-white">Standar Redaman OPM (-16 s/d -22 dBm)</h4>
-                    <p class="text-[11px] text-slate-300">Panduan redaman optik presisi untuk menjamin internet pelanggan stabil &amp; minim loss.</p>
+                    <h4 class="text-xs font-bold text-slate-100">Standar Redaman OPM (-16 s/d -22 dBm)</h4>
+                    <p class="text-[11px] text-slate-400 leading-normal">Panduan redaman optik presisi untuk menjamin internet pelanggan stabil &amp; minim loss.</p>
                   </div>
                 </div>
 
-                <div class="flex items-start gap-3 p-3 rounded-md bg-white/5 border border-white/10">
-                  <div class="w-8 h-8 rounded-md bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
-                    <i data-lucide="file-check-2" class="w-4 h-4"></i>
+                <div class="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex items-start gap-3.5 shadow-sm">
+                  <div class="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                   </div>
                   <div>
-                    <h4 class="text-xs font-semibold text-white">BAST Digital &amp; Validasi ONT</h4>
-                    <p class="text-[11px] text-slate-300">Pindai barcode SN/MAC ONT dan tanda tangan pelanggan langsung dari smartphone.</p>
+                    <h4 class="text-xs font-bold text-slate-100">BAST Digital &amp; Validasi ONT</h4>
+                    <p class="text-[11px] text-slate-400 leading-normal">Pindai barcode SN/MAC ONT dan tanda tangan pelanggan langsung dari smartphone lapangan.</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Trust / Security Footer -->
-            <div class="pt-6 mt-6 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-              <div class="flex items-center gap-1.5 text-slate-300">
-                <i data-lucide="shield-check" class="w-4 h-4 text-amber-400"></i>
-                <span>Enkripsi Sambungan Lapangan</span>
-              </div>
-              <span class="text-slate-400 text-[11px]">GPS Terhubung</span>
+            <!-- Left Panel Footer -->
+            <div class="relative z-10 pt-6 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+              <p id="technician-login-copyright" class="text-[11px] text-slate-400"></p>
+              <span class="font-mono text-[11px] text-slate-500">v3.2-carrier &bull; Field Operations</span>
             </div>
           </div>
 
-          <!-- RIGHT LOGIN FORM PANEL (lg:col-span-7) -->
-          <div class="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between bg-white relative">
-            <div class="space-y-6">
-              
-              <!-- Form Top Bar -->
-              <div class="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div>
-                  <h3 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Portal Petugas Teknisi</h3>
-                  <p class="text-xs text-slate-500 font-sans mt-0.5">Masukkan username teknisi dan password untuk membuka daftar SPK</p>
+          <!-- RIGHT LOGIN FORM PANEL (White background matching billing) -->
+          <div class="w-full lg:w-1/2 xl:w-5/12 flex items-center justify-center p-6 sm:p-12 xl:p-16 bg-white min-h-screen relative text-slate-900">
+            <div class="w-full max-w-md">
+
+              <!-- Mobile Header Brand (lg:hidden) -->
+              <div class="lg:hidden flex items-center gap-3 mb-8 pb-6 border-b border-slate-200">
+                <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center p-1.5 shrink-0 shadow-sm">
+                  <img id="technician-mobile-brand-logo" src="" alt="Logo" class="w-full h-full object-contain shrink-0" onerror="this.style.display='none'; var mfb = document.getElementById('technician-mobile-fallback-logo'); if (mfb) mfb.classList.remove('hidden');" />
+                  <div id="technician-mobile-fallback-logo" class="hidden w-full h-full rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-sm text-white shrink-0">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  </div>
                 </div>
-                <div class="w-11 h-11 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200 shadow-xs shrink-0">
-                  <i data-lucide="wrench" class="w-5 h-5"></i>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span id="technician-mobile-brand-name" class="font-black text-xl text-slate-900 tracking-tight uppercase"></span>
+                    <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-slate-100 text-cyan-700 border border-slate-200 shrink-0 whitespace-nowrap">
+                      PORTAL TEKNISI
+                    </span>
+                  </div>
+                  <p id="technician-mobile-brand-desc" class="text-[11px] text-slate-500 font-sans mt-0.5"></p>
+                </div>
+              </div>
+              <script>
+                (function() {
+                  try {
+                    var s = window.__EARLY_TENANT_SLUG__ || 'dev';
+                    var b = window.__EARLY_BRAND_NAME__ || (s === 'dev' ? 'DEV LAB' : s.toUpperCase());
+                    var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_favicon.svg');
+                    var mImg = document.getElementById('technician-mobile-brand-logo'); if (mImg) mImg.src = logo;
+                    var mH2 = document.getElementById('technician-mobile-brand-name'); if (mH2) mH2.textContent = b;
+                    var mDesc = document.getElementById('technician-mobile-brand-desc'); if (mDesc) mDesc.textContent = 'Portal Tugas Teknisi & Lapangan ' + b;
+                  } catch(e) {}
+                })();
+              </script>
+
+              <!-- Welcome Heading (Uniform with FiberGrid & NOC) -->
+              <div class="mb-8">
+                <h2 class="text-3xl font-extrabold tracking-tight text-slate-900">Masuk ke Akun</h2>
+                <p class="text-slate-500 text-sm mt-2 leading-relaxed">Masukkan identitas teknisi lapangan untuk membuka penugasan SPK instalasi &amp; pemeliharaan jaringan.</p>
+                <div class="mt-3 flex items-center gap-2">
+                  <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-cyan-50 text-cyan-700 border border-cyan-200">
+                    AKSES RESMI TEKNISI
+                  </span>
+                  <span class="text-xs text-slate-500 font-normal">Disposisi &amp; BAST Lapangan</span>
                 </div>
               </div>
 
-              <form onsubmit="handleTechnicianDirectLogin(event)" class="space-y-4">
+              <!-- Login Form -->
+              <form onsubmit="handleTechnicianDirectLogin(event)" class="space-y-5">
                 <div>
-                  <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">Username Teknisi</label>
-                  <input type="text" id="technician-direct-name" placeholder="Masukkan username teknisi" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-md px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-mono outline-none focus:bg-white focus:border-slate-900 transition" required />
+                  <label for="technician-direct-name" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Username Teknisi</label>
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    </div>
+                    <input type="text" id="technician-direct-name" autocomplete="username" placeholder="Masukkan username teknisi" class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-600 focus:border-cyan-600 text-sm transition-all shadow-xs" required />
+                  </div>
                 </div>
 
                 <div>
-                  <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">Password Teknisi</label>
-                  <input type="password" id="technician-direct-pin" placeholder="Masukkan password akun teknisi" class="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-md px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-mono outline-none focus:bg-white focus:border-slate-900 transition" required />
+                  <div class="flex items-center justify-between mb-2">
+                    <label for="technician-direct-pin" class="block text-xs font-bold uppercase tracking-wider text-slate-700">Password / PIN Teknisi</label>
+                  </div>
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                    </div>
+                    <input type="password" id="technician-direct-pin" autocomplete="current-password" placeholder="Masukkan password akun teknisi" class="w-full pl-10 pr-11 py-2.5 rounded-xl border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-600 focus:border-cyan-600 text-sm transition-all shadow-xs" required />
+                  </div>
                 </div>
 
-                <button type="submit" id="btn-technician-direct-login" class="w-full py-3.5 px-4 rounded-md text-xs sm:text-sm font-bold text-white bg-slate-900 hover:bg-slate-800 shadow-xs transition flex items-center justify-center gap-2 cursor-pointer">
-                  <i data-lucide="wrench" class="w-4 h-4"></i>
+                <button type="submit" id="btn-technician-direct-login" class="w-full bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-bold py-3.5 px-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2 shadow-md shadow-cyan-600/20 active:scale-[0.99] cursor-pointer">
                   <span>MASUK KE DAFTAR TUGAS SPK</span>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                 </button>
               </form>
-            </div>
 
-            <!-- Footer Help Note -->
-            <div class="pt-4 border-t border-slate-100 text-center text-xs text-slate-400">
-              Kendala di lapangan? Hubungi Dispatcher NOC Gogiganet via radio/WhatsApp.
+              <!-- Footer Help Note -->
+              <div class="pt-6 mt-8 border-t border-slate-100 text-center text-xs text-slate-400">
+                Kendala di lapangan? Hubungi Dispatcher NOC <span id="technician-support-brand" class="font-bold text-slate-600"></span>.
+              </div>
             </div>
           </div>
 
@@ -23741,21 +23826,17 @@
           dev: 'Laboratorium ISPSYNC R&D'
         };
 
-        // Always use short uppercase brand acronym (ISPMU, ISPKU), fallback to ISPSYNC for dev/platform
-        let brandName = (slug && slug !== 'dev') ? slug.toUpperCase() : 'ISPSYNC';
-        if (injected.short_name && injected.short_name !== 'DEVLAB' && injected.short_name !== 'DEV' && !injected.short_name.toUpperCase().startsWith('PT')) {
-          brandName = injected.short_name.toUpperCase();
-        }
+        // Always use short uppercase brand acronym (ISPMU, ISPKU), DEV LAB for dev
+        let brandName = (injected.short_name && !injected.short_name.toUpperCase().startsWith('PT')) ? injected.short_name : ((slug === 'dev') ? 'DEV LAB' : (slug ? slug.toUpperCase() : 'ISPSYNC'));
 
         const legalName = injected.company_name || injected.name || legalMap[slug] || ('PT. ' + brandName + ' Data Nusantara');
         const copyrightText = '© 2026 ' + legalName + '. All rights reserved.';
         const supportEmail = injected.contact_email || injected.email || ('sales@' + (slug || 'dev') + '.ispsync.id');
-        const logoSrc = '/web/' + (slug || 'dev') + '_logo.svg';
+        const logoSrc = '/web/' + (slug || 'dev') + '_favicon.svg';
 
         const elLogo = document.getElementById('sales-login-brand-logo');
         if (elLogo) {
           elLogo.src = logoSrc;
-          elLogo.classList.add('brightness-0', 'invert');
         }
         const elMobileLogo = document.getElementById('sales-mobile-brand-logo');
         if (elMobileLogo) elMobileLogo.src = logoSrc;
@@ -28038,7 +28119,52 @@
       }
     }
 
+    function applyTechnicianDynamicBranding() {
+      try {
+        const injected = window.__ISPSYNC_TENANT__ || {};
+        let slug = injected.slug || window.__EARLY_TENANT_SLUG__;
+        if (!slug) {
+          const parts = window.location.hostname.split('.');
+          if (parts.length >= 4) slug = parts[1];
+          else if (parts.length === 3) slug = parts[0];
+          else slug = 'dev';
+        }
+        const legalMap = { ispmu: 'PT. Mitra Usaha Data', ispku: 'PT. ISP Kita Nusantara', dev: 'Laboratorium ISPSYNC R&D' };
+        let brandName = (injected.short_name && !injected.short_name.toUpperCase().startsWith('PT')) ? injected.short_name : ((slug === 'dev') ? 'DEV LAB' : (slug ? slug.toUpperCase() : 'ISPSYNC'));
+        const legalName = injected.company_name || injected.name || legalMap[slug] || ('PT. ' + brandName + ' Data Nusantara');
+        const logoSrc = '/web/' + (slug || 'dev') + '_favicon.svg';
+
+        const elLogo = document.getElementById('technician-login-brand-logo');
+        if (elLogo) elLogo.src = logoSrc;
+        const elMobileLogo = document.getElementById('technician-mobile-brand-logo');
+        if (elMobileLogo) elMobileLogo.src = logoSrc;
+
+        const elBrandName = document.getElementById('technician-login-brand-name');
+        if (elBrandName) elBrandName.textContent = brandName;
+        const elMobileBrandName = document.getElementById('technician-mobile-brand-name');
+        if (elMobileBrandName) elMobileBrandName.textContent = brandName;
+
+        const elBrandDesc = document.getElementById('technician-login-brand-desc');
+        if (elBrandDesc) elBrandDesc.textContent = 'Portal Penugasan Teknisi Lapangan & BAST Digital ' + brandName;
+        const elMobileDesc = document.getElementById('technician-mobile-brand-desc');
+        if (elMobileDesc) elMobileDesc.textContent = 'Portal Tugas Teknisi & Lapangan ' + brandName;
+
+        const elBrandHighlight = document.getElementById('technician-login-brand-highlight');
+        if (elBrandHighlight) elBrandHighlight.textContent = 'Operasional Lapangan ' + brandName;
+
+        const elHeroSub = document.getElementById('technician-login-hero-sub');
+        if (elHeroSub) elHeroSub.textContent = 'Akses operasional resmi tim teknisi lapangan ' + brandName + ' untuk penyelesaian Surat Perintah Kerja (SPK), uji redaman OPM, scan barcode SN/MAC ONT, dan tanda tangan BAST digital pelanggan.';
+
+        const elCopyright = document.getElementById('technician-login-copyright');
+        if (elCopyright) elCopyright.textContent = '© 2026 ' + legalName + '. All rights reserved.';
+
+        const elSupportBrand = document.getElementById('technician-support-brand');
+        if (elSupportBrand) elSupportBrand.textContent = brandName;
+      } catch(e) {}
+    }
+
     function initTechnicianPortal() {
+      applyTechnicianDynamicBranding();
       const auth = localStorage.getItem('technician_auth');
       const loginBox = document.getElementById('technician-login-container');
       const dashBox = document.getElementById('technician-dashboard-container');
