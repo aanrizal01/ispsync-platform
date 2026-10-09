@@ -69,12 +69,13 @@ func (s *Service) CreateDevice(ctx context.Context, tenantSlug string, req Creat
 		}
 
 		desc := fmt.Sprintf("Auto-created from Network Device %s", dev.Name)
-		_, err := s.radiusSvc.CreateNAS(ctx, radius.CreateNASRequest{
+		_, err := s.radiusSvc.CreateNAS(ctx, dev.TenantSlug, radius.CreateNASRequest{
 			NasName:     dev.IPAddress,
 			ShortName:   &dev.Name,
 			Type:        nasType,
 			Secret:      secret,
 			Description: &desc,
+			TenantSlug:  dev.TenantSlug,
 		})
 		if err != nil {
 			s.logger.Warn("network device created but failed to auto-register NAS", "error", err)
@@ -88,12 +89,15 @@ func (s *Service) CreateDevice(ctx context.Context, tenantSlug string, req Creat
 }
 
 
-func (s *Service) GetDevice(ctx context.Context, id uuid.UUID) (*Device, error) {
+func (s *Service) GetDevice(ctx context.Context, tenantSlug string, id uuid.UUID) (*Device, error) {
 	dev, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, apperrors.Internal(err)
 	}
 	if dev == nil {
+		return nil, apperrors.NotFound("Network device tidak ditemukan")
+	}
+	if tenantSlug != "" && tenantSlug != "superadmin" && dev.TenantSlug != "" && dev.TenantSlug != tenantSlug {
 		return nil, apperrors.NotFound("Network device tidak ditemukan")
 	}
 	return dev, nil
@@ -103,13 +107,10 @@ func (s *Service) ListDevices(ctx context.Context, tenantSlug string, vendor *Ve
 	return s.repo.List(ctx, tenantSlug, vendor, isActive)
 }
 
-func (s *Service) UpdateDevice(ctx context.Context, id uuid.UUID, req UpdateDeviceRequest) (*Device, error) {
-	dev, err := s.repo.GetByID(ctx, id)
+func (s *Service) UpdateDevice(ctx context.Context, tenantSlug string, id uuid.UUID, req UpdateDeviceRequest) (*Device, error) {
+	dev, err := s.GetDevice(ctx, tenantSlug, id)
 	if err != nil {
-		return nil, apperrors.Internal(err)
-	}
-	if dev == nil {
-		return nil, apperrors.NotFound("Network device tidak ditemukan")
+		return nil, err
 	}
 
 	dev.Name = req.Name
@@ -134,7 +135,11 @@ func (s *Service) UpdateDevice(ctx context.Context, id uuid.UUID, req UpdateDevi
 	return dev, nil
 }
 
-func (s *Service) DeleteDevice(ctx context.Context, id uuid.UUID) error {
+func (s *Service) DeleteDevice(ctx context.Context, tenantSlug string, id uuid.UUID) error {
+	_, err := s.GetDevice(ctx, tenantSlug, id)
+	if err != nil {
+		return err
+	}
 	return s.repo.Delete(ctx, id)
 }
 
@@ -149,13 +154,10 @@ func (s *Service) GetAdapter(dev *Device) (DeviceAdapter, error) {
 	}
 }
 
-func (s *Service) TestConnection(ctx context.Context, id uuid.UUID) (*TestConnectionResponse, error) {
-	dev, err := s.repo.GetByID(ctx, id)
+func (s *Service) TestConnection(ctx context.Context, tenantSlug string, id uuid.UUID) (*TestConnectionResponse, error) {
+	dev, err := s.GetDevice(ctx, tenantSlug, id)
 	if err != nil {
-		return nil, apperrors.Internal(err)
-	}
-	if dev == nil {
-		return nil, apperrors.NotFound("Perangkat tidak ditemukan")
+		return nil, err
 	}
 
 	adapter, err := s.GetAdapter(dev)
@@ -221,10 +223,10 @@ func (s *Service) TestConnection(ctx context.Context, id uuid.UUID) (*TestConnec
 	}, nil
 }
 
-func (s *Service) SyncPPPoEProfile(ctx context.Context, deviceID uuid.UUID, profile PPPoEProfile) error {
-	dev, err := s.repo.GetByID(ctx, deviceID)
-	if err != nil || dev == nil {
-		return apperrors.NotFound("Perangkat router tidak ditemukan")
+func (s *Service) SyncPPPoEProfile(ctx context.Context, tenantSlug string, deviceID uuid.UUID, profile PPPoEProfile) error {
+	dev, err := s.GetDevice(ctx, tenantSlug, deviceID)
+	if err != nil {
+		return err
 	}
 
 	adapter, err := s.GetAdapter(dev)
@@ -235,10 +237,10 @@ func (s *Service) SyncPPPoEProfile(ctx context.Context, deviceID uuid.UUID, prof
 	return adapter.SyncPPPoEProfile(ctx, profile)
 }
 
-func (s *Service) SetSimpleQueue(ctx context.Context, deviceID uuid.UUID, queue SimpleQueue) error {
-	dev, err := s.repo.GetByID(ctx, deviceID)
-	if err != nil || dev == nil {
-		return apperrors.NotFound("Perangkat router tidak ditemukan")
+func (s *Service) SetSimpleQueue(ctx context.Context, tenantSlug string, deviceID uuid.UUID, queue SimpleQueue) error {
+	dev, err := s.GetDevice(ctx, tenantSlug, deviceID)
+	if err != nil {
+		return err
 	}
 
 	adapter, err := s.GetAdapter(dev)
@@ -249,7 +251,10 @@ func (s *Service) SetSimpleQueue(ctx context.Context, deviceID uuid.UUID, queue 
 	return adapter.SetSimpleQueue(ctx, queue)
 }
 
-func (s *Service) ListLogs(ctx context.Context, deviceID uuid.UUID, limit int) ([]DeviceLog, error) {
+func (s *Service) ListLogs(ctx context.Context, tenantSlug string, deviceID uuid.UUID, limit int) ([]DeviceLog, error) {
+	if _, err := s.GetDevice(ctx, tenantSlug, deviceID); err != nil {
+		return nil, err
+	}
 	if limit <= 0 {
 		limit = 20
 	}

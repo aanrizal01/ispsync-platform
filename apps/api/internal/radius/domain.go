@@ -12,6 +12,7 @@ type NAS struct {
 	Ports       *int      `json:"ports,omitempty"`
 	Secret      string    `json:"secret"`
 	Description *string   `json:"description,omitempty"`
+	TenantSlug  string    `json:"tenant_slug,omitempty"`
 	CreatedAt   time.Time `json:"created_at"`
 }
 
@@ -53,6 +54,7 @@ type CreateNASRequest struct {
 	Type        string  `json:"type" validate:"required,oneof=mikrotik cisco juniper other"`
 	Secret      string  `json:"secret" validate:"required,min=4"`
 	Description *string `json:"description"`
+	TenantSlug  string  `json:"tenant_slug,omitempty"`
 }
 
 type DisconnectSessionRequest struct {

@@ -91,7 +91,8 @@ func (h *Handler) GetDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dev, err := h.service.GetDevice(r.Context(), id)
+	tenantSlug := extractTenantSlug(r)
+	dev, err := h.service.GetDevice(r.Context(), tenantSlug, id)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -113,7 +114,8 @@ func (h *Handler) UpdateDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dev, err := h.service.UpdateDevice(r.Context(), id, req)
+	tenantSlug := extractTenantSlug(r)
+	dev, err := h.service.UpdateDevice(r.Context(), tenantSlug, id, req)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -129,7 +131,8 @@ func (h *Handler) DeleteDevice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.DeleteDevice(r.Context(), id); err != nil {
+	tenantSlug := extractTenantSlug(r)
+	if err := h.service.DeleteDevice(r.Context(), tenantSlug, id); err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
 	}
@@ -144,7 +147,8 @@ func (h *Handler) TestConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := h.service.TestConnection(r.Context(), id)
+	tenantSlug := extractTenantSlug(r)
+	res, err := h.service.TestConnection(r.Context(), tenantSlug, id)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -161,7 +165,8 @@ func (h *Handler) ListLogs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	logs, err := h.service.ListLogs(r.Context(), id, limit)
+	tenantSlug := extractTenantSlug(r)
+	logs, err := h.service.ListLogs(r.Context(), tenantSlug, id, limit)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -183,7 +188,8 @@ func (h *Handler) SyncPPPoEProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.SyncPPPoEProfile(r.Context(), id, req); err != nil {
+	tenantSlug := extractTenantSlug(r)
+	if err := h.service.SyncPPPoEProfile(r.Context(), tenantSlug, id, req); err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
 	}
@@ -204,7 +210,8 @@ func (h *Handler) SetSimpleQueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.SetSimpleQueue(r.Context(), id, req); err != nil {
+	tenantSlug := extractTenantSlug(r)
+	if err := h.service.SetSimpleQueue(r.Context(), tenantSlug, id, req); err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
 	}

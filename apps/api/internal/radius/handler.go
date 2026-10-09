@@ -3,10 +3,12 @@ package radius
 import (
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 
 	"github.com/gigabill/isp/internal/auth"
+	apperrors "github.com/gigabill/isp/internal/shared/errors"
 	"github.com/gigabill/isp/internal/shared/middleware"
 	"github.com/gigabill/isp/internal/shared/pagination"
 )
@@ -20,6 +22,10 @@ func NewHandler(service *Service, logger *slog.Logger) *Handler {
 	return &Handler{service: service, logger: logger}
 }
 
+func extractTenantSlug(r *http.Request) string {
+	return auth.ExtractTenantSlug(r)
+}
+
 func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 	r.Group(func(r chi.Router) {
 		r.Use(authMW.Authenticate)
@@ -31,6 +37,7 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 		// NAS Routers
 		r.With(authMW.RequirePermission("radius:read")).Get("/nas", h.ListNAS)
 		r.With(authMW.RequirePermission("radius:write")).Post("/nas", h.CreateNAS)
+		r.With(authMW.RequirePermission("radius:write")).Delete("/nas/{id}", h.DeleteNAS)
 
 		// Logs
 		r.With(authMW.RequirePermission("radius:read")).Get("/auth-logs", h.ListAuthLogs)
@@ -40,8 +47,9 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 func (h *Handler) ListActiveSessions(w http.ResponseWriter, r *http.Request) {
 	params := pagination.FromRequest(r)
 	search := r.URL.Query().Get("search")
+	tenantSlug := extractTenantSlug(r)
 
-	sessions, meta, err := h.service.ListActiveSessions(r.Context(), params, search)
+	sessions, meta, err := h.service.ListActiveSessions(r.Context(), tenantSlug, params, search)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -68,7 +76,8 @@ func (h *Handler) DisconnectSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListNAS(w http.ResponseWriter, r *http.Request) {
-	nasList, err := h.service.ListNAS(r.Context())
+	tenantSlug := extractTenantSlug(r)
+	nasList, err := h.service.ListNAS(r.Context(), tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -84,7 +93,8 @@ func (h *Handler) CreateNAS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nas, err := h.service.CreateNAS(r.Context(), req)
+	tenantSlug := extractTenantSlug(r)
+	nas, err := h.service.CreateNAS(r.Context(), tenantSlug, req)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -93,11 +103,31 @@ func (h *Handler) CreateNAS(w http.ResponseWriter, r *http.Request) {
 	middleware.JSON(w, http.StatusCreated, nas)
 }
 
+func (h *Handler) DeleteNAS(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		middleware.JSONError(w, h.logger, apperrors.BadRequest("ID NAS tidak valid"))
+		return
+	}
+
+	tenantSlug := extractTenantSlug(r)
+	if err := h.service.DeleteNAS(r.Context(), tenantSlug, id); err != nil {
+		middleware.JSONError(w, h.logger, err)
+		return
+	}
+
+	middleware.JSON(w, http.StatusOK, map[string]string{
+		"message": "NAS router berhasil dihapus",
+	})
+}
+
 func (h *Handler) ListAuthLogs(w http.ResponseWriter, r *http.Request) {
 	params := pagination.FromRequest(r)
 	search := r.URL.Query().Get("search")
+	tenantSlug := extractTenantSlug(r)
 
-	logs, meta, err := h.service.ListAuthLogs(r.Context(), params, search)
+	logs, meta, err := h.service.ListAuthLogs(r.Context(), tenantSlug, params, search)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return

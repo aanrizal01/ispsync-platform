@@ -20,8 +20,8 @@ func NewService(repo *Repository, logger *slog.Logger) *Service {
 	return &Service{repo: repo, logger: logger}
 }
 
-func (s *Service) ListActiveSessions(ctx context.Context, params pagination.Params, search string) ([]Session, pagination.Meta, error) {
-	sessions, total, err := s.repo.ListActiveSessions(ctx, params, search)
+func (s *Service) ListActiveSessions(ctx context.Context, tenantSlug string, params pagination.Params, search string) ([]Session, pagination.Meta, error) {
+	sessions, total, err := s.repo.ListActiveSessions(ctx, tenantSlug, params, search)
 	if err != nil {
 		return nil, pagination.Meta{}, apperrors.Internal(err)
 	}
@@ -31,7 +31,7 @@ func (s *Service) ListActiveSessions(ctx context.Context, params pagination.Para
 
 func (s *Service) DisconnectSession(ctx context.Context, req DisconnectSessionRequest) error {
 	// Lookup NAS shared secret
-	nas, err := s.repo.GetNASByIP(ctx, req.NasIPAddress)
+	nas, err := s.repo.GetNASByIP(ctx, "", req.NasIPAddress)
 	if err != nil {
 		return apperrors.Internal(err)
 	}
@@ -70,13 +70,21 @@ func (s *Service) DisconnectSession(ctx context.Context, req DisconnectSessionRe
 	return nil
 }
 
-func (s *Service) CreateNAS(ctx context.Context, req CreateNASRequest) (*NAS, error) {
+func (s *Service) CreateNAS(ctx context.Context, tenantSlug string, req CreateNASRequest) (*NAS, error) {
+	if req.TenantSlug != "" {
+		tenantSlug = req.TenantSlug
+	}
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
+
 	nas := &NAS{
 		NasName:     req.NasName,
 		ShortName:   req.ShortName,
 		Type:        req.Type,
 		Secret:      req.Secret,
 		Description: req.Description,
+		TenantSlug:  tenantSlug,
 		CreatedAt:   time.Now(),
 	}
 
@@ -85,12 +93,16 @@ func (s *Service) CreateNAS(ctx context.Context, req CreateNASRequest) (*NAS, er
 		return nil, apperrors.Internal(err)
 	}
 
-	s.logger.Info("new NAS registered", "nasname", nas.NasName, "type", nas.Type)
+	s.logger.Info("new NAS registered", "nasname", nas.NasName, "type", nas.Type, "tenant", nas.TenantSlug)
 	return nas, nil
 }
 
-func (s *Service) ListNAS(ctx context.Context) ([]NAS, error) {
-	return s.repo.ListNAS(ctx)
+func (s *Service) ListNAS(ctx context.Context, tenantSlug string) ([]NAS, error) {
+	return s.repo.ListNAS(ctx, tenantSlug)
+}
+
+func (s *Service) DeleteNAS(ctx context.Context, tenantSlug string, id int) error {
+	return s.repo.DeleteNAS(ctx, tenantSlug, id)
 }
 
 func (s *Service) SyncCredential(ctx context.Context, username, password, groupname string) error {
@@ -109,8 +121,8 @@ func (s *Service) DeleteCredential(ctx context.Context, username string) error {
 	return s.repo.DeleteUserCredential(ctx, username)
 }
 
-func (s *Service) ListAuthLogs(ctx context.Context, params pagination.Params, search string) ([]AuthLog, pagination.Meta, error) {
-	logs, total, err := s.repo.ListAuthLogs(ctx, params, search)
+func (s *Service) ListAuthLogs(ctx context.Context, tenantSlug string, params pagination.Params, search string) ([]AuthLog, pagination.Meta, error) {
+	logs, total, err := s.repo.ListAuthLogs(ctx, tenantSlug, params, search)
 	if err != nil {
 		return nil, pagination.Meta{}, apperrors.Internal(err)
 	}

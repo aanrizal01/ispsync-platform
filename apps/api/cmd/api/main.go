@@ -897,6 +897,28 @@ func handlePurgeTenant(db *pgxpool.Pool, cfg *config.Config, log *slog.Logger) h
 		// 1. Purge from isp_billing (current db)
 		_, _ = db.Exec(ctx, "DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%' || $1 || '%' OR (email = $2 AND $2 != ''))", slug, req.Email)
 		_, _ = db.Exec(ctx, "DELETE FROM users WHERE email LIKE '%' || $1 || '%' OR (email = $2 AND $2 != '')", slug, req.Email)
+		_, _ = db.Exec(ctx, `DELETE FROM radcheck WHERE username IN (
+			SELECT identity FROM access_accounts a JOIN customers c ON a.customer_id = c.id WHERE c.tenant_slug = $1
+			UNION
+			SELECT code FROM vouchers WHERE tenant_slug = $1
+			UNION
+			SELECT username FROM passpoint_credentials WHERE tenant_slug = $1
+		)`, slug)
+		_, _ = db.Exec(ctx, `DELETE FROM radreply WHERE username IN (
+			SELECT identity FROM access_accounts a JOIN customers c ON a.customer_id = c.id WHERE c.tenant_slug = $1
+			UNION
+			SELECT code FROM vouchers WHERE tenant_slug = $1
+			UNION
+			SELECT username FROM passpoint_credentials WHERE tenant_slug = $1
+		)`, slug)
+		_, _ = db.Exec(ctx, `DELETE FROM radusergroup WHERE username IN (
+			SELECT identity FROM access_accounts a JOIN customers c ON a.customer_id = c.id WHERE c.tenant_slug = $1
+			UNION
+			SELECT code FROM vouchers WHERE tenant_slug = $1
+			UNION
+			SELECT username FROM passpoint_credentials WHERE tenant_slug = $1
+		)`, slug)
+		_, _ = db.Exec(ctx, "DELETE FROM nas WHERE tenant_slug = $1", slug)
 		_, _ = db.Exec(ctx, "DELETE FROM customers WHERE tenant_slug = $1", slug)
 		_, _ = db.Exec(ctx, "DELETE FROM invoices WHERE tenant_slug = $1", slug)
 		_, _ = db.Exec(ctx, "DELETE FROM network_devices WHERE tenant_slug = $1", slug)

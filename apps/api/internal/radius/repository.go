@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	apperrors "github.com/gigabill/isp/internal/shared/errors"
 	"github.com/gigabill/isp/internal/shared/pagination"
 )
 
@@ -23,10 +24,27 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 
 // SESSIONS
 
-func (r *Repository) ListActiveSessions(ctx context.Context, params pagination.Params, search string) ([]Session, int, error) {
+func (r *Repository) ListActiveSessions(ctx context.Context, tenantSlug string, params pagination.Params, search string) ([]Session, int, error) {
 	where := "WHERE acctstoptime IS NULL"
 	args := []interface{}{}
 	argIdx := 1
+
+	if tenantSlug != "" && tenantSlug != "superadmin" {
+		where += fmt.Sprintf(` AND (
+			username IN (
+				SELECT a.identity FROM access_accounts a JOIN customers c ON a.customer_id = c.id WHERE c.tenant_slug = $%d
+				UNION
+				SELECT v.code FROM vouchers v WHERE v.tenant_slug = $%d
+				UNION
+				SELECT p.username FROM passpoint_credentials p WHERE p.tenant_slug = $%d
+			)
+			OR nasipaddress::TEXT IN (
+				SELECT nasname FROM nas WHERE tenant_slug = $%d
+			)
+		)`, argIdx, argIdx, argIdx, argIdx)
+		args = append(args, tenantSlug)
+		argIdx++
+	}
 
 	if search != "" {
 		where += fmt.Sprintf(" AND (username ILIKE $%d OR callingstationid ILIKE $%d OR framedipaddress::TEXT ILIKE $%d)", argIdx, argIdx, argIdx)
@@ -99,23 +117,33 @@ func (r *Repository) MarkSessionTerminated(ctx context.Context, acctSessionID, u
 // NAS ROUTERS
 
 func (r *Repository) CreateNAS(ctx context.Context, n *NAS) error {
+	if n.TenantSlug == "" {
+		n.TenantSlug = "dev"
+	}
 	const q = `
-		INSERT INTO nas (nasname, shortname, type, ports, secret, description, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO nas (nasname, shortname, type, ports, secret, description, tenant_slug, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id
 	`
 	return r.db.QueryRow(ctx, q,
-		n.NasName, n.ShortName, n.Type, n.Ports, n.Secret, n.Description, n.CreatedAt,
+		n.NasName, n.ShortName, n.Type, n.Ports, n.Secret, n.Description, n.TenantSlug, n.CreatedAt,
 	).Scan(&n.ID)
 }
 
-func (r *Repository) ListNAS(ctx context.Context) ([]NAS, error) {
-	const q = `
-		SELECT id, nasname, shortname, type, ports, secret, description, created_at
+func (r *Repository) ListNAS(ctx context.Context, tenantSlug string) ([]NAS, error) {
+	where := ""
+	var args []any
+	if tenantSlug != "" && tenantSlug != "superadmin" {
+		where = "WHERE tenant_slug = $1"
+		args = append(args, tenantSlug)
+	}
+	q := fmt.Sprintf(`
+		SELECT id, nasname, shortname, type, ports, secret, description, COALESCE(tenant_slug, 'dev'), created_at
 		FROM nas
+		%s
 		ORDER BY created_at DESC
-	`
-	rows, err := r.db.Query(ctx, q)
+	`, where)
+	rows, err := r.db.Query(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +153,7 @@ func (r *Repository) ListNAS(ctx context.Context) ([]NAS, error) {
 	for rows.Next() {
 		var n NAS
 		if err := rows.Scan(
-			&n.ID, &n.NasName, &n.ShortName, &n.Type, &n.Ports, &n.Secret, &n.Description, &n.CreatedAt,
+			&n.ID, &n.NasName, &n.ShortName, &n.Type, &n.Ports, &n.Secret, &n.Description, &n.TenantSlug, &n.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -134,16 +162,22 @@ func (r *Repository) ListNAS(ctx context.Context) ([]NAS, error) {
 	return list, nil
 }
 
-func (r *Repository) GetNASByIP(ctx context.Context, ip string) (*NAS, error) {
-	const q = `
-		SELECT id, nasname, shortname, type, ports, secret, description, created_at
+func (r *Repository) GetNASByIP(ctx context.Context, tenantSlug string, ip string) (*NAS, error) {
+	where := "WHERE nasname = $1"
+	args := []any{ip}
+	if tenantSlug != "" && tenantSlug != "superadmin" {
+		where += " AND tenant_slug = $2"
+		args = append(args, tenantSlug)
+	}
+	q := fmt.Sprintf(`
+		SELECT id, nasname, shortname, type, ports, secret, description, COALESCE(tenant_slug, 'dev'), created_at
 		FROM nas
-		WHERE nasname = $1
+		%s
 		LIMIT 1
-	`
+	`, where)
 	var n NAS
-	err := r.db.QueryRow(ctx, q, ip).Scan(
-		&n.ID, &n.NasName, &n.ShortName, &n.Type, &n.Ports, &n.Secret, &n.Description, &n.CreatedAt,
+	err := r.db.QueryRow(ctx, q, args...).Scan(
+		&n.ID, &n.NasName, &n.ShortName, &n.Type, &n.Ports, &n.Secret, &n.Description, &n.TenantSlug, &n.CreatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -152,6 +186,26 @@ func (r *Repository) GetNASByIP(ctx context.Context, ip string) (*NAS, error) {
 		return nil, err
 	}
 	return &n, nil
+}
+
+func (r *Repository) DeleteNAS(ctx context.Context, tenantSlug string, id int) error {
+	var q string
+	var args []any
+	if tenantSlug != "" && tenantSlug != "superadmin" {
+		q = "DELETE FROM nas WHERE id = $1 AND tenant_slug = $2"
+		args = []any{id, tenantSlug}
+	} else {
+		q = "DELETE FROM nas WHERE id = $1"
+		args = []any{id}
+	}
+	tag, err := r.db.Exec(ctx, q, args...)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return apperrors.NotFound("NAS router tidak ditemukan")
+	}
+	return nil
 }
 
 // SINKRONISASI USER/VOUCHER KE RADCHECK & RADREPLY
@@ -225,10 +279,29 @@ func (r *Repository) DeleteUserCredential(ctx context.Context, username string) 
 
 // AUDIT LOGS (RADPOSTAUTH)
 
-func (r *Repository) ListAuthLogs(ctx context.Context, params pagination.Params, search string) ([]AuthLog, int, error) {
+func (r *Repository) ListAuthLogs(ctx context.Context, tenantSlug string, params pagination.Params, search string) ([]AuthLog, int, error) {
 	where := "WHERE 1=1"
 	args := []any{}
 	argIdx := 1
+
+	nasJoinOn := "n.nasname = p.nasipaddress::TEXT"
+	if tenantSlug != "" && tenantSlug != "superadmin" {
+		where += fmt.Sprintf(` AND (
+			p.username IN (
+				SELECT a.identity FROM access_accounts a JOIN customers c ON a.customer_id = c.id WHERE c.tenant_slug = $%d
+				UNION
+				SELECT v.code FROM vouchers v WHERE v.tenant_slug = $%d
+				UNION
+				SELECT pc.username FROM passpoint_credentials pc WHERE pc.tenant_slug = $%d
+			)
+			OR p.nasipaddress::TEXT IN (
+				SELECT nasname FROM nas WHERE tenant_slug = $%d
+			)
+		)`, argIdx, argIdx, argIdx, argIdx)
+		args = append(args, tenantSlug)
+		nasJoinOn += fmt.Sprintf(" AND n.tenant_slug = $%d", argIdx)
+		argIdx++
+	}
 
 	if search = strings.TrimSpace(search); search != "" {
 		searchParam := "%" + search + "%"
@@ -240,9 +313,9 @@ func (r *Repository) ListAuthLogs(ctx context.Context, params pagination.Params,
 	countQuery := fmt.Sprintf(`
 		SELECT COUNT(*)
 		FROM radpostauth p
-		LEFT JOIN nas n ON n.nasname = p.nasipaddress::TEXT
+		LEFT JOIN nas n ON %s
 		%s
-	`, where)
+	`, nasJoinOn, where)
 	var total int
 	err := r.db.QueryRow(ctx, countQuery, args...).Scan(&total)
 	if err != nil {
@@ -264,11 +337,11 @@ func (r *Repository) ListAuthLogs(ctx context.Context, params pagination.Params,
 		       )) AS callingstationid,
 		       p.pass
 		FROM radpostauth p
-		LEFT JOIN nas n ON n.nasname = p.nasipaddress::TEXT
+		LEFT JOIN nas n ON %s
 		%s
 		ORDER BY p.authdate DESC
 		LIMIT $%d OFFSET $%d
-	`, where, argIdx, argIdx+1)
+	`, nasJoinOn, where, argIdx, argIdx+1)
 
 	args = append(args, params.Limit, params.Offset)
 	rows, err := r.db.Query(ctx, dataQuery, args...)
