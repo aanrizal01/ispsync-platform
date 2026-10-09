@@ -137,6 +137,7 @@ export async function GET(req: NextRequest) {
       smtp: maskSmtp(smtp),
       email_templates: emailTemplates,
       default_templates: DEFAULT_EMAIL_TEMPLATES,
+      max_saas_tenants: parseInt(process.env.MAX_SAAS_TENANTS || readEnvFile()["MAX_SAAS_TENANTS"] || "50", 10),
     });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -194,6 +195,20 @@ export async function POST(req: NextRequest) {
         success: true,
         message: "Pengaturan SMTP Platform berhasil disimpan dan disinkronkan ke server.",
         smtp: maskSmtp(updated)
+      });
+    }
+
+    // 1b. UPDATE SAAS CONFIG
+    if (action === "update_saas") {
+      const { max_saas_tenants } = body;
+      const num = parseInt(max_saas_tenants, 10) || 50;
+      updateEnvFile({
+        MAX_SAAS_TENANTS: String(num)
+      });
+      return NextResponse.json({
+        success: true,
+        message: "Konfigurasi kuota SaaS berhasil disimpan dan disinkronkan ke server.",
+        max_saas_tenants: num
       });
     }
 
