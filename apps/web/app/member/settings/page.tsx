@@ -31,7 +31,7 @@ import {
   DEFAULT_EMAIL_TEMPLATES,
   type EmailTemplates,
   type TemplateModelStyle,
-} from "@/lib/mailer";
+} from "@/lib/email-types";
 
 type SmtpConfig = {
   smtp_host: string;
