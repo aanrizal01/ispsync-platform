@@ -4,6 +4,33 @@ Semua perubahan, penambahan fitur, dan perbaikan bug pada platform ISPSYNC / GoG
 
 ---
 
+## [2026-10-09] - Pembaruan Isolasi Multi-Tenant, Unifikasi Akun Owner & Wilayah Operasional Dinamis
+
+### Ditambahkan & Ditingkatkan
+1. **Unifikasi Akun Owner & Autentikasi Fleksibel (`internal/repository/postgres.go`, `internal/repository/sqlite.go`, `apps/api/cmd/api/main.go`):**
+   - Mendukung login menggunakan **Username** ATAU **Email** (`WHERE tenant_id = $1 AND (LOWER(username) = LOWER($2) OR LOWER(email) = LOWER($2))`) dengan penataan prioritas username.
+   - Menghapus duplikasi row akun Owner pada saat onboarding tenant baru di `apps/api`.
+   - Mengeliminasi duplikat akun Owner di seluruh tenant yang tersisa sehingga setiap tenant hanya memiliki 1 akun Owner resmi tanpa kehilangan fleksibilitas login via email.
+   - Sinkronisasi endpoint reset password (`ResetUserPassword`) agar mendukung identifikasi username atau email.
+
+2. **Wilayah Operasional & Kantor Cabang Dinamis Antar-Tenant (`web/index.html`):**
+   - Menghapus opsi statis/hardcoded *"Kantor Cabang Payakumbuh (PYK)"* pada 5 elemen selector (`global-branch-selector`, `admin-sidebar-branch-selector`, `admin-table-branch-selector`, `staff-table-branch-filter`, dan modal `add-staff-branch`).
+   - Implementasi fungsi `syncTenantBranchOptions()` yang secara dinamis menyusun daftar cabang berdasarkan:
+     - Cabang penempatan staf terdaftar (`users.branch_code`).
+     - Klaster jaringan ODP aktif milik tenant (`window.adminClustersData`).
+     - Kantor Pusat (`HQ`) dan Semua Wilayah (`ALL`).
+   - Auto-reset nilai filter cabang lokal (`selected_branch_filter`) ke `'ALL'` apabila filter tersimpan sebelumnya tidak valid untuk tenant yang bersangkutan.
+
+3. **Isolasi Hierarkis & Profil Multi-Tenant FiberGrid (`deploy/caddy/Caddyfile.prod`, `apps/api/cmd/api/main.go`):**
+   - Integrasi otomatis pembuatan profil legalitas `ispsync_fibergrid.fttx_jartaplok_profile` saat pendaftaran tenant baru (`company_name`, `brand_name`, `website`, dan domain kustom).
+   - Penegakan isolasi pohon jaringan FiberGrid (OLT $\rightarrow$ ODC $\rightarrow$ ODP $\rightarrow$ Rute Fiber $\rightarrow$ ONT) agar aset fisik tenant terisolasi penuh secara multi-tenant.
+   - Pengecekan status isolasi lintas-tenant dan verifikasi bahwa hak akses non-superuser tidak dapat mengakses aset fisik tenant lain.
+
+4. **Klaster Jaringan & Provider Dinamis (`internal/handler/api_handler.go`):**
+   - Mengubah fallback provider klaster in-house di `PublicClusters` dari statis `"GOGIGA In-House FO"` menjadi dinamis mengikuti nama dan slug tenant aktif (`t.Name + " In-House FO"`).
+
+---
+
 ## [2026-10-06] - Pembaruan Operasional NOC, Sinkronisasi Sesi, dan Navigasi Tabel
 
 ### Ditambahkan

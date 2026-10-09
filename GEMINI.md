@@ -84,6 +84,22 @@ Whenever creating or modifying frontend interfaces across the ISPSYNC platform (
    * Query backend `ListPlans` dan `GetPlanByID` di `internal/repository/postgres.go` wajib mempertahankan mekanisme auto-fallback: jika `ispsync.plans` kosong untuk suatu tenant, backend otomatis menyalin dan meng-upsert paket berstatus `ACTIVE` dari `public.plans` + `public.plan_prices` ke `ispsync.plans` menggunakan ID tenant terkait.
    * Frontend modal (seperti Upgrade Bandwidth) dan form registrasi wajib memuat daftar paket secara dinamis melalui `/api/v1/public/plans` tanpa melakukan hardcode opsi paket di template HTML.
 
+6. **Single Owner Account & Flexible Login (Username or Email):**
+   * Setiap tenant hanya boleh memiliki **1 akun Owner tunggal** di tabel `users`. Dilarang menduplikasi row pengguna hanya untuk memfasilitasi login via email.
+   * Query autentikasi backend (`GetUserByUsername`, `ResetUserPassword`) wajib mendukung pencocokan ganda: `WHERE tenant_id = $1 AND (LOWER(username) = LOWER($2) OR LOWER(email) = LOWER($2))` dengan prioritas kecocokan username.
+   * Onboarding tenant baru (`apps/api`) wajib memastikan hanya satu baris akun owner yang dimasukkan ke skema database.
+
+7. **Zero Hardcoded Branches & Wilayah Operasional Dinamis:**
+   * DILARANG meng-hardcode nama cabang spesifik (seperti *"Kantor Cabang Payakumbuh (PYK)"*) di dalam template HTML (`web/*.html`).
+   * Selector cabang wajib disusun secara dinamis (`syncTenantBranchOptions`) berbasis:
+     - Cabang penugasan staf yang terdaftar (`users.branch_code`).
+     - Klaster jaringan ODP milik tenant yang aktif.
+     - Default universal: `Semua Wilayah Operasional (ALL)` dan `Kantor Pusat (HQ)`.
+
+8. **Hierarchical Data Isolation & Profil Legalitas (FiberGrid / FTTX):**
+   * Isolasi data fisik FiberGrid berakar dari tabel `fttx_olt_devices.tenant_slug`. Node turunan (ODC, ODP, Rute Kabel, ONT) diisolasi secara relasional berbasis ID OLT milik tenant yang bersangkutan.
+   * Setiap pendaftaran tenant baru wajib otomatis meng-upsert profil legalitas ke `ispsync_fibergrid.fttx_jartaplok_profile` agar data instansi, website, dan domain kustom langsung tersaji dinamis.
+
 ---
 
 ## 🚀 3. Deployment & Build Procedures (VPS)

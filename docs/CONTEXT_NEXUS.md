@@ -32,6 +32,11 @@
    - Dashboard monitoring sesi PPPoE online/offline dan trigger reset sesi.
 5. **Jartaplok Collaboration**:
    - Manajemen perjanjian kerjasama sewa port ODP antar-ISP (`jartaplok_agreements`).
+6. **Autentikasi & Akun Owner Tunggal**:
+   - 1 Akun Owner tunggal per tenant (role `OWNER` / `SUPER_ADMIN`).
+   - Autentikasi fleksibel: login dapat menggunakan Username maupun Email resmi tanpa duplikasi data pengguna di database.
+7. **Wilayah Operasional & Cabang Dinamis**:
+   - Zero hardcoded branches di UI. Dropdown wilayah disusun secara dinamis mengikuti staf terdaftar dan klaster jaringan aktif milik tenant.
 
 ---
 

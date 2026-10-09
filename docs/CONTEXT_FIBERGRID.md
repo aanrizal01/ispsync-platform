@@ -14,7 +14,7 @@
 * **Source Reference**: Proyek `FTTX` / `ispsync-fttx`
 * **Lokasi Server VPS**: `/home/anri01/ispsync-fttx`
 * **Service Systemd**: `ispsync-fttx.service` (Port 8082)
-* **Database Engine**: Central PostgreSQL 16 + PostGIS (Port `5432`, Host: `127.0.0.1`, Database: `ispsync` / `isp_billing` - `fttx_olt_devices`, `fttx_odc_nodes`, `fttx_odp_nodes`, `fttx_fiber_routes`, `wholesale_contracts`, `fttx_acs_cpe_data`)
+* **Database Engine**: Central PostgreSQL 16 + PostGIS (Port `5432`, Host: `127.0.0.1`, Database: `ispsync_fibergrid` - `fttx_olt_devices`, `fttx_odc_nodes`, `fttx_odp_nodes`, `fttx_fiber_routes`, `fttx_ont_devices`, `fttx_staff_users`, `fttx_jartaplok_profile`)
 * **Koneksi Antar-Engine**: Terhubung ke Nexus di `ISP_BASE_URL=http://127.0.0.1:8081`
 
 ---
@@ -34,6 +34,9 @@
    - Remote Wi-Fi management (SSID/Password), monitoring sinyal RSSI pelanggan dari jarak jauh.
 4. **Wholesale Jartaplok B2B**:
    - Manajemen sewa port optik pasif untuk ISP partner (kalkulasi prorata & kontrak aktif).
+5. **Isolasi Multi-Tenant Hierarkis & Profil Dinamis**:
+   - Isolasi data berakar dari `fttx_olt_devices.tenant_slug` $\rightarrow$ ODC $\rightarrow$ ODP $\rightarrow$ Rute Kabel $\rightarrow$ ONT pelanggan.
+   - Profil instansi legal & wholesale disajikan dinamis per tenant melalui `fttx_jartaplok_profile`.
 
 ---
 
