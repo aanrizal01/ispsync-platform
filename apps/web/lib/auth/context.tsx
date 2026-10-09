@@ -106,16 +106,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           router.push("/portal/overview");
         } else if (user.roles?.some((r) => r.slug === "voucher_agent")) {
           router.push("/agent/dashboard");
-        } else if (
-          user.permissions &&
-          !user.permissions.includes("*") &&
-          !user.permissions.includes("reports:read") &&
-          (user.permissions.includes("payments:read") || user.permissions.includes("payments:write"))
-        ) {
-          // Dedicated Kasir / POS landing in Pembayaran
-          router.push("/admin/payments?tab=pos");
         } else {
-          router.push("/admin/dashboard");
+          // Check if admin user belongs to a specific tenant domain like gbd.ispsync.id
+          let targetTenant = "";
+          if (user.email) {
+            const emailParts = user.email.toLowerCase().split("@")[1]?.split(".") || [];
+            if (emailParts.length >= 3 && emailParts[emailParts.length - 2] === "ispsync" && emailParts[emailParts.length - 1] === "id") {
+              const uSlug = emailParts[0];
+              if (uSlug !== "admin" && uSlug !== "private" && uSlug !== "member") {
+                targetTenant = uSlug;
+              }
+            }
+          }
+
+          const currentHost = typeof window !== "undefined" ? window.location.hostname.toLowerCase() : "";
+          if (targetTenant && !currentHost.includes(`.${targetTenant}.ispsync.id`)) {
+            // Cross-domain redirect to the tenant's own isolated ledger backoffice!
+            window.location.href = `https://ledger.${targetTenant}.ispsync.id/admin/dashboard`;
+            return;
+          }
+
+          if (
+            user.permissions &&
+            !user.permissions.includes("*") &&
+            !user.permissions.includes("reports:read") &&
+            (user.permissions.includes("payments:read") || user.permissions.includes("payments:write"))
+          ) {
+            // Dedicated Kasir / POS landing in Pembayaran
+            router.push("/admin/payments?tab=pos");
+          } else {
+            router.push("/admin/dashboard");
+          }
         }
       } catch (err) {
         // Fallback untuk Demo Admin saat offline / pengetesan lokal tanpa database

@@ -209,8 +209,50 @@ interface SidebarProps {
 
 export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
   const pathname = usePathname();
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const [tenantName, setTenantName] = useState("ISPSYNC");
+  const [tenantLogo, setTenantLogo] = useState("/logo-prism.png");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      let slug = "";
+      const h = window.location.hostname.toLowerCase();
+      const parts = h.split(".");
+      if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "billing" || parts[0] === "admin")) {
+        slug = parts[1];
+      } else if (parts.length === 3 && parts[1] === "ispsync") {
+        slug = parts[0];
+      }
+
+      if ((!slug || slug === "dev") && user?.email) {
+        const atIdx = user.email.indexOf("@");
+        if (atIdx !== -1) {
+          const domain = user.email.slice(atIdx + 1).toLowerCase();
+          const dParts = domain.split(".");
+          if (dParts.length >= 3 && dParts[dParts.length - 2] === "ispsync" && dParts[0] !== "admin" && dParts[0] !== "private") {
+            slug = dParts[0];
+          }
+        }
+      }
+
+      if (slug && slug !== "ispsync") {
+        setTenantName(slug.toUpperCase());
+        const testImg = new Image();
+        testImg.src = `/web/${slug}_logo.svg`;
+        testImg.onload = () => setTenantLogo(`/web/${slug}_logo.svg`);
+        testImg.onerror = () => {
+          const testPng = new Image();
+          testPng.src = `/web/${slug}_logo.png`;
+          testPng.onload = () => setTenantLogo(`/web/${slug}_logo.png`);
+          testPng.onerror = () => setTenantLogo("/logo-prism.png");
+        };
+      } else {
+        setTenantName("ISPSYNC");
+        setTenantLogo("/logo-prism.png");
+      }
+    }
+  }, [user]);
 
   // Load saved collapse preference
   useEffect(() => {
@@ -245,16 +287,26 @@ export function Sidebar({ mobileOpen = false, onCloseMobile }: SidebarProps) {
           )}
         >
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 p-0.5 flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 p-0.5 flex items-center justify-center shadow-lg shadow-cyan-500/20 shrink-0">
               <div className="w-full h-full bg-[#0B1120] rounded-[10px] flex items-center justify-center p-1">
-                <img src="/logo.png" alt="ISPSYNC Logo" className="w-full h-full object-contain" />
+                <img
+                  src={tenantLogo}
+                  alt={`${tenantName} Logo`}
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "/logo-prism.png";
+                  }}
+                />
               </div>
             </div>
 
             {!isMini && (
               <div className="min-w-0">
                 <div className="leading-tight">
-                  <p className="text-sm font-bold tracking-tight text-white truncate">ISPSYNC LEDGER</p>
+                  <p className="text-sm font-black tracking-tight text-white uppercase truncate">
+                    {tenantName} LEDGER
+                  </p>
                   <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase truncate">
                     ISP Billing & Core Engine
                   </p>

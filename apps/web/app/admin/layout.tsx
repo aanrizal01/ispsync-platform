@@ -48,6 +48,76 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
 
+  const [tenantName, setTenantName] = useState("ISPSYNC");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      let slug = "";
+      const h = window.location.hostname.toLowerCase();
+      const parts = h.split(".");
+      if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "billing" || parts[0] === "admin")) {
+        slug = parts[1];
+      } else if (parts.length === 3 && parts[1] === "ispsync") {
+        slug = parts[0];
+      }
+
+      if ((!slug || slug === "dev") && user?.email) {
+        const atIdx = user.email.indexOf("@");
+        if (atIdx !== -1) {
+          const domain = user.email.slice(atIdx + 1).toLowerCase();
+          const dParts = domain.split(".");
+          if (dParts.length >= 3 && dParts[dParts.length - 2] === "ispsync" && dParts[0] !== "admin" && dParts[0] !== "private") {
+            slug = dParts[0];
+          }
+        }
+      }
+
+      const up = slug && slug !== "ispsync" ? slug.toUpperCase() : "ISPSYNC";
+      setTenantName(up);
+      document.title = `${up} Ledger | Admin Dashboard`;
+
+      const iconEl = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+      if (iconEl) {
+        if (slug && slug !== "ispsync") {
+          const testFavicon = new Image();
+          testFavicon.src = `/web/${slug}_favicon.svg`;
+          testFavicon.onload = () => { iconEl.href = `/web/${slug}_favicon.svg`; };
+          testFavicon.onerror = () => { iconEl.href = "/web/ispsync_favicon.svg"; };
+        } else {
+          iconEl.href = "/web/ispsync_favicon.svg";
+        }
+      }
+    }
+  }, [user]);
+
+  // Tenant Domain Redirection Guard (Prevent accidental cross-tenant dashboard access)
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user?.email && typeof window !== "undefined") {
+      const email = user.email.toLowerCase();
+      const atIdx = email.indexOf("@");
+      if (atIdx !== -1) {
+        const domain = email.slice(atIdx + 1);
+        const parts = domain.split(".");
+        if (parts.length >= 3 && parts[parts.length - 2] === "ispsync" && parts[parts.length - 1] === "id") {
+          const userTenant = parts[0];
+          if (userTenant !== "admin" && userTenant !== "private" && userTenant !== "member") {
+            const currentHost = window.location.hostname.toLowerCase();
+            const hostParts = currentHost.split(".");
+            let currentTenant = "";
+            if (hostParts.length >= 4) {
+              currentTenant = hostParts[1];
+            } else if (hostParts.length === 3 && hostParts[1] === "ispsync") {
+              currentTenant = hostParts[0];
+            }
+            if (currentTenant && currentTenant !== userTenant && (currentTenant === "dev" || currentTenant === "ispsync")) {
+              window.location.href = `https://ledger.${userTenant}.ispsync.id${window.location.pathname}${window.location.search}`;
+            }
+          }
+        }
+      }
+    }
+  }, [isLoading, isAuthenticated, user]);
+
   // Close mobile sidebar and user dropdown on route change
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -124,8 +194,8 @@ export default function AdminLayout({
 
             {/* Mobile-only Brand Header */}
             <div className="flex items-center gap-2 lg:hidden">
-              <span className="font-bold text-white text-sm tracking-tight">ISPSYNC CMS</span>
-              <span className="text-[10px] bg-blue-500/20 text-blue-300 font-semibold px-1.5 py-0.5 rounded border border-blue-500/30">
+              <span className="font-bold text-white text-sm tracking-tight">{tenantName} LEDGER</span>
+              <span className="text-[10px] bg-cyan-500/20 text-cyan-300 font-semibold px-1.5 py-0.5 rounded border border-cyan-500/30">
                 Core
               </span>
             </div>

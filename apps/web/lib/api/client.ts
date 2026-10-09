@@ -72,14 +72,43 @@ async function request<T>(
   };
 
   if (typeof window !== "undefined") {
-    const host = window.location.hostname.toLowerCase();
-    const parts = host.split(".");
     let slug = "";
-    if (parts.length >= 4) {
-      slug = parts[1];
-    } else if (parts.length === 3 && parts[1] === "ispsync") {
-      slug = parts[0];
+    try {
+      const stored = sessionStorage.getItem("isp_session") || localStorage.getItem("isp_session");
+      if (stored) {
+        const session = JSON.parse(stored);
+        if (session?.access_token) {
+          const payloadBase64 = session.access_token.split(".")[1];
+          if (payloadBase64) {
+            const decoded = JSON.parse(atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/")));
+            if (decoded?.email) {
+              const email = decoded.email.toLowerCase();
+              const atIdx = email.indexOf("@");
+              if (atIdx !== -1) {
+                const domain = email.slice(atIdx + 1);
+                const parts = domain.split(".");
+                if (parts.length >= 3 && parts[parts.length - 2] === "ispsync" && parts[parts.length - 1] === "id") {
+                  if (parts[0] !== "admin" && parts[0] !== "private" && parts[0] !== "member") {
+                    slug = parts[0];
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch {}
+
+    if (!slug) {
+      const host = window.location.hostname.toLowerCase();
+      const parts = host.split(".");
+      if (parts.length >= 4) {
+        slug = parts[1];
+      } else if (parts.length === 3 && parts[1] === "ispsync") {
+        slug = parts[0];
+      }
     }
+
     if (slug) {
       headers["X-Tenant-Slug"] = slug;
     }

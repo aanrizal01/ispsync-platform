@@ -31,11 +31,11 @@ export const metadata: Metadata = {
     "ISPSYNC — Carrier-Grade Network Orchestration, RADIUS AAA & Telecom Operations Platform for Licensed Operators",
   icons: {
     icon: [
-      { url: "/logo.png", type: "image/png" },
-      { url: "/favicon.ico" },
+      { url: "/web/ispsync_favicon.svg", type: "image/svg+xml" },
+      { url: "/logo-prism.png", type: "image/png" },
     ],
-    shortcut: "/logo.png",
-    apple: "/logo.png",
+    shortcut: "/web/ispsync_favicon.svg",
+    apple: "/logo-prism.png",
   },
 };
 

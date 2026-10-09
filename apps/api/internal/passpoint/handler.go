@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"net/url"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -17,37 +15,7 @@ import (
 )
 
 func extractTenantSlug(r *http.Request) string {
-	if s := r.Header.Get("X-Tenant-Slug"); s != "" {
-		return s
-	}
-	host := r.Header.Get("X-Forwarded-Host")
-	if host == "" {
-		host = r.Host
-	}
-	if host == "" {
-		if ref := r.Header.Get("Referer"); ref != "" {
-			if u, err := url.Parse(ref); err == nil {
-				host = u.Host
-			}
-		}
-	}
-	if host == "" {
-		if orig := r.Header.Get("Origin"); orig != "" {
-			if u, err := url.Parse(orig); err == nil {
-				host = u.Host
-			}
-		}
-	}
-	if idx := strings.Index(host, ":"); idx != -1 {
-		host = host[:idx]
-	}
-	parts := strings.Split(host, ".")
-	if len(parts) >= 4 {
-		return parts[1]
-	} else if len(parts) == 3 && parts[1] == "ispsync" {
-		return parts[0]
-	}
-	return "dev"
+	return auth.ExtractTenantSlug(r)
 }
 
 type Handler struct {

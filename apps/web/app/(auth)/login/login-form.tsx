@@ -81,7 +81,10 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
         document.title = `Masuk | ${up} Ledger`;
         const iconEl = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
         if (iconEl) {
-          iconEl.href = `/web/${detectedSlug}_favicon.svg`;
+          const testFav = new Image();
+          testFav.src = `/web/${detectedSlug}_favicon.svg`;
+          testFav.onload = () => { iconEl.href = `/web/${detectedSlug}_favicon.svg`; };
+          testFav.onerror = () => { iconEl.href = "/web/ispsync_favicon.svg"; };
         }
       }
     }
