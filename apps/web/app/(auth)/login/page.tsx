@@ -46,9 +46,12 @@ export default async function LoginPage() {
 
   let tenantLogo = "/logo-prism.png";
   if (isTenant) {
+    const customFav = path.join(process.cwd(), "public", "web", `${slug}_favicon.svg`);
     const customSvg = path.join(process.cwd(), "public", "web", `${slug}_logo.svg`);
     const customPng = path.join(process.cwd(), "public", "web", `${slug}_logo.png`);
-    if (fs.existsSync(customSvg)) {
+    if (fs.existsSync(customFav)) {
+      tenantLogo = `/web/${slug}_favicon.svg`;
+    } else if (fs.existsSync(customSvg)) {
       tenantLogo = `/web/${slug}_logo.svg`;
     } else if (fs.existsSync(customPng)) {
       tenantLogo = `/web/${slug}_logo.png`;
