@@ -80,13 +80,13 @@ export async function GET(req: NextRequest) {
           description: "High-throughput Go engine for billing, radius AAA, invoice settlement, and payment webhooks"
         },
         {
-          name: "ISPSYNC Nexus / Core",
+          name: "ISPSYNC Nexus (Team Operations)",
           host: "172.18.0.1:8081",
           port: 8081,
           protocol: "HTTP/1.1",
-          routingPattern: "nexus.*, portal.*, sales.*, teknisi.*, /web/*, /api/v1/caddy/ask",
+          routingPattern: "nexus.<tenant>.ispsync.id (/noc, /sales, /teknisi), portal.<tenant>.ispsync.id, /web/*",
           status: "ONLINE",
-          description: "NOC network ops, field technician portals, dynamic tenant assets, and Caddy TLS permission hook"
+          description: "Pusat operasi terpadu seluruh tim internal ISP: NOC (/noc), Sales (/sales), dan Teknisi Lapangan (/teknisi) dalam satu subdomain nexus.<tenant>.ispsync.id, serta portal mandiri pelanggan."
         },
         {
           name: "FiberGrid FTTX Engine",
@@ -196,7 +196,7 @@ export async function GET(req: NextRequest) {
       domainList.push({
         domain: `nexus.${slug}.ispsync.id`,
         type: "TENANT_SUBDOMAIN",
-        category: "NOC & Customer Ops",
+        category: "NOC, Sales & Teknisi (/noc, /sales, /teknisi)",
         company: m.company,
         tenantSlug: slug,
         tenantId: m.id,
