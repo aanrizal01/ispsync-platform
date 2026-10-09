@@ -347,6 +347,30 @@ func main() {
 	}
 	r.Get("/logo.png", serveLogo)
 	r.Head("/logo.png", serveLogo)
+
+	serveFavicon := func(w http.ResponseWriter, r *http.Request) {
+		if _, err := os.Stat("web/favicon.ico"); err == nil {
+			w.Header().Set("Content-Type", "image/x-icon")
+			w.Header().Set("Cache-Control", "public, max-age=86400")
+			http.ServeFile(w, r, "web/favicon.ico")
+			return
+		}
+		w.Header().Set("Content-Type", "image/png")
+		w.Header().Set("Cache-Control", "public, max-age=86400")
+		http.ServeFile(w, r, "web/icon.png")
+	}
+	r.Get("/favicon.ico", serveFavicon)
+	r.Head("/favicon.ico", serveFavicon)
+	r.Get("/icon.png", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/png")
+		w.Header().Set("Cache-Control", "public, max-age=86400")
+		http.ServeFile(w, r, "web/icon.png")
+	})
+	r.Head("/icon.png", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/png")
+		w.Header().Set("Cache-Control", "public, max-age=86400")
+		http.ServeFile(w, r, "web/icon.png")
+	})
 	// Universal Document & PDF Handler (Multi-tenant dynamic branding support)
 	r.Get("/{filename}.pdf", func(w http.ResponseWriter, r *http.Request) {
 		fname := chi.URLParam(r, "filename")
