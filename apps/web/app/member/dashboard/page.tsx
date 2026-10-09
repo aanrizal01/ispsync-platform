@@ -22,6 +22,7 @@ import {
   Cpu,
   Database,
   Lock,
+  Network,
 } from "lucide-react";
 
 type Tenant = {
@@ -195,8 +196,15 @@ export default function MemberDashboard() {
                 <span>Kelola Pelanggan SaaS</span>
               </Link>
               <Link
+                href="/member/gateway"
+                className="px-3.5 py-2.5 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-xs bg-white"
+              >
+                <Network className="w-4 h-4 text-cyan-600" />
+                <span>Gateway &amp; Caddy</span>
+              </Link>
+              <Link
                 href="/cms-9x7k2"
-                className="px-3.5 py-2.5 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5"
+                className="px-3.5 py-2.5 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-xs bg-white"
               >
                 <SlidersHorizontal className="w-4 h-4 text-slate-500" />
                 <span>CMS &amp; Paket</span>
@@ -271,27 +279,38 @@ export default function MemberDashboard() {
                 </div>
               </div>
 
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-800 text-emerald-400 text-xs font-semibold">
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                <span>Seluruh Layanan Klaster Beroperasi Normal</span>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/member/gateway"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-cyan-500/40 text-cyan-400 text-xs font-semibold transition-all"
+                >
+                  <Network className="w-3.5 h-3.5" />
+                  <span>Buka Caddy Gateway</span>
+                  <ArrowRight className="w-3 h-3 text-cyan-400" />
+                </Link>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-800 text-emerald-400 text-xs font-semibold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <span>Klaster 100% Online</span>
+                </div>
               </div>
             </div>
 
-            <div className="relative z-10 grid grid-cols-2 md:grid-cols-6 gap-3 pt-5">
+            <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 pt-5">
               {[
+                { name: "Caddy Proxy", host: "On-Demand TLS", port: "80/443", status: "Online" },
                 { name: "Web Portal", host: "Next.js 16", port: "3000", status: "Online" },
                 { name: "Billing API", host: "Go Core API", port: "8080", status: "Online" },
                 { name: "Nexus CRM", host: "ispsync-core", port: "8081", status: "Online" },
-                { name: "FiberGrid FTTX", host: "ispsync-core", port: "8082", status: "Online" },
-                { name: "FreeRADIUS AAA", host: "Port 1812/1813", port: "3799", status: "Online" },
-                { name: "PostgreSQL DB", host: "isp_billing", port: "5432", status: "Healthy" },
+                { name: "FiberGrid", host: "ispsync-core", port: "8082", status: "Online" },
+                { name: "FreeRADIUS", host: "Port 1812/1813", port: "3799", status: "Online" },
+                { name: "PostgreSQL", host: "isp_billing", port: "5432", status: "Healthy" },
               ].map((svc, i) => (
                 <div key={i} className="bg-slate-900/80 p-3 rounded-xl border border-slate-800/80">
                   <div className="flex items-center justify-between text-[11px] mb-1">
-                    <span className="font-bold text-slate-200">{svc.name}</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    <span className="font-bold text-slate-200 truncate">{svc.name}</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
                   </div>
-                  <div className="text-[10px] text-slate-400 font-mono">{svc.host}</div>
+                  <div className="text-[10px] text-slate-400 font-mono truncate">{svc.host}</div>
                   <div className="text-[10px] text-cyan-400 font-mono mt-1">Port: {svc.port}</div>
                 </div>
               ))}
