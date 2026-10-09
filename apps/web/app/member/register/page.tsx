@@ -11,11 +11,9 @@ import {
   User,
   Phone,
   Globe,
-  ShieldCheck,
   CheckCircle2,
   ArrowRight,
   RotateCcw,
-  Sparkles,
   Server,
   Network,
   Zap,
@@ -240,12 +238,8 @@ export default function MemberRegisterPage() {
           {step === 1 && (
             <div>
               <div className="mb-6">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100 mb-3">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Free Trial 14 Hari — Full Enterprise
-                </span>
                 <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                  Pendaftaran Akun Baru SaaS ISP
+                  Pendaftaran Akun Baru
                 </h1>
                 <p className="text-sm text-slate-500 mt-2">
                   Dapatkan akses instan ke 3 engine cloud: Ledger (Billing &amp; RADIUS), Nexus (Selfcare &amp; NOC), dan FiberGrid (FTTX &amp; OLT).
@@ -543,9 +537,6 @@ export default function MemberRegisterPage() {
                 <CheckCircle2 className="w-9 h-9" />
               </div>
 
-              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 mb-2">
-                VERIFIKASI BERHASIL
-              </span>
               <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                 Selamat Datang di ISPSYNC!
               </h1>
@@ -657,14 +648,8 @@ export default function MemberRegisterPage() {
       {/* ── Right Column: Enterprise Capabilities Showcase (Light Telco Theme) ── */}
       <div className="hidden lg:flex w-5/12 bg-slate-50 border-l border-slate-200 p-12 flex-col justify-between">
         <div>
-          {/* Top Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-slate-200 shadow-sm text-xs font-bold text-slate-700 mb-8">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>Multi-Tenant High Availability</span>
-          </div>
-
           <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-snug mb-3">
-            Infrastruktur ISP Terpadu dalam Satu Platform SaaS
+            Infrastruktur ISP Terpadu dalam Satu Platform
           </h2>
           <p className="text-sm text-slate-600 leading-relaxed mb-8">
             Didesain khusus untuk operasional ISP modern di Indonesia. Dari manajemen radius ribuan pelanggan hingga peta jaringan fiber optic lapangan.
