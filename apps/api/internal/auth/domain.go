@@ -71,6 +71,25 @@ func (c *Claims) HasPermission(perm string) bool {
 			return true
 		}
 	}
+	// Fallback for active admin sessions minted before new permission slugs were introduced
+	if !c.IsCustomer() && c.hasRawPermission("admin:users") {
+		switch perm {
+		case "partners:read", "partners:write",
+			"billing:read", "billing:write",
+			"notifications:read", "notifications:write",
+			"network:write":
+			return true
+		}
+	}
+	return false
+}
+
+func (c *Claims) hasRawPermission(perm string) bool {
+	for _, p := range c.Permissions {
+		if p == perm || p == "*" {
+			return true
+		}
+	}
 	return false
 }
 
