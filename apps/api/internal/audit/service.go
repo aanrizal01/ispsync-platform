@@ -49,6 +49,16 @@ func (s *Service) Log(ctx context.Context, in RecordInput) error {
 		}
 	}
 
+	tenantSlug := in.TenantSlug
+	if tenantSlug == "" {
+		if claims := auth.ClaimsFromContext(ctx); claims != nil {
+			tenantSlug = claims.TenantSlug
+		}
+	}
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
+
 	entry := &AuditLog{
 		ID:          uuid.New(),
 		ActorID:     in.ActorID,
@@ -64,6 +74,7 @@ func (s *Service) Log(ctx context.Context, in RecordInput) error {
 		UserAgent:   in.UserAgent,
 		RequestID:   in.RequestID,
 		Metadata:    json.RawMessage(metaBytes),
+		TenantSlug:  tenantSlug,
 		CreatedAt:   time.Now(),
 	}
 
@@ -81,11 +92,16 @@ func (s *Service) LogFromRequest(r *http.Request, action, entityType, entityID, 
 	var actorID *uuid.UUID
 	actorType := ActorSystem
 	var actorEmail *string
+	tenantSlug := ""
 
 	if claims != nil {
 		actorID = &claims.UserID
 		actorType = ActorUser
 		actorEmail = &claims.Email
+		tenantSlug = claims.TenantSlug
+	}
+	if tenantSlug == "" {
+		tenantSlug = auth.ExtractTenantSlug(r)
 	}
 
 	ip := r.Header.Get("X-Forwarded-For")
@@ -115,6 +131,7 @@ func (s *Service) LogFromRequest(r *http.Request, action, entityType, entityID, 
 		IPAddress:   &ip,
 		UserAgent:   &ua,
 		RequestID:   &reqID,
+		TenantSlug:  tenantSlug,
 	})
 }
 
@@ -122,6 +139,6 @@ func (s *Service) List(ctx context.Context, filter Filter, params pagination.Par
 	return s.repo.List(ctx, filter, params)
 }
 
-func (s *Service) GetByEntity(ctx context.Context, entityType, entityID string, limit int) ([]AuditLog, error) {
-	return s.repo.GetByEntity(ctx, entityType, entityID, limit)
+func (s *Service) GetByEntity(ctx context.Context, tenantSlug, entityType, entityID string, limit int) ([]AuditLog, error) {
+	return s.repo.GetByEntity(ctx, tenantSlug, entityType, entityID, limit)
 }

@@ -40,15 +40,19 @@ func (r *Repository) Record(ctx context.Context, entry *AuditLog) error {
 		ipParam = &cleanIP
 	}
 
+	if entry.TenantSlug == "" {
+		entry.TenantSlug = "dev"
+	}
+
 	query := `
 		INSERT INTO audit_logs (
 			id, actor_id, actor_type, actor_email, action, description,
 			entity_type, entity_id, old_values, new_values, ip_address,
-			user_agent, request_id, metadata, created_at
+			user_agent, request_id, metadata, tenant_slug, created_at
 		) VALUES (
 			$1, $2, $3, $4, $5, $6,
 			$7, $8, $9, $10, NULLIF($11, '')::inet,
-			$12, $13, $14, $15
+			$12, $13, $14, $15, $16
 		)`
 
 	_, err := r.db.Exec(ctx, query,
@@ -66,6 +70,7 @@ func (r *Repository) Record(ctx context.Context, entry *AuditLog) error {
 		entry.UserAgent,
 		entry.RequestID,
 		entry.Metadata,
+		entry.TenantSlug,
 		entry.CreatedAt,
 	)
 	return err
@@ -75,6 +80,12 @@ func (r *Repository) List(ctx context.Context, filter Filter, params pagination.
 	where := []string{"1=1"}
 	args := []any{}
 	idx := 1
+
+	if filter.TenantSlug != "" && filter.TenantSlug != "superadmin" {
+		where = append(where, fmt.Sprintf("tenant_slug = $%d", idx))
+		args = append(args, filter.TenantSlug)
+		idx++
+	}
 
 	if filter.ActorID != nil {
 		where = append(where, fmt.Sprintf("actor_id = $%d", idx))
@@ -136,7 +147,7 @@ func (r *Repository) List(ctx context.Context, filter Filter, params pagination.
 	selectQuery := fmt.Sprintf(`
 		SELECT id, actor_id, actor_type, actor_email, action, description,
 		       entity_type, entity_id, old_values, new_values, host(ip_address),
-		       user_agent, request_id, metadata, created_at
+		       user_agent, request_id, metadata, tenant_slug, created_at
 		FROM audit_logs
 		WHERE %s
 		ORDER BY created_at DESC
@@ -170,6 +181,7 @@ func (r *Repository) List(ctx context.Context, filter Filter, params pagination.
 			&l.UserAgent,
 			&l.RequestID,
 			&meta,
+			&l.TenantSlug,
 			&l.CreatedAt,
 		)
 		if err != nil {
@@ -205,21 +217,32 @@ func (r *Repository) List(ctx context.Context, filter Filter, params pagination.
 	return logs, metaData, nil
 }
 
-func (r *Repository) GetByEntity(ctx context.Context, entityType, entityID string, limit int) ([]AuditLog, error) {
+func (r *Repository) GetByEntity(ctx context.Context, tenantSlug, entityType, entityID string, limit int) ([]AuditLog, error) {
 	if limit <= 0 {
 		limit = 50
 	}
 
-	query := `
+	where := "entity_type = $1 AND entity_id = $2"
+	args := []any{entityType, entityID}
+	idx := 3
+
+	if tenantSlug != "" && tenantSlug != "superadmin" {
+		where += fmt.Sprintf(" AND tenant_slug = $%d", idx)
+		args = append(args, tenantSlug)
+		idx++
+	}
+
+	query := fmt.Sprintf(`
 		SELECT id, actor_id, actor_type, actor_email, action, description,
 		       entity_type, entity_id, old_values, new_values, host(ip_address),
-		       user_agent, request_id, metadata, created_at
+		       user_agent, request_id, metadata, tenant_slug, created_at
 		FROM audit_logs
-		WHERE entity_type = $1 AND entity_id = $2
+		WHERE %s
 		ORDER BY created_at DESC
-		LIMIT $3`
+		LIMIT $%d`, where, idx)
+	args = append(args, limit)
 
-	rows, err := r.db.Query(ctx, query, entityType, entityID, limit)
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("get audit logs by entity: %w", err)
 	}
@@ -245,6 +268,7 @@ func (r *Repository) GetByEntity(ctx context.Context, entityType, entityID strin
 			&l.UserAgent,
 			&l.RequestID,
 			&meta,
+			&l.TenantSlug,
 			&l.CreatedAt,
 		)
 		if err != nil {

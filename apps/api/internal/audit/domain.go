@@ -31,6 +31,7 @@ type AuditLog struct {
 	UserAgent   *string         `json:"user_agent,omitempty"`
 	RequestID   *string         `json:"request_id,omitempty"`
 	Metadata    json.RawMessage `json:"metadata,omitempty"`
+	TenantSlug  string          `json:"tenant_slug"`
 	CreatedAt   time.Time       `json:"created_at"`
 }
 
@@ -48,6 +49,7 @@ type RecordInput struct {
 	UserAgent   *string
 	RequestID   *string
 	Metadata    any
+	TenantSlug  string
 }
 
 type Filter struct {
@@ -57,6 +59,7 @@ type Filter struct {
 	EntityID   *string
 	Action     *string
 	Search     *string
+	TenantSlug string
 	DateFrom   *time.Time
 	DateTo     *time.Time
 }

@@ -49,10 +49,12 @@ func (s *Service) recordAudit(ctx context.Context, action, entityID, description
 	var actorID *uuid.UUID
 	var actorEmail *string
 	actorType := audit.ActorSystem
+	tenantSlug := ""
 	if claims != nil {
 		actorID = &claims.UserID
 		actorType = audit.ActorUser
 		actorEmail = &claims.Email
+		tenantSlug = claims.TenantSlug
 	}
 	_ = s.auditSvc.Log(ctx, audit.RecordInput{
 		ActorID:     actorID,
@@ -64,6 +66,7 @@ func (s *Service) recordAudit(ctx context.Context, action, entityID, description
 		EntityID:    entityID,
 		OldValues:   oldValues,
 		NewValues:   newValues,
+		TenantSlug:  tenantSlug,
 	})
 }
 

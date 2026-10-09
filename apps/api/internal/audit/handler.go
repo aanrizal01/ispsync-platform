@@ -35,7 +35,9 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	params := pagination.FromRequest(r)
 
-	filter := Filter{}
+	filter := Filter{
+		TenantSlug: auth.ExtractTenantSlug(r),
+	}
 
 	if search := r.URL.Query().Get("search"); search != "" {
 		filter.Search = &search
@@ -77,7 +79,8 @@ func (h *Handler) GetByEntity(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	logs, err := h.service.GetByEntity(r.Context(), entityType, entityID, limit)
+	tenantSlug := auth.ExtractTenantSlug(r)
+	logs, err := h.service.GetByEntity(r.Context(), tenantSlug, entityType, entityID, limit)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return

@@ -930,6 +930,7 @@ func handlePurgeTenant(db *pgxpool.Pool, cfg *config.Config, log *slog.Logger) h
 		_, _ = db.Exec(ctx, "DELETE FROM plan_prices WHERE plan_id IN (SELECT id FROM plans WHERE tenant_slug = $1)", slug)
 		_, _ = db.Exec(ctx, "DELETE FROM plans WHERE tenant_slug = $1", slug)
 		_, _ = db.Exec(ctx, "DELETE FROM plan_groups WHERE tenant_slug = $1", slug)
+		_, _ = db.Exec(ctx, "DELETE FROM audit_logs WHERE tenant_slug = $1", slug)
 		_, _ = db.Exec(ctx, "DELETE FROM app_settings WHERE key LIKE '%_' || $1", slug)
 
 		// Helper to connect to other DB on same host
