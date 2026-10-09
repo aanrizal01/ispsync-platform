@@ -338,21 +338,41 @@ export async function POST(req: NextRequest) {
 
       // Execute Auto-Purge on database server
       if (slug && slug !== "dev" && slug !== "superadmin" && slug !== "gogiga") {
-        try {
-          const apiBaseUrl = process.env.API_BASE_URL || (process.env.NODE_ENV === "production" ? "http://api:8080" : "http://localhost:8080");
-          await fetch(`${apiBaseUrl}/api/v1/internal/tenants/purge`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-Admin-Key": "isp-onboarding-admin-key",
-            },
-            body: JSON.stringify({
-              tenant_slug: slug,
-              email: targetMember.email,
-            }),
-          });
-        } catch (purgeErr) {
-          console.error("Auto-purge error during tenant deletion:", purgeErr);
+        const purgePayload = JSON.stringify({
+          tenant_slug: slug,
+          email: targetMember.email,
+        });
+
+        const urls = [
+          process.env.API_BASE_URL || (process.env.NODE_ENV === "production" ? "http://api:8080" : "http://localhost:8080"),
+          "http://172.18.0.1:8080",
+          "http://127.0.0.1:8080",
+        ];
+
+        let purged = false;
+        for (const baseUrl of urls) {
+          for (let attempt = 1; attempt <= 2; attempt++) {
+            try {
+              const purgeRes = await fetch(`${baseUrl}/api/v1/internal/tenants/purge`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-Admin-Key": "isp-onboarding-admin-key",
+                },
+                body: purgePayload,
+                signal: AbortSignal.timeout(5000),
+              });
+              if (purgeRes.ok) {
+                console.log(`Auto-purge successfully executed via ${baseUrl} for tenant ${slug}`);
+                purged = true;
+                break;
+              }
+            } catch (err: any) {
+              console.warn(`Auto-purge attempt ${attempt} at ${baseUrl}:`, err?.message || err);
+              await new Promise((r) => setTimeout(r, 500));
+            }
+          }
+          if (purged) break;
         }
       }
 
