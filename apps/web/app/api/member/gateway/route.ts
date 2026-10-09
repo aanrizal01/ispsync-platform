@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import dns from "dns/promises";
+import { requireMember } from "../../../../../lib/member-auth";
 
 const MEMBERS_PATH = path.join(process.cwd(), "data", "members.json");
 const EDGE_SERVER_IP = "103.179.65.73";
@@ -51,6 +52,11 @@ async function quickDnsCheck(domain: string): Promise<{ resolved: boolean; ips: 
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = requireMember(req, ["SUPERADMIN"]);
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const members = getMembersData();
 
     // 1. Edge gateway metadata
@@ -298,6 +304,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = requireMember(req, ["SUPERADMIN"]);
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const body = await req.json();
     const { action } = body;
 

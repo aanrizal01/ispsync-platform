@@ -629,27 +629,35 @@ export default function MemberDashboard() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-gray-100 flex items-center gap-2">
-                <a
-                  href={urls.ledger}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-1.5 transition-all shadow-sm shadow-blue-200"
-                >
-                  <span>Buka Ledger</span>
-                  <span className="text-sm font-normal">↗</span>
-                </a>
-                <Link
-                  href="/member/engine/ledger"
-                  className="py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 text-xs font-semibold rounded-xl text-center transition-colors"
-                >
-                  Setting
-                </Link>
+              <div className="pt-3 border-t border-gray-100 flex flex-col gap-2">
+                {member.status === "pending_payment" ? (
+                  <button disabled className="w-full py-2 px-3 bg-gray-100 text-gray-400 text-xs font-bold rounded-xl text-center cursor-not-allowed">
+                    Terkunci (Pilih Paket)
+                  </button>
+                ) : (
+                  <>
+                    <a
+                      href={urls.ledger}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-1.5 transition-all shadow-sm shadow-blue-200"
+                    >
+                      <span>Buka Ledger</span>
+                      <span className="text-sm font-normal">↗</span>
+                    </a>
+                    <Link
+                      href="/member/engine/ledger"
+                      className="py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 text-xs font-semibold rounded-xl text-center transition-colors"
+                    >
+                      Setting
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
 
             {/* Engine 2: Nexus */}
-            <div className="bg-white rounded-2xl border border-purple-200 p-5 shadow-sm hover:shadow-md hover:border-purple-400 transition-all flex flex-col justify-between group">
+            <div className="bg-white rounded-2xl border border-purple-200 p-5 shadow-sm hover:shadow-md hover:border-purple-400 transition-all flex flex-col justify-between group relative">
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-800">
@@ -676,27 +684,35 @@ export default function MemberDashboard() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-gray-100 flex items-center gap-2">
-                <a
-                  href={urls.nexus}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-1.5 transition-all shadow-sm shadow-purple-200"
-                >
-                  <span>Buka Nexus</span>
-                  <span className="text-sm font-normal">↗</span>
-                </a>
-                <Link
-                  href="/member/engine/nexus"
-                  className="py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 text-xs font-semibold rounded-xl text-center transition-colors"
-                >
-                  Setting
-                </Link>
+              <div className="pt-3 border-t border-gray-100 flex flex-col gap-2">
+                {member.status === "pending_payment" ? (
+                  <button disabled className="w-full py-2 px-3 bg-gray-100 text-gray-400 text-xs font-bold rounded-xl text-center cursor-not-allowed">
+                    Terkunci (Pilih Paket)
+                  </button>
+                ) : (
+                  <>
+                    <a
+                      href={urls.nexus}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-1.5 transition-all shadow-sm shadow-purple-200"
+                    >
+                      <span>Buka Nexus</span>
+                      <span className="text-sm font-normal">↗</span>
+                    </a>
+                    <Link
+                      href="/member/engine/nexus"
+                      className="py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 text-xs font-semibold rounded-xl text-center transition-colors"
+                    >
+                      Setting
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
 
             {/* Engine 3: FiberGrid */}
-            <div className="bg-white rounded-2xl border border-emerald-200 p-5 shadow-sm hover:shadow-md hover:border-emerald-400 transition-all flex flex-col justify-between group">
+            <div className="bg-white rounded-2xl border border-emerald-200 p-5 shadow-sm hover:shadow-md hover:border-emerald-400 transition-all flex flex-col justify-between group relative">
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">
@@ -723,22 +739,30 @@ export default function MemberDashboard() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-gray-100 flex items-center gap-2">
-                <a
-                  href={urls.fibergrid}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-1.5 transition-all shadow-sm shadow-emerald-200"
-                >
-                  <span>Buka FiberGrid</span>
-                  <span className="text-sm font-normal">↗</span>
-                </a>
-                <Link
-                  href="/member/engine/fibergrid"
-                  className="py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 text-xs font-semibold rounded-xl text-center transition-colors"
-                >
-                  Setting
-                </Link>
+              <div className="pt-3 border-t border-gray-100 flex flex-col gap-2">
+                {member.status === "pending_payment" ? (
+                  <button disabled className="w-full py-2 px-3 bg-gray-100 text-gray-400 text-xs font-bold rounded-xl text-center cursor-not-allowed">
+                    Terkunci (Pilih Paket)
+                  </button>
+                ) : (
+                  <>
+                    <a
+                      href={urls.fibergrid}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl text-center flex items-center justify-center gap-1.5 transition-all shadow-sm shadow-emerald-200"
+                    >
+                      <span>Buka FiberGrid</span>
+                      <span className="text-sm font-normal">↗</span>
+                    </a>
+                    <Link
+                      href="/member/engine/fibergrid"
+                      className="py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 hover:text-gray-900 text-xs font-semibold rounded-xl text-center transition-colors"
+                    >
+                      Setting
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -746,15 +770,26 @@ export default function MemberDashboard() {
 
         {/* Subscription detail */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-blue-600 rounded-2xl p-6 text-white">
-            <div className="text-xs font-bold uppercase tracking-wider text-blue-200 mb-1">Paket Saat Ini</div>
-            <div className="text-2xl font-black mb-1">{member.planName}</div>
-            <div className="text-blue-100 text-sm mb-4">{member.planCapacity}</div>
-            <div className="text-3xl font-black mb-0.5">{fmt(member.planPrice)}</div>
-            <div className="text-blue-200 text-xs">per bulan</div>
-            <div className="mt-4 pt-4 border-t border-blue-500 flex justify-between text-xs text-blue-200">
-              <span>Mulai: {member.subscribedAt}</span>
-              <span>Exp: {member.expiresAt}</span>
+          <div className="bg-blue-600 rounded-2xl p-6 text-white flex flex-col justify-between">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-wider text-blue-200 mb-1">Paket Saat Ini</div>
+              <div className="text-2xl font-black mb-1">{member.planName}</div>
+              <div className="text-blue-100 text-sm mb-4">{member.planCapacity}</div>
+              <div className="text-3xl font-black mb-0.5">{fmt(member.planPrice)}</div>
+              <div className="text-blue-200 text-xs">per bulan</div>
+            </div>
+            
+            <div className="mt-4 pt-4 border-t border-blue-500 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-blue-200">
+              <div className="flex flex-col gap-1 w-full sm:w-auto">
+                <span>Mulai: {member.subscribedAt}</span>
+                <span>Exp: {member.expiresAt}</span>
+              </div>
+              <Link
+                href="/member/upgrade"
+                className="w-full sm:w-auto px-4 py-2 bg-white text-blue-700 font-bold rounded-xl text-center hover:bg-blue-50 transition-colors shadow-sm"
+              >
+                Upgrade Paket
+              </Link>
             </div>
           </div>
 

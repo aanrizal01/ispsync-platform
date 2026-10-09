@@ -101,14 +101,12 @@ export default function MemberLoginPage() {
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
                   Password
                 </label>
-                <a
-                  href="https://wa.me/6281100000000?text=Halo%20ISPSYNC,%20saya%20lupa%20password%20Member%20Portal"
-                  target="_blank"
-                  rel="noreferrer"
+                <Link
+                  href="/member/forgot-password"
                   className="text-xs text-blue-600 hover:text-blue-700 font-medium"
                 >
                   Forgot Password?
-                </a>
+                </Link>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -149,7 +147,7 @@ export default function MemberLoginPage() {
                 href="/member/register"
                 className="text-blue-600 font-bold hover:underline"
               >
-                Daftar Akun Baru (Free Trial 14 Hari)
+                Daftar Akun Baru
               </Link>
             </p>
           </div>

@@ -541,80 +541,8 @@ export default function MemberRegisterPage() {
                 Selamat Datang di ISPSYNC!
               </h1>
               <p className="text-sm text-slate-500 mt-2 max-w-md mx-auto">
-                Akun tenant <strong>{company}</strong> telah aktif dengan status <strong>Free Trial 14 Hari</strong>. Anda dapat langsung menggunakan seluruh engine platform.
+                Akun tenant <strong>{company}</strong> telah berhasil dibuat. Silakan menuju dashboard untuk mengaktifkan paket berlangganan dan mulai menggunakan infrastruktur ISPSYNC.
               </p>
-
-              {/* Ready Engines Showcase */}
-              <div className="mt-6 text-left space-y-3">
-                <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
-                      1
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-800">Billing &amp; RADIUS Ledger</h4>
-                      <p className="text-[11px] text-slate-500 font-mono">
-                        ledger.{subdomain}.ispsync.id
-                      </p>
-                    </div>
-                  </div>
-                  <a
-                    href={`https://ledger.${subdomain}.ispsync.id`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                  >
-                    <span>Buka</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-
-                <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
-                      2
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-800">NOC &amp; Customer Portal Nexus</h4>
-                      <p className="text-[11px] text-slate-500 font-mono">
-                        nexus.{subdomain}.ispsync.id
-                      </p>
-                    </div>
-                  </div>
-                  <a
-                    href={`https://nexus.${subdomain}.ispsync.id`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
-                  >
-                    <span>Buka</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-
-                <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
-                      3
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-800">FTTX &amp; CWMP FiberGrid</h4>
-                      <p className="text-[11px] text-slate-500 font-mono">
-                        fibergrid.{subdomain}.ispsync.id
-                      </p>
-                    </div>
-                  </div>
-                  <a
-                    href={`https://fibergrid.${subdomain}.ispsync.id`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs font-semibold text-emerald-600 hover:text-emerald-800 flex items-center gap-1"
-                  >
-                    <span>Buka</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-              </div>
 
               {/* Direct to Dashboard Button */}
               <div className="mt-8 space-y-3">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { requireMember } from "../../../../../lib/member-auth";
 
 const MEMBERS_PATH = path.join(process.cwd(), "data", "members.json");
 
@@ -23,7 +24,14 @@ function saveMembers(data: any) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { memberId, engine, config } = await req.json();
+    const auth = requireMember(req);
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
+    const { engine, config } = await req.json();
+    const memberId = auth.member.id;
+
     if (!memberId || !engine) {
       return NextResponse.json({ error: "Missing memberId or engine" }, { status: 400 });
     }

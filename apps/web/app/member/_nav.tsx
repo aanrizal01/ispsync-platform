@@ -15,7 +15,8 @@ import {
   Settings,
   HelpCircle,
   ExternalLink,
-  Mail
+  Mail,
+  Users
 } from "lucide-react";
 
 const mainNavItems = [
@@ -30,6 +31,7 @@ const engineNavItems = [
 ];
 
 const accountNavItems = [
+  { href: "/member/staff", label: "Manajemen Staf & Akses", icon: Users },
   { href: "/member/profile", label: "Pengaturan Akun & Profil", icon: Settings },
   { href: "/member/support", label: "Bantuan & Support", icon: HelpCircle },
 ];
@@ -181,6 +183,17 @@ export default function MemberNav({ children }: { children: React.ReactNode }) {
                 >
                   <Mail className="w-4 h-4 text-cyan-600 shrink-0" />
                   <span>Pengaturan SMTP &amp; Mailer</span>
+                </Link>
+                <Link
+                  href="/member/settings-payment"
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    pathname === "/member/settings-payment"
+                      ? "bg-slate-900 text-cyan-400 shadow-sm"
+                      : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
+                >
+                  <CreditCard className="w-4 h-4 text-cyan-600 shrink-0" />
+                  <span>Pengaturan Payment Gateway</span>
                 </Link>
               </div>
             </div>

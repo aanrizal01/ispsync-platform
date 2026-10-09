@@ -105,6 +105,18 @@ function recordFail(ip: string) {
   authAttempts.set(ip, rec);
 }
 
+function hashPassword(password: string): string {
+  return crypto.createHash("sha256").update(password + "ispsync_salt").digest("hex");
+}
+
+function verifyPassword(input: string, stored: string): boolean {
+  if (!input || !stored) return false;
+  if (stored === hashPassword(input)) return true;
+  // Fallback for unmigrated plaintext passwords
+  if (stored === input) return true;
+  return false;
+}
+
 export async function POST(req: NextRequest) {
   const ip = getClientIP(req);
   if (!checkRateLimit(ip)) {
@@ -126,13 +138,19 @@ export async function POST(req: NextRequest) {
     const member = db.members.find(
       (m: any) =>
         m.email.toLowerCase() === (email || "").trim().toLowerCase() &&
-        m.password === password
+        verifyPassword(password, m.password)
     );
 
     if (!member) {
       recordFail(ip);
       await new Promise((r) => setTimeout(r, 600));
       return NextResponse.json({ error: "Email atau password salah." }, { status: 401 });
+    }
+
+    // Auto-migrate password to hash if it was plaintext
+    if (member.password === password) {
+       member.password = hashPassword(password);
+       saveMembers(db);
     }
 
     authAttempts.delete(ip);
@@ -344,51 +362,30 @@ export async function POST(req: NextRequest) {
     const newMember = {
       id: newId,
       email: cleanEmail,
-      password: p.password,
+      password: hashPassword(p.password),
       company: p.company,
       picName: p.picName,
       phone: p.phone,
       address: "",
       npwp: "",
-      plan: "trial",
-      planName: "Trial Enterprise (14 Hari)",
+      plan: "none",
+      planName: "Belum Berlangganan",
       planPrice: "0",
-      planCapacity: "1.000 Pelanggan",
-      status: "active",
+      planCapacity: "-",
+      status: "pending_payment",
       subscribedAt: today,
-      expiresAt: expiresDate,
+      expiresAt: today, // Expired immediately, requires payment
       autoRenew: false,
       domain: `${p.subdomain}.ispsync.id`,
       role: "TENANT",
       clusterType: "shared",
       clusterNode: "103.179.65.73",
       engines: {
-        ledger: {
-          customDomain: `ledger.${p.subdomain}.ispsync.id`,
-          updatedAt: new Date().toISOString()
-        },
-        nexus: {
-          customDomain: `nexus.${p.subdomain}.ispsync.id`,
-          brandName: p.company,
-          updatedAt: new Date().toISOString()
-        },
-        fibergrid: {
-          customDomain: `fibergrid.${p.subdomain}.ispsync.id`,
-          updatedAt: new Date().toISOString()
-        }
+        ledger: { customDomain: `ledger.${p.subdomain}.ispsync.id`, updatedAt: new Date().toISOString() },
+        nexus: { customDomain: `nexus.${p.subdomain}.ispsync.id`, brandName: p.company, updatedAt: new Date().toISOString() },
+        fibergrid: { customDomain: `fibergrid.${p.subdomain}.ispsync.id`, updatedAt: new Date().toISOString() }
       },
-      invoices: [
-        {
-          id: `INV-${Date.now().toString().slice(-6)}`,
-          date: today,
-          dueDate: expiresDate,
-          period: "Free Trial 14 Hari",
-          amount: "0",
-          status: "paid",
-          paymentDate: today,
-          paymentMethod: "Free Trial"
-        }
-      ],
+      invoices: [],
       tickets: []
     };
 
@@ -419,7 +416,7 @@ export async function POST(req: NextRequest) {
     const { password: _, ...safeMember } = newMember;
     return NextResponse.json({
       success: true,
-      message: "Verifikasi email berhasil! Akun cloud SaaS Anda telah aktif dengan akses 14 hari free trial.",
+      message: "Verifikasi email berhasil! Silakan pilih paket langganan untuk mengaktifkan infrastruktur Anda.",
       token: sessionToken,
       member: safeMember
     });
@@ -526,7 +523,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Kata sandi lama dan baru wajib diisi." }, { status: 400 });
     }
 
-    if (member.password !== oldPassword) {
+    if (!verifyPassword(oldPassword, member.password)) {
       return NextResponse.json({ error: "Kata sandi lama salah." }, { status: 400 });
     }
 
@@ -534,13 +531,73 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Kata sandi baru minimal 6 karakter." }, { status: 400 });
     }
 
-    member.password = newPassword;
+    member.password = hashPassword(newPassword);
     saveMembers(db);
 
     return NextResponse.json({ success: true, message: "Kata sandi berhasil diubah." });
   }
 
-  // 8. LOGOUT
+  // 8. FORGOT PASSWORD
+  if (action === "forgot_password") {
+    if (!email) return NextResponse.json({ error: "Email wajib diisi." }, { status: 400 });
+    const cleanEmail = String(email).trim().toLowerCase();
+
+    const db = getMembers();
+    const member = db.members.find((m: any) => m.email.toLowerCase() === cleanEmail);
+
+    if (member) {
+      // Generate a temporary reset token (in production, save this token to DB with expiry)
+      // Since this is a file-based demo, we use a signed session token specifically marked for reset
+      const resetToken = signSessionToken(`reset:${member.id}`);
+
+      // Send forgot password email
+      try {
+        const { sendForgotPasswordEmail } = require("@/lib/mailer");
+        await sendForgotPasswordEmail({
+          to: member.email,
+          name: member.picName || member.company,
+          resetToken,
+        });
+      } catch (err: any) {
+        console.error("Failed to send forgot password email:", err);
+      }
+    }
+
+    // Always return success even if email not found to prevent user enumeration
+    return NextResponse.json({ success: true, message: "Jika email terdaftar, tautan reset password telah dikirim." });
+  }
+
+  // 9. RESET PASSWORD (using token from email)
+  if (action === "reset_password") {
+    const { newPassword } = body;
+    if (!token || !newPassword) {
+      return NextResponse.json({ error: "Token dan kata sandi baru wajib diisi." }, { status: 400 });
+    }
+    
+    const payload = verifySessionToken(token);
+    if (!payload || !payload.startsWith("reset:")) {
+      return NextResponse.json({ error: "Tautan reset tidak valid atau telah kedaluwarsa." }, { status: 400 });
+    }
+
+    const memberId = payload.split("reset:")[1];
+    if (newPassword.length < 6) {
+      return NextResponse.json({ error: "Kata sandi baru minimal 6 karakter." }, { status: 400 });
+    }
+
+    const db = getMembers();
+    const idx = (db.members || []).findIndex((m: any) => m.id === memberId);
+    if (idx === -1) {
+      return NextResponse.json({ error: "Akun tidak ditemukan." }, { status: 404 });
+    }
+
+    db.members[idx].password = hashPassword(newPassword);
+    saveMembers(db);
+
+    // Invalidate the reset token by effectively doing nothing (it's stateless, but we could add a blocklist)
+    return NextResponse.json({ success: true, message: "Kata sandi berhasil diatur ulang. Silakan login dengan kata sandi baru Anda." });
+  }
+
+  // 10. LOGOUT
   if (action === "logout") {
     if (token) sessions.delete(token);
     return NextResponse.json({ success: true });

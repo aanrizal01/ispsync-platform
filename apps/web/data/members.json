@@ -3,7 +3,7 @@
     {
       "id": "mbr_001",
       "email": "admin@ispsync.id",
-      "password": "Ispsync2026!",
+      "password": "c4e82a2544ca933e76683960a97a522445c85a6e6c281a2a6f866f783f94ab67",
       "company": "PT Inovasi Sistem Pintar",
       "picName": "Administrator ISPSYNC",
       "phone": "081166012345",
@@ -39,7 +39,7 @@
     {
       "id": "mbr_002",
       "email": "demo@ispclient.id",
-      "password": "Demo1234!",
+      "password": "90795ddcfeb5e95ceebb24da60f39727c55098468ab1654851771ba03704744d",
       "company": "PT Demo Internet Nusantara",
       "picName": "Budi Santoso",
       "phone": "081234567890",
@@ -94,7 +94,7 @@
     {
       "id": "mbr_003",
       "email": "admin@ispku.ispsync.id",
-      "password": "Ispku2026!",
+      "password": "61935b7c270010b70964225ea2bf756f94eb8cdb97157cf9a4e21c425f9c4b82",
       "company": "PT. ISP Kita Nusantara",
       "picName": "Budi Santoso",
       "phone": "081288889999",
@@ -132,7 +132,7 @@
     {
       "id": "mbr_004",
       "email": "admin@gbd.ispsync.id",
-      "password": "12121212",
+      "password": "25e61ed9c4099c59916a4827158188a68507bc01863c3ca01c52badd947da6b5",
       "company": "PT. Gnet Biaro Data",
       "picName": "Amirullah",
       "phone": "",

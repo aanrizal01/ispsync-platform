@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import dns from "dns/promises";
+import { requireMember } from "../../../../../lib/member-auth";
 
 // Determine data directory (container /app/data or local process.cwd()/data)
 function getDataDir(): string {
@@ -276,6 +277,11 @@ function syncCorefile(data: any): boolean {
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = requireMember(req, ["SUPERADMIN"]);
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const data = getDnsData();
     let rawCorefile = "";
     try {
@@ -318,6 +324,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = requireMember(req, ["SUPERADMIN"]);
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const body = await req.json();
     const { action } = body;
     const data = getDnsData();
