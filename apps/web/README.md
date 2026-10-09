@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌐 ISPSYNC Web Frontend (`apps/web`)
 
-## Getting Started
+Frontend aplikasi web modern berbasis **Next.js 16 (App Router)** dan **Tailwind CSS v4** dengan arsitektur **Multi-Tenant Terisolasi** dan bahasa desain **Linear Telco Dark**.
 
-First, run the development server:
+---
+
+## 🎨 Design System: Linear Telco Dark
+
+Mengikuti standar antarmuka carrier-grade telekomunikasi yang ditetapkan pada [`GEMINI.md`](../../GEMINI.md):
+- **Deep Slate Canvas:** `bg-slate-950` (`#020617`), `via-slate-900`, `to-cyan-950/40`.
+- **Aurora Radial Glows:** Efek pencahayaan cyan/blue blur 3xl di sudut kanvas.
+- **Accents:** Electric Cyan (`#06b6d4`), Royal Blue (`#3b82f6`), Emerald Green (`#10b981`).
+- **Corporate Micro-Badges:** Label minimalis bergaris batas tajam tanpa capsule animasi gimmick (`animate-pulse`).
+
+---
+
+## 🏢 Arsitektur Multi-Tenant
+
+Frontend secara dinamis menyesuaikan branding, identitas tenant, rute API, dan hak akses berdasarkan subdomain HTTP request:
+1. **Subdomain Parsing:**
+   - 4 segmen (`ledger.ispmu.ispsync.id`): Tenant slug adalah segmen ke-2 (`ispmu`).
+   - 3 segmen (`ispmu.ispsync.id`): Tenant slug adalah segmen ke-1 (`ispmu`).
+   - Root SaaS (`ispsync.id`, `member.ispsync.id`): Mode platform pusat.
+2. **Page Title Overrides:**
+   - Halaman tenant menggunakan `title: { absolute: "..." }` untuk mencegah template parent menyisipkan duplikasi branding `| ISPSYNC`.
+3. **Pemisahan Domain Publik vs Terisolasi:**
+   - `wifi.{tenant}.ispsync.id`: Captive portal voucher (`/hotspot/buy`, `/hotspot/login`), Passpoint WiFi (`/passpoint`), dan loket pendaftaran agen mitra (`/agent/*`).
+   - `ledger.{tenant}.ispsync.id`: Backoffice admin internal ISP (`/admin/*`) dan login terenkripsi RS256.
+
+---
+
+## 🚀 Menjalankan Secara Lokal
 
 ```bash
+# Pindah ke direktori web
+cd apps/web
+
+# Install dependensi
+npm install
+
+# Jalankan server development Turbopack
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Akses portal lokal pada [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📦 Membangun untuk Produksi
 
-## Learn More
+```bash
+# Build standalone Next.js binary
+npm run build
 
-To learn more about Next.js, take a look at the following resources:
+# Menjalankan hasil build
+npm run start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📑 Struktur Halaman Utama (`app/`)
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `app/(auth)/login/`: Halaman login multi-tenant (Username atau Email).
+- `app/admin/`: Backoffice ISP (Dashboard, Tagihan/Invoices, Pelanggan, Jaringan & Router, Loket Kasir POS, Passpoint, Settings).
+- `app/billing/check/`: Portal mandiri pelanggan untuk cek & bayar tagihan via QRIS Dinamis.
+- `app/hotspot/`: Portal voucher hotspot ritel mandiri.
+- `app/passpoint/`: Installer profil Wi-Fi roaming Passpoint (Hotspot 2.0).
+- `app/agent/`: Pendaftaran mitra agen (Auto-kompres foto 97% & proteksi anti-spam bot) dan dashboard loket kasir.
+- `app/member/`: Portal Member SaaS langganan platform ISP.

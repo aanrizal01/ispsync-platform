@@ -26,10 +26,10 @@
    - Jatuh tempo tanggal 20.
 2. **Payment Gateway Integration**:
    - Integrasi Tripay / Midtrans / Xendit (QRIS Realtime, Virtual Account BCA/Mandiri/BRI, Gerai Retail).
-3. **FreeRADIUS & MikroTik CoA Auto-Isolir**:
+3. **FreeRADIUS, MikroTik & Juniper BNG CoA Auto-Isolir**:
    - Tanggal 21 pukul 00:05 WIB: Otomatis isolir (pindah grup FreeRADIUS ke `ISOLIR`).
-   - Tembak paket RFC 3576 CoA Disconnect ke MikroTik Gateway.
-   - Auto-Restore instan begitu tagihan lunas via webhook.
+   - Tembak paket RFC 3576 CoA Disconnect ke gateway MikroTik RouterOS dan Juniper MX BNG Router (UDP 3799 / Junos REST API dual-mode).
+   - Auto-Restore instan begitu tagihan lunas via webhook perbankan/QRIS.
 4. **Member Portal SaaS & Tenant Billing**:
    - Pengelolaan langganan ISP di `ispsync.id/member` (`members.json`).
 5. **Jartaplok Settlement**:

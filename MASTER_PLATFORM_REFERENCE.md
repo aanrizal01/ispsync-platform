@@ -208,4 +208,54 @@ Untuk menjamin ketersediaan paket internet di seluruh modul multi-tenant tanpa e
    * Sistem secara transparan melakukan `INSERT ... ON CONFLICT (tenant_id, code) DO UPDATE` ke tabel `ispsync.plans` menggunakan `tenant_id` pemanggil.
    * Hasilnya, seluruh tenant yang baru onboarded atau tenant lain langsung memiliki katalog paket aktif secara instan tanpa perlu menjalankan migrasi atau intervensi query SQL manual.
 
+---
+
+## 12. Akun Owner Tunggal & Autentikasi Fleksibel (Username atau Email)
+
+Menjaga integritas data pengguna dan kenyamanan otentikasi pimpinan ISP:
+1. **Aturan 1 Baris Pengguna per Owner (Single Owner Account):**
+   * Setiap tenant hanya boleh memiliki tepat **1 (satu) baris akun Owner** di tabel `users`.
+   * Dilarang menduplikasi baris pengguna hanya untuk memisahkan login username dan email.
+2. **Pencocokan Ganda di Backend (`internal/repository/postgres.go` & `sqlite.go`):**
+   * Query `GetUserByUsername` dan `ResetUserPassword` mengeksekusi:
+     `WHERE tenant_id = $1 AND (LOWER(username) = LOWER($2) OR LOWER(email) = LOWER($2))`
+   * Prioritas pencocokan diberikan pada username jika ada kemiripan string.
+
+---
+
+## 13. Wilayah Operasional & Kantor Cabang Dinamis (Zero Hardcoding)
+
+Menghapus seluruh nama cabang statis (seperti *"Kantor Cabang Payakumbuh (PYK)"*) di antarmuka HTML/JS:
+1. **Penyusunan Dropdown Real-time (`syncTenantBranchOptions`):**
+   * Mengambil daftar cabang dari staf aktif (`users.branch_code`).
+   * Membaca klaster ODP aktif milik tenant (`window.adminClustersData`).
+   * Menggabungkan opsi universal: `Semua Wilayah Operasional (ALL)` dan `Kantor Pusat (HQ)`.
+2. **Auto-Reset Filter Tidak Valid:**
+   * Apabila browser menyimpan filter cabang lokal dari tenant lain yang tidak eksis di tenant aktif, sistem otomatis mereset pilihan ke `'ALL'`.
+
+---
+
+## 14. Isolasi Hierarkis & Profil Legalitas Multi-Tenant FiberGrid
+
+Pengamanan data infrastruktur fisik kabel optik dan legalitas wholesale:
+1. **Pohon Isolasi Relasional:**
+   * Isolasi berakar dari `fttx_olt_devices.tenant_slug`.
+   * Node turunan (ODC, ODP, Rute Kabel Feeder/Distribusi, dan ONT pelanggan) diisolasi berdasarkan relasi ID OLT milik tenant terkait.
+2. **Auto-Provisioning Profil Legalitas (`fttx_jartaplok_profile`):**
+   * Saat pendaftaran tenant baru di `apps/api`, sistem otomatis meng-upsert profil legalitas (`company_name`, `brand_name`, `website`, domain kustom) ke skema `ispsync_fibergrid` sehingga profil instansi langsung tersaji dinamis.
+
+---
+
+## 15. Adapter Router Carrier-Grade: Juniper MX BNG & Mesin Protokol RFC 3576 CoA PoD
+
+Mendukung router berkapasitas besar level telco (Juniper MX Series & SRX):
+1. **Junos REST XML-RPC API (`/rpc`):**
+   * Memantau resource CPU, RAM buffer, dan uptime via `get-system-information` dan `get-route-engine-information`.
+   * Injeksi `dynamic-profiles` PPPoE, rate-limiting filter, dan firewall policer (`bandwidth-limit` & `burst-size-limit`) via `load-configuration`.
+2. **Mesin Paket Biner RFC 3576 / RFC 5176 Asli (Go Native):**
+   * Menghitung Request Authenticator MD5 standar RFC 3576 Section 2.1:
+     `MD5(Code + Identifier + Length + 16 zero octets + Attributes + Shared Secret)`.
+   * Mengirim paket Disconnect-Request (Code 40) ke port UDP `3799` router.
+3. **Dual-Mode Disconnect:**
+   * Mengombinasikan pengiriman paket RFC 3576 PoD dan eksekusi Junos REST RPC `clear-subscribers-session` untuk menjamin pemutusan sesi pelanggan pasti berhasil di segala topologi jaringan.
 

@@ -224,10 +224,13 @@ After running migrations and seed:
 
 | Document | Description |
 |---|---|
+| [**Master Platform Reference**](MASTER_PLATFORM_REFERENCE.md) | Konsolidasi arsitektur, database, 3 engine telekomunikasi, kredensial, dan model data. |
+| [**Quick Cheatsheet & Directory**](CHEATSHEET.md) | Panduan cepat akses IP host VPS, port protocol, URL tenant demo, dan perintah deploy. |
 | [**Portal Member SaaS Manual**](docs/SAAS_MANUAL.md) | Panduan lengkap pengelolaan tenant, konfigurasi 3 engine mandiri, invoice SaaS & tiket support di `/member`. |
-| [**Billing & POS Cashier Manual**](docs/BILLING_MANUAL.md) | Panduan operasional billing, siklus faktur, Loket Kasir POS (`/admin/payments?tab=pos`), dan peran Kasir. |
+| [**Billing & POS Cashier Manual**](docs/BILLING_MANUAL.md) | Panduan operasional billing, siklus faktur, Loket Kasir POS (`/admin/payments?tab=pos`), router MikroTik/Juniper, dan peran Kasir. |
 | [**Master SOP Ekosistem 3 Engine**](docs/MASTER_SOP_EKOSISTEM_3_ENGINE_ISPSYNC.md) | Dokumen master SOP telekomunikasi terpadu (FiberGrid, Nexus, Ledger). |
 | [**Universal Mobile App Manual**](docs/MANUAL_APLIKASI_MOBILE_UNIVERSAL.md) | Panduan aplikasi mobile pelanggan & teknisi aliansi bersama (React Native / Expo). |
+| [**PKS Kemitraan Agen & Loket**](docs/PKS_KEMITRAAN_AGEN_ISPSYNC.md) | Perjanjian kerjasama kemitraan penjualan voucher, passpoint, dan loket pembayaran. |
 | [**FiberGrid API Blueprint**](docs/FIBERGRID_API_BLUEPRINT.md) | Arsitektur FTTX, OLT SNMP, dan pemetaan rute kabel optik GIS. |
 | [**CMS & Landing Page Guide**](docs/CMS_AND_LANDING_PAGE_GUIDE.md) | Panduan visual landing page, branding tenant, dan konten dinamis. |
 

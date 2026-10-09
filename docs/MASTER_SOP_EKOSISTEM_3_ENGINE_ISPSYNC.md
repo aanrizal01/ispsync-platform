@@ -224,16 +224,15 @@ Sistem FTTX menjalankan daemon SNMP Poller secara otomatis setiap **5 menit** un
 ### SOP-BILL-04: Mekanisme Otomasi Isolir Penunggak (FreeRADIUS CoA)
 1. Pada tanggal **21 pukul 00:05 WIB**, sistem mendeteksi seluruh tagihan yang berstatus `UNPAID` dan telah melewati jatuh tempo.
 2. ISPSYNC Ledger otomatis mengubah grup akun di database FreeRADIUS (`radusergroup`) dari paket reguler ke grup `ISOLIR`.
-3. ISPSYNC Ledger menembakkan perintah **CoA Disconnect RFC 3576** ke router MikroTik Gateway:
-   - Sesi PPPoE lama pelanggan diputus seketika.
-   - Saat modem pelanggan dial-up ulang, MikroTik menetapkan IP pelanggan ke dalam address-list `ISOLIR`.
-   - Firewall MikroTik membatasi kecepatan ke **128 Kbps** dan mengarahkan (*redirect*) seluruh lalu lintas HTTP/HTTPS ke halaman informasi pembayaran: `http://isolir.{tenant}.ispsync.id`.
+3. ISPSYNC Ledger menembakkan perintah **CoA Disconnect RFC 3576** ke router gateway aktif pelanggan:
+   - **Router MikroTik**: Menembak PoD / CoA disconnect ke port 3799. Saat modem dial-up ulang, MikroTik menetapkan IP pelanggan ke dalam address-list `ISOLIR`, membatasi kecepatan ke **128 Kbps**, dan mengarahkan (*redirect*) seluruh lalu lintas HTTP/HTTPS ke halaman informasi pembayaran: `http://isolir.{tenant}.ispsync.id`.
+   - **Router Juniper MX BNG**: Mengirim paket RFC 3576 Disconnect-Request (Code 40) ke UDP 3799 disertai fallback RPC Junos REST `clear-subscribers-session` (Dual-Mode Disconnect). Router menerapkan dynamic policer `COS_ISOLIR`.
 
 ### SOP-BILL-05: Mekanisme Pemulihan Otomatis Pasca Pelunasan (Auto-Restore)
 1. Begitu pelanggan yang terisolir melakukan pembayaran (baik lewat QRIS, VA, maupun konfirmasi kasir):
 2. Sistem detik itu juga memulihkan grup di FreeRADIUS kembali ke paket semula (misal `Paket Epic (30M)`).
-3. Sistem otomatis menembakkan paket CoA Disconnect ke MikroTik.
-4. Modem pelanggan terhubung kembali dengan kecepatan penuh dan keluar dari address-list isolir secara **100% otomatis tanpa campur tangan teknisi NOC**.
+3. Sistem otomatis menembakkan paket CoA Disconnect ke router gateway (MikroTik / Juniper MX BNG).
+4. Modem pelanggan terhubung kembali dengan kecepatan penuh dan keluar dari pembatasan isolir secara **100% otomatis tanpa campur tangan teknisi NOC**.
 
 ### SOP-BILL-06: Rekonsiliasi Keuangan, Settlement Bank & Laporan Pajak
 1. Setiap akhir bulan (tanggal 28-30), Manajer Keuangan melakukan *settlement balance* dari payment gateway Tripay ke Rekening Giro Perusahaan.

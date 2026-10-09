@@ -4,6 +4,32 @@ Semua perubahan, penambahan fitur, dan perbaikan bug pada platform ISPSYNC / GoG
 
 ---
 
+## [2026-10-09] - Phase 11: Juniper BNG Adapter (Junos REST API / RFC 3576 CoA PoD)
+
+### Ditambahkan & Ditingkatkan
+1. **Mesin Protokol RFC 3576 / RFC 5176 RADIUS Dynamic Authorization (`apps/api/internal/radius/rfc3576.go`, `apps/api/internal/network/rfc3576.go`):**
+   - Implementasi native Go binary packet generator untuk Disconnect-Request (Code 40) dan Dynamic Authorization.
+   - Perhitungan MD5 Request Authenticator standar RFC 3576 Section 2.1: `MD5(Code + Identifier + Length + 16 zero octets + Attributes + Shared Secret)`.
+   - Penyusunan atribut standar `User-Name` (1), `Acct-Session-Id` (44), `Framed-IP-Address` (8), dan `Event-Timestamp` (55).
+   - Pengiriman paket biner UDP langsung ke port `3799` router gateway/BNG dengan timeout dan error handling ACK/NAK.
+
+2. **Juniper Junos BNG Adapter (`apps/api/internal/network/juniper_adapter.go`):**
+   - Mendukung router Juniper MX Series (MX104, MX204, MX480, MX960) dan SRX Services Gateway via Junos REST XML-RPC API (`/rpc`) dan RFC 3576 CoA.
+   - `Ping`: Probe konektivitas ganda TCP socket port API dan HTTP RPC `get-system-information`.
+   - `GetSystemInfo`: Parser data JSON Junos OS (`hardware-model`, `os-version`, telemetri `cpu-idle`, buffer memori, dan uptime dari Routing Engine).
+   - `SyncPPPoEProfile`: Injeksi dynamic-profiles subscriber PPPoE dan hierarchical firewall policers.
+   - `ProvisionPPPoEUser` & `DeprovisionPPPoEUser`: Konfigurasi basis data subscriber Junos access profile.
+   - `SetSimpleQueue` & `RemoveSimpleQueue`: Manajemen firewall filter policer (`bandwidth-limit` & `burst-size-limit`).
+   - `AddWalledGarden`: Pendaftaran term filter `ALLOW_<dst_host>` ke firewall filter `WALLED_GARDEN_FILTER`.
+   - `DisconnectActiveSession` (Dual-Mode Disconnect): Eksekusi pemutusan sesi kombinasi pengiriman paket RFC 3576 PoD UDP 3799 dan RPC Junos `clear-subscribers-session`.
+   - Ekstraksi `radius_secret` dan `coa_port` dinamis dari metadata perangkat (`device.Metadata`) di `network.Service.GetAdapter`.
+
+3. **Integrasi CoA Disconnect di Layanan RADIUS (`apps/api/internal/radius/service.go`):**
+   - `DisconnectSession`: Otomatis mencari NAS Shared Secret di database (`GetNASByIP`) dan memicu paket RFC 3576 PoD asli ke UDP 3799.
+   - Unit tests komprehensif pada `apps/api/internal/network/juniper_adapter_test.go` dan `apps/api/internal/radius/rfc3576_test.go` (100% PASS).
+
+---
+
 ## [2026-10-09] - Pembaruan Isolasi Multi-Tenant, Unifikasi Akun Owner & Wilayah Operasional Dinamis
 
 ### Ditambahkan & Ditingkatkan
