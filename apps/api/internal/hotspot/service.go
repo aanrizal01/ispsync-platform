@@ -28,7 +28,7 @@ type WhatsAppSender interface {
 }
 
 type SecuritySettingsGetter interface {
-	GetSecuritySettings(ctx context.Context) (*settings.SecuritySettings, error)
+	GetSecuritySettings(ctx context.Context, tenantSlug ...string) (*settings.SecuritySettings, error)
 }
 
 type pendingOrder struct {

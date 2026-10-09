@@ -22,49 +22,84 @@ func NewService(repo *Repository, logger *slog.Logger) *Service {
 	return &Service{repo: repo, logger: logger}
 }
 
-func (s *Service) GetInvoiceTemplate(ctx context.Context) (*InvoiceTemplateSettings, error) {
-	return s.repo.GetInvoiceTemplate(ctx)
+// ─────────────────────────────────────────────────────────────────────────────
+// Invoice Template
+// ─────────────────────────────────────────────────────────────────────────────
+
+func (s *Service) GetInvoiceTemplate(ctx context.Context, tenantSlug ...string) (*InvoiceTemplateSettings, error) {
+	return s.repo.GetInvoiceTemplate(ctx, tenantSlug...)
 }
 
-func (s *Service) UpdateInvoiceTemplate(ctx context.Context, input InvoiceTemplateSettings) (*InvoiceTemplateSettings, error) {
+func (s *Service) UpdateInvoiceTemplate(ctx context.Context, tenantSlug string, input InvoiceTemplateSettings) (*InvoiceTemplateSettings, error) {
+	slug := strings.ToLower(strings.TrimSpace(tenantSlug))
+	if slug == "" {
+		slug = resolveTenantSlugFromContext(ctx)
+	}
+
 	if input.BrandName == "" {
-		input.BrandName = "ISPSYNC"
+		if slug != "" && slug != "dev" {
+			input.BrandName = strings.ToUpper(slug)
+		} else {
+			input.BrandName = "ISPSYNC"
+		}
 	}
 	if input.CompanyName == "" {
-		input.CompanyName = "PT Inovasi Sistem Pintar"
+		if slug != "" && slug != "dev" {
+			input.CompanyName = "PT " + strings.ToUpper(slug) + " Data Nusantara"
+		} else {
+			input.CompanyName = "PT Inovasi Sistem Pintar"
+		}
 	}
 	if input.AccentColor == "" {
-		input.AccentColor = "#2563eb"
+		input.AccentColor = "#06b6d4"
 	}
 
-	if err := s.repo.SaveInvoiceTemplate(ctx, &input); err != nil {
+	if err := s.repo.SaveInvoiceTemplate(ctx, slug, &input); err != nil {
 		return nil, err
 	}
-	return s.repo.GetInvoiceTemplate(ctx)
+	return s.repo.GetInvoiceTemplate(ctx, slug)
 }
 
-func (s *Service) GetBillingAddons(ctx context.Context) (*BillingAddonSettings, error) {
-	return s.repo.GetBillingAddonSettings(ctx)
+// ─────────────────────────────────────────────────────────────────────────────
+// Billing Addons
+// ─────────────────────────────────────────────────────────────────────────────
+
+func (s *Service) GetBillingAddons(ctx context.Context, tenantSlug ...string) (*BillingAddonSettings, error) {
+	return s.repo.GetBillingAddonSettings(ctx, tenantSlug...)
 }
 
-func (s *Service) UpdateBillingAddons(ctx context.Context, input BillingAddonSettings) (*BillingAddonSettings, error) {
+func (s *Service) UpdateBillingAddons(ctx context.Context, tenantSlug string, input BillingAddonSettings) (*BillingAddonSettings, error) {
+	slug := strings.ToLower(strings.TrimSpace(tenantSlug))
+	if slug == "" {
+		slug = resolveTenantSlugFromContext(ctx)
+	}
+
 	if input.PublicIPDescription == "" {
 		input.PublicIPDescription = "Sewa Add-on IP Publik Statik"
 	}
 	if input.PublicIPMonthlyPrice < 0 {
 		input.PublicIPMonthlyPrice = 0
 	}
-	if err := s.repo.SaveBillingAddonSettings(ctx, &input); err != nil {
+	if err := s.repo.SaveBillingAddonSettings(ctx, slug, &input); err != nil {
 		return nil, err
 	}
-	return s.repo.GetBillingAddonSettings(ctx)
+	return s.repo.GetBillingAddonSettings(ctx, slug)
 }
 
-func (s *Service) GetSecuritySettings(ctx context.Context) (*SecuritySettings, error) {
-	return s.repo.GetSecuritySettings(ctx)
+// ─────────────────────────────────────────────────────────────────────────────
+// Security Settings
+// ─────────────────────────────────────────────────────────────────────────────
+
+func (s *Service) GetSecuritySettings(ctx context.Context, tenantSlug ...string) (*SecuritySettings, error) {
+	return s.repo.GetSecuritySettings(ctx, tenantSlug...)
 }
 
-func (s *Service) UpdateSecuritySettings(ctx context.Context, input SecuritySettings) (*SecuritySettings, error) {
+func (s *Service) UpdateSecuritySettings(ctx context.Context, tenantSlug string, input SecuritySettings) (*SecuritySettings, error) {
+	slug := strings.ToLower(strings.TrimSpace(tenantSlug))
+	if slug == "" {
+		slug = resolveTenantSlugFromContext(ctx)
+	}
+
 	if input.JWTExpiryHours <= 0 {
 		input.JWTExpiryHours = 8
 	}
@@ -78,17 +113,26 @@ func (s *Service) UpdateSecuritySettings(ctx context.Context, input SecuritySett
 		input.GoogleMapsAPIKey = DefaultSecuritySettings().GoogleMapsAPIKey
 	}
 
-	if err := s.repo.SaveSecuritySettings(ctx, &input); err != nil {
+	if err := s.repo.SaveSecuritySettings(ctx, slug, &input); err != nil {
 		return nil, err
 	}
-	return s.repo.GetSecuritySettings(ctx)
+	return s.repo.GetSecuritySettings(ctx, slug)
 }
 
-func (s *Service) GetPaymentGatewaySettings(ctx context.Context) (*PaymentGatewaySettings, error) {
-	return s.repo.GetPaymentGatewaySettings(ctx)
+// ─────────────────────────────────────────────────────────────────────────────
+// Payment Gateway Settings
+// ─────────────────────────────────────────────────────────────────────────────
+
+func (s *Service) GetPaymentGatewaySettings(ctx context.Context, tenantSlug ...string) (*PaymentGatewaySettings, error) {
+	return s.repo.GetPaymentGatewaySettings(ctx, tenantSlug...)
 }
 
-func (s *Service) UpdatePaymentGatewaySettings(ctx context.Context, input PaymentGatewaySettings) (*PaymentGatewaySettings, error) {
+func (s *Service) UpdatePaymentGatewaySettings(ctx context.Context, tenantSlug string, input PaymentGatewaySettings) (*PaymentGatewaySettings, error) {
+	slug := strings.ToLower(strings.TrimSpace(tenantSlug))
+	if slug == "" {
+		slug = resolveTenantSlugFromContext(ctx)
+	}
+
 	if input.PPPoEProvider == "" {
 		input.PPPoEProvider = "midtrans"
 	}
@@ -105,44 +149,74 @@ func (s *Service) UpdatePaymentGatewaySettings(ctx context.Context, input Paymen
 		input.DuitkuEnv = "sandbox"
 	}
 
-	if err := s.repo.SavePaymentGatewaySettings(ctx, &input); err != nil {
+	if err := s.repo.SavePaymentGatewaySettings(ctx, slug, &input); err != nil {
 		return nil, err
 	}
-	return s.repo.GetPaymentGatewaySettings(ctx)
+	return s.repo.GetPaymentGatewaySettings(ctx, slug)
 }
 
-func (s *Service) GetDomainSettings(ctx context.Context) (*DomainSettings, error) {
-	return s.repo.GetDomainSettings(ctx)
+// ─────────────────────────────────────────────────────────────────────────────
+// Domain Settings
+// ─────────────────────────────────────────────────────────────────────────────
+
+func (s *Service) GetDomainSettings(ctx context.Context, tenantSlug ...string) (*DomainSettings, error) {
+	return s.repo.GetDomainSettings(ctx, tenantSlug...)
 }
 
-func (s *Service) UpdateDomainSettings(ctx context.Context, input DomainSettings) (*DomainSettings, error) {
+func (s *Service) UpdateDomainSettings(ctx context.Context, tenantSlug string, input DomainSettings) (*DomainSettings, error) {
+	slug := strings.ToLower(strings.TrimSpace(tenantSlug))
+	if slug == "" {
+		slug = resolveTenantSlugFromContext(ctx)
+	}
+
 	if input.PrimaryDomain == "" {
 		input.PrimaryDomain = "ispsync.id"
 	}
 	if input.LedgerDomain == "" {
-		input.LedgerDomain = "ledger.dev.ispsync.id"
+		if slug != "" && slug != "dev" {
+			input.LedgerDomain = "ledger." + slug + ".ispsync.id"
+		} else {
+			input.LedgerDomain = "ledger.dev.ispsync.id"
+		}
 	}
 	if input.WifiDomain == "" {
-		input.WifiDomain = "wifi.dev.ispsync.id"
+		if slug != "" && slug != "dev" {
+			input.WifiDomain = "wifi." + slug + ".ispsync.id"
+		} else {
+			input.WifiDomain = "wifi.dev.ispsync.id"
+		}
 	}
 	if input.WifiBrandName == "" {
-		input.WifiBrandName = "@gowifi"
+		if slug != "" && slug != "dev" {
+			input.WifiBrandName = "@" + slug
+		} else {
+			input.WifiBrandName = "@gowifi"
+		}
 	}
 	if input.ServerIP == "" {
 		input.ServerIP = "103.179.65.73"
 	}
 
-	if err := s.repo.SaveDomainSettings(ctx, &input); err != nil {
+	if err := s.repo.SaveDomainSettings(ctx, slug, &input); err != nil {
 		return nil, err
 	}
-	return s.repo.GetDomainSettings(ctx)
+	return s.repo.GetDomainSettings(ctx, slug)
 }
 
-func (s *Service) GetNotificationSettings(ctx context.Context) (*NotificationSettings, error) {
-	return s.repo.GetNotificationSettings(ctx)
+// ─────────────────────────────────────────────────────────────────────────────
+// Notification Settings & WhatsApp Test
+// ─────────────────────────────────────────────────────────────────────────────
+
+func (s *Service) GetNotificationSettings(ctx context.Context, tenantSlug ...string) (*NotificationSettings, error) {
+	return s.repo.GetNotificationSettings(ctx, tenantSlug...)
 }
 
-func (s *Service) UpdateNotificationSettings(ctx context.Context, input NotificationSettings) (*NotificationSettings, error) {
+func (s *Service) UpdateNotificationSettings(ctx context.Context, tenantSlug string, input NotificationSettings) (*NotificationSettings, error) {
+	slug := strings.ToLower(strings.TrimSpace(tenantSlug))
+	if slug == "" {
+		slug = resolveTenantSlugFromContext(ctx)
+	}
+
 	if input.WAProvider == "" {
 		input.WAProvider = "FONNTE"
 	}
@@ -153,19 +227,19 @@ func (s *Service) UpdateNotificationSettings(ctx context.Context, input Notifica
 		input.SMTPPort = 587
 	}
 
-	if err := s.repo.SaveNotificationSettings(ctx, &input); err != nil {
+	if err := s.repo.SaveNotificationSettings(ctx, slug, &input); err != nil {
 		return nil, err
 	}
-	return s.repo.GetNotificationSettings(ctx)
+	return s.repo.GetNotificationSettings(ctx, slug)
 }
 
-func (s *Service) TestWhatsApp(ctx context.Context, input TestWhatsAppRequest) error {
+func (s *Service) TestWhatsApp(ctx context.Context, tenantSlug string, input TestWhatsAppRequest) error {
 	recipient := strings.TrimSpace(input.Recipient)
 	if recipient == "" {
 		return apperrors.BadRequest("Nomor WhatsApp tujuan uji coba wajib diisi")
 	}
 
-	saved, err := s.repo.GetNotificationSettings(ctx)
+	saved, err := s.repo.GetNotificationSettings(ctx, tenantSlug)
 	if err != nil && saved == nil {
 		def := DefaultNotificationSettings()
 		saved = &def
@@ -198,7 +272,11 @@ func (s *Service) TestWhatsApp(ctx context.Context, input TestWhatsAppRequest) e
 	messageText := input.Message
 	if strings.TrimSpace(messageText) == "" {
 		nowStr := time.Now().Format("02-01-2006 15:04:05")
-		messageText = fmt.Sprintf("[ISPSYNC Gateway Test]\n\nKonfigurasi WhatsApp Gateway berhasil terhubung ke server ISPSYNC.\n\nProvider: %s\nTarget: %s\nWaktu Uji: %s WIB\nStatus: Terverifikasi Aktif", provider, recipient, nowStr)
+		brand := "ISPSYNC"
+		if tenantSlug != "" && tenantSlug != "dev" {
+			brand = strings.ToUpper(tenantSlug)
+		}
+		messageText = fmt.Sprintf("[%s Gateway Test]\n\nKonfigurasi WhatsApp Gateway berhasil terhubung ke server %s.\n\nProvider: %s\nTarget: %s\nWaktu Uji: %s WIB\nStatus: Terverifikasi Aktif", brand, brand, provider, recipient, nowStr)
 	}
 
 	switch provider {
@@ -221,6 +299,10 @@ func (s *Service) TestWhatsApp(ctx context.Context, input TestWhatsAppRequest) e
 	s.logger.Info("whatsapp test message sent successfully", "provider", provider, "recipient", recipient)
 	return nil
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FiberGrid Settings & Connection Test
+// ─────────────────────────────────────────────────────────────────────────────
 
 func (s *Service) GetFiberGridSettings(ctx context.Context, tenantSlug string) (*FiberGridIntegrationSettings, error) {
 	return s.repo.GetFiberGridSettings(ctx, tenantSlug)
@@ -296,7 +378,3 @@ func (s *Service) TestFiberGridConnection(ctx context.Context, req TestFiberGrid
 		RoutesCount: routesCount,
 	}, nil
 }
-
-
-
-

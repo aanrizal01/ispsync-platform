@@ -30,6 +30,23 @@ export interface InvoiceTemplateSettings {
   updated_at?: string;
 }
 
+export function getTenantDefaultLogo(): string {
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname.toLowerCase();
+    const parts = host.split(".");
+    let slug = "";
+    if (parts.length >= 4) {
+      slug = parts[1];
+    } else if (parts.length === 3 && parts[1] === "ispsync") {
+      slug = parts[0];
+    }
+    if (slug && slug !== "dev") {
+      return `/web/${slug}_logo.svg`;
+    }
+  }
+  return "/web/dev_logo.svg";
+}
+
 export const defaultInvoiceTemplateSettings: InvoiceTemplateSettings = {
   brand_name: "ISPSYNC",
   company_name: "PT Inovasi Sistem Pintar",
@@ -39,7 +56,7 @@ export const defaultInvoiceTemplateSettings: InvoiceTemplateSettings = {
   phone: "+62 811-660-1234",
   email: "info@ispsync.id",
   website: "https://ispsync.id",
-  logo_url: "/web/dev_logo.svg",
+  logo_url: "/logo.png",
   bank_name: "Bank Central Asia (BCA)",
   bank_account_number: "8001234567",
   bank_account_holder: "PT Inovasi Sistem Pintar",

@@ -305,21 +305,23 @@ export default function AdminSettingsPage() {
               !prev.company_name ||
               prev.company_name === "PT Inovasi Sistem Pintar" ||
               prev.company_name === "PT Giga Nusantara Digital" ||
-              prev.company_name === "PT CITRA MEDIA NUSANTARA";
+              prev.company_name === "PT CITRA MEDIA NUSANTARA" ||
+              prev.company_name === "ISPSYNC Staging Lab" ||
+              (prev.company_name.startsWith("PT. ") && prev.company_name.endsWith(" Data Nusantara"));
 
             if (isDefault) {
               return {
                 ...prev,
-                brand_name: data.brandName,
-                company_name: data.companyName,
-                tax_id: data.npwp,
-                phone: data.phone,
-                email: data.emailSupport,
-                website: data.website,
-                address: data.address,
+                brand_name: data.brandName || prev.brand_name,
+                company_name: data.companyName || prev.company_name,
+                tax_id: data.npwp || prev.tax_id,
+                phone: data.phone || prev.phone,
+                email: data.emailSupport || prev.email,
+                website: data.website || prev.website,
+                address: data.address || prev.address,
                 logo_url: data.logoUrl || prev.logo_url,
-                footer_notes: data.invoiceFooterNote,
-                bank_account_holder: data.companyName,
+                footer_notes: data.invoiceFooterNote || prev.footer_notes,
+                bank_account_holder: data.companyName || prev.bank_account_holder,
               };
             }
             return prev;
@@ -339,11 +341,28 @@ export default function AdminSettingsPage() {
       .getInvoiceTemplate()
       .then((data) => {
         if (data && data.brand_name) {
-          setInvoiceTemplate({
-            ...defaultInvoiceTemplateSettings,
-            ...data,
-            enable_qr_verification: data.enable_qr_verification !== false,
-          });
+          let currentSlug = "";
+          if (typeof window !== "undefined") {
+            const h = window.location.hostname.toLowerCase().split(".");
+            if (h.length >= 4) currentSlug = h[1];
+            else if (h.length === 3 && h[1] === "ispsync") currentSlug = h[0];
+          }
+          const isDevData =
+            data.brand_name === "ISPSYNC DEV" ||
+            data.company_name === "ISPSYNC Staging Lab" ||
+            data.email === "admin@dev.ispsync.id";
+
+          if (!isDevData || !currentSlug || currentSlug === "dev") {
+            setInvoiceTemplate({
+              ...defaultInvoiceTemplateSettings,
+              logo_url:
+                currentSlug && currentSlug !== "dev"
+                  ? `/web/${currentSlug}_logo.svg`
+                  : defaultInvoiceTemplateSettings.logo_url,
+              ...data,
+              enable_qr_verification: data.enable_qr_verification !== false,
+            });
+          }
         }
       })
       .catch((err) => {

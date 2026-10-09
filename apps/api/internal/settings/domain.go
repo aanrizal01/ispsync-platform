@@ -1,7 +1,9 @@
 package settings
 
 import (
+	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -64,6 +66,59 @@ func DefaultInvoiceTemplateSettings() InvoiceTemplateSettings {
         EnableQRVerification: true,
         Layout:               "modern",
     }
+}
+
+func DefaultInvoiceTemplateSettingsForTenant(tenantSlug string) InvoiceTemplateSettings {
+	slug := strings.ToLower(strings.TrimSpace(tenantSlug))
+	if slug == "" || slug == "dev" {
+		return DefaultInvoiceTemplateSettings()
+	}
+
+	upper := strings.ToUpper(slug)
+	legalName := "PT " + upper + " Data Nusantara"
+	switch slug {
+	case "ispmu":
+		legalName = "PT. Mitra Usaha Data"
+	case "ispku":
+		legalName = "PT. ISP Kita Nusantara"
+	case "gogiga":
+		legalName = "PT. GOGIGA MEDIA TEKNOLOGI"
+	}
+
+	brandName := upper
+	email := "admin@" + slug + ".ispsync.id"
+	website := "https://" + slug + ".ispsync.id"
+	logoURL := "/web/" + slug + "_logo.svg"
+	phone := "+62 811-660-1234"
+
+	return InvoiceTemplateSettings{
+		BrandName:            brandName,
+		CompanyName:          legalName,
+		LicenseNo:            "Izin Penyelenggaraan Jasa Telekomunikasi & Jaringan Internet (ISP)",
+		TaxID:                "01.234.567.8-901.000",
+		Address:              "Gedung Operasional " + upper + ", Jl. Protokol Digital No. 8",
+		Phone:                phone,
+		Email:                email,
+		Website:              website,
+		LogoURL:              logoURL,
+		BankName:             "Bank Central Asia (BCA)",
+		BankAccountNumber:    "8001234567",
+		BankAccountHolder:    legalName,
+		BankAccounts: []BankAccountItem{
+			{
+				BankName:          "Bank Central Asia (BCA)",
+				BankAccountNumber: "8001234567",
+				BankAccountHolder: legalName,
+				Branch:            "KCU Operasional",
+			},
+		},
+		FooterNotes:          fmt.Sprintf("Faktur ini diterbitkan secara elektronik dan sah tanpa memerlukan stempel basah.\nMohon melakukan pembayaran sebelum tanggal jatuh tempo guna menghindari isolir otomatis.\nHubungi Helpdesk Layanan %s jika membutuhkan bantuan pembayaran.", brandName),
+		AccentColor:          "#06b6d4",
+		HeaderImageURL:       "",
+		LetterheadHTML:       "",
+		EnableQRVerification: true,
+		Layout:               "modern",
+	}
 }
 
 type BillingAddonSettings struct {
@@ -194,6 +249,22 @@ func DefaultDomainSettings() DomainSettings {
         FibergridDomain: "fibergrid.dev.ispsync.id",
         ServerIP:        "103.179.65.73",
     }
+}
+
+func DefaultDomainSettingsForTenant(tenantSlug string) DomainSettings {
+	slug := strings.ToLower(strings.TrimSpace(tenantSlug))
+	if slug == "" || slug == "dev" {
+		return DefaultDomainSettings()
+	}
+	return DomainSettings{
+		PrimaryDomain:   "ispsync.id",
+		LedgerDomain:    "ledger." + slug + ".ispsync.id",
+		WifiDomain:      "wifi." + slug + ".ispsync.id",
+		WifiBrandName:   "@" + slug,
+		PortalDomain:    "portal." + slug + ".ispsync.id",
+		FibergridDomain: "fibergrid." + slug + ".ispsync.id",
+		ServerIP:        "103.179.65.73",
+	}
 }
 
 type NotificationSettings struct {

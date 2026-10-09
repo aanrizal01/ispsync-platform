@@ -55,8 +55,22 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 	})
 }
 
+func extractTenantSlug(r *http.Request) string {
+	if q := r.URL.Query().Get("tenant"); q != "" {
+		return strings.ToLower(strings.TrimSpace(q))
+	}
+	if q := r.URL.Query().Get("tenant_slug"); q != "" {
+		return strings.ToLower(strings.TrimSpace(q))
+	}
+	if q := r.URL.Query().Get("slug"); q != "" {
+		return strings.ToLower(strings.TrimSpace(q))
+	}
+	return auth.ExtractTenantSlug(r)
+}
+
 func (h *Handler) GetInvoiceTemplate(w http.ResponseWriter, r *http.Request) {
-	settings, err := h.service.GetInvoiceTemplate(r.Context())
+	tenantSlug := extractTenantSlug(r)
+	settings, err := h.service.GetInvoiceTemplate(r.Context(), tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -71,7 +85,8 @@ func (h *Handler) UpdateInvoiceTemplate(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	updated, err := h.service.UpdateInvoiceTemplate(r.Context(), req)
+	tenantSlug := extractTenantSlug(r)
+	updated, err := h.service.UpdateInvoiceTemplate(r.Context(), tenantSlug, req)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -85,7 +100,8 @@ func (h *Handler) UpdateInvoiceTemplate(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *Handler) GetBillingAddons(w http.ResponseWriter, r *http.Request) {
-	settings, err := h.service.GetBillingAddons(r.Context())
+	tenantSlug := extractTenantSlug(r)
+	settings, err := h.service.GetBillingAddons(r.Context(), tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -100,7 +116,8 @@ func (h *Handler) UpdateBillingAddons(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updated, err := h.service.UpdateBillingAddons(r.Context(), req)
+	tenantSlug := extractTenantSlug(r)
+	updated, err := h.service.UpdateBillingAddons(r.Context(), tenantSlug, req)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -114,7 +131,8 @@ func (h *Handler) UpdateBillingAddons(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetSecuritySettings(w http.ResponseWriter, r *http.Request) {
-	settings, err := h.service.GetSecuritySettings(r.Context())
+	tenantSlug := extractTenantSlug(r)
+	settings, err := h.service.GetSecuritySettings(r.Context(), tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -129,7 +147,8 @@ func (h *Handler) UpdateSecuritySettings(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	updated, err := h.service.UpdateSecuritySettings(r.Context(), req)
+	tenantSlug := extractTenantSlug(r)
+	updated, err := h.service.UpdateSecuritySettings(r.Context(), tenantSlug, req)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -151,7 +170,8 @@ func (h *Handler) GetClientIP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetWalledGarden(w http.ResponseWriter, r *http.Request) {
-	sec, err := h.service.GetSecuritySettings(r.Context())
+	tenantSlug := extractTenantSlug(r)
+	sec, err := h.service.GetSecuritySettings(r.Context(), tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -173,7 +193,8 @@ func (h *Handler) GetWalledGarden(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetMapsConfig(w http.ResponseWriter, r *http.Request) {
-	sec, err := h.service.GetSecuritySettings(r.Context())
+	tenantSlug := extractTenantSlug(r)
+	sec, err := h.service.GetSecuritySettings(r.Context(), tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -189,7 +210,8 @@ func (h *Handler) GetMapsConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetPaymentGatewaySettings(w http.ResponseWriter, r *http.Request) {
-	s, err := h.service.GetPaymentGatewaySettings(r.Context())
+	tenantSlug := extractTenantSlug(r)
+	s, err := h.service.GetPaymentGatewaySettings(r.Context(), tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -204,7 +226,8 @@ func (h *Handler) UpdatePaymentGatewaySettings(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	updated, err := h.service.UpdatePaymentGatewaySettings(r.Context(), req)
+	tenantSlug := extractTenantSlug(r)
+	updated, err := h.service.UpdatePaymentGatewaySettings(r.Context(), tenantSlug, req)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -218,7 +241,8 @@ func (h *Handler) UpdatePaymentGatewaySettings(w http.ResponseWriter, r *http.Re
 }
 
 func (h *Handler) GetDomainSettings(w http.ResponseWriter, r *http.Request) {
-	s, err := h.service.GetDomainSettings(r.Context())
+	tenantSlug := extractTenantSlug(r)
+	s, err := h.service.GetDomainSettings(r.Context(), tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -233,7 +257,8 @@ func (h *Handler) UpdateDomainSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updated, err := h.service.UpdateDomainSettings(r.Context(), req)
+	tenantSlug := extractTenantSlug(r)
+	updated, err := h.service.UpdateDomainSettings(r.Context(), tenantSlug, req)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -247,7 +272,8 @@ func (h *Handler) UpdateDomainSettings(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetNotificationSettings(w http.ResponseWriter, r *http.Request) {
-	s, err := h.service.GetNotificationSettings(r.Context())
+	tenantSlug := extractTenantSlug(r)
+	s, err := h.service.GetNotificationSettings(r.Context(), tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -262,7 +288,8 @@ func (h *Handler) UpdateNotificationSettings(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	updated, err := h.service.UpdateNotificationSettings(r.Context(), req)
+	tenantSlug := extractTenantSlug(r)
+	updated, err := h.service.UpdateNotificationSettings(r.Context(), tenantSlug, req)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -282,7 +309,8 @@ func (h *Handler) TestWhatsApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.TestWhatsApp(r.Context(), req); err != nil {
+	tenantSlug := extractTenantSlug(r)
+	if err := h.service.TestWhatsApp(r.Context(), tenantSlug, req); err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
 	}
@@ -291,10 +319,6 @@ func (h *Handler) TestWhatsApp(w http.ResponseWriter, r *http.Request) {
 		"success": true,
 		"message": "Pesan uji coba WhatsApp berhasil dikirim ke nomor tujuan",
 	})
-}
-
-func extractTenantSlug(r *http.Request) string {
-	return auth.ExtractTenantSlug(r)
 }
 
 func (h *Handler) GetFiberGridSettings(w http.ResponseWriter, r *http.Request) {
@@ -341,7 +365,3 @@ func (h *Handler) TestFiberGrid(w http.ResponseWriter, r *http.Request) {
 	}
 	middleware.JSON(w, http.StatusOK, res)
 }
-
-
-
-
