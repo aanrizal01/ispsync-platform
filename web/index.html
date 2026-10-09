@@ -720,7 +720,7 @@
             <span class="text-[10px] font-mono font-bold text-slate-500 uppercase hidden sm:inline">Wilayah:</span>
             <select id="global-branch-selector" onchange="onGlobalBranchChange(this.value)" class="bg-transparent text-xs font-mono font-bold text-slate-900 outline-none cursor-pointer pr-1">
               <option value="ALL">Semua Wilayah Operasional</option>
-              <option value="PYK">Kantor Cabang Payakumbuh (PYK)</option>
+              <option value="HQ">Kantor Pusat (HQ)</option>
             </select>
           </div>
         </div>
@@ -3187,7 +3187,7 @@
             </div>
             <select id="admin-sidebar-branch-selector" onchange="onGlobalBranchChange(this.value)" class="w-full bg-white border border-slate-300 text-slate-900 text-xs font-mono font-bold rounded-md px-2 py-1.5 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 cursor-pointer shadow-2xs">
               <option value="ALL">Semua Wilayah Operasional</option>
-              <option value="PYK">Kantor Cabang Payakumbuh (PYK)</option>
+              <option value="HQ">Kantor Pusat (HQ)</option>
             </select>
           </div>
 
@@ -3302,7 +3302,7 @@
               <span class="text-[10px] font-mono font-bold text-slate-500 uppercase hidden sm:inline">Cabang:</span>
               <select id="admin-table-branch-selector" onchange="onGlobalBranchChange(this.value)" class="bg-transparent text-xs font-mono font-bold text-slate-900 outline-none cursor-pointer">
                 <option value="ALL">Semua Wilayah</option>
-                <option value="PYK">Kantor Cabang Payakumbuh (PYK)</option>
+                <option value="HQ">Kantor Pusat (HQ)</option>
               </select>
             </div>
             <button onclick="loadAdminRegistrations()" class="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 font-mono text-xs font-semibold rounded-md border border-slate-300 flex items-center gap-1.5 transition shadow-2xs cursor-pointer">
@@ -4418,7 +4418,7 @@
                 <i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-500"></i>
                 <select id="staff-table-branch-filter" onchange="onGlobalBranchChange(this.value)" class="text-xs font-mono font-bold bg-transparent text-slate-800 outline-none cursor-pointer">
                   <option value="ALL">Semua Wilayah Penugasan</option>
-                  <option value="PYK">Kantor Cabang Payakumbuh (PYK)</option>
+                  <option value="HQ">Kantor Pusat (HQ)</option>
                 </select>
               </div>
               <button onclick="loadSuperUserStaff()" class="text-xs font-mono text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md border border-slate-200 hover:bg-slate-50 flex items-center gap-1.5 transition shadow-xs">
@@ -7653,7 +7653,7 @@
           <label class="block text-xs font-mono font-bold uppercase tracking-wider text-slate-700 mb-1.5">Wilayah / Kantor Cabang Penempatan</label>
           <select id="add-staff-branch" class="w-full bg-white border border-slate-300 text-slate-900 rounded-md px-4 py-2 text-sm font-mono outline-none focus:border-slate-900 transition">
             <option value="ALL">Semua Cabang (Nasional)</option>
-            <option value="PYK">Kantor Cabang Payakumbuh (PYK)</option>
+            <option value="HQ">Kantor Pusat (Headquarters)</option>
           </select>
         </div>
 
@@ -20178,6 +20178,7 @@
 
         if (json.success && json.data) {
           window.adminClustersData = json.data || [];
+          if (typeof syncTenantBranchOptions === 'function') syncTenantBranchOptions();
           const badge = document.getElementById('admin-cluster-count-badge');
           if (badge) {
             badge.textContent = `${window.adminClustersData.length} Klaster`;
@@ -21971,6 +21972,8 @@
         const json = await res.json();
         if (json.success) {
           superUserStaffList = Array.isArray(json.data) ? json.data : (json.data && Array.isArray(json.data.users) ? json.data.users : []);
+          window.superUserStaffList = superUserStaffList;
+          if (typeof syncTenantBranchOptions === 'function') syncTenantBranchOptions();
 
           // Ambil wilayah aktif saat ini dari selector
           const activeBranch = localStorage.getItem('selected_branch_filter') || 'ALL';
@@ -26731,6 +26734,7 @@
       }
 
       // Sync Admin Sidebar & Table Branch selectors (NOC-FO Dashboard)
+      if (typeof syncTenantBranchOptions === 'function') syncTenantBranchOptions();
       const currentBranch = localStorage.getItem('selected_branch_filter') || 'ALL';
       const sideBranchSel = document.getElementById('admin-sidebar-branch-selector');
       const tableBranchSel = document.getElementById('admin-table-branch-selector');
@@ -26939,6 +26943,79 @@
 
       lucide.createIcons();
     }
+
+    function syncTenantBranchOptions() {
+      const currentSlug = (window.__ISPSYNC_TENANT__ && window.__ISPSYNC_TENANT__.slug) || window.__EARLY_TENANT_SLUG__ || '';
+
+      // Kumpulkan cabang unik milik tenant aktif
+      const branchMap = new Map();
+      branchMap.set('HQ', 'Kantor Pusat (Headquarters)');
+
+      // 1. Ambil dari staf terdaftar milik tenant
+      if (Array.isArray(window.superUserStaffList)) {
+        window.superUserStaffList.forEach(staf => {
+          const b = (staf.branch_code || '').trim().toUpperCase();
+          if (b && b !== 'ALL' && b !== 'HQ') {
+            if (!branchMap.has(b)) {
+              branchMap.set(b, 'Kantor Cabang ' + b);
+            }
+          }
+        });
+      }
+
+      // 2. Ambil dari klaster ODP aktif milik tenant
+      if (Array.isArray(window.adminClustersData)) {
+        window.adminClustersData.forEach(c => {
+          if (c && c.name) {
+            const m = c.name.match(/Cluster\s+([A-Z0-9]+)/i);
+            if (m && m[1]) {
+              const code = m[1].toUpperCase();
+              if (code !== 'ALL' && code !== 'HQ' && !branchMap.has(code)) {
+                branchMap.set(code, 'Wilayah Jaringan ' + code);
+              }
+            }
+          }
+        });
+      }
+
+      // 3. Khusus tenant legacy ispku (Payakumbuh)
+      if (currentSlug === 'ispku' && !branchMap.has('PYK')) {
+        branchMap.set('PYK', 'Kantor Cabang Payakumbuh (PYK)');
+      }
+
+      let currentVal = localStorage.getItem('selected_branch_filter') || 'ALL';
+      if (!branchMap.has(currentVal) && currentVal !== 'ALL') {
+        currentVal = 'ALL';
+        localStorage.setItem('selected_branch_filter', 'ALL');
+      }
+
+      const targetSelectors = [
+        { id: 'global-branch-selector', allLabel: 'Semua Wilayah Operasional' },
+        { id: 'admin-sidebar-branch-selector', allLabel: 'Semua Wilayah Operasional' },
+        { id: 'admin-table-branch-selector', allLabel: 'Semua Wilayah' },
+        { id: 'staff-table-branch-filter', allLabel: 'Semua Wilayah Penugasan' },
+        { id: 'add-staff-branch', allLabel: 'Semua Cabang (Nasional)' }
+      ];
+
+      targetSelectors.forEach(({ id, allLabel }) => {
+        const sel = document.getElementById(id);
+        if (!sel) return;
+
+        const valBefore = sel.value || currentVal;
+        let opts = `<option value="ALL">${allLabel}</option>`;
+        branchMap.forEach((label, val) => {
+          opts += `<option value="${val}">${label}</option>`;
+        });
+        sel.innerHTML = opts;
+
+        if (branchMap.has(valBefore) || valBefore === 'ALL') {
+          sel.value = valBefore;
+        } else {
+          sel.value = 'ALL';
+        }
+      });
+    }
+    window.syncTenantBranchOptions = syncTenantBranchOptions;
 
     function onGlobalBranchChange(code) {
       localStorage.setItem('selected_branch_filter', code);
@@ -29986,6 +30063,7 @@
     });
 
     window.addEventListener('DOMContentLoaded', () => {
+      if (typeof syncTenantBranchOptions === 'function') syncTenantBranchOptions();
       initMap();
       loadPlans();
       initCustomerPortal();

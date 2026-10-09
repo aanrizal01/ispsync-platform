@@ -1078,8 +1078,8 @@ func (h *APIHandler) PublicClusters(w http.ResponseWriter, r *http.Request) {
 
 	for _, o := range odps {
 		cName := "Cluster Distribusi Utama"
-		provName := "GOGIGA In-House FO"
-		provID := "GOGIGA"
+		provName := t.Name + " In-House FO"
+		provID := strings.ToUpper(t.Slug)
 		isShared := false
 
 		upperCode := strings.ToUpper(o.Code)
@@ -1110,8 +1110,8 @@ func (h *APIHandler) PublicClusters(w http.ResponseWriter, r *http.Request) {
 			isShared = true
 		} else if strings.HasPrefix(upperCode, "ODP-HRU") || strings.HasPrefix(upperCode, "OPD-HRU") {
 			cName = "Cluster HRU"
-			provName = "GOGIGA In-House FO"
-			provID = "GOGIGA"
+			provName = t.Name + " In-House FO"
+			provID = strings.ToUpper(t.Slug)
 			isShared = false
 		} else if o.OwnerTenantName != "" && o.IsSharedJartaplok {
 			cName = fmt.Sprintf("Jartaplok %s", o.OwnerTenantName)
