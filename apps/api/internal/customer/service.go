@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+	"strings"
+	"strconv"
 
 	"github.com/google/uuid"
 
@@ -41,6 +43,55 @@ func (s *Service) SetAuditService(auditSvc *audit.Service) {
 	s.auditSvc = auditSvc
 }
 
+func (s *Service) checkCapacity(ctx context.Context, tenantSlug string) error {
+	if tenantSlug == "" || tenantSlug == "dev" || tenantSlug == "superadmin" {
+		return nil
+	}
+
+	var count int
+	err := s.repo.db.QueryRow(ctx, "SELECT COUNT(*) FROM customers WHERE tenant_slug = $1", tenantSlug).Scan(&count)
+	if err != nil {
+		s.logger.Error("failed to check current customer count", "error", err)
+		return nil
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "GET", "http://web:3000/api/tenant/profile?slug="+tenantSlug, nil)
+	if err != nil {
+		return nil
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil
+	}
+	defer resp.Body.Close()
+
+	var res struct {
+		Success      bool   `json:"success"`
+		PlanCapacity string `json:"planCapacity"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil || !res.Success {
+		return nil
+	}
+
+	if strings.Contains(strings.ToLower(res.PlanCapacity), "unlimited") {
+		return nil
+	}
+
+	var limitStr string
+	for _, ch := range res.PlanCapacity {
+		if ch >= '0' && ch <= '9' {
+			limitStr += string(ch)
+		}
+	}
+	if limitStr != "" {
+		limit, _ := strconv.Atoi(limitStr)
+		if count >= limit {
+			return apperrors.BadRequest(fmt.Sprintf("Kapasitas maksimum paket Anda (%d pelanggan) telah tercapai. Silakan upgrade paket SaaS ISPSYNC Anda.", limit))
+		}
+	}
+	return nil
+}
+
 func (s *Service) recordAudit(ctx context.Context, action, entityID, description string, oldValues, newValues any) {
 	if s.auditSvc == nil {
 		return
@@ -72,13 +123,17 @@ func (s *Service) recordAudit(ctx context.Context, action, entityID, description
 
 
 func (s *Service) Create(ctx context.Context, tenantSlug string, req CreateCustomerRequest) (*Customer, error) {
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
+
+	if err := s.checkCapacity(ctx, tenantSlug); err != nil {
+		return nil, err
+	}
+
 	custNum, err := s.repo.GenerateCustomerNumber(ctx)
 	if err != nil {
 		return nil, apperrors.Internal(err)
-	}
-
-	if tenantSlug == "" {
-		tenantSlug = "dev"
 	}
 
 	now := time.Now()

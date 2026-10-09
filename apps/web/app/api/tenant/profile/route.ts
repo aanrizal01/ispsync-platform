@@ -119,6 +119,8 @@ export async function GET(req: NextRequest) {
     success: true,
     slug,
     companyName: legalName,
+    plan: member?.plan || "professional",
+    planCapacity: member?.planCapacity || "5.000 Pelanggan",
     brandName,
     npwp,
     nib,
