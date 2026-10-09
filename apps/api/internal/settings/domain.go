@@ -146,9 +146,14 @@ type SecuritySettings struct {
 }
 
 func DefaultSecuritySettings() SecuritySettings {
-    gmapsKey := os.Getenv("GOOGLE_MAPS_API_KEY")
-    if gmapsKey == "" {
-        gmapsKey = "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA"
+    return DefaultSecuritySettingsForTenant("dev")
+}
+
+func DefaultSecuritySettingsForTenant(tenantSlug string) SecuritySettings {
+    slug := strings.ToLower(strings.TrimSpace(tenantSlug))
+    gmapsKey := ""
+    if slug == "dev" {
+        gmapsKey = os.Getenv("GOOGLE_MAPS_API_KEY")
     }
     return SecuritySettings{
         JWTExpiryHours:     8,

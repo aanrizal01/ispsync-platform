@@ -491,7 +491,7 @@ export default function AdminSettingsPage() {
             telegramBotToken: data.telegram_bot_token || prev.telegramBotToken,
             telegramChatId: data.telegram_chat_id || prev.telegramChatId,
           }));
-          if (data.google_maps_api_key) {
+          if (data.google_maps_api_key && data.google_maps_api_key.trim() !== "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA") {
             setSecuritySettings((prev) => ({
               ...prev,
               google_maps_api_key: prev.google_maps_api_key || data.google_maps_api_key,

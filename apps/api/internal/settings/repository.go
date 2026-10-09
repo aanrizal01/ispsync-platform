@@ -235,13 +235,13 @@ func (r *Repository) GetSecuritySettings(ctx context.Context, tenantSlug ...stri
 	err := r.db.QueryRow(ctx, "SELECT value, updated_at FROM app_settings WHERE key = $1", key).Scan(&valBytes, &updatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			def := DefaultSecuritySettings()
+			def := DefaultSecuritySettingsForTenant(slug)
 			return &def, nil
 		}
 		return nil, err
 	}
 
-	s := DefaultSecuritySettings()
+	s := DefaultSecuritySettingsForTenant(slug)
 	if err := json.Unmarshal(valBytes, &s); err != nil {
 		return nil, err
 	}

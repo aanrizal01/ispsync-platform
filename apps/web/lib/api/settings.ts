@@ -274,7 +274,7 @@ export const defaultSecuritySettings: SecuritySettings = {
   enable_walled_garden: false,
   walled_garden_hosts: "ispsync.id, portal.ispsync.id, api.midtrans.com, app.midtrans.com",
   enable_mac_lock: true,
-  google_maps_api_key: "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA",
+  google_maps_api_key: "",
 };
 
 export type PaymentProviderOption = "midtrans" | "duitku" | "xendit" | "tripay" | "nicepay" | "manual";
