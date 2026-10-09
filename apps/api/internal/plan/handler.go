@@ -13,6 +13,10 @@ import (
 	"github.com/gigabill/isp/internal/shared/pagination"
 )
 
+func extractTenantSlug(r *http.Request) string {
+	return auth.ExtractTenantSlug(r)
+}
+
 type Handler struct {
 	service *Service
 	logger  *slog.Logger
@@ -60,7 +64,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		userID = &claims.UserID
 	}
 
-	p, err := h.service.Create(r.Context(), req, userID)
+	tenantSlug := extractTenantSlug(r)
+	p, err := h.service.Create(r.Context(), tenantSlug, req, userID)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -89,7 +94,8 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 		visibleOnly = &v
 	}
 
-	plans, meta, err := h.service.List(r.Context(), params, status, planType, group, cluster, visibleOnly)
+	tenantSlug := extractTenantSlug(r)
+	plans, meta, err := h.service.List(r.Context(), tenantSlug, params, status, planType, group, cluster, visibleOnly)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -112,7 +118,8 @@ func (h *Handler) ToggleVisibility(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p, err := h.service.ToggleVisibility(r.Context(), id, req.IsVisible)
+	tenantSlug := extractTenantSlug(r)
+	p, err := h.service.ToggleVisibility(r.Context(), tenantSlug, id, req.IsVisible)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -129,7 +136,8 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p, err := h.service.GetByID(r.Context(), id)
+	tenantSlug := extractTenantSlug(r)
+	p, err := h.service.GetByID(r.Context(), tenantSlug, id)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -152,7 +160,8 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p, err := h.service.Update(r.Context(), id, req)
+	tenantSlug := extractTenantSlug(r)
+	p, err := h.service.Update(r.Context(), tenantSlug, id, req)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -169,7 +178,8 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.Delete(r.Context(), id); err != nil {
+	tenantSlug := extractTenantSlug(r)
+	if err := h.service.Delete(r.Context(), tenantSlug, id); err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
 	}
@@ -197,7 +207,8 @@ func (h *Handler) AddPriceVersion(w http.ResponseWriter, r *http.Request) {
 		userID = &claims.UserID
 	}
 
-	price, err := h.service.AddPriceVersion(r.Context(), id, req, userID)
+	tenantSlug := extractTenantSlug(r)
+	price, err := h.service.AddPriceVersion(r.Context(), tenantSlug, id, req, userID)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -209,7 +220,8 @@ func (h *Handler) AddPriceVersion(w http.ResponseWriter, r *http.Request) {
 // Plan Groups Handlers
 
 func (h *Handler) ListGroups(w http.ResponseWriter, r *http.Request) {
-	groups, err := h.service.ListGroups(r.Context())
+	tenantSlug := extractTenantSlug(r)
+	groups, err := h.service.ListGroups(r.Context(), tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -226,7 +238,8 @@ func (h *Handler) GetGroupByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	g, err := h.service.GetGroupByID(r.Context(), id)
+	tenantSlug := extractTenantSlug(r)
+	g, err := h.service.GetGroupByID(r.Context(), tenantSlug, id)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -242,7 +255,8 @@ func (h *Handler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	g, err := h.service.CreateGroup(r.Context(), req)
+	tenantSlug := extractTenantSlug(r)
+	g, err := h.service.CreateGroup(r.Context(), tenantSlug, req)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -265,7 +279,8 @@ func (h *Handler) UpdateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	g, err := h.service.UpdateGroup(r.Context(), id, req)
+	tenantSlug := extractTenantSlug(r)
+	g, err := h.service.UpdateGroup(r.Context(), tenantSlug, id, req)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -282,7 +297,8 @@ func (h *Handler) DeleteGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.DeleteGroup(r.Context(), id); err != nil {
+	tenantSlug := extractTenantSlug(r)
+	if err := h.service.DeleteGroup(r.Context(), tenantSlug, id); err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
 	}

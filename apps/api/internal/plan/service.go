@@ -30,11 +30,19 @@ func (s *Service) SetRadiusService(radiusSvc *radius.Service) {
 	s.radiusSvc = radiusSvc
 }
 
-func (s *Service) Create(ctx context.Context, req CreatePlanRequest, userID *uuid.UUID) (*Plan, error) {
+func (s *Service) Create(ctx context.Context, tenantSlug string, req CreatePlanRequest, userID *uuid.UUID) (*Plan, error) {
 	now := time.Now()
 	pkgGroup := req.PackageGroup
 	if pkgGroup == "" {
 		pkgGroup = "UMUM"
+	}
+
+	slug := tenantSlug
+	if slug == "" {
+		slug = req.TenantSlug
+	}
+	if slug == "" {
+		slug = "dev"
 	}
 
 	p := &Plan{
@@ -53,6 +61,7 @@ func (s *Service) Create(ctx context.Context, req CreatePlanRequest, userID *uui
 		FramedPool:      req.FramedPool,
 		GroupID:         req.GroupID,
 		PackageGroup:    pkgGroup,
+		TenantSlug:      slug,
 		CreatedAt:       now,
 		UpdatedAt:       now,
 	}
@@ -90,7 +99,7 @@ func (s *Service) Create(ctx context.Context, req CreatePlanRequest, userID *uui
 	return p, nil
 }
 
-func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*Plan, error) {
+func (s *Service) GetByID(ctx context.Context, tenantSlug string, id uuid.UUID) (*Plan, error) {
 	p, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, apperrors.Internal(err)
@@ -98,11 +107,14 @@ func (s *Service) GetByID(ctx context.Context, id uuid.UUID) (*Plan, error) {
 	if p == nil {
 		return nil, apperrors.NotFound("Plan")
 	}
+	if tenantSlug != "" && tenantSlug != "superadmin" && p.TenantSlug != "" && p.TenantSlug != tenantSlug {
+		return nil, apperrors.NotFound("Plan")
+	}
 	return p, nil
 }
 
-func (s *Service) List(ctx context.Context, params pagination.Params, status, planType, group, cluster string, visibleOnly *bool) ([]Plan, pagination.Meta, error) {
-	plans, total, err := s.repo.List(ctx, params, status, planType, group, cluster, visibleOnly)
+func (s *Service) List(ctx context.Context, tenantSlug string, params pagination.Params, status, planType, group, cluster string, visibleOnly *bool) ([]Plan, pagination.Meta, error) {
+	plans, total, err := s.repo.List(ctx, tenantSlug, params, status, planType, group, cluster, visibleOnly)
 	if err != nil {
 		return nil, pagination.Meta{}, apperrors.Internal(err)
 	}
@@ -110,13 +122,10 @@ func (s *Service) List(ctx context.Context, params pagination.Params, status, pl
 	return plans, meta, nil
 }
 
-func (s *Service) Update(ctx context.Context, id uuid.UUID, req UpdatePlanRequest) (*Plan, error) {
-	p, err := s.repo.GetByID(ctx, id)
+func (s *Service) Update(ctx context.Context, tenantSlug string, id uuid.UUID, req UpdatePlanRequest) (*Plan, error) {
+	p, err := s.GetByID(ctx, tenantSlug, id)
 	if err != nil {
-		return nil, apperrors.Internal(err)
-	}
-	if p == nil {
-		return nil, apperrors.NotFound("Plan")
+		return nil, err
 	}
 
 	p.Name = req.Name
@@ -170,13 +179,10 @@ func (s *Service) Update(ctx context.Context, id uuid.UUID, req UpdatePlanReques
 	return p, nil
 }
 
-func (s *Service) ToggleVisibility(ctx context.Context, id uuid.UUID, isVisible bool) (*Plan, error) {
-	p, err := s.repo.GetByID(ctx, id)
+func (s *Service) ToggleVisibility(ctx context.Context, tenantSlug string, id uuid.UUID, isVisible bool) (*Plan, error) {
+	p, err := s.GetByID(ctx, tenantSlug, id)
 	if err != nil {
-		return nil, apperrors.Internal(err)
-	}
-	if p == nil {
-		return nil, apperrors.NotFound("Plan")
+		return nil, err
 	}
 
 	if err := s.repo.UpdateVisibility(ctx, id, isVisible); err != nil {
@@ -188,13 +194,10 @@ func (s *Service) ToggleVisibility(ctx context.Context, id uuid.UUID, isVisible 
 	return p, nil
 }
 
-func (s *Service) Delete(ctx context.Context, id uuid.UUID) error {
-	p, err := s.repo.GetByID(ctx, id)
+func (s *Service) Delete(ctx context.Context, tenantSlug string, id uuid.UUID) error {
+	_, err := s.GetByID(ctx, tenantSlug, id)
 	if err != nil {
-		return apperrors.Internal(err)
-	}
-	if p == nil {
-		return apperrors.NotFound("Plan")
+		return err
 	}
 
 	if err := s.repo.Delete(ctx, id); err != nil {
@@ -205,13 +208,10 @@ func (s *Service) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (s *Service) AddPriceVersion(ctx context.Context, planID uuid.UUID, req CreatePriceVersionRequest, userID *uuid.UUID) (*Price, error) {
-	p, err := s.repo.GetByID(ctx, planID)
+func (s *Service) AddPriceVersion(ctx context.Context, tenantSlug string, planID uuid.UUID, req CreatePriceVersionRequest, userID *uuid.UUID) (*Price, error) {
+	_, err := s.GetByID(ctx, tenantSlug, planID)
 	if err != nil {
-		return nil, apperrors.Internal(err)
-	}
-	if p == nil {
-		return nil, apperrors.NotFound("Plan")
+		return nil, err
 	}
 
 	now := time.Now()
@@ -241,15 +241,15 @@ func (s *Service) AddPriceVersion(ctx context.Context, planID uuid.UUID, req Cre
 
 // Plan Groups
 
-func (s *Service) ListGroups(ctx context.Context) ([]PlanGroup, error) {
-	groups, err := s.repo.ListPlanGroups(ctx)
+func (s *Service) ListGroups(ctx context.Context, tenantSlug string) ([]PlanGroup, error) {
+	groups, err := s.repo.ListPlanGroups(ctx, tenantSlug)
 	if err != nil {
 		return nil, apperrors.Internal(err)
 	}
 	return groups, nil
 }
 
-func (s *Service) GetGroupByID(ctx context.Context, id uuid.UUID) (*PlanGroup, error) {
+func (s *Service) GetGroupByID(ctx context.Context, tenantSlug string, id uuid.UUID) (*PlanGroup, error) {
 	g, err := s.repo.GetPlanGroupByID(ctx, id)
 	if err != nil {
 		return nil, apperrors.Internal(err)
@@ -257,11 +257,22 @@ func (s *Service) GetGroupByID(ctx context.Context, id uuid.UUID) (*PlanGroup, e
 	if g == nil {
 		return nil, apperrors.NotFound("PlanGroup")
 	}
+	if tenantSlug != "" && tenantSlug != "superadmin" && g.TenantSlug != "" && g.TenantSlug != tenantSlug {
+		return nil, apperrors.NotFound("PlanGroup")
+	}
 	return g, nil
 }
 
-func (s *Service) CreateGroup(ctx context.Context, req CreatePlanGroupRequest) (*PlanGroup, error) {
+func (s *Service) CreateGroup(ctx context.Context, tenantSlug string, req CreatePlanGroupRequest) (*PlanGroup, error) {
 	now := time.Now()
+	slug := tenantSlug
+	if slug == "" {
+		slug = req.TenantSlug
+	}
+	if slug == "" {
+		slug = "dev"
+	}
+
 	g := &PlanGroup{
 		ID:          uuid.New(),
 		Name:        req.Name,
@@ -269,6 +280,7 @@ func (s *Service) CreateGroup(ctx context.Context, req CreatePlanGroupRequest) (
 		Description: req.Description,
 		ClusterCode: req.ClusterCode,
 		ClusterArea: req.ClusterArea,
+		TenantSlug:  slug,
 		IsActive:    true,
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -282,13 +294,10 @@ func (s *Service) CreateGroup(ctx context.Context, req CreatePlanGroupRequest) (
 	return g, nil
 }
 
-func (s *Service) UpdateGroup(ctx context.Context, id uuid.UUID, req UpdatePlanGroupRequest) (*PlanGroup, error) {
-	g, err := s.repo.GetPlanGroupByID(ctx, id)
+func (s *Service) UpdateGroup(ctx context.Context, tenantSlug string, id uuid.UUID, req UpdatePlanGroupRequest) (*PlanGroup, error) {
+	g, err := s.GetGroupByID(ctx, tenantSlug, id)
 	if err != nil {
-		return nil, apperrors.Internal(err)
-	}
-	if g == nil {
-		return nil, apperrors.NotFound("PlanGroup")
+		return nil, err
 	}
 
 	g.Name = req.Name
@@ -305,7 +314,12 @@ func (s *Service) UpdateGroup(ctx context.Context, id uuid.UUID, req UpdatePlanG
 	return g, nil
 }
 
-func (s *Service) DeleteGroup(ctx context.Context, id uuid.UUID) error {
+func (s *Service) DeleteGroup(ctx context.Context, tenantSlug string, id uuid.UUID) error {
+	_, err := s.GetGroupByID(ctx, tenantSlug, id)
+	if err != nil {
+		return err
+	}
+
 	if err := s.repo.DeletePlanGroup(ctx, id); err != nil {
 		return apperrors.Internal(err)
 	}

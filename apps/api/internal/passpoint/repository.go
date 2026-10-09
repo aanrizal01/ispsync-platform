@@ -955,17 +955,18 @@ func (r *Repository) MarkOrderPaid(ctx context.Context, orderID string, credID u
 	return tx.Commit(ctx)
 }
 
-func (r *Repository) ListPackages(ctx context.Context, onlyActive bool) ([]PasspointPackage, error) {
+func (r *Repository) ListPackages(ctx context.Context, tenantSlug string, onlyActive bool) ([]PasspointPackage, error) {
 	q := `
-		SELECT id, name, description, duration_days, price, speed_limit, is_popular, is_active, sort_order, created_at, updated_at
+		SELECT id, name, description, duration_days, price, speed_limit, is_popular, is_active, sort_order, COALESCE(tenant_slug, 'dev'), created_at, updated_at
 		FROM passpoint_packages
+		WHERE ($1 = '' OR $1 = 'superadmin' OR tenant_slug = $1)
 	`
 	if onlyActive {
-		q += " WHERE is_active = TRUE"
+		q += " AND is_active = TRUE"
 	}
 	q += " ORDER BY sort_order ASC, duration_days ASC"
 
-	rows, err := r.db.Query(ctx, q)
+	rows, err := r.db.Query(ctx, q, tenantSlug)
 	if err != nil {
 		return nil, fmt.Errorf("list packages: %w", err)
 	}
@@ -977,7 +978,7 @@ func (r *Repository) ListPackages(ctx context.Context, onlyActive bool) ([]Passp
 		if err := rows.Scan(
 			&p.ID, &p.Name, &p.Description, &p.DurationDays, &p.Price,
 			&p.SpeedLimit, &p.IsPopular, &p.IsActive, &p.SortOrder,
-			&p.CreatedAt, &p.UpdatedAt,
+			&p.TenantSlug, &p.CreatedAt, &p.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan package: %w", err)
 		}
@@ -986,17 +987,17 @@ func (r *Repository) ListPackages(ctx context.Context, onlyActive bool) ([]Passp
 	return pkgs, nil
 }
 
-func (r *Repository) GetPackageByID(ctx context.Context, id string) (*PasspointPackage, error) {
+func (r *Repository) GetPackageByID(ctx context.Context, tenantSlug string, id string) (*PasspointPackage, error) {
 	const q = `
-		SELECT id, name, description, duration_days, price, speed_limit, is_popular, is_active, sort_order, created_at, updated_at
+		SELECT id, name, description, duration_days, price, speed_limit, is_popular, is_active, sort_order, COALESCE(tenant_slug, 'dev'), created_at, updated_at
 		FROM passpoint_packages
-		WHERE id = $1
+		WHERE id = $1 AND ($2 = '' OR $2 = 'superadmin' OR tenant_slug = $2)
 	`
 	var p PasspointPackage
-	err := r.db.QueryRow(ctx, q, id).Scan(
+	err := r.db.QueryRow(ctx, q, id, tenantSlug).Scan(
 		&p.ID, &p.Name, &p.Description, &p.DurationDays, &p.Price,
 		&p.SpeedLimit, &p.IsPopular, &p.IsActive, &p.SortOrder,
-		&p.CreatedAt, &p.UpdatedAt,
+		&p.TenantSlug, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if err == pgx.ErrNoRows {
 		return nil, nil
@@ -1008,16 +1009,20 @@ func (r *Repository) GetPackageByID(ctx context.Context, id string) (*PasspointP
 }
 
 func (r *Repository) CreatePackage(ctx context.Context, p *PasspointPackage) error {
+	tenantSlug := p.TenantSlug
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
 	const q = `
 		INSERT INTO passpoint_packages (
-			id, name, description, duration_days, price, speed_limit, is_popular, is_active, sort_order, created_at, updated_at
+			id, name, description, duration_days, price, speed_limit, is_popular, is_active, sort_order, tenant_slug, created_at, updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW()
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW()
 		)
 	`
 	_, err := r.db.Exec(ctx, q,
 		p.ID, p.Name, p.Description, p.DurationDays, p.Price,
-		p.SpeedLimit, p.IsPopular, p.IsActive, p.SortOrder,
+		p.SpeedLimit, p.IsPopular, p.IsActive, p.SortOrder, tenantSlug,
 	)
 	if err != nil {
 		return fmt.Errorf("create package: %w", err)
@@ -1037,11 +1042,11 @@ func (r *Repository) UpdatePackage(ctx context.Context, p *PasspointPackage) err
 			is_active = $8,
 			sort_order = $9,
 			updated_at = NOW()
-		WHERE id = $1
+		WHERE id = $1 AND ($10 = '' OR $10 = 'superadmin' OR tenant_slug = $10)
 	`
 	res, err := r.db.Exec(ctx, q,
 		p.ID, p.Name, p.Description, p.DurationDays, p.Price,
-		p.SpeedLimit, p.IsPopular, p.IsActive, p.SortOrder,
+		p.SpeedLimit, p.IsPopular, p.IsActive, p.SortOrder, p.TenantSlug,
 	)
 	if err != nil {
 		return fmt.Errorf("update package: %w", err)
@@ -1052,9 +1057,9 @@ func (r *Repository) UpdatePackage(ctx context.Context, p *PasspointPackage) err
 	return nil
 }
 
-func (r *Repository) DeletePackage(ctx context.Context, id string) error {
-	const q = `DELETE FROM passpoint_packages WHERE id = $1`
-	res, err := r.db.Exec(ctx, q, id)
+func (r *Repository) DeletePackage(ctx context.Context, tenantSlug string, id string) error {
+	const q = `DELETE FROM passpoint_packages WHERE id = $1 AND ($2 = '' OR $2 = 'superadmin' OR tenant_slug = $2)`
+	res, err := r.db.Exec(ctx, q, id, tenantSlug)
 	if err != nil {
 		return fmt.Errorf("delete package: %w", err)
 	}

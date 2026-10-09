@@ -34,12 +34,16 @@ func (r *Repository) Create(ctx context.Context, p *Plan, initialPrice *Price) e
 	}
 
 	const insertPlan = `
-		INSERT INTO plans (id, name, description, plan_type, download_kbps, upload_kbps, min_download_kbps, min_upload_kbps, billing_cycle, grace_period_days, status, group_id, package_group, is_visible, framed_pool, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+		INSERT INTO plans (id, name, description, plan_type, download_kbps, upload_kbps, min_download_kbps, min_upload_kbps, billing_cycle, grace_period_days, status, group_id, package_group, is_visible, framed_pool, tenant_slug, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 	`
+	tenantSlug := p.TenantSlug
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
 	_, err = tx.Exec(ctx, insertPlan,
 		p.ID, p.Name, p.Description, p.PlanType, p.DownloadKbps, p.UploadKbps, p.MinDownloadKbps, p.MinUploadKbps,
-		p.BillingCycle, p.GracePeriodDays, p.Status, p.GroupID, p.PackageGroup, p.IsVisible, p.FramedPool, p.CreatedAt, p.UpdatedAt,
+		p.BillingCycle, p.GracePeriodDays, p.Status, p.GroupID, p.PackageGroup, p.IsVisible, p.FramedPool, tenantSlug, p.CreatedAt, p.UpdatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("insert plan: %w", err)
@@ -69,7 +73,7 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*Plan, error) {
 		       p.billing_cycle, p.grace_period_days, p.status, p.group_id, 
 		       COALESCE(pg.name, ''), COALESCE(p.package_group, 'UMUM'), 
 		       COALESCE(pg.cluster_code, ''), COALESCE(pg.cluster_area, ''), 
-		       p.is_visible, p.framed_pool, p.created_at, p.updated_at
+		       p.is_visible, p.framed_pool, COALESCE(p.tenant_slug, 'dev'), p.created_at, p.updated_at
 		FROM plans p
 		LEFT JOIN plan_groups pg ON p.group_id = pg.id
 		WHERE p.id = $1
@@ -80,7 +84,7 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*Plan, error) {
 		&p.MinDownloadKbps, &p.MinUploadKbps,
 		&p.BillingCycle, &p.GracePeriodDays, &p.Status, &p.GroupID,
 		&p.GroupName, &p.PackageGroup, &p.ClusterCode, &p.ClusterArea,
-		&p.IsVisible, &p.FramedPool, &p.CreatedAt, &p.UpdatedAt,
+		&p.IsVisible, &p.FramedPool, &p.TenantSlug, &p.CreatedAt, &p.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -122,10 +126,16 @@ func (r *Repository) GetByID(ctx context.Context, id uuid.UUID) (*Plan, error) {
 	return &p, nil
 }
 
-func (r *Repository) List(ctx context.Context, params pagination.Params, status, planType, group, cluster string, visibleOnly *bool) ([]Plan, int, error) {
+func (r *Repository) List(ctx context.Context, tenantSlug string, params pagination.Params, status, planType, group, cluster string, visibleOnly *bool) ([]Plan, int, error) {
 	where := "WHERE 1=1"
 	args := []interface{}{}
 	argIdx := 1
+
+	if tenantSlug != "" && tenantSlug != "superadmin" {
+		where += fmt.Sprintf(" AND p.tenant_slug = $%d", argIdx)
+		args = append(args, tenantSlug)
+		argIdx++
+	}
 
 	if status != "" {
 		where += fmt.Sprintf(" AND p.status = $%d", argIdx)
@@ -180,7 +190,7 @@ func (r *Repository) List(ctx context.Context, params pagination.Params, status,
 		       p.billing_cycle, p.grace_period_days, p.status, p.group_id,
 		       COALESCE(pg.name, ''), COALESCE(p.package_group, 'UMUM'),
 		       COALESCE(pg.cluster_code, ''), COALESCE(pg.cluster_area, ''),
-		       p.is_visible, p.framed_pool, p.created_at, p.updated_at,
+		       p.is_visible, p.framed_pool, COALESCE(p.tenant_slug, 'dev'), p.created_at, p.updated_at,
 		       pr.id, pr.monthly_price, pr.installation_fee, pr.activation_fee,
 		       pr.tax_percent, pr.late_fee_percent, pr.currency, pr.effective_from, pr.effective_until
 		FROM plans p
@@ -218,7 +228,7 @@ func (r *Repository) List(ctx context.Context, params pagination.Params, status,
 			&p.MinDownloadKbps, &p.MinUploadKbps,
 			&p.BillingCycle, &p.GracePeriodDays, &p.Status, &p.GroupID,
 			&p.GroupName, &p.PackageGroup, &p.ClusterCode, &p.ClusterArea,
-			&p.IsVisible, &p.FramedPool, &p.CreatedAt, &p.UpdatedAt,
+			&p.IsVisible, &p.FramedPool, &p.TenantSlug, &p.CreatedAt, &p.UpdatedAt,
 			&prID, &monthly, &install, &activ, &tax, &late, &curr, &effFrom, &effUntil,
 		)
 		if err != nil {
@@ -388,16 +398,17 @@ func (r *Repository) GetCurrentPrice(ctx context.Context, planID uuid.UUID) (*Pr
 
 // Plan Groups repository methods:
 
-func (r *Repository) ListPlanGroups(ctx context.Context) ([]PlanGroup, error) {
+func (r *Repository) ListPlanGroups(ctx context.Context, tenantSlug string) ([]PlanGroup, error) {
 	const q = `
 		SELECT pg.id, pg.name, pg.code, pg.description, pg.cluster_code, pg.cluster_area, pg.is_active,
-		       COUNT(p.id) as plan_count, pg.created_at, pg.updated_at
+		       COUNT(p.id) as plan_count, COALESCE(pg.tenant_slug, 'dev'), pg.created_at, pg.updated_at
 		FROM plan_groups pg
 		LEFT JOIN plans p ON p.group_id = pg.id
+		WHERE ($1 = '' OR $1 = 'superadmin' OR pg.tenant_slug = $1)
 		GROUP BY pg.id
 		ORDER BY pg.cluster_code ASC, pg.created_at ASC
 	`
-	rows, err := r.db.Query(ctx, q)
+	rows, err := r.db.Query(ctx, q, tenantSlug)
 	if err != nil {
 		return nil, fmt.Errorf("list plan groups: %w", err)
 	}
@@ -408,7 +419,7 @@ func (r *Repository) ListPlanGroups(ctx context.Context) ([]PlanGroup, error) {
 		var g PlanGroup
 		if err := rows.Scan(
 			&g.ID, &g.Name, &g.Code, &g.Description, &g.ClusterCode, &g.ClusterArea, &g.IsActive,
-			&g.PlanCount, &g.CreatedAt, &g.UpdatedAt,
+			&g.PlanCount, &g.TenantSlug, &g.CreatedAt, &g.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -420,7 +431,7 @@ func (r *Repository) ListPlanGroups(ctx context.Context) ([]PlanGroup, error) {
 func (r *Repository) GetPlanGroupByID(ctx context.Context, id uuid.UUID) (*PlanGroup, error) {
 	const q = `
 		SELECT pg.id, pg.name, pg.code, pg.description, pg.cluster_code, pg.cluster_area, pg.is_active,
-		       COUNT(p.id) as plan_count, pg.created_at, pg.updated_at
+		       COUNT(p.id) as plan_count, COALESCE(pg.tenant_slug, 'dev'), pg.created_at, pg.updated_at
 		FROM plan_groups pg
 		LEFT JOIN plans p ON p.group_id = pg.id
 		WHERE pg.id = $1
@@ -429,7 +440,7 @@ func (r *Repository) GetPlanGroupByID(ctx context.Context, id uuid.UUID) (*PlanG
 	var g PlanGroup
 	err := r.db.QueryRow(ctx, q, id).Scan(
 		&g.ID, &g.Name, &g.Code, &g.Description, &g.ClusterCode, &g.ClusterArea, &g.IsActive,
-		&g.PlanCount, &g.CreatedAt, &g.UpdatedAt,
+		&g.PlanCount, &g.TenantSlug, &g.CreatedAt, &g.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -441,12 +452,16 @@ func (r *Repository) GetPlanGroupByID(ctx context.Context, id uuid.UUID) (*PlanG
 }
 
 func (r *Repository) CreatePlanGroup(ctx context.Context, g *PlanGroup) error {
+	tenantSlug := g.TenantSlug
+	if tenantSlug == "" {
+		tenantSlug = "dev"
+	}
 	const q = `
-		INSERT INTO plan_groups (id, name, code, description, cluster_code, cluster_area, is_active, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO plan_groups (id, name, code, description, cluster_code, cluster_area, is_active, tenant_slug, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 	`
 	_, err := r.db.Exec(ctx, q,
-		g.ID, g.Name, g.Code, g.Description, g.ClusterCode, g.ClusterArea, g.IsActive, g.CreatedAt, g.UpdatedAt,
+		g.ID, g.Name, g.Code, g.Description, g.ClusterCode, g.ClusterArea, g.IsActive, tenantSlug, g.CreatedAt, g.UpdatedAt,
 	)
 	return err
 }

@@ -902,6 +902,13 @@ func handlePurgeTenant(db *pgxpool.Pool, cfg *config.Config, log *slog.Logger) h
 		_, _ = db.Exec(ctx, "DELETE FROM network_devices WHERE tenant_slug = $1", slug)
 		_, _ = db.Exec(ctx, "DELETE FROM expenses WHERE tenant_slug = $1", slug)
 		_, _ = db.Exec(ctx, "DELETE FROM agents WHERE tenant_slug = $1", slug)
+		_, _ = db.Exec(ctx, "DELETE FROM passpoint_credentials WHERE tenant_slug = $1", slug)
+		_, _ = db.Exec(ctx, "DELETE FROM passpoint_orders WHERE tenant_slug = $1", slug)
+		_, _ = db.Exec(ctx, "DELETE FROM passpoint_packages WHERE tenant_slug = $1", slug)
+		_, _ = db.Exec(ctx, "DELETE FROM plan_prices WHERE plan_id IN (SELECT id FROM plans WHERE tenant_slug = $1)", slug)
+		_, _ = db.Exec(ctx, "DELETE FROM plans WHERE tenant_slug = $1", slug)
+		_, _ = db.Exec(ctx, "DELETE FROM plan_groups WHERE tenant_slug = $1", slug)
+		_, _ = db.Exec(ctx, "DELETE FROM app_settings WHERE key LIKE '%_' || $1", slug)
 
 		// Helper to connect to other DB on same host
 		purgeOtherDB := func(dbName string, purgeFn func(ctx context.Context, pool *pgxpool.Pool) error) error {

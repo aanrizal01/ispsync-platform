@@ -250,61 +250,79 @@ func (s *Service) GenerateAppleProfile(ctx context.Context, credID uuid.UUID) ([
 	return configXML, filename, nil
 }
 
-func (s *Service) GetPackages(ctx context.Context) ([]PasspointPackage, error) {
-	pkgs, err := s.repo.ListPackages(ctx, true)
+func (s *Service) GetPackages(ctx context.Context, tenantSlug string) ([]PasspointPackage, error) {
+	pkgs, err := s.repo.ListPackages(ctx, tenantSlug, true)
 	if err == nil && len(pkgs) > 0 {
 		return pkgs, nil
 	}
-	return []PasspointPackage{
-		{
-			ID:           "pkg-passpoint-7d",
-			Name:         "Passpoint Mingguan 7 Hari",
-			Description:  "Akses otomatis roaming WiFi berkecepatan tinggi selama 1 minggu penuh",
-			DurationDays: 7,
-			Price:        25000,
-			SpeedLimit:   "15 Mbps Unlimited",
-			IsPopular:    false,
-			IsActive:     true,
-			SortOrder:    1,
-		},
-		{
-			ID:           "pkg-passpoint-30d",
-			Name:         "Passpoint Bulanan 30 Hari",
-			Description:  "Paket favorit koneksi otomatis tanpa ribet untuk pekerja & mahasiswa",
-			DurationDays: 30,
-			Price:        50000,
-			SpeedLimit:   "25 Mbps Unlimited",
-			IsPopular:    true,
-			IsActive:     true,
-			SortOrder:    2,
-		},
-		{
-			ID:           "pkg-passpoint-90d",
-			Name:         "Passpoint Seasonal 90 Hari",
-			Description:  "Roaming 3 bulan hemat tanpa batas di seluruh jaringan ISP",
-			DurationDays: 90,
-			Price:        120000,
-			SpeedLimit:   "35 Mbps Unlimited",
-			IsPopular:    false,
-			IsActive:     true,
-			SortOrder:    3,
-		},
-	}, nil
+	// Fallback seed packages ONLY for dev or fallback when tenant is dev or empty
+	if tenantSlug == "dev" || tenantSlug == "" {
+		return []PasspointPackage{
+			{
+				ID:           "pkg-passpoint-7d",
+				Name:         "Passpoint Mingguan 7 Hari",
+				Description:  "Akses otomatis roaming WiFi berkecepatan tinggi selama 1 minggu penuh",
+				DurationDays: 7,
+				Price:        25000,
+				SpeedLimit:   "15 Mbps Unlimited",
+				IsPopular:    false,
+				IsActive:     true,
+				SortOrder:    1,
+				TenantSlug:   "dev",
+			},
+			{
+				ID:           "pkg-passpoint-30d",
+				Name:         "Passpoint Bulanan 30 Hari",
+				Description:  "Paket favorit koneksi otomatis tanpa ribet untuk pekerja & mahasiswa",
+				DurationDays: 30,
+				Price:        50000,
+				SpeedLimit:   "25 Mbps Unlimited",
+				IsPopular:    true,
+				IsActive:     true,
+				SortOrder:    2,
+				TenantSlug:   "dev",
+			},
+			{
+				ID:           "pkg-passpoint-90d",
+				Name:         "Passpoint Seasonal 90 Hari",
+				Description:  "Roaming 3 bulan hemat tanpa batas di seluruh jaringan ISP",
+				DurationDays: 90,
+				Price:        120000,
+				SpeedLimit:   "35 Mbps Unlimited",
+				IsPopular:    false,
+				IsActive:     true,
+				SortOrder:    3,
+				TenantSlug:   "dev",
+			},
+		}, nil
+	}
+	return []PasspointPackage{}, nil
 }
 
-func (s *Service) ListAdminPackages(ctx context.Context) ([]PasspointPackage, error) {
-	pkgs, err := s.repo.ListPackages(ctx, false)
+func (s *Service) ListAdminPackages(ctx context.Context, tenantSlug string) ([]PasspointPackage, error) {
+	pkgs, err := s.repo.ListPackages(ctx, tenantSlug, false)
 	if err != nil {
 		return nil, apperrors.Internal(err)
 	}
-	if len(pkgs) == 0 {
-		return s.GetPackages(ctx)
+	if len(pkgs) == 0 && (tenantSlug == "dev" || tenantSlug == "") {
+		return s.GetPackages(ctx, tenantSlug)
+	}
+	if pkgs == nil {
+		pkgs = []PasspointPackage{}
 	}
 	return pkgs, nil
 }
 
-func (s *Service) CreatePackage(ctx context.Context, req CreatePasspointPackageRequest) (*PasspointPackage, error) {
-	existing, err := s.repo.GetPackageByID(ctx, req.ID)
+func (s *Service) CreatePackage(ctx context.Context, tenantSlug string, req CreatePasspointPackageRequest) (*PasspointPackage, error) {
+	slug := tenantSlug
+	if slug == "" {
+		slug = req.TenantSlug
+	}
+	if slug == "" {
+		slug = "dev"
+	}
+
+	existing, err := s.repo.GetPackageByID(ctx, slug, req.ID)
 	if err != nil {
 		return nil, apperrors.Internal(err)
 	}
@@ -331,6 +349,7 @@ func (s *Service) CreatePackage(ctx context.Context, req CreatePasspointPackageR
 		IsPopular:    req.IsPopular,
 		IsActive:     isActive,
 		SortOrder:    sortOrder,
+		TenantSlug:   slug,
 	}
 
 	if err := s.repo.CreatePackage(ctx, pkg); err != nil {
@@ -340,8 +359,8 @@ func (s *Service) CreatePackage(ctx context.Context, req CreatePasspointPackageR
 	return pkg, nil
 }
 
-func (s *Service) UpdatePackage(ctx context.Context, id string, req UpdatePasspointPackageRequest) (*PasspointPackage, error) {
-	existing, err := s.repo.GetPackageByID(ctx, id)
+func (s *Service) UpdatePackage(ctx context.Context, tenantSlug string, id string, req UpdatePasspointPackageRequest) (*PasspointPackage, error) {
+	existing, err := s.repo.GetPackageByID(ctx, tenantSlug, id)
 	if err != nil {
 		return nil, apperrors.Internal(err)
 	}
@@ -359,6 +378,7 @@ func (s *Service) UpdatePackage(ctx context.Context, id string, req UpdatePasspo
 		IsPopular:    req.IsPopular,
 		IsActive:     req.IsActive,
 		SortOrder:    req.SortOrder,
+		TenantSlug:   existing.TenantSlug,
 	}
 
 	if err := s.repo.UpdatePackage(ctx, pkg); err != nil {
@@ -368,8 +388,8 @@ func (s *Service) UpdatePackage(ctx context.Context, id string, req UpdatePasspo
 	return pkg, nil
 }
 
-func (s *Service) DeletePackage(ctx context.Context, id string) error {
-	existing, err := s.repo.GetPackageByID(ctx, id)
+func (s *Service) DeletePackage(ctx context.Context, tenantSlug string, id string) error {
+	existing, err := s.repo.GetPackageByID(ctx, tenantSlug, id)
 	if err != nil {
 		return apperrors.Internal(err)
 	}
@@ -377,7 +397,7 @@ func (s *Service) DeletePackage(ctx context.Context, id string) error {
 		return apperrors.NotFound("Paket Passpoint tidak ditemukan")
 	}
 
-	if err := s.repo.DeletePackage(ctx, id); err != nil {
+	if err := s.repo.DeletePackage(ctx, tenantSlug, id); err != nil {
 		return apperrors.Internal(err)
 	}
 	return nil
@@ -387,7 +407,7 @@ func (s *Service) Purchase(ctx context.Context, tenantSlug string, req Passpoint
 	if tenantSlug == "" {
 		tenantSlug = "gogiga"
 	}
-	pkgs, _ := s.GetPackages(ctx)
+	pkgs, _ := s.GetPackages(ctx, tenantSlug)
 	var selectedPkg *PasspointPackage
 	for _, p := range pkgs {
 		if p.ID == req.PackageID {
@@ -395,8 +415,10 @@ func (s *Service) Purchase(ctx context.Context, tenantSlug string, req Passpoint
 			break
 		}
 	}
-	if selectedPkg == nil {
+	if selectedPkg == nil && len(pkgs) > 1 {
 		selectedPkg = &pkgs[1] // default 30d
+	} else if selectedPkg == nil && len(pkgs) > 0 {
+		selectedPkg = &pkgs[0]
 	}
 
 	finalPrice := selectedPkg.Price
@@ -573,7 +595,7 @@ func (s *Service) CheckPurchase(ctx context.Context, req PasspointCheckRequest) 
 			if ord, _ := s.repo.GetOrderByOrderID(ctx, req.OrderID); ord != nil {
 				currentOrder = ord
 				if ord.PackageID != "" {
-					if pkg, _ := s.repo.GetPackageByID(ctx, ord.PackageID); pkg != nil && pkg.SpeedLimit != "" {
+					if pkg, _ := s.repo.GetPackageByID(ctx, ord.TenantSlug, ord.PackageID); pkg != nil && pkg.SpeedLimit != "" {
 						speedLimit = pkg.SpeedLimit
 					}
 				}
@@ -634,7 +656,7 @@ func (s *Service) Renew(ctx context.Context, tenantSlug string, req PasspointRen
 	if tenantSlug == "" {
 		tenantSlug = "gogiga"
 	}
-	pkgs, _ := s.GetPackages(ctx)
+	pkgs, _ := s.GetPackages(ctx, tenantSlug)
 	var selectedPkg *PasspointPackage
 	for _, p := range pkgs {
 		if p.ID == req.PackageID {
@@ -642,8 +664,10 @@ func (s *Service) Renew(ctx context.Context, tenantSlug string, req PasspointRen
 			break
 		}
 	}
-	if selectedPkg == nil {
+	if selectedPkg == nil && len(pkgs) > 1 {
 		selectedPkg = &pkgs[1] // default 30d
+	} else if selectedPkg == nil && len(pkgs) > 0 {
+		selectedPkg = &pkgs[0]
 	}
 
 	finalPrice := selectedPkg.Price
@@ -820,7 +844,7 @@ func (s *Service) IssueManualPasspoint(ctx context.Context, agentID uuid.UUID, r
 		return nil, apperrors.BadRequest("Nomor HP pelanggan harus diisi")
 	}
 
-	pkgs, _ := s.GetPackages(ctx)
+	pkgs, _ := s.GetPackages(ctx, "")
 	var selectedPkg *PasspointPackage
 	for _, p := range pkgs {
 		if p.ID == req.PackageID {
@@ -828,8 +852,10 @@ func (s *Service) IssueManualPasspoint(ctx context.Context, agentID uuid.UUID, r
 			break
 		}
 	}
-	if selectedPkg == nil {
+	if selectedPkg == nil && len(pkgs) > 1 {
 		selectedPkg = &pkgs[1] // default 30d
+	} else if selectedPkg == nil && len(pkgs) > 0 {
+		selectedPkg = &pkgs[0]
 	}
 
 	prof, err := s.repo.GetDefaultProfile(ctx)

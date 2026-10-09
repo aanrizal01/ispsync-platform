@@ -71,6 +71,7 @@ type PasspointPackage struct {
 	IsPopular    bool      `json:"is_popular"`
 	IsActive     bool      `json:"is_active"`
 	SortOrder    int       `json:"sort_order"`
+	TenantSlug   string    `json:"tenant_slug,omitempty"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
@@ -85,6 +86,7 @@ type CreatePasspointPackageRequest struct {
 	IsPopular    bool   `json:"is_popular"`
 	IsActive     *bool  `json:"is_active"`
 	SortOrder    *int   `json:"sort_order"`
+	TenantSlug   string `json:"tenant_slug,omitempty"`
 }
 
 type UpdatePasspointPackageRequest struct {

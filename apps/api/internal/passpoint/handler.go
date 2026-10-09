@@ -206,7 +206,8 @@ func (h *Handler) DownloadAppleProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetPackages(w http.ResponseWriter, r *http.Request) {
-	pkgs, err := h.service.GetPackages(r.Context())
+	tenantSlug := extractTenantSlug(r)
+	pkgs, err := h.service.GetPackages(r.Context(), tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -297,7 +298,8 @@ func (h *Handler) CheckRenew(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListAdminPackages(w http.ResponseWriter, r *http.Request) {
-	pkgs, err := h.service.ListAdminPackages(r.Context())
+	tenantSlug := extractTenantSlug(r)
+	pkgs, err := h.service.ListAdminPackages(r.Context(), tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -312,7 +314,8 @@ func (h *Handler) CreatePackage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pkg, err := h.service.CreatePackage(r.Context(), req)
+	tenantSlug := extractTenantSlug(r)
+	pkg, err := h.service.CreatePackage(r.Context(), tenantSlug, req)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -333,7 +336,8 @@ func (h *Handler) UpdatePackage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pkg, err := h.service.UpdatePackage(r.Context(), id, req)
+	tenantSlug := extractTenantSlug(r)
+	pkg, err := h.service.UpdatePackage(r.Context(), tenantSlug, id, req)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -348,7 +352,8 @@ func (h *Handler) DeletePackage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.DeletePackage(r.Context(), id); err != nil {
+	tenantSlug := extractTenantSlug(r)
+	if err := h.service.DeletePackage(r.Context(), tenantSlug, id); err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
 	}

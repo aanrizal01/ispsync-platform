@@ -58,6 +58,7 @@ type Plan struct {
 	ClusterArea     string       `json:"cluster_area,omitempty"`
 	CurrentPrice    *Price       `json:"current_price,omitempty"`
 	PriceHistory    []Price      `json:"price_history,omitempty"`
+	TenantSlug      string       `json:"tenant_slug,omitempty"`
 	CreatedAt       time.Time    `json:"created_at"`
 	UpdatedAt       time.Time    `json:"updated_at"`
 }
@@ -87,6 +88,7 @@ type PlanGroup struct {
 	ClusterArea string    `json:"cluster_area"`
 	IsActive    bool      `json:"is_active"`
 	PlanCount   int       `json:"plan_count"`
+	TenantSlug  string    `json:"tenant_slug,omitempty"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -111,6 +113,7 @@ type CreatePlanRequest struct {
 	ActivationFee   int64        `json:"activation_fee" validate:"min=0"`
 	TaxPercent      int          `json:"tax_percent" validate:"min=0,max=10000"`
 	LateFeePercent  int          `json:"late_fee_percent" validate:"min=0,max=10000"`
+	TenantSlug      string       `json:"tenant_slug,omitempty"`
 }
 
 type UpdatePlanRequest struct {
@@ -128,6 +131,7 @@ type UpdatePlanRequest struct {
 	PackageGroup    string        `json:"package_group"`
 	FramedPool      *string       `json:"framed_pool"`
 	IsVisible       *bool         `json:"is_visible"`
+	TenantSlug      string        `json:"tenant_slug,omitempty"`
 }
 
 type ToggleVisibilityRequest struct {
@@ -140,6 +144,7 @@ type CreatePlanGroupRequest struct {
 	Description *string `json:"description"`
 	ClusterCode string  `json:"cluster_code" validate:"required"`
 	ClusterArea string  `json:"cluster_area" validate:"required"`
+	TenantSlug  string  `json:"tenant_slug,omitempty"`
 }
 
 type UpdatePlanGroupRequest struct {
