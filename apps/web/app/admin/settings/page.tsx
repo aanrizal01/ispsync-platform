@@ -353,13 +353,15 @@ export default function AdminSettingsPage() {
             data.email === "admin@dev.ispsync.id";
 
           if (!isDevData || !currentSlug || currentSlug === "dev") {
+            const defaultLogo =
+              currentSlug && currentSlug !== "dev"
+                ? `/web/${currentSlug}_logo.svg`
+                : defaultInvoiceTemplateSettings.logo_url;
+
             setInvoiceTemplate({
               ...defaultInvoiceTemplateSettings,
-              logo_url:
-                currentSlug && currentSlug !== "dev"
-                  ? `/web/${currentSlug}_logo.svg`
-                  : defaultInvoiceTemplateSettings.logo_url,
               ...data,
+              logo_url: data.logo_url || defaultLogo,
               enable_qr_verification: data.enable_qr_verification !== false,
             });
           }
