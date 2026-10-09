@@ -1114,6 +1114,42 @@ func handleProvisionTenant(db *pgxpool.Pool, cfg *config.Config, log *slog.Logge
 				VALUES ($1, $2, $3, $4, 'SUPER_ADMIN', $5, 'ACTIVE')
 				ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash, status = 'ACTIVE'
 			`, "usr-"+slug+"-admin", req.Email, passwordHash, picName, req.Phone)
+
+			unit := "Pusat Kontrol Jartaplok & Wholesale • " + shortName
+			addr := req.Address
+			if addr == "" {
+				addr = "Gedung Operasional & Fiber NOC"
+			}
+			phone := req.Phone
+			if phone == "" {
+				phone = "081100002026"
+			}
+			web := "https://fibergrid." + slug + ".ispsync.id"
+			customDom := "fibergrid." + slug + ".ispsync.id"
+			fav := "/web/" + slug + "_favicon.svg"
+			logo := "/web/" + slug + "_logo.svg"
+			copyRight := fmt.Sprintf("© 2026 %s. All rights reserved.", company)
+
+			_, _ = pool.Exec(ctx, `
+				INSERT INTO public.fttx_jartaplok_profile (
+					id, company_name, brand_name, service_unit, address, phone, email, website,
+					bank_name, bank_account_no, bank_account_holder, signer_name, invoice_prefix,
+					npwp, is_pkp, tax_rate_ppn, enable_pph23, tax_rate_pph23,
+					favicon_url, website_title, custom_domain, logo_url, footer_copyright, updated_at
+				) VALUES (
+					$1, $2, $3, $4, $5, $6, $7, $8,
+					'Bank Mandiri / BCA', '101-00-998877-1', $2, $9, $10,
+					'', 1, 11.0, 1, 2.0,
+					$11, $12, $13, $14, $15, NOW()
+				) ON CONFLICT (id) DO UPDATE SET
+					company_name = EXCLUDED.company_name,
+					brand_name = EXCLUDED.brand_name,
+					custom_domain = EXCLUDED.custom_domain,
+					website = EXCLUDED.website,
+					footer_copyright = EXCLUDED.footer_copyright,
+					updated_at = NOW()
+			`, slug, company, shortName, unit, addr, phone, req.Email, web, "Direktur Operasional "+shortName, prefixID, fav, shortName+" FiberGrid NOC Command Center", customDom, logo, copyRight)
+
 			return nil
 		})
 
