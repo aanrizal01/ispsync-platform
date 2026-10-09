@@ -218,6 +218,15 @@ export async function POST(req: NextRequest) {
     const db = getMembers();
     const membersList = db.members || [];
 
+    // Check if max tenants reached
+    const maxTenants = parseInt(process.env.MAX_SAAS_TENANTS || "50", 10);
+    const tenantCount = membersList.filter((m: any) => m.role === "TENANT" || m.role === "SUPERADMIN").length;
+    if (tenantCount >= maxTenants) {
+      return NextResponse.json({
+        error: `Pendaftaran ditutup sementara. Kapasitas maksimum server (${maxTenants} ISP) telah tercapai.`
+      }, { status: 403 });
+    }
+
     // Check if email already registered
     const emailExists = membersList.some((m: any) => (m.email || "").toLowerCase() === cleanEmail);
     if (emailExists) {
