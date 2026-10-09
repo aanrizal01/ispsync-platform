@@ -6,7 +6,7 @@
 }
 
 # Main SaaS Landing & Platform App
-ispsync.id, www.ispsync.id {
+ispsync.id, www.ispsync.id, member.ispsync.id {
     log {
         output file /var/log/caddy/access.log {
             roll_size 50mb
@@ -100,6 +100,17 @@ https:// {
     handle @deprecated_single_level {
         respond "Subdomain single-level tanpa nama tenant telah dinonaktifkan. Seluruh operasional wajib menggunakan format multi-tenant: {modul}.{tenant}.ispsync.id atau {tenant}.ispsync.id" 404 {
             close
+        }
+    }
+
+    # 0.4. Universal Next.js Static Assets (_next/*)
+    @next_static {
+        path /_next/*
+    }
+    handle @next_static {
+        reverse_proxy web:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
         }
     }
 
