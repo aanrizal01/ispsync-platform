@@ -24,7 +24,7 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*User, string, error) {
 	const q = `
 		SELECT id, email, password_hash, full_name, phone, is_active,
-		       customer_id, last_login_at, created_at, updated_at
+		       customer_id, last_login_at, created_at, updated_at, COALESCE(tenant_slug, '')
 		FROM users
 		WHERE email = $1 AND deleted_at IS NULL
 	`
@@ -34,7 +34,7 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*User, s
 
 	err := r.db.QueryRow(ctx, q, email).Scan(
 		&u.ID, &u.Email, &passwordHash, &u.FullName, &u.Phone,
-		&u.IsActive, &customerID, &u.LastLoginAt, &u.CreatedAt, &u.UpdatedAt,
+		&u.IsActive, &customerID, &u.LastLoginAt, &u.CreatedAt, &u.UpdatedAt, &u.TenantSlug,
 	)
 	if err != nil {
 		return nil, "", fmt.Errorf("get user by email: %w", err)
@@ -61,7 +61,7 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*User, s
 func (r *Repository) GetUserByID(ctx context.Context, id uuid.UUID) (*User, error) {
 	const q = `
 		SELECT id, email, full_name, phone, is_active,
-		       customer_id, last_login_at, created_at, updated_at
+		       customer_id, last_login_at, created_at, updated_at, COALESCE(tenant_slug, '')
 		FROM users
 		WHERE id = $1 AND deleted_at IS NULL
 	`
@@ -70,7 +70,7 @@ func (r *Repository) GetUserByID(ctx context.Context, id uuid.UUID) (*User, erro
 
 	err := r.db.QueryRow(ctx, q, id).Scan(
 		&u.ID, &u.Email, &u.FullName, &u.Phone, &u.IsActive,
-		&customerID, &u.LastLoginAt, &u.CreatedAt, &u.UpdatedAt,
+		&customerID, &u.LastLoginAt, &u.CreatedAt, &u.UpdatedAt, &u.TenantSlug,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("get user by id: %w", err)
@@ -178,12 +178,11 @@ func (r *Repository) BlacklistToken(ctx context.Context, jti string, expiresAt t
 	return err
 }
 
-// ListUsers retrieves all users with their primary role.
-// If callerEmail != "private@ispsync.id", root account is excluded from the query.
-func (r *Repository) ListUsers(ctx context.Context, search, roleSlug, callerEmail string) ([]UserListItem, error) {
+// ListUsers retrieves all users with their primary role scoped by tenant.
+func (r *Repository) ListUsers(ctx context.Context, search, roleSlug, callerEmail, tenantSlug string) ([]UserListItem, error) {
 	q := `
 		SELECT u.id, u.email, u.full_name, COALESCE(u.phone, ''), u.is_active, u.customer_id,
-		       u.last_login_at, u.created_at,
+		       u.last_login_at, u.created_at, COALESCE(u.tenant_slug, ''),
 		       r.id, r.name, r.slug, r.description
 		FROM users u
 		LEFT JOIN user_roles ur ON ur.user_id = u.id
@@ -195,6 +194,19 @@ func (r *Repository) ListUsers(ctx context.Context, search, roleSlug, callerEmai
 
 	if !strings.EqualFold(callerEmail, "private@ispsync.id") {
 		q += " AND LOWER(u.email) != 'private@ispsync.id'"
+	}
+
+	isSuperadmin := strings.EqualFold(callerEmail, "private@ispsync.id") || strings.EqualFold(callerEmail, "admin@ispsync.id")
+	if !isSuperadmin {
+		if tenantSlug != "" && tenantSlug != "superadmin" {
+			q += fmt.Sprintf(" AND (u.tenant_slug = $%d OR u.email ILIKE '%%@' || $%d || '.%%' OR u.email ILIKE '%%.' || $%d || '.%%')", argIdx, argIdx, argIdx)
+			args = append(args, tenantSlug)
+			argIdx++
+		}
+	} else if tenantSlug != "" && tenantSlug != "superadmin" && tenantSlug != "dev" {
+		q += fmt.Sprintf(" AND (u.tenant_slug = $%d OR u.email ILIKE '%%@' || $%d || '.%%' OR u.email ILIKE '%%.' || $%d || '.%%')", argIdx, argIdx, argIdx)
+		args = append(args, tenantSlug)
+		argIdx++
 	}
 
 	if search != "" {
@@ -226,7 +238,7 @@ func (r *Repository) ListUsers(ctx context.Context, search, roleSlug, callerEmai
 
 		if err := rows.Scan(
 			&u.ID, &u.Email, &u.FullName, &u.Phone, &u.IsActive, &customerID,
-			&u.LastLoginAt, &u.CreatedAt,
+			&u.LastLoginAt, &u.CreatedAt, &u.TenantSlug,
 			&roleID, &roleName, &roleSlug, &roleDesc,
 		); err != nil {
 			return nil, fmt.Errorf("scan user: %w", err)
@@ -253,7 +265,7 @@ func (r *Repository) ListUsers(ctx context.Context, search, roleSlug, callerEmai
 }
 
 // CreateUser creates a new user and assigns a role.
-func (r *Repository) CreateUser(ctx context.Context, email, passwordHash, fullName, phone string, roleID, creatorID uuid.UUID) (*UserListItem, error) {
+func (r *Repository) CreateUser(ctx context.Context, email, passwordHash, fullName, phone string, roleID, creatorID uuid.UUID, tenantSlug string) (*UserListItem, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
@@ -261,13 +273,13 @@ func (r *Repository) CreateUser(ctx context.Context, email, passwordHash, fullNa
 	defer tx.Rollback(ctx)
 
 	const insertUser = `
-		INSERT INTO users (email, password_hash, full_name, phone, is_active)
-		VALUES ($1, $2, $3, $4, TRUE)
-		RETURNING id, email, full_name, COALESCE(phone, ''), is_active, created_at
+		INSERT INTO users (email, password_hash, full_name, phone, is_active, tenant_slug)
+		VALUES ($1, $2, $3, $4, TRUE, $5)
+		RETURNING id, email, full_name, COALESCE(phone, ''), is_active, created_at, COALESCE(tenant_slug, '')
 	`
 	var u UserListItem
-	err = tx.QueryRow(ctx, insertUser, email, passwordHash, fullName, phone).Scan(
-		&u.ID, &u.Email, &u.FullName, &u.Phone, &u.IsActive, &u.CreatedAt,
+	err = tx.QueryRow(ctx, insertUser, email, passwordHash, fullName, phone, tenantSlug).Scan(
+		&u.ID, &u.Email, &u.FullName, &u.Phone, &u.IsActive, &u.CreatedAt, &u.TenantSlug,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("insert user: %w", err)

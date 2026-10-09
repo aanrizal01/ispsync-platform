@@ -15,6 +15,7 @@ type User struct {
 	FullName     string     `json:"full_name"`
 	Phone        string     `json:"phone"`
 	IsActive     bool       `json:"is_active"`
+	TenantSlug   string     `json:"tenant_slug,omitempty"`
 	CustomerID   *uuid.UUID `json:"customer_id,omitempty"` // non-nil for customer portal users
 	LastLoginAt  *time.Time `json:"last_login_at,omitempty"`
 	CreatedAt    time.Time  `json:"created_at"`
@@ -53,13 +54,14 @@ type Session struct {
 
 // Claims holds the JWT payload for authenticated requests.
 type Claims struct {
-	UserID      uuid.UUID `json:"sub"`
-	Email       string    `json:"email"`
+	UserID      uuid.UUID  `json:"sub"`
+	Email       string     `json:"email"`
+	TenantSlug  string     `json:"tenant_slug,omitempty"`
 	CustomerID  *uuid.UUID `json:"customer_id,omitempty"`
-	Permissions []string  `json:"permissions"`
-	TokenID     string    `json:"jti"` // for blacklisting
-	IssuedAt    int64     `json:"iat"`
-	ExpiresAt   int64     `json:"exp"`
+	Permissions []string   `json:"permissions"`
+	TokenID     string     `json:"jti"` // for blacklisting
+	IssuedAt    int64      `json:"iat"`
+	ExpiresAt   int64      `json:"exp"`
 }
 
 // HasPermission returns true if the claims include the given permission slug.
@@ -109,6 +111,7 @@ type UserListItem struct {
 	FullName    string     `json:"full_name"`
 	Phone       string     `json:"phone"`
 	IsActive    bool       `json:"is_active"`
+	TenantSlug  string     `json:"tenant_slug,omitempty"`
 	CustomerID  *uuid.UUID `json:"customer_id,omitempty"`
 	LastLoginAt *time.Time `json:"last_login_at,omitempty"`
 	CreatedAt   time.Time  `json:"created_at"`

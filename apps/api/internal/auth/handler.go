@@ -162,8 +162,9 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	if claims != nil {
 		callerEmail = claims.Email
 	}
+	tenantSlug := ExtractTenantSlug(r)
 
-	users, err := h.service.ListUsers(r.Context(), search, roleSlug, callerEmail)
+	users, err := h.service.ListUsers(r.Context(), search, roleSlug, callerEmail, tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -182,6 +183,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	if claims != nil {
 		creatorID = claims.UserID
 	}
+	tenantSlug := ExtractTenantSlug(r)
 
 	var req CreateUserRequest
 	if err := middleware.DecodeJSON(r, &req); err != nil {
@@ -189,7 +191,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, err := h.service.CreateUser(r.Context(), req, creatorID)
+	u, err := h.service.CreateUser(r.Context(), req, creatorID, tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -207,7 +209,14 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, err := h.service.GetCurrentUser(r.Context(), id)
+	claims := ClaimsFromContext(r.Context())
+	callerEmail := ""
+	if claims != nil {
+		callerEmail = claims.Email
+	}
+	tenantSlug := ExtractTenantSlug(r)
+
+	u, err := h.service.GetUserByIDScoped(r.Context(), id, callerEmail, tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -225,6 +234,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		updaterID = claims.UserID
 		updaterEmail = claims.Email
 	}
+	tenantSlug := ExtractTenantSlug(r)
 
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
@@ -239,7 +249,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.UpdateUser(r.Context(), id, req, updaterID, updaterEmail); err != nil {
+	if err := h.service.UpdateUser(r.Context(), id, req, updaterID, updaterEmail, tenantSlug); err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
 	}
@@ -254,6 +264,7 @@ func (h *Handler) AdminResetPassword(w http.ResponseWriter, r *http.Request) {
 	if claims != nil {
 		callerEmail = claims.Email
 	}
+	tenantSlug := ExtractTenantSlug(r)
 
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
@@ -268,7 +279,7 @@ func (h *Handler) AdminResetPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.AdminResetPassword(r.Context(), id, req.NewPassword, callerEmail); err != nil {
+	if err := h.service.AdminResetPassword(r.Context(), id, req.NewPassword, callerEmail, tenantSlug); err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
 	}
@@ -283,6 +294,7 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	if claims != nil {
 		callerEmail = claims.Email
 	}
+	tenantSlug := ExtractTenantSlug(r)
 
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
@@ -297,7 +309,7 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.DeleteUser(r.Context(), id, callerEmail); err != nil {
+	if err := h.service.DeleteUser(r.Context(), id, callerEmail, tenantSlug); err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
 	}

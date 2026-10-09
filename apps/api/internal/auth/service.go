@@ -184,6 +184,7 @@ func (s *Service) issueSession(ctx context.Context, user *User) (*Session, error
 		UserID:      user.ID,
 		Email:       user.Email,
 		CustomerID:  user.CustomerID,
+		TenantSlug:  user.TenantSlug,
 		Permissions: user.Permissions,
 		TokenID:     accessJTI,
 		IssuedAt:    now.Unix(),
@@ -194,11 +195,12 @@ func (s *Service) issueSession(ctx context.Context, user *User) (*Session, error
 	}
 
 	refreshToken, err := s.signToken(Claims{
-		UserID:    user.ID,
-		Email:     user.Email,
-		TokenID:   refreshJTI,
-		IssuedAt:  now.Unix(),
-		ExpiresAt: refreshExp.Unix(),
+		UserID:     user.ID,
+		Email:      user.Email,
+		TenantSlug: user.TenantSlug,
+		TokenID:    refreshJTI,
+		IssuedAt:   now.Unix(),
+		ExpiresAt:  refreshExp.Unix(),
 	})
 	if err != nil {
 		return nil, apperrors.Internal(err)
@@ -223,6 +225,7 @@ func (s *Service) signToken(claims Claims) (string, error) {
 		"sub":         claims.UserID.String(),
 		"email":       claims.Email,
 		"customer_id": claims.CustomerID,
+		"tenant_slug": claims.TenantSlug,
 		"permissions": claims.Permissions,
 		"jti":         claims.TokenID,
 		"iat":         claims.IssuedAt,
@@ -260,6 +263,10 @@ func (s *Service) parseToken(tokenStr string) (*Claims, error) {
 
 	if email, ok := mc["email"].(string); ok {
 		claims.Email = email
+	}
+
+	if ts, ok := mc["tenant_slug"].(string); ok {
+		claims.TenantSlug = ts
 	}
 
 	if perms, ok := mc["permissions"].([]interface{}); ok {
@@ -321,14 +328,14 @@ func loadPublicKey(path string) (*rsa.PublicKey, error) {
 	return key, nil
 }
 
-// ListUsers returns users filtered by search query or role.
+// ListUsers returns users filtered by search query or role scoped by tenant.
 // If caller is not root (private@ispsync.id), root account is shielded from results.
-func (s *Service) ListUsers(ctx context.Context, search, roleSlug, callerEmail string) ([]UserListItem, error) {
-	return s.repo.ListUsers(ctx, search, roleSlug, callerEmail)
+func (s *Service) ListUsers(ctx context.Context, search, roleSlug, callerEmail, tenantSlug string) ([]UserListItem, error) {
+	return s.repo.ListUsers(ctx, search, roleSlug, callerEmail, tenantSlug)
 }
 
-// CreateUser creates a new system/staff user.
-func (s *Service) CreateUser(ctx context.Context, req CreateUserRequest, creatorID uuid.UUID) (*UserListItem, error) {
+// CreateUser creates a new system/staff user scoped to tenantSlug.
+func (s *Service) CreateUser(ctx context.Context, req CreateUserRequest, creatorID uuid.UUID, tenantSlug string) (*UserListItem, error) {
 	if len(req.Password) < 8 {
 		return nil, apperrors.BadRequest("password must be at least 8 characters")
 	}
@@ -337,17 +344,31 @@ func (s *Service) CreateUser(ctx context.Context, req CreateUserRequest, creator
 		return nil, fmt.Errorf("hash password: %w", err)
 	}
 
-	user, err := s.repo.CreateUser(ctx, req.Email, hash, req.FullName, req.Phone, req.RoleID, creatorID)
+	user, err := s.repo.CreateUser(ctx, req.Email, hash, req.FullName, req.Phone, req.RoleID, creatorID, tenantSlug)
 	if err != nil {
 		return nil, err
 	}
 
-	s.logger.Info("user created", "id", user.ID, "email", user.Email, "role_id", req.RoleID)
+	s.logger.Info("user created", "id", user.ID, "email", user.Email, "role_id", req.RoleID, "tenant_slug", tenantSlug)
 	return user, nil
 }
 
+// GetUserByIDScoped fetches user by ID ensuring tenant isolation unless caller is root superadmin.
+func (s *Service) GetUserByIDScoped(ctx context.Context, id uuid.UUID, callerEmail string, tenantSlug string) (*User, error) {
+	targetUser, err := s.repo.GetUserByID(ctx, id)
+	if err != nil {
+		return nil, apperrors.NotFound("User")
+	}
+	if !strings.EqualFold(callerEmail, "private@ispsync.id") && !strings.EqualFold(callerEmail, "admin@ispsync.id") {
+		if targetUser.TenantSlug != "" && tenantSlug != "" && !strings.EqualFold(targetUser.TenantSlug, tenantSlug) {
+			return nil, apperrors.NotFound("User")
+		}
+	}
+	return targetUser, nil
+}
+
 // UpdateUser updates user profile and role with platform root account protection.
-func (s *Service) UpdateUser(ctx context.Context, id uuid.UUID, req UpdateUserRequest, updaterID uuid.UUID, updaterEmail string) error {
+func (s *Service) UpdateUser(ctx context.Context, id uuid.UUID, req UpdateUserRequest, updaterID uuid.UUID, updaterEmail string, tenantSlug string) error {
 	targetUser, err := s.repo.GetUserByID(ctx, id)
 	if err != nil {
 		return err
@@ -355,17 +376,29 @@ func (s *Service) UpdateUser(ctx context.Context, id uuid.UUID, req UpdateUserRe
 	if strings.EqualFold(targetUser.Email, "private@ispsync.id") && !strings.EqualFold(updaterEmail, "private@ispsync.id") {
 		return apperrors.Forbidden("Akun root platform dilindungi dan tidak dapat diubah oleh pengguna lain")
 	}
+	// Tenant isolation check
+	if !strings.EqualFold(updaterEmail, "private@ispsync.id") && !strings.EqualFold(updaterEmail, "admin@ispsync.id") {
+		if targetUser.TenantSlug != "" && tenantSlug != "" && !strings.EqualFold(targetUser.TenantSlug, tenantSlug) {
+			return apperrors.Forbidden("Pengguna tidak berada dalam domain organisasi Anda")
+		}
+	}
 	return s.repo.UpdateUser(ctx, id, req.FullName, req.Phone, req.IsActive, req.RoleID, updaterID)
 }
 
 // AdminResetPassword sets a new password for a user without requiring their current password.
-func (s *Service) AdminResetPassword(ctx context.Context, id uuid.UUID, newPassword string, callerEmail string) error {
+func (s *Service) AdminResetPassword(ctx context.Context, id uuid.UUID, newPassword string, callerEmail string, tenantSlug string) error {
 	targetUser, err := s.repo.GetUserByID(ctx, id)
 	if err != nil {
 		return err
 	}
 	if strings.EqualFold(targetUser.Email, "private@ispsync.id") && !strings.EqualFold(callerEmail, "private@ispsync.id") {
 		return apperrors.Forbidden("Password akun root platform tidak dapat direset oleh pengguna lain")
+	}
+	// Tenant isolation check
+	if !strings.EqualFold(callerEmail, "private@ispsync.id") && !strings.EqualFold(callerEmail, "admin@ispsync.id") {
+		if targetUser.TenantSlug != "" && tenantSlug != "" && !strings.EqualFold(targetUser.TenantSlug, tenantSlug) {
+			return apperrors.Forbidden("Pengguna tidak berada dalam domain organisasi Anda")
+		}
 	}
 	if len(newPassword) < 8 {
 		return apperrors.BadRequest("password must be at least 8 characters")
@@ -378,13 +411,19 @@ func (s *Service) AdminResetPassword(ctx context.Context, id uuid.UUID, newPassw
 }
 
 // DeleteUser deletes (soft delete) a user account.
-func (s *Service) DeleteUser(ctx context.Context, id uuid.UUID, callerEmail string) error {
+func (s *Service) DeleteUser(ctx context.Context, id uuid.UUID, callerEmail string, tenantSlug string) error {
 	targetUser, err := s.repo.GetUserByID(ctx, id)
 	if err != nil {
 		return err
 	}
 	if strings.EqualFold(targetUser.Email, "private@ispsync.id") {
 		return apperrors.Forbidden("Akun root platform dilindungi dan tidak dapat dihapus")
+	}
+	// Tenant isolation check
+	if !strings.EqualFold(callerEmail, "private@ispsync.id") && !strings.EqualFold(callerEmail, "admin@ispsync.id") {
+		if targetUser.TenantSlug != "" && tenantSlug != "" && !strings.EqualFold(targetUser.TenantSlug, tenantSlug) {
+			return apperrors.Forbidden("Pengguna tidak berada dalam domain organisasi Anda")
+		}
 	}
 	return s.repo.DeleteUser(ctx, id)
 }
