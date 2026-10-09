@@ -3,7 +3,31 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 
-const MEMBERS_PATH = path.join(process.cwd(), "data", "members.json");
+function getMembersPath(): string {
+  const p1 = path.join(process.cwd(), "data", "members.json");
+  if (fs.existsSync(p1)) return p1;
+  const p2 = path.join(process.cwd(), "apps", "web", "data", "members.json");
+  if (fs.existsSync(p2)) return p2;
+  return p1;
+}
+
+function getMembers() {
+  try {
+    return JSON.parse(fs.readFileSync(getMembersPath(), "utf-8"));
+  } catch {
+    return { members: [] };
+  }
+}
+
+function saveMembers(data: any): boolean {
+  try {
+    fs.writeFileSync(getMembersPath(), JSON.stringify(data, null, 2), "utf-8");
+    return true;
+  } catch (err) {
+    console.error("Failed to save members.json:", err);
+    return false;
+  }
+}
 
 // Secret key for HMAC token signing (persists across container restarts)
 const SESSION_SECRET = process.env.SESSION_SECRET || "ispsync-member-auth-secret-key-2026-carrier-grade";
@@ -44,14 +68,6 @@ function verifySessionToken(token: string): string | null {
   }
 
   return null;
-}
-
-function getMembers() {
-  try {
-    return JSON.parse(fs.readFileSync(MEMBERS_PATH, "utf-8"));
-  } catch {
-    return { members: [] };
-  }
 }
 
 function getClientIP(req: NextRequest) {
@@ -136,6 +152,70 @@ export async function POST(req: NextRequest) {
 
     const { password: _, ...safeMember } = member;
     return NextResponse.json({ success: true, member: safeMember });
+  }
+
+  if (action === "update_profile") {
+    if (!token) return NextResponse.json({ error: "Sesi tidak valid atau belum masuk." }, { status: 401 });
+    const memberId = verifySessionToken(token);
+    if (!memberId) return NextResponse.json({ error: "Sesi kedaluwarsa, silakan login ulang." }, { status: 401 });
+
+    const db = getMembers();
+    const idx = (db.members || []).findIndex((m: any) => m.id === memberId);
+    if (idx === -1) return NextResponse.json({ error: "Data akun tidak ditemukan." }, { status: 404 });
+
+    const member = db.members[idx];
+    const { picName, phone, company, address, npwp, email: newEmail } = body;
+
+    if (newEmail && newEmail.trim().toLowerCase() !== member.email.toLowerCase()) {
+      const emailExists = db.members.some(
+        (m: any) => m.id !== memberId && m.email.toLowerCase() === newEmail.trim().toLowerCase()
+      );
+      if (emailExists) {
+        return NextResponse.json({ error: "Alamat email sudah digunakan akun lain." }, { status: 400 });
+      }
+      member.email = newEmail.trim().toLowerCase();
+    }
+
+    if (picName !== undefined) member.picName = String(picName).trim();
+    if (phone !== undefined) member.phone = String(phone).trim();
+    if (company !== undefined) member.company = String(company).trim();
+    if (address !== undefined) member.address = String(address).trim();
+    if (npwp !== undefined) member.npwp = String(npwp).trim();
+
+    saveMembers(db);
+
+    const { password: _, ...safeMember } = member;
+    return NextResponse.json({ success: true, message: "Profil berhasil diperbarui.", member: safeMember });
+  }
+
+  if (action === "change_password") {
+    if (!token) return NextResponse.json({ error: "Sesi tidak valid atau belum masuk." }, { status: 401 });
+    const memberId = verifySessionToken(token);
+    if (!memberId) return NextResponse.json({ error: "Sesi kedaluwarsa, silakan login ulang." }, { status: 401 });
+
+    const db = getMembers();
+    const idx = (db.members || []).findIndex((m: any) => m.id === memberId);
+    if (idx === -1) return NextResponse.json({ error: "Data akun tidak ditemukan." }, { status: 404 });
+
+    const member = db.members[idx];
+    const { oldPassword, newPassword } = body;
+
+    if (!oldPassword || !newPassword) {
+      return NextResponse.json({ error: "Kata sandi lama dan baru wajib diisi." }, { status: 400 });
+    }
+
+    if (member.password !== oldPassword) {
+      return NextResponse.json({ error: "Kata sandi lama salah." }, { status: 400 });
+    }
+
+    if (newPassword.length < 6) {
+      return NextResponse.json({ error: "Kata sandi baru minimal 6 karakter." }, { status: 400 });
+    }
+
+    member.password = newPassword;
+    saveMembers(db);
+
+    return NextResponse.json({ success: true, message: "Kata sandi berhasil diubah." });
   }
 
   if (action === "logout") {

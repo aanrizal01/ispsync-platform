@@ -24,6 +24,8 @@ type MemberContextType = {
   loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  setMember: (m: Member | null) => void;
+  refreshMember: () => Promise<void>;
   updateEngineConfig: (engine: "ledger" | "nexus" | "fibergrid" | "primary", config: any) => Promise<{ success: boolean; error?: string }>;
 };
 
@@ -100,6 +102,22 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  async function refreshMember() {
+    const stored = token || (typeof window !== "undefined" ? localStorage.getItem("member-token") : null);
+    if (!stored) return;
+    try {
+      const res = await fetch("/api/member/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "verify", token: stored }),
+      });
+      const data = await res.json();
+      if (data.success && data.member) {
+        setMember(data.member);
+      }
+    } catch {}
+  }
+
   function logout() {
     if (token) {
       fetch("/api/member/auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "logout", token }) });
@@ -109,7 +127,7 @@ export function MemberProvider({ children }: { children: React.ReactNode }) {
     router.push("/member/login");
   }
 
-  return <MemberContext.Provider value={{ member, token, loading, login, logout, updateEngineConfig }}>{children}</MemberContext.Provider>;
+  return <MemberContext.Provider value={{ member, token, loading, login, logout, setMember, refreshMember, updateEngineConfig }}>{children}</MemberContext.Provider>;
 }
 
 export function useMember() {

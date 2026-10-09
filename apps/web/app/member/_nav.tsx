@@ -17,7 +17,7 @@ const engineNavItems = [
 ];
 
 const accountNavItems = [
-  { href: "/member/profile", label: "Profil Perusahaan", icon: "👤" },
+  { href: "/member/profile", label: "Pengaturan Akun & Profil", icon: "⚙️" },
   { href: "/member/support", label: "Bantuan & Support", icon: "💬" },
 ];
 
@@ -259,19 +259,35 @@ export default function MemberNav({ children }: { children: React.ReactNode }) {
 
         {/* User */}
         <div className="p-4 border-t border-gray-100">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs flex-shrink-0">
-              {member.picName.charAt(0)}
+          <Link
+            href="/member/profile"
+            className="flex items-center gap-3 mb-2 p-1.5 -mx-1.5 rounded-xl hover:bg-slate-100 transition group cursor-pointer"
+            title="Buka Pengaturan Akun"
+          >
+            <div className="w-8 h-8 rounded-full bg-blue-100 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center text-blue-600 font-bold text-xs flex-shrink-0 transition-colors">
+              {member.picName ? member.picName.charAt(0).toUpperCase() : "A"}
             </div>
-            <div className="min-w-0">
-              <div className="text-xs font-semibold text-gray-900 truncate">{member.picName}</div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-semibold text-gray-900 group-hover:text-blue-600 truncate transition-colors">
+                {member.picName}
+              </div>
               <div className="text-[10px] text-gray-400 truncate">{member.email}</div>
             </div>
+          </Link>
+          <div className="flex items-center justify-between text-xs pt-1.5 border-t border-slate-100">
+            <Link
+              href="/member/profile"
+              className="text-[11px] font-medium text-slate-500 hover:text-blue-600 transition-colors"
+            >
+              Pengaturan Akun
+            </Link>
+            <button
+              onClick={logout}
+              className="text-[11px] font-medium text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
+            >
+              Keluar
+            </button>
           </div>
-          <button onClick={logout}
-            className="w-full text-xs text-gray-400 hover:text-red-500 py-1.5 transition-colors text-center">
-            Keluar
-          </button>
         </div>
       </aside>
 
