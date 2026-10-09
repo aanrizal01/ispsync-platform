@@ -27563,33 +27563,24 @@
       }
 
       try {
-        if (password) {
-          const authRes = await fetch('/api/v1/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ username: username.toLowerCase(), password })
-          });
-          const authJson = await authRes.json();
-          if (authRes.ok && authJson.success && authJson.data) {
-            applyAuthenticatedRoleSession(authJson.data);
-            return;
-          } else if (authRes.status === 401) {
-            alert('Autentikasi gagal: Username atau password teknisi salah.');
-            return;
-          }
+        if (!password) {
+          alert('Silakan masukkan kata sandi teknisi.');
+          return;
         }
-        localStorage.setItem('technician_auth', JSON.stringify({ name: username, username }));
-        localStorage.setItem('active_portal_role', 'technician');
-        updateNavbarPortalBadge();
-        switchTab('technician');
-        initTechnicianPortal();
+        const authRes = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ username: username.toLowerCase(), password })
+        });
+        const authJson = await authRes.json().catch(() => ({}));
+        if (!authRes.ok || !authJson.success || !authJson.data || !authJson.data.token) {
+          alert(authJson.error || authJson.message || 'Autentikasi gagal: username atau password teknisi salah.');
+          return;
+        }
+        applyAuthenticatedRoleSession(authJson.data);
       } catch (err) {
-        localStorage.setItem('technician_auth', JSON.stringify({ name: username, username }));
-        localStorage.setItem('active_portal_role', 'technician');
-        updateNavbarPortalBadge();
-        switchTab('technician');
-        initTechnicianPortal();
+        alert('Tidak dapat terhubung ke server. Periksa koneksi lalu coba lagi.');
       } finally {
         if (btn) {
           btn.disabled = false;
@@ -27886,7 +27877,44 @@
       window.__ispsyncFetchPatched = true;
       const originalFetch = window.fetch;
       window.fetch = async function(...args) {
+        try {
+          const tok = localStorage.getItem('auth_session_token') || sessionStorage.getItem('auth_session_token');
+          if (tok) {
+            const input = args[0];
+            const rawUrl = (typeof input === 'string') ? input : (input instanceof URL ? input.href : (input?.url || ''));
+            const isSameOrigin = (rawUrl.startsWith('/') && !rawUrl.startsWith('//')) || rawUrl.startsWith(window.location.origin);
+            if (isSameOrigin && rawUrl.includes('/api/') && !rawUrl.includes('/api/v1/auth/login')) {
+              if (input instanceof Request) {
+                if (!input.headers.has('Authorization')) {
+                  const h = new Headers(input.headers);
+                  h.set('Authorization', 'Bearer ' + tok);
+                  args[0] = new Request(input, { headers: h });
+                }
+              } else {
+                const init = Object.assign({}, args[1] || {});
+                const h = new Headers(init.headers || {});
+                if (!h.has('Authorization')) {
+                  h.set('Authorization', 'Bearer ' + tok);
+                  init.headers = h;
+                  args[1] = init;
+                }
+              }
+            }
+          }
+        } catch (e) {}
         const response = await originalFetch.apply(this, args);
+        if (response.status === 401 && localStorage.getItem('active_portal_role') === 'technician') {
+          const u401 = (typeof args[0] === 'string') ? args[0] : (args[0]?.url || '');
+          if (u401.includes('/api/v1/technician/')) {
+            localStorage.removeItem('technician_auth');
+            localStorage.removeItem('active_portal_role');
+            try {
+              if (typeof switchTab === 'function') switchTab('admin');
+              if (typeof openNexusLoginModal === 'function') openNexusLoginModal('technician');
+            } catch (e) {}
+            return response;
+          }
+        }
         if (response.status === 401) {
           const url = (typeof args[0] === 'string') ? args[0] : (args[0]?.url || '');
           if (!url.includes('/api/v1/auth/login')) {
@@ -28207,7 +28235,8 @@
       e.preventDefault();
       const techName = document.getElementById('nexus-tech-name')?.value.trim();
       const pin = document.getElementById('nexus-tech-pin')?.value.trim();
-      if (!techName) return alert('Silakan masukkan username atau nama teknisi lapangan.');
+      if (!techName) return alert('Silakan masukkan username teknisi.');
+      if (!pin) return alert('Silakan masukkan PIN atau kata sandi teknisi.');
 
       const btn = document.getElementById('btn-nexus-tech-submit');
       const origHtml = btn ? btn.innerHTML : '';
@@ -28217,36 +28246,30 @@
       }
 
       try {
-        if (pin) {
-          const res = await fetch('/api/v1/auth/login', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: techName.toLowerCase(), password: pin })
-          });
-          const json = await res.json();
-          if (res.ok && json.success && json.data) {
-            applyAuthenticatedRoleSession(json.data);
-            closeNexusLoginModal();
-            initTechnicianPortal();
-            switchTab('technician');
-            return;
-          } else if (res.status === 401) {
-            alert('Autentikasi gagal: Username atau PIN/Password teknisi salah.');
-            return;
-          }
+        const res = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: techName.toLowerCase(), password: pin })
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json.success || !json.data || !json.data.token) {
+          alert(json.error || json.message || 'Autentikasi gagal: username atau PIN teknisi salah.');
+          return;
         }
-        localStorage.setItem('technician_auth', JSON.stringify({ name: techName }));
+        // Clear any stale token-less technician session before applying the real one
+        localStorage.removeItem('technician_auth');
+        applyAuthenticatedRoleSession(json.data);
+        if (!localStorage.getItem('technician_auth')) {
+          alert('Akun ini tidak memiliki akses Portal Teknisi.');
+          return;
+        }
         localStorage.setItem('active_portal_role', 'technician');
         closeNexusLoginModal();
         initTechnicianPortal();
         switchTab('technician');
       } catch (err) {
-        localStorage.setItem('technician_auth', JSON.stringify({ name: techName }));
-        localStorage.setItem('active_portal_role', 'technician');
-        closeNexusLoginModal();
-        initTechnicianPortal();
-        switchTab('technician');
+        alert('Tidak dapat terhubung ke server. Periksa koneksi lalu coba lagi.');
       } finally {
         if (btn) {
           btn.disabled = false;
@@ -28468,33 +28491,32 @@
       }
 
       try {
-        if (pin) {
-          const res = await fetch('/api/v1/auth/login', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: techName.toLowerCase(), password: pin })
-          });
-          const json = await res.json();
-          if (res.ok && json.success && json.data) {
-            applyAuthenticatedRoleSession(json.data);
-            initTechnicianPortal();
-            return;
-          } else if (res.status === 401) {
-            alert('Autentikasi gagal: Username atau PIN/Password teknisi salah.');
-            return;
-          }
+        if (!pin) {
+          alert('Silakan masukkan PIN atau kata sandi teknisi.');
+          return;
         }
-        // Fallback jika tanpa password atau mode offline tim
-        localStorage.setItem('technician_auth', JSON.stringify({ name: techName }));
+        const res = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: techName.toLowerCase(), password: pin })
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json.success || !json.data || !json.data.token) {
+          alert(json.error || json.message || 'Autentikasi gagal: username atau PIN teknisi salah.');
+          return;
+        }
+        localStorage.removeItem('technician_auth');
+        applyAuthenticatedRoleSession(json.data);
+        if (!localStorage.getItem('technician_auth')) {
+          alert('Akun ini tidak memiliki akses Portal Teknisi.');
+          return;
+        }
         localStorage.setItem('active_portal_role', 'technician');
         updateNavbarPortalBadge();
         initTechnicianPortal();
       } catch (err) {
-        localStorage.setItem('technician_auth', JSON.stringify({ name: techName }));
-        localStorage.setItem('active_portal_role', 'technician');
-        updateNavbarPortalBadge();
-        initTechnicianPortal();
+        alert('Tidak dapat terhubung ke server. Periksa koneksi lalu coba lagi.');
       } finally {
         if (btn) {
           btn.disabled = false;
