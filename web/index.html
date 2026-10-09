@@ -29,9 +29,12 @@
         if (window.__ISPSYNC_TENANT__ && window.__ISPSYNC_TENANT__.slug) {
           favSlug = window.__ISPSYNC_TENANT__.slug;
         } else {
-          var hp = host.split('.');
-          if (hp.length >= 4) favSlug = (hp[0] === 'sales' || hp[0] === 'noc' || hp[0] === 'noc-fo' || hp[0] === 'nexus' || hp[0] === 'fibergrid' || hp[0] === 'ledger') ? hp[1] : hp[0];
-          else if (hp.length === 3 && hp[1] === 'ispsync') favSlug = hp[0];
+          if (hp.length >= 4) {
+            var subPrefixes = ['sales', 'noc', 'noc-fo', 'nexus', 'fibergrid', 'ledger', 'portal', 'billing', 'wifi', 'hotspot', 'rekan', 'teknisi', 'technician'];
+            favSlug = subPrefixes.includes(hp[0]) ? hp[1] : hp[0];
+          } else if (hp.length === 3 && hp[1] === 'ispsync') {
+            favSlug = hp[0];
+          }
         }
         if (!favSlug || favSlug === 'localhost' || favSlug === '103') favSlug = 'dev';
 
@@ -671,9 +674,9 @@
       
       <!-- Brand Logo -->
       <div class="flex items-center gap-2 sm:gap-3 cursor-pointer" onclick="handleBrandLogoClick()">
-        <img src="/logo.png" alt="GOGIGA" class="h-8 sm:h-10 w-auto object-contain transition-transform" />
+        <img id="navbar-brand-logo" src="/logo.png" alt="Logo" class="h-8 sm:h-10 w-auto object-contain transition-transform" onerror="this.onerror=null; this.src='/logo.png';" />
         <div class="hidden sm:block border-l border-slate-200 pl-3">
-          <span class="font-extrabold text-base tracking-tight text-slate-900 font-mono block leading-none">GOGIGA<span class="text-sky-600">NET</span></span>
+          <span id="navbar-brand-name-title" class="font-extrabold text-base tracking-tight text-slate-900 font-mono block leading-none cust-brand-name-dynamic">ISPSYNC</span>
           <p id="navbar-brand-subtitle" class="text-[11px] text-slate-500 font-medium mt-1">Fiber Broadband &amp; Telco Network</p>
         </div>
       </div>
@@ -29824,6 +29827,17 @@
           simBar.classList.add('hidden');
         }
       }
+
+      const brandTitle = document.getElementById('navbar-brand-name-title');
+      if (brandTitle) brandTitle.innerText = window.__EARLY_BRAND_NAME__ || "ISPSYNC";
+      const brandLogo = document.getElementById('navbar-brand-logo');
+      if (brandLogo) {
+        brandLogo.src = '/logo.png';
+        brandLogo.alt = window.__EARLY_BRAND_NAME__ || "ISPSYNC";
+      }
+      document.querySelectorAll('.cust-brand-name-dynamic').forEach(function(el) {
+        el.textContent = window.__EARLY_BRAND_NAME__ || "ISPSYNC";
+      });
 
       const subtitle = document.getElementById('navbar-brand-subtitle');
       const regBtn = document.getElementById('tab-register-btn');

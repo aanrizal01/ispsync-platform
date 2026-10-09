@@ -129,7 +129,7 @@ https:// {
 
     # 0.75. Universal Tenant Favicon Handler
     @tenant_favicon {
-        path /favicon.ico /favicon.ico* /logo.png
+        path /favicon.ico /favicon.ico*
     }
     handle @tenant_favicon {
         rewrite * /web/{labels.2}_favicon.svg

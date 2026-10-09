@@ -341,6 +341,8 @@ func main() {
 
 	// Static Assets (Logo, Documents, Web files)
 	r.Get("/logo.png", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/png")
+		w.Header().Set("Cache-Control", "public, max-age=86400")
 		http.ServeFile(w, r, "web/logo.png")
 	})
 	// Universal Document & PDF Handler (Multi-tenant dynamic branding support)
