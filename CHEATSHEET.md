@@ -63,35 +63,29 @@ Tenant **`dev`** (*Laboratorium ISPSYNC R&D / Telecom DevLab*) digunakan untuk p
 ## 🏢 3. Tenant Demo Resmi (Multi-Tenant Production)
 
 ### A. Tenant `ispku` — PT. ISP Kita Nusantara
-* **Billing & Finance**: [https://billing.ispku.ispsync.id](https://billing.ispku.ispsync.id)
-* **NOC & Portal Operasional**: [https://nexus.ispku.ispsync.id](https://nexus.ispku.ispsync.id)
+* **Billing & Finance**: [https://billing.ispku.ispsync.id](https://billing.ispku.ispsync.id) *(atau `https://ledger.ispku.ispsync.id`)*
+* **Operasional Internal Terpadu (Nexus)**: [https://nexus.ispku.ispsync.id](https://nexus.ispku.ispsync.id) *(Owner, NOC, Sales & Teknisi)*
 * **Portal Registrasi Pelanggan GIS**: [https://portal.ispku.ispsync.id](https://portal.ispku.ispsync.id)
-* **Portal Sales**: [https://sales.ispku.ispsync.id](https://sales.ispku.ispsync.id)
-* **Portal Teknisi (SPK & BAST)**: [https://teknisi.ispku.ispsync.id](https://teknisi.ispku.ispsync.id)
-* **FTTX Command Center**: [https://fttx.ispku.ispsync.id](https://fttx.ispku.ispsync.id)
-* **Loket Agen**: [https://billing.ispku.ispsync.id/agent](https://billing.ispku.ispsync.id/agent)
-* **Portal Passpoint Wi-Fi**: [https://billing.ispku.ispsync.id/passpoint](https://billing.ispku.ispsync.id/passpoint)
+* **FTTX Command Center (FiberGrid)**: [https://fttx.ispku.ispsync.id](https://fttx.ispku.ispsync.id)
+* **Hotspot, Passpoint & Loket Agen**: [https://wifi.ispku.ispsync.id](https://wifi.ispku.ispsync.id) *(atau `/agent`)*
 * **Akun Login (`ispku`)**:
-  * `owner` / `Password@123`
-  * `noc` / `Password@123`
-  * `sales` / `Password@123`
-  * `teknisi` / `Password@123`
+  * `owner` / `Password@123` *(Pimpinan / Owner)*
+  * `noc` / `Password@123` *(NOC & Dispatcher)*
+  * `sales` / `Password@123` *(Sales Marketing)*
+  * `teknisi` / `Password@123` *(Teknisi Lapangan SPK & BAST)*
   * `admin@ispku.ispsync.id` / `Ispku2026!` *(Member Portal)*
 
 ### B. Tenant `ispmu` — PT. Mitra Usaha Data
-* **Billing & Finance**: [https://billing.ispmu.ispsync.id](https://billing.ispmu.ispsync.id)
-* **NOC & Portal Operasional**: [https://nexus.ispmu.ispsync.id](https://nexus.ispmu.ispsync.id)
+* **Billing & Finance**: [https://billing.ispmu.ispsync.id](https://billing.ispmu.ispsync.id) *(atau `https://ledger.ispmu.ispsync.id`)*
+* **Operasional Internal Terpadu (Nexus)**: [https://nexus.ispmu.ispsync.id](https://nexus.ispmu.ispsync.id) *(Owner, NOC, Sales & Teknisi)*
 * **Portal Registrasi Pelanggan GIS**: [https://portal.ispmu.ispsync.id](https://portal.ispmu.ispsync.id)
-* **Portal Sales**: [https://sales.ispmu.ispsync.id](https://sales.ispmu.ispsync.id)
-* **Portal Teknisi (SPK & BAST)**: [https://teknisi.ispmu.ispsync.id](https://teknisi.ispmu.ispsync.id)
-* **FTTX Command Center**: [https://fttx.ispmu.ispsync.id](https://fttx.ispmu.ispsync.id)
-* **Loket Agen**: [https://billing.ispmu.ispsync.id/agent](https://billing.ispmu.ispsync.id/agent)
-* **Portal Passpoint Wi-Fi**: [https://billing.ispmu.ispsync.id/passpoint](https://billing.ispmu.ispsync.id/passpoint)
+* **FTTX Command Center (FiberGrid)**: [https://fttx.ispmu.ispsync.id](https://fttx.ispmu.ispsync.id)
+* **Hotspot, Passpoint & Loket Agen**: [https://wifi.ispmu.ispsync.id](https://wifi.ispmu.ispsync.id) *(atau `/agent`)*
 * **Akun Login (`ispmu`)**:
-  * `owner` / `Password@123`
-  * `noc` / `Password@123`
-  * `sales` / `Password@123`
-  * `teknisi` / `Password@123`
+  * `owner` / `Password@123` *(Pimpinan / Owner)*
+  * `noc` / `Password@123` *(NOC & Dispatcher)*
+  * `sales` / `Password@123` *(Sales Marketing)*
+  * `teknisi` / `Password@123` *(Teknisi Lapangan SPK & BAST)*
   * `admin@ispmu.ispsync.id` / `Ispmu2026!` *(Member Portal)*
 
 ---

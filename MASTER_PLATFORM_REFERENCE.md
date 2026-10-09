@@ -22,19 +22,14 @@
   * Docker Container: `ispsync-dns` (CoreDNS running with `--net=host` on public IP `103.179.65.73:53`)
   * Resolves: `ispsync.id`, `*.ispsync.id`, `*.*.ispsync.id` (multi-level subdomains bypass Cloudflare Universal SSL limitation).
 * **Hierarchical Subdomain Routing (The 3-Engine Platform Architecture)**:
-  * **Engine 1: CMS Billing Platform** (`cms.<tenant>.ispsync.id` & `billing.<tenant>.ispsync.id`):
-    * Next.js 14 Standalone (`web:3000`) & Go REST API (`api:8080`).
-    * Backoffice CRM, Billing, Invoices, Loket Kasir POS (`/admin/payments?tab=pos`) dengan kalkulator uang pas & cetak thermal 58mm/80mm, Hotspot POS Blanko Vouchers, Payment Gateway (Midtrans, Xendit, QRIS).
-  * **Engine 2: ISP Onboarding & Field Portals** (`ispsync-core.service` on Port 8082):
-    * `portal.<tenant>.ispsync.id` $\rightarrow$ Registrasi Mandiri & Peta GIS Leaflet ODP Terdekat (Haversine $\le 250\text{ m}$), KTP, Tanda Tangan Kontrak.
-    * `sales.<tenant>.ispsync.id` $\rightarrow$ Portal Sales Lapangan & Generator Link WhatsApp Referral.
-    * `teknisi.<tenant>.ispsync.id` $\rightarrow$ Surat Perintah Kerja (SPK) & BAST Digital Redaman OPM ($\ge -27\text{ dBm}$).
-    * `rekan.<tenant>.ispsync.id` $\rightarrow$ Portal Rekan Mitra Jartaplok.
-  * **Engine 3: FTTX NOC Command Center & Wholesale Jartaplok** (`ispsync-fttx.service` on Port 8083):
-    * `fttx.<tenant>.ispsync.id` & `noc.<tenant>.ispsync.id` $\rightarrow$ FTTX NOC Command Center.
-    * Visualisasi Topologi FO GIS (OLT, ODC, ODP, Rute Feeder Backbone, Waypoint Belokan Kabel, Export KML Google Earth).
-    * Monitoring OLT Multi-Vendor (Huawei, ZTE, FiberHome, C-Data, VSOL/Jolink 1-Port) & Auto-Discovery SNMP / TR-069.
-    * Wholesale Jartaplok Management (Billing Sewa Port, e-Faktur Pajak PPN 11%, PPh 23 2%, e-Bupot Unifikasi).
+  * **Engine 1: ISPSYNC FiberGrid (Physical Infrastructure & FTTX)** (`ispsync-fttx.service` on Port 8082):
+    * `fttx.<tenant>.ispsync.id` $\rightarrow$ FTTX Command Center, Visualisasi Topologi FO GIS (OLT, ODC, ODP, Rute Feeder/Distribusi, Export KML Google Earth), Monitoring OLT Multi-Vendor (Huawei, ZTE, FiberHome, C-Data, VSOL) via SNMP/TR-069, dan Wholesale Jartaplok Management (Billing Sewa Port, e-Faktur Pajak PPN 11%, PPh 23 2%).
+  * **Engine 2: ISPSYNC Nexus (Retail Operations, Field & CRM)** (`ispsync-core.service` on Port 8081):
+    * `portal.<tenant>.ispsync.id` $\rightarrow$ Registrasi Mandiri Publik & Peta GIS Leaflet ODP Terdekat (Haversine $\le 250\text{ m}$), KTP, Tanda Tangan Kontrak Digital.
+    * `nexus.<tenant>.ispsync.id` $\rightarrow$ Pintu Masuk Tunggal Seluruh Operasional Staf & Mitra (Dashboard Terpadu Role-Based: Pimpinan/Owner, Dispatcher NOC, Sales Lapangan & Link Referral WhatsApp, Teknisi SPK & BAST Digital Redaman OPM, serta Rekan Mitra Jartaplok).
+  * **Engine 3: ISPSYNC Ledger (Billing, Finance, POS & AAA)**:
+    * `ledger.<tenant>.ispsync.id` & `billing.<tenant>.ispsync.id` (Port 8080 API / Port 3000 Web) $\rightarrow$ Backoffice CRM, Invoicing, Billing, Loket Kasir POS (`/admin/payments?tab=pos`) cetak thermal 58mm/80mm, Router Gateway (MikroTik / Juniper MX BNG), dan FreeRADIUS AAA.
+    * `wifi.<tenant>.ispsync.id` $\rightarrow$ Jalur Publik Mandiri Voucher Hotspot QRIS (`/hotspot/*`), Wi-Fi Passpoint Hotspot 2.0 (`/passpoint`), dan Pendaftaran & Loket Kasir Agen Mitra (`/agent/*`).
 * **Custom Domain / CNAME Support**:
   * Tenant dapat memetakan domain sendiri (contoh: `billing.ispku.net` CNAME $\rightarrow$ `ispsync.id`).
   * **Zero-Touch On-Demand TLS**: Caddy Web Server mengonfirmasi kepemilikan domain via webhook `GET http://172.18.0.1:8082/api/v1/caddy/ask?domain={domain}`.

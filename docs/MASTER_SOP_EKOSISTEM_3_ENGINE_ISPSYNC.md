@@ -73,15 +73,15 @@ Ekosistem telekomunikasi **GOGIGANET** dibangun di atas arsitektur *microservice
 
 ## BAB II: STANDAR PORT, DOMAIN, & MATRIKS HAK AKSES KREDENSIAL
 
+Platform ISPSYNC menerapkan arsitektur domain pintu masuk tunggal terpadu per engine (*Unified Single-Entry Portal*):
+
 | Layanan / Portal | Alamat Domain Resmi | Port Server | Sasaran Pengguna | Kredensial Default |
 |---|---|:---:|---|---|
-| **FTTX Command Center** | `https://fttx.{tenant}.ispsync.id` | `8082` | NOC Core & Tim Fiber | Akun Superuser / Staf FTTX |
-| **NOC FO Command Center** | `https://noc.{tenant}.ispsync.id` | `8081` | Dispatcher & Tim NOC | `admin` / `admin123` |
-| **Portal Registrasi Publik** | `https://portal.{tenant}.ispsync.id` | `8081` | Calon Pelanggan Baru | Akses Terbuka (Public Self-Service) |
-| **Portal Sales Marketing** | `https://sales.{tenant}.ispsync.id` | `8081` | Tim Sales / AE | `fajar` / `sales123` |
-| **Portal Teknisi Lapangan** | `https://teknisi.{tenant}.ispsync.id` | `8081` | Regu Teknisi Instalasi | `nando`, `ricci`, `zikka`, `egi` |
-| **Portal Rekan Jartaplok** | `https://rekan.{tenant}.ispsync.id` | `8081` | Mitra Pemilik Jaringan | `GNET-BIARO` / API Key |
-| **ISPSYNC Ledger Admin Billing**| `https://billing.{tenant}.ispsync.id` | `8080` | Finance, Kasir & Manajemen | Akun Admin Keuangan |
+| **Engine 1: ISPSYNC FiberGrid (FTTX)** | `https://fttx.{tenant}.ispsync.id` | `8082` | NOC Core & Tim Fiber Engineering | Akun Superuser / Staf FTTX |
+| **Engine 2: Portal Registrasi Publik** | `https://portal.{tenant}.ispsync.id` | `8081` | Calon Pelanggan Baru | Akses Terbuka (Public Self-Service GIS) |
+| **Engine 2: ISPSYNC Nexus (Unified Ops)** | `https://nexus.{tenant}.ispsync.id` | `8081` | Owner, Dispatcher NOC, Sales, Teknisi & Mitra Lapangan | Login Terpadu Berbasis Peran:<br>• `owner` (Owner / Super Admin)<br>• `noc` (Dispatcher & Monitoring)<br>• `sales` (Tim Sales & Referral)<br>• `teknisi` (Teknisi SPK & BAST Digital)<br>• Mitra Jartaplok (API Key / Partner) |
+| **Engine 3: ISPSYNC Ledger (Backoffice)**| `https://ledger.{tenant}.ispsync.id` | `8080` / `3000` | Finance, Kasir POS & Manajemen | Akun Admin Keuangan / Kasir |
+| **Engine 3: Portal Hotspot & Mitra Loket**| `https://wifi.{tenant}.ispsync.id` | `3000` | Pelanggan Hotspot & Mitra Agen | Akses Publik QRIS & Kasir Loket Warung |
 
 ---
 
@@ -144,7 +144,7 @@ Sistem FTTX menjalankan daemon SNMP Poller secara otomatis setiap **5 menit** un
 3. Pelanggan mengisi formulir data diri, mengunggah foto KTP, fasad rumah, dan menandatangani **Surat Perjanjian Berlangganan Digital** langsung di layar ponsel.
 
 ### SOP-ISP-02: Prospek Tim Sales, Kode Referral, & Klaim Komisi Rp 50.000
-1. Tim Sales / Account Executive menggunakan portal [sales.gogiga.net.id](https://sales.{tenant}.ispsync.id).
+1. Tim Sales / Account Executive membuka portal operasional [https://nexus.{tenant}.ispsync.id](https://nexus.{tenant}.ispsync.id) (login dengan akun role Sales).
 2. Bagikan link pendaftaran ber-referral: `https://portal.{tenant}.ispsync.id/?ref=FAJAR-PYK`.
 3. Setiap pelanggan yang mendaftar melalui link tersebut otomatis tercatat di bawah ID staf bersangkutan.
 4. **Ketentuan Pencairan Komisi**:
@@ -152,7 +152,7 @@ Sistem FTTX menjalankan daemon SNMP Poller secara otomatis setiap **5 menit** un
    - Komisi berstatus *Eligible for Payout* seketika setelah Berita Acara Serah Terima (BAST) diverifikasi NOC dan pelanggan aktif internetnya.
 
 ### SOP-ISP-03: Verifikasi Dokumen KTP, Kontrak Digital, & Penerbitan SPK
-1. Dispatcher NOC membuka [noc-fo.gogiga.net.id](https://noc.{tenant}.ispsync.id) menu **Pendaftaran Pelanggan**.
+1. Dispatcher NOC membuka portal operasional [https://nexus.{tenant}.ispsync.id](https://nexus.{tenant}.ispsync.id) (login dengan akun role NOC/Dispatcher) menu **Pendaftaran Pelanggan / Leads**.
 2. Verifikasi dokumen:
    - Pastikan NIK KTP terbaca jelas dan foto rumah sesuai dengan titik koordinat maps.
    - Pastikan port ODP terdekat masih tersedia (kurang dari 8 port terisi).
@@ -173,7 +173,7 @@ Sistem FTTX menjalankan daemon SNMP Poller secara otomatis setiap **5 menit** un
 1. Teknisi wajib mengukur sinyal optik di konektor ujung rumah pelanggan menggunakan Optical Power Meter (OPM) pada panjang gelombang $1490\text{ nm}$.
 2. **Kriteria Kelayakan**: Redaman wajib bernilai **$\le -23.0\text{ dBm}$** (misal: $-18.5\text{ dBm}$).
 3. **Penyusunan BAST Digital**:
-   - Teknisi membuka [teknisi.gogiga.net.id](https://teknisi.{tenant}.ispsync.id).
+   - Teknisi membuka portal operasional [https://nexus.{tenant}.ispsync.id](https://nexus.{tenant}.ispsync.id) (login dengan akun role Teknisi) menu **SPK & BAST Digital**.
    - Masukkan nilai redaman dBm, Serial Number ONT, dan MAC Address.
    - Unggah foto bukti redaman OPM dan foto modem menyala hijau.
    - Pelanggan menandatangani BAST digital di layar HP teknisi sebagai tanda terima pekerjaan selesai.

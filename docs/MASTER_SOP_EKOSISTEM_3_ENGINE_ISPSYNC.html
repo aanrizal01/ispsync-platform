@@ -237,53 +237,40 @@
 </thead>
 <tbody>
 <tr>
-<td><strong>FTTX Command Center</strong></td>
+<tr>
+<td><strong>Engine 1: ISPSYNC FiberGrid (FTTX)</strong></td>
 <td><code>https://fttx.{tenant}.ispsync.id</code></td>
 <td style="text-align: center;"><code>8082</code></td>
-<td>NOC Core &amp; Tim Fiber</td>
+<td>NOC Core &amp; Tim Fiber Engineering</td>
 <td>Akun Superuser / Staf FTTX</td>
 </tr>
 <tr>
-<td><strong>NOC FO Command Center</strong></td>
-<td><code>https://noc.{tenant}.ispsync.id</code></td>
-<td style="text-align: center;"><code>8081</code></td>
-<td>Dispatcher &amp; Tim NOC</td>
-<td><code>admin</code> / <code>admin123</code></td>
-</tr>
-<tr>
-<td><strong>Portal Registrasi Publik</strong></td>
+<td><strong>Engine 2: Portal Registrasi Publik</strong></td>
 <td><code>https://portal.{tenant}.ispsync.id</code></td>
 <td style="text-align: center;"><code>8081</code></td>
 <td>Calon Pelanggan Baru</td>
-<td>Akses Terbuka (Public Self-Service)</td>
+<td>Akses Terbuka (Public Self-Service GIS)</td>
 </tr>
 <tr>
-<td><strong>Portal Sales Marketing</strong></td>
-<td><code>https://sales.{tenant}.ispsync.id</code></td>
+<td><strong>Engine 2: ISPSYNC Nexus (Unified Ops)</strong></td>
+<td><code>https://nexus.{tenant}.ispsync.id</code></td>
 <td style="text-align: center;"><code>8081</code></td>
-<td>Tim Sales / AE</td>
-<td><code>fajar</code> / <code>sales123</code></td>
+<td>Owner, Dispatcher NOC, Sales, Teknisi &amp; Mitra Lapangan</td>
+<td>Login Terpadu Berbasis Peran:<br>• <code>owner</code> (Owner / Super Admin)<br>• <code>noc</code> (Dispatcher &amp; Monitoring)<br>• <code>sales</code> (Tim Sales &amp; Referral)<br>• <code>teknisi</code> (Teknisi SPK &amp; BAST Digital)<br>• Mitra Jartaplok (API Key / Partner)</td>
 </tr>
 <tr>
-<td><strong>Portal Teknisi Lapangan</strong></td>
-<td><code>https://teknisi.{tenant}.ispsync.id</code></td>
-<td style="text-align: center;"><code>8081</code></td>
-<td>Regu Teknisi Instalasi</td>
-<td><code>nando</code>, <code>ricci</code>, <code>zikka</code>, <code>egi</code></td>
+<td><strong>Engine 3: ISPSYNC Ledger (Backoffice)</strong></td>
+<td><code>https://ledger.{tenant}.ispsync.id</code></td>
+<td style="text-align: center;"><code>8080 / 3000</code></td>
+<td>Finance, Kasir POS &amp; Manajemen</td>
+<td>Akun Admin Keuangan / Kasir</td>
 </tr>
 <tr>
-<td><strong>Portal Rekan Jartaplok</strong></td>
-<td><code>https://rekan.{tenant}.ispsync.id</code></td>
-<td style="text-align: center;"><code>8081</code></td>
-<td>Mitra Pemilik Jaringan</td>
-<td><code>GNET-BIARO</code> / API Key</td>
-</tr>
-<tr>
-<td><strong>ISPSYNC Ledger Admin Billing</strong></td>
-<td><code>https://billing.{tenant}.ispsync.id</code></td>
-<td style="text-align: center;"><code>8080</code></td>
-<td>Finance, Kasir &amp; Manajemen</td>
-<td>Akun Admin Keuangan</td>
+<td><strong>Engine 3: Portal Hotspot &amp; Mitra Loket</strong></td>
+<td><code>https://wifi.{tenant}.ispsync.id</code></td>
+<td style="text-align: center;"><code>3000</code></td>
+<td>Pelanggan Hotspot &amp; Mitra Agen</td>
+<td>Akses Publik QRIS &amp; Kasir Loket Warung</td>
 </tr>
 </tbody>
 </table>
@@ -349,7 +336,7 @@
 </ol>
 <h3>SOP-ISP-02: Prospek Tim Sales, Kode Referral, &amp; Klaim Komisi Rp 50.000</h3>
 <ol>
-<li>Tim Sales / Account Executive menggunakan portal <a href="https://sales.{tenant}.ispsync.id">sales.gogiga.net.id</a>.</li>
+<li>Tim Sales / Account Executive membuka portal operasional <a href="https://nexus.{tenant}.ispsync.id">https://nexus.{tenant}.ispsync.id</a> (login dengan akun role Sales).</li>
 <li>Bagikan link pendaftaran ber-referral: <code>https://portal.{tenant}.ispsync.id/?ref=FAJAR-PYK</code>.</li>
 <li>Setiap pelanggan yang mendaftar melalui link tersebut otomatis tercatat di bawah ID staf bersangkutan.</li>
 <li><strong>Ketentuan Pencairan Komisi</strong>:</li>
@@ -358,7 +345,7 @@
 </ol>
 <h3>SOP-ISP-03: Verifikasi Dokumen KTP, Kontrak Digital, &amp; Penerbitan SPK</h3>
 <ol>
-<li>Dispatcher NOC membuka <a href="https://noc.{tenant}.ispsync.id">noc-fo.gogiga.net.id</a> menu <strong>Pendaftaran Pelanggan</strong>.</li>
+<li>Dispatcher NOC membuka portal operasional <a href="https://nexus.{tenant}.ispsync.id">https://nexus.{tenant}.ispsync.id</a> (login dengan akun role NOC/Dispatcher) menu <strong>Pendaftaran Pelanggan / Leads</strong>.</li>
 <li>Verifikasi dokumen:</li>
 <li>Pastikan NIK KTP terbaca jelas dan foto rumah sesuai dengan titik koordinat maps.</li>
 <li>Pastikan port ODP terdekat masih tersedia (kurang dari 8 port terisi).</li>
@@ -381,7 +368,7 @@
 <li>Teknisi wajib mengukur sinyal optik di konektor ujung rumah pelanggan menggunakan Optical Power Meter (OPM) pada panjang gelombang $1490\text{ nm}$.</li>
 <li><strong>Kriteria Kelayakan</strong>: Redaman wajib bernilai <strong>$\le -23.0\text{ dBm}$</strong> (misal: $-18.5\text{ dBm}$).</li>
 <li><strong>Penyusunan BAST Digital</strong>:</li>
-<li>Teknisi membuka <a href="https://teknisi.{tenant}.ispsync.id">teknisi.gogiga.net.id</a>.</li>
+<li>Teknisi membuka portal operasional <a href="https://nexus.{tenant}.ispsync.id">https://nexus.{tenant}.ispsync.id</a> (login dengan akun role Teknisi) menu <strong>SPK &amp; BAST Digital</strong>.</li>
 <li>Masukkan nilai redaman dBm, Serial Number ONT, dan MAC Address.</li>
 <li>Unggah foto bukti redaman OPM dan foto modem menyala hijau.</li>
 <li>Pelanggan menandatangani BAST digital di layar HP teknisi sebagai tanda terima pekerjaan selesai.</li>
