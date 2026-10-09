@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useMember } from "../../context";
 import { Building2, CreditCard, ShieldCheck, CheckCircle2, ArrowRight } from "lucide-react";
 
-export default function MockPaymentPage({ params }: { params: { id: string } }) {
-  const invoiceId = params.id;
-  const { member, refresh } = useMember();
+export default function MockPaymentPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: invoiceId } = use(params);
+  const { member, refreshMember } = useMember();
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
@@ -38,7 +38,7 @@ export default function MockPaymentPage({ params }: { params: { id: string } }) 
       
       if (data.success) {
         setSuccess(true);
-        refresh(); // update member context
+        refreshMember(); // update member context
         setTimeout(() => {
           router.push("/member/invoices");
         }, 3000);
