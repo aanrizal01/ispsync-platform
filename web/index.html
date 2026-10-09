@@ -679,6 +679,16 @@
           <span id="navbar-brand-name-title" class="font-extrabold text-base tracking-tight text-slate-900 font-mono block leading-none cust-brand-name-dynamic">ISPSYNC</span>
           <p id="navbar-brand-subtitle" class="text-[11px] text-slate-500 font-medium mt-1">Fiber Broadband &amp; Telco Network</p>
         </div>
+        <script>
+          (function() {
+            try {
+              var t = document.getElementById('navbar-brand-name-title');
+              if (t && window.__EARLY_BRAND_NAME__) t.textContent = window.__EARLY_BRAND_NAME__;
+              var l = document.getElementById('navbar-brand-logo');
+              if (l && window.__EARLY_LOGO_URL__) l.src = window.__EARLY_LOGO_URL__;
+            } catch(e) {}
+          })();
+        </script>
       </div>
 
       <!-- Navigation Tabs (Satu Pintu: Unified Portal Gateway) -->
@@ -29832,7 +29842,7 @@
       if (brandTitle) brandTitle.innerText = window.__EARLY_BRAND_NAME__ || "ISPSYNC";
       const brandLogo = document.getElementById('navbar-brand-logo');
       if (brandLogo) {
-        brandLogo.src = '/logo.png';
+        brandLogo.src = (window.__ISPSYNC_TENANT__ && window.__ISPSYNC_TENANT__.logo_url) || window.__EARLY_LOGO_URL__ || '/logo.png';
         brandLogo.alt = window.__EARLY_BRAND_NAME__ || "ISPSYNC";
       }
       document.querySelectorAll('.cust-brand-name-dynamic').forEach(function(el) {

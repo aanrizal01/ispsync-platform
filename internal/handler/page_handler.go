@@ -124,9 +124,12 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. Injected Early Tenant Context Script
-	brandShort := tCtx.Tenant.PrefixID
+	brandShort := strings.TrimSpace(tCtx.Tenant.ShortName)
 	if brandShort == "" || strings.HasPrefix(strings.ToUpper(brandShort), "PT") || brandShort == "DEV" {
 		brandShort = strings.ToUpper(tCtx.Tenant.Slug)
+	}
+	if brandShort == "" || brandShort == "DEV" {
+		brandShort = tCtx.Tenant.PrefixID
 	}
 	if brandShort == "" || brandShort == "DEV" {
 		brandShort = "ISPSYNC"
@@ -232,6 +235,11 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 		npwp = st.NPWP
 	}
 
+	logoURL := tCtx.Tenant.LogoURL
+	if logoURL == "" {
+		logoURL = "/web/" + tCtx.Tenant.Slug + "_logo.svg"
+	}
+
 	tenantScript := fmt.Sprintf(`
   <!-- DYNAMIC ISPSYNC TENANT INJECTION -->
   <script>
@@ -240,6 +248,7 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
       slug: %q,
       name: %q,
       short_name: %q,
+      prefix_id: %q,
       logo_url: %q,
       brand_color: %q,
       contact_phone: %q,
@@ -261,7 +270,7 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
       } catch (e) {}
     })();
   </script>
-`, tCtx.Tenant.ID, tCtx.Tenant.Slug, tCtx.Tenant.Name, tCtx.Tenant.PrefixID, tCtx.Tenant.LogoURL, tCtx.Tenant.BrandColor, tCtx.Tenant.ContactPhone, tCtx.Tenant.ContactEmail, tCtx.Tenant.Address, tCtx.AppType, tCtx.Subdomain, tCtx.Host, taxMode, taxRatePPN, npwp, string(allTenantsJSON), mode, pageTitle, trackClassScript)
+`, tCtx.Tenant.ID, tCtx.Tenant.Slug, tCtx.Tenant.Name, brandShort, tCtx.Tenant.PrefixID, logoURL, tCtx.Tenant.BrandColor, tCtx.Tenant.ContactPhone, tCtx.Tenant.ContactEmail, tCtx.Tenant.Address, tCtx.AppType, tCtx.Subdomain, tCtx.Host, taxMode, taxRatePPN, npwp, string(allTenantsJSON), mode, pageTitle, trackClassScript)
 
 	// Inject script into <head>
 	html = strings.Replace(html, "<head>", "<head>\n"+tenantScript, 1)
@@ -283,8 +292,10 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 			html = html[:idxStart] + "<title>" + pageTitle + html[idxStart+idxEnd:]
 		}
 	}
-	html = strings.Replace(html, ">GOGIGA<span class=\"text-sky-600\">NET</span><", ">"+tCtx.Tenant.PrefixID+"<span style=\"color:"+tCtx.Tenant.BrandColor+"\"> FIBER</span><", -1)
+	html = strings.Replace(html, ">GOGIGA<span class=\"text-sky-600\">NET</span><", ">"+brandShort+"<span style=\"color:"+tCtx.Tenant.BrandColor+"\"> FIBER</span><", -1)
 	html = strings.Replace(html, "id=\"navbar-brand-subtitle\" class=\"text-[11px] text-slate-500 font-medium mt-1\">Fiber Broadband &amp; Telco<", "id=\"navbar-brand-subtitle\" class=\"text-[11px] text-slate-500 font-medium mt-1\">"+tCtx.Tenant.Name+"<", -1)
+	html = strings.Replace(html, `id="navbar-brand-name-title" class="font-extrabold text-base tracking-tight text-slate-900 font-mono block leading-none cust-brand-name-dynamic">ISPSYNC<`, `id="navbar-brand-name-title" class="font-extrabold text-base tracking-tight text-slate-900 font-mono block leading-none cust-brand-name-dynamic">`+brandShort+`<`, -1)
+	html = strings.Replace(html, `>ISPSYNC</span>`, `>`+brandShort+`</span>`, -1)
 
 	// Dynamic Footer & Contact replacements
 	html = strings.Replace(html, "https://wa.me/6285186866164", "https://wa.me/"+phoneWA, -1)
@@ -299,6 +310,7 @@ func (h *PageHandler) ServeApp(w http.ResponseWriter, r *http.Request) {
 	faviconURL := "/web/" + tCtx.Tenant.Slug + "_favicon.svg"
 	html = strings.Replace(html, `<link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="/web/dev_favicon.svg" />`, `<link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="`+faviconURL+`" />`, 1)
 	html = strings.Replace(html, `<link rel="icon" type="image/png" href="/logo.png?v=20260930" />`, `<link id="dynamic-favicon" rel="icon" type="image/svg+xml" href="`+faviconURL+`" />`, 1)
+	html = strings.Replace(html, `src="/logo.png"`, `src="`+logoURL+`"`, -1)
 	if tCtx.Tenant.LogoURL != "" {
 		html = strings.Replace(html, "/logo.png", tCtx.Tenant.LogoURL, -1)
 	}
