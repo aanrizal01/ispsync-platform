@@ -150,7 +150,7 @@ function saveDnsData(data: any): boolean {
   }
 }
 
-export function generateCorefile(data: any): string {
+function generateCorefile(data: any): string {
   const zone = data.zone || "ispsync.id";
   const serverIpv4 = data.serverIpv4 || "103.179.65.73";
   const serverIpv6 = data.serverIpv6 || "2001:df1:1cc0:65::73";
