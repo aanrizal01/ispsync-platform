@@ -279,8 +279,8 @@ export default function GatewayManagementPage() {
   if (!isSuperadmin && !memberLoading) {
     return (
       <MemberNav>
-        <div className="p-8 max-w-4xl mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+        <div className="flex-1 ml-64 p-8 min-h-screen bg-slate-50 flex items-center justify-center">
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center max-w-lg">
             <ShieldCheck className="w-12 h-12 text-red-500 mx-auto mb-3" />
             <h2 className="text-lg font-bold text-red-900 mb-1">Akses Terbatas Administrator Master</h2>
             <p className="text-sm text-red-700">
@@ -294,333 +294,328 @@ export default function GatewayManagementPage() {
 
   return (
     <MemberNav>
-      <div className="flex-1 min-h-screen bg-slate-950 text-slate-100 flex flex-col relative overflow-hidden">
-        {/* Ambient Radial Glows (Aurora Effect) */}
-        <div className="absolute -top-32 -left-32 w-80 h-80 bg-cyan-600/20 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute top-1/2 -right-32 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute -bottom-32 left-1/4 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
-
-        {/* Top Header Bar */}
-        <header className="h-16 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-30">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center">
-              <Network className="w-5 h-5" />
+      <div className="flex-1 ml-64 p-8 min-h-screen bg-slate-50 text-slate-800 space-y-6">
+        {/* Top Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
+                SUPERADMIN GATEWAY
+              </span>
+              <span className="text-xs font-semibold text-slate-500 font-mono">
+                Edge Reverse Proxy &amp; On-Demand TLS
+              </span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-sm font-black tracking-tight text-white">CADDY EDGE GATEWAY</h1>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800 text-cyan-400 border border-slate-700">
-                  CARRIER PROXY
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400">Reverse proxy routing &amp; On-Demand TLS multi-tenant</p>
-            </div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+              <Network className="w-6 h-6 text-cyan-600" />
+              <span>Caddy Gateway &amp; Domain Management</span>
+            </h1>
+            <p className="text-xs text-slate-500 mt-1">
+              Pemantauan orkestrasi reverse proxy Caddy, otorisasi On-Demand TLS otomatis, serta pemetaan 4 upstream engine platform.
+            </p>
           </div>
 
           <div className="flex items-center gap-2.5">
             <button
               onClick={() => setIsTopologyOpen(true)}
-              className="px-3 py-1.5 rounded-xl border border-slate-700 hover:border-slate-600 bg-slate-900/60 hover:bg-slate-800 text-xs font-semibold text-slate-300 transition-all flex items-center gap-2 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold text-xs transition-all flex items-center gap-2 cursor-pointer shadow-sm bg-white"
             >
-              <Layers className="w-3.5 h-3.5 text-cyan-400" />
+              <Layers className="w-4 h-4 text-cyan-600" />
               <span>Topologi Pipeline</span>
             </button>
             <button
               onClick={() => setIsCustomDomainModalOpen(true)}
-              className="px-3 py-1.5 rounded-xl border border-cyan-500/30 hover:border-cyan-500/50 bg-cyan-950/30 hover:bg-cyan-900/40 text-xs font-semibold text-cyan-300 transition-all flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-2 cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5 text-cyan-400" />
+              <Plus className="w-4 h-4" />
               <span>Daftar Custom Domain</span>
             </button>
             <button
               onClick={fetchGatewayData}
-              className="p-2 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-900/60 text-slate-400 hover:text-slate-200 transition-all cursor-pointer"
+              className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors bg-white shadow-sm cursor-pointer"
               title="Perbarui Data"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-cyan-400" : ""}`} />
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-cyan-600" : ""}`} />
             </button>
           </div>
-        </header>
+        </div>
 
-        {/* Main Content Area */}
-        <main className="flex-1 p-6 space-y-6 max-w-7xl mx-auto w-full relative z-10">
-          {/* Notification Banner */}
-          {actionMessage && (
-            <div className="p-3.5 rounded-2xl bg-cyan-950/40 border border-cyan-800/80 backdrop-blur-sm flex items-center justify-between text-xs text-cyan-300">
-              <div className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-cyan-400 shrink-0" />
-                <span>{actionMessage}</span>
-              </div>
-              <button onClick={() => setActionMessage(null)} className="text-cyan-400 hover:text-cyan-200">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-
-          {/* KPI Metrics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Domain Terpantau</span>
-                <Globe className="w-4 h-4 text-cyan-400" />
-              </div>
-              <div className="text-3xl font-black text-white tracking-tight">{stats?.totalDomains || 0}</div>
-              <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-2">
-                <span className="text-cyan-400 font-semibold">{stats?.tenantSubdomains || 0} Subdomain</span>
-                <span className="text-slate-600">|</span>
-                <span className="text-blue-400 font-semibold">{stats?.customDomains || 0} Custom</span>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Otorisasi On-Demand TLS</span>
-                <Lock className="w-4 h-4 text-emerald-400" />
-              </div>
-              <div className="text-3xl font-black text-emerald-400 tracking-tight">ACTIVE</div>
-              <div className="text-[11px] text-slate-400 mt-1">Zero-Touch ACME Let&apos;s Encrypt &amp; ZeroSSL</div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Edge Cluster IP</span>
-                <Server className="w-4 h-4 text-blue-400" />
-              </div>
-              <div className="text-2xl font-black text-slate-100 font-mono tracking-tight">{stats?.edgeNodeIp || "103.179.65.73"}</div>
-              <div className="text-[11px] text-emerald-400 font-medium mt-1">Port 80 (HTTP) &amp; Port 443 (HTTPS)</div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Upstream Reverse Proxy</span>
-                <Cpu className="w-4 h-4 text-cyan-400" />
-              </div>
-              <div className="text-3xl font-black text-cyan-400 tracking-tight">4 Engine</div>
-              <div className="text-[11px] text-slate-400 mt-1">Next.js Web, Billing API, Nexus, FiberGrid</div>
-            </div>
-          </div>
-
-          {/* Architecture Pipeline Banner */}
-          <div className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <Radio className="w-4 h-4 text-cyan-400" />
-                <h3 className="text-xs font-bold text-white uppercase tracking-wider">Caddy Ask Webhook Hook Status</h3>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-950/60 text-emerald-400 border border-emerald-800">
-                  ONLINE HTTP 200
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-mono">
-                GET http://172.18.0.1:8081/api/v1/caddy/ask?domain=&#123;domain&#125;
-              </p>
-            </div>
+        {/* Action notification banner */}
+        {actionMessage && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-xs text-emerald-800 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => runDiagnostic("ispsync.id")}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-all flex items-center gap-1.5 cursor-pointer"
-              >
-                <Terminal className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Uji Host Apex</span>
-              </button>
-              <button
-                onClick={() => {
-                  const firstTenant = domains.find(d => d.type === "TENANT_SUBDOMAIN");
-                  if (firstTenant) runDiagnostic(firstTenant.domain);
-                }}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-all flex items-center gap-1.5 cursor-pointer"
-              >
-                <Terminal className="w-3.5 h-3.5 text-blue-400" />
-                <span>Uji Tenant Terdaftar</span>
-              </button>
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span className="font-semibold">{actionMessage}</span>
+            </div>
+            <button onClick={() => setActionMessage(null)} className="text-emerald-500 hover:text-emerald-700 cursor-pointer">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* KPI Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Domain Terpantau</span>
+              <Globe className="w-4 h-4 text-slate-400" />
+            </div>
+            <div className="text-3xl font-black text-slate-900 tracking-tight">{stats?.totalDomains || 0}</div>
+            <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-2">
+              <span className="text-cyan-700 font-semibold">{stats?.tenantSubdomains || 0} Subdomain</span>
+              <span className="text-slate-300">•</span>
+              <span className="text-blue-700 font-semibold">{stats?.customDomains || 0} Custom</span>
             </div>
           </div>
 
-          {/* Domain Table Section */}
-          <div className="bg-slate-900/60 rounded-2xl border border-slate-800/80 overflow-hidden shadow-lg">
-            {/* Filter and Search Bar */}
-            <div className="p-4 border-b border-slate-800/80 flex flex-col md:flex-row items-center justify-between gap-3">
-              <div className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800 w-full md:w-auto">
-                <button
-                  onClick={() => setFilterTab("ALL")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    filterTab === "ALL"
-                      ? "bg-slate-800 text-cyan-400 shadow-sm"
-                      : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  Semua ({domains.length})
-                </button>
-                <button
-                  onClick={() => setFilterTab("SYSTEM")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    filterTab === "SYSTEM"
-                      ? "bg-slate-800 text-cyan-400 shadow-sm"
-                      : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  Sistem &amp; Showcase ({stats?.systemDomains || 0})
-                </button>
-                <button
-                  onClick={() => setFilterTab("TENANT")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    filterTab === "TENANT"
-                      ? "bg-slate-800 text-cyan-400 shadow-sm"
-                      : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  Subdomain Tenant ({stats?.tenantSubdomains || 0})
-                </button>
-                <button
-                  onClick={() => setFilterTab("CUSTOM")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    filterTab === "CUSTOM"
-                      ? "bg-slate-800 text-cyan-400 shadow-sm"
-                      : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  Custom Domain ({stats?.customDomains || 0})
-                </button>
-              </div>
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Otorisasi On-Demand TLS</span>
+              <Lock className="w-4 h-4 text-emerald-500" />
+            </div>
+            <div className="text-3xl font-black text-emerald-600 tracking-tight">ACTIVE</div>
+            <div className="text-[11px] text-slate-500 mt-1">Zero-Touch ACME Let&apos;s Encrypt &amp; ZeroSSL</div>
+          </div>
 
-              <div className="relative w-full md:w-72">
-                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Cari domain, tenant, atau engine..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-slate-950/70 border border-slate-800 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
-                />
-              </div>
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Edge Cluster IP</span>
+              <Server className="w-4 h-4 text-blue-500" />
+            </div>
+            <div className="text-2xl font-black text-slate-900 font-mono tracking-tight">{stats?.edgeNodeIp || "103.179.65.73"}</div>
+            <div className="text-[11px] text-emerald-600 font-medium mt-1">Port 80 (HTTP) &amp; Port 443 (HTTPS)</div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Upstream Reverse Proxy</span>
+              <Cpu className="w-4 h-4 text-cyan-600" />
+            </div>
+            <div className="text-3xl font-black text-cyan-700 tracking-tight">4 Engine</div>
+            <div className="text-[11px] text-slate-500 mt-1">Web:3000, API:8080, Nexus, FiberGrid</div>
+          </div>
+        </div>
+
+        {/* Caddy Hook Banner */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Radio className="w-4 h-4 text-cyan-600" />
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Caddy Ask Webhook Hook Status</h3>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                ONLINE HTTP 200
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 font-mono">
+              GET http://172.18.0.1:8081/api/v1/caddy/ask?domain=&#123;domain&#125;
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => runDiagnostic("ispsync.id")}
+              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition-all flex items-center gap-1.5 cursor-pointer border border-slate-200"
+            >
+              <Terminal className="w-3.5 h-3.5 text-cyan-600" />
+              <span>Uji Host Apex</span>
+            </button>
+            <button
+              onClick={() => {
+                const firstTenant = domains.find(d => d.type === "TENANT_SUBDOMAIN");
+                if (firstTenant) runDiagnostic(firstTenant.domain);
+              }}
+              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition-all flex items-center gap-1.5 cursor-pointer border border-slate-200"
+            >
+              <Terminal className="w-3.5 h-3.5 text-blue-600" />
+              <span>Uji Tenant Klien</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Domain Table Section */}
+        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          {/* Filter and Search Bar */}
+          <div className="p-4 border-b border-slate-200 flex flex-col md:flex-row items-center justify-between gap-3 bg-slate-50/50">
+            <div className="flex items-center gap-1 bg-slate-200/70 p-1 rounded-xl w-full md:w-auto">
+              <button
+                onClick={() => setFilterTab("ALL")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  filterTab === "ALL"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Semua ({domains.length})
+              </button>
+              <button
+                onClick={() => setFilterTab("SYSTEM")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  filterTab === "SYSTEM"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Sistem &amp; Showcase ({stats?.systemDomains || 0})
+              </button>
+              <button
+                onClick={() => setFilterTab("TENANT")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  filterTab === "TENANT"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Subdomain Tenant ({stats?.tenantSubdomains || 0})
+              </button>
+              <button
+                onClick={() => setFilterTab("CUSTOM")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  filterTab === "CUSTOM"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Custom Domain ({stats?.customDomains || 0})
+              </button>
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="bg-slate-950/60 border-b border-slate-800 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                    <th className="py-3 px-4">Domain FQDN</th>
-                    <th className="py-3 px-4">Kategori &amp; Peran</th>
-                    <th className="py-3 px-4">Entitas / Tenant</th>
-                    <th className="py-3 px-4">Target Upstream</th>
-                    <th className="py-3 px-4">Protokol TLS</th>
-                    <th className="py-3 px-4 text-right">Diagnostik</th>
+            <div className="relative w-full md:w-80">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Cari domain, tenant, atau engine..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-cyan-600 transition-colors"
+              />
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                  <th className="py-3 px-4">Domain FQDN</th>
+                  <th className="py-3 px-4">Kategori &amp; Peran</th>
+                  <th className="py-3 px-4">Entitas / Tenant</th>
+                  <th className="py-3 px-4">Target Upstream</th>
+                  <th className="py-3 px-4">Protokol TLS</th>
+                  <th className="py-3 px-4 text-right">Diagnostik</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredDomains.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                      Tidak ada domain yang cocok dengan pencarian atau filter saat ini.
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {filteredDomains.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-12 text-center text-slate-500">
-                        Tidak ada domain yang cocok dengan pencarian atau filter saat ini.
+                ) : (
+                  filteredDomains.map((d, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
+                        <div className="flex items-center gap-2">
+                          <span>{d.domain}</span>
+                          <button
+                            onClick={() => copyToClipboard(d.domain)}
+                            className="text-slate-400 hover:text-cyan-600 transition-colors p-1"
+                            title="Salin domain"
+                          >
+                            {copiedDomain === d.domain ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                          <a
+                            href={`https://${d.domain}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-slate-400 hover:text-cyan-600 transition-colors p-1"
+                            title="Buka situs"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <div className="font-semibold text-slate-800">{d.category}</div>
+                        <div className="text-[10px] text-slate-400">{d.type}</div>
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-slate-800">{d.company}</div>
+                        <div className="text-[10px] text-cyan-600 font-mono">slug: {d.tenantSlug}</div>
+                      </td>
+
+                      <td className="py-3.5 px-4 font-mono">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                          {d.primaryUpstream}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                          <span className="text-[11px] font-bold text-emerald-700">
+                            {d.tlsStatus}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-slate-400">{d.tlsMode}</div>
+                      </td>
+
+                      <td className="py-3.5 px-4 text-right">
+                        <button
+                          onClick={() => runDiagnostic(d.domain)}
+                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-cyan-50 hover:text-cyan-700 hover:border-cyan-300 border border-slate-200 text-[11px] font-semibold text-slate-700 transition-all cursor-pointer inline-flex items-center gap-1 shadow-xs"
+                        >
+                          <Terminal className="w-3 h-3 text-cyan-600" />
+                          <span>Diagnosa</span>
+                        </button>
                       </td>
                     </tr>
-                  ) : (
-                    filteredDomains.map((d, idx) => (
-                      <tr key={idx} className="hover:bg-slate-800/30 transition-colors">
-                        <td className="py-3 px-4 font-mono font-bold text-slate-200">
-                          <div className="flex items-center gap-2">
-                            <span>{d.domain}</span>
-                            <button
-                              onClick={() => copyToClipboard(d.domain)}
-                              className="text-slate-500 hover:text-cyan-400 transition-colors p-1"
-                              title="Salin domain"
-                            >
-                              {copiedDomain === d.domain ? (
-                                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                              ) : (
-                                <Copy className="w-3.5 h-3.5" />
-                              )}
-                            </button>
-                            <a
-                              href={`https://${d.domain}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-slate-500 hover:text-cyan-400 transition-colors p-1"
-                              title="Buka situs"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </a>
-                          </div>
-                        </td>
-
-                        <td className="py-3 px-4">
-                          <div className="font-semibold text-slate-300">{d.category}</div>
-                          <div className="text-[10px] text-slate-500">{d.type}</div>
-                        </td>
-
-                        <td className="py-3 px-4">
-                          <div className="font-bold text-slate-200">{d.company}</div>
-                          <div className="text-[10px] text-cyan-400 font-mono">slug: {d.tenantSlug}</div>
-                        </td>
-
-                        <td className="py-3 px-4 font-mono">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
-                            {d.primaryUpstream}
-                          </span>
-                        </td>
-
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                            <span className="text-[11px] font-semibold text-emerald-400">
-                              {d.tlsStatus}
-                            </span>
-                          </div>
-                          <div className="text-[10px] text-slate-500">{d.tlsMode}</div>
-                        </td>
-
-                        <td className="py-3 px-4 text-right">
-                          <button
-                            onClick={() => runDiagnostic(d.domain)}
-                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-cyan-950/60 hover:text-cyan-300 hover:border-cyan-700/60 border border-slate-700 text-[11px] font-semibold text-slate-300 transition-all cursor-pointer inline-flex items-center gap-1"
-                          >
-                            <Terminal className="w-3 h-3 text-cyan-400" />
-                            <span>Diagnosa</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
-        </main>
+        </div>
 
         {/* Footer */}
-        <footer className="mt-auto border-t border-slate-800/80 bg-slate-950/70 py-4 px-6 text-center text-xs text-slate-500">
-          © 2026 PT. Mitra Usaha Data. All rights reserved. Enterprise Carrier-Grade Caddy Edge Proxy.
+        <footer className="pt-4 pb-8 border-t border-slate-200 text-center text-xs text-slate-400">
+          © 2026 PT Inovasi Sistem Pintar. All rights reserved. Enterprise Carrier-Grade Caddy Edge Proxy.
         </footer>
 
         {/* ── MODAL 1: Diagnostic Live Runner ───────────────────────────── */}
         {isDiagnosticOpen && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in fade-in duration-200">
-              <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl animate-in fade-in duration-200">
+              <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
                 <div className="flex items-center gap-2">
-                  <Terminal className="w-4 h-4 text-cyan-400" />
-                  <h3 className="text-sm font-bold text-white">Edge Diagnostic: {diagnosticDomain}</h3>
+                  <Terminal className="w-4 h-4 text-cyan-600" />
+                  <h3 className="text-sm font-bold text-slate-900">Edge Diagnostic: {diagnosticDomain}</h3>
                 </div>
                 <button
                   onClick={() => setIsDiagnosticOpen(false)}
-                  className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+                  className="text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="p-4 space-y-4">
+              <div className="p-5 space-y-4">
                 {/* Status Indicator */}
-                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950/70 border border-slate-800">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                  <div className="flex items-center gap-2.5">
                     {diagnosticLoading ? (
-                      <RefreshCw className="w-4 h-4 text-cyan-400 animate-spin" />
+                      <RefreshCw className="w-4 h-4 text-cyan-600 animate-spin" />
                     ) : diagnosticResult?.ssl?.online || diagnosticResult?.ask?.authorized ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     ) : (
-                      <AlertCircle className="w-4 h-4 text-amber-400" />
+                      <AlertCircle className="w-4 h-4 text-amber-500" />
                     )}
-                    <span className="text-xs font-bold text-slate-200">
+                    <span className="text-xs font-bold text-slate-800">
                       {diagnosticLoading
                         ? "Menjalankan Pengujian Edge & SSL..."
                         : diagnosticResult?.ssl?.online
@@ -631,14 +626,14 @@ export default function GatewayManagementPage() {
                   <button
                     onClick={() => runDiagnostic(diagnosticDomain)}
                     disabled={diagnosticLoading}
-                    className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition-all cursor-pointer disabled:opacity-50"
+                    className="px-3 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-700 transition-all cursor-pointer disabled:opacity-50 shadow-xs"
                   >
                     Uji Ulang
                   </button>
                 </div>
 
                 {/* Terminal Console Output */}
-                <div className="bg-black/90 rounded-xl p-3.5 border border-slate-800 font-mono text-[11px] space-y-1.5 max-h-64 overflow-y-auto">
+                <div className="bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-[11px] space-y-1.5 max-h-64 overflow-y-auto shadow-inner">
                   {diagnosticLogs.map((log, i) => (
                     <div
                       key={i}
@@ -658,15 +653,15 @@ export default function GatewayManagementPage() {
                 </div>
 
                 {/* Explanatory Note */}
-                <div className="text-[11px] text-slate-400 leading-normal p-3 rounded-xl bg-slate-950/40 border border-slate-800/80">
-                  <strong className="text-slate-200">Arsitektur On-Demand TLS:</strong> Caddy otomatis meminta izin ke endpoint internal sebelum menerbitkan sertifikat SSL Let&apos;s Encrypt. Jika domain baru diarahkan ke IP <code className="text-cyan-400">103.179.65.73</code>, sertifikat HTTPS otomatis dibuat dalam 1-2 detik saat akses HTTP/HTTPS pertama dilakukan.
+                <div className="text-[11px] text-slate-600 leading-normal p-3.5 rounded-xl bg-cyan-50/60 border border-cyan-100">
+                  <strong className="text-slate-800">Arsitektur On-Demand TLS:</strong> Caddy otomatis meminta izin ke endpoint internal sebelum menerbitkan sertifikat SSL Let&apos;s Encrypt. Jika domain baru diarahkan ke IP <code className="text-cyan-700 font-bold">103.179.65.73</code>, sertifikat HTTPS otomatis dibuat dalam 1-2 detik saat akses HTTP/HTTPS pertama dilakukan.
                 </div>
               </div>
 
-              <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex justify-end">
+              <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end">
                 <button
                   onClick={() => setIsDiagnosticOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition-all cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-xs font-bold text-slate-700 transition-all cursor-pointer shadow-xs"
                 >
                   Tutup
                 </button>
@@ -677,18 +672,18 @@ export default function GatewayManagementPage() {
 
         {/* ── MODAL 2: Register Custom Domain ───────────────────────────── */}
         {isCustomDomainModalOpen && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in duration-200">
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in duration-200">
               <form onSubmit={handleSaveCustomDomain}>
-                <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+                <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
                   <div className="flex items-center gap-2">
-                    <Plus className="w-4 h-4 text-cyan-400" />
-                    <h3 className="text-sm font-bold text-white">Daftarkan Custom Domain FQDN</h3>
+                    <Plus className="w-4 h-4 text-cyan-600" />
+                    <h3 className="text-sm font-bold text-slate-900">Daftarkan Custom Domain FQDN</h3>
                   </div>
                   <button
                     type="button"
                     onClick={() => setIsCustomDomainModalOpen(false)}
-                    className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+                    className="text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -696,14 +691,14 @@ export default function GatewayManagementPage() {
 
                 <div className="p-5 space-y-4 text-xs">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                       Pilih Tenant SaaS
                     </label>
                     <select
                       value={selectedTenantSlug}
                       onChange={(e) => setSelectedTenantSlug(e.target.value)}
                       required
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-cyan-500"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-cyan-600"
                     >
                       <option value="">-- Pilih Tenant --</option>
                       {tenantOptions.map((t, idx) => (
@@ -715,7 +710,7 @@ export default function GatewayManagementPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                    <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                       Nama Custom Domain (FQDN)
                     </label>
                     <input
@@ -724,38 +719,38 @@ export default function GatewayManagementPage() {
                       value={customDomainInput}
                       onChange={(e) => setCustomDomainInput(e.target.value)}
                       required
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500 font-mono"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:border-cyan-600 font-mono"
                     />
-                    <p className="text-[10px] text-slate-400 mt-1">
+                    <p className="text-[10px] text-slate-500 mt-1">
                       Masukkan domain tanpa http:// atau https://.
                     </p>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                    <div className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider">
+                  <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-100 space-y-2">
+                    <div className="text-[11px] font-bold text-blue-900 uppercase tracking-wider">
                       Instruksi Konfigurasi DNS Klien:
                     </div>
-                    <div className="space-y-1 font-mono text-[10px] text-slate-300">
-                      <div>Tipe: <span className="text-white font-bold">A Record</span></div>
-                      <div>Host / Subdomain: <span className="text-white font-bold">@ atau subdomain</span></div>
-                      <div>Nilai Tujuan (Edge IP): <span className="text-cyan-400 font-bold">103.179.65.73</span></div>
-                      <div className="text-slate-500 pt-1">Atau CNAME Record ke: <span className="text-cyan-400 font-bold">ispsync.id</span></div>
+                    <div className="space-y-1 font-mono text-[10px] text-slate-700">
+                      <div>Tipe: <span className="text-slate-900 font-bold">A Record</span></div>
+                      <div>Host / Subdomain: <span className="text-slate-900 font-bold">@ atau subdomain</span></div>
+                      <div>Nilai Tujuan (Edge IP): <span className="text-cyan-700 font-bold">103.179.65.73</span></div>
+                      <div className="text-slate-500 pt-1">Atau CNAME Record ke: <span className="text-cyan-700 font-bold">ispsync.id</span></div>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-end gap-2">
+                <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2">
                   <button
                     type="button"
                     onClick={() => setIsCustomDomainModalOpen(false)}
-                    className="px-4 py-2 rounded-xl border border-slate-800 hover:bg-slate-800 text-xs font-semibold text-slate-300 transition-all cursor-pointer"
+                    className="px-4 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-xs font-semibold text-slate-700 transition-all cursor-pointer bg-white"
                   >
                     Batal
                   </button>
                   <button
                     type="submit"
                     disabled={customDomainSubmitting}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-xs font-bold text-white transition-all shadow-md cursor-pointer disabled:opacity-50"
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-xs font-bold text-white transition-all shadow-sm cursor-pointer disabled:opacity-50"
                   >
                     {customDomainSubmitting ? "Mendaftarkan..." : "Daftarkan ke On-Demand TLS"}
                   </button>
@@ -767,60 +762,60 @@ export default function GatewayManagementPage() {
 
         {/* ── MODAL 3: Topology Inspector ───────────────────────────────── */}
         {isTopologyOpen && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl animate-in fade-in duration-200">
-              <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-3xl overflow-hidden shadow-2xl animate-in fade-in duration-200">
+              <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
                 <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-cyan-400" />
-                  <h3 className="text-sm font-bold text-white">Topologi Arsitektur Caddy Edge Proxy</h3>
+                  <Layers className="w-4 h-4 text-cyan-600" />
+                  <h3 className="text-sm font-bold text-slate-900">Topologi Arsitektur Caddy Edge Proxy</h3>
                 </div>
                 <button
                   onClick={() => setIsTopologyOpen(false)}
-                  className="text-slate-400 hover:text-white transition-colors cursor-pointer"
+                  className="text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto text-xs">
-                <div className="text-[11px] text-slate-400">
+                <div className="text-[11px] text-slate-600">
                   Seluruh lalu lintas masuk dari domain Apex, subdomain tenant, dan custom domain diterima oleh Caddy Edge di port 80 &amp; 443 sebelum dialirkan ke upstream engine:
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {gatewayInfo?.upstreams.map((up, i) => (
-                    <div key={i} className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
+                    <div key={i} className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-white text-xs">{up.name}</span>
-                        <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono">
+                        <span className="font-bold text-slate-900 text-xs">{up.name}</span>
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
                           {up.status}
                         </span>
                       </div>
-                      <div className="font-mono text-cyan-400 text-[11px]">
+                      <div className="font-mono text-cyan-700 font-semibold text-[11px]">
                         Target: {up.host}
                       </div>
-                      <div className="text-[11px] text-slate-400 leading-relaxed">
+                      <div className="text-[11px] text-slate-600 leading-relaxed">
                         {up.description}
                       </div>
-                      <div className="pt-2 border-t border-slate-800/80 text-[10px] text-slate-500 font-mono">
+                      <div className="pt-2 border-t border-slate-200 text-[10px] text-slate-500 font-mono">
                         Pattern: {up.routingPattern}
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div className="p-4 rounded-xl bg-cyan-950/20 border border-cyan-800/60 text-slate-300 space-y-1.5">
-                  <div className="font-bold text-cyan-400 text-xs">Validasi Keamanan Webhook:</div>
-                  <p className="text-[11px] text-slate-400 leading-normal">
-                    Setiap ada request SSL handshake baru, Caddy menghubungi endpoint <code className="text-cyan-300">/api/v1/caddy/ask</code>. Sertifikat SSL HTTPS On-Demand hanya akan diterbitkan jika domain berakhiran <code className="text-cyan-300">.ispsync.id</code> atau telah terdaftar aktif sebagai custom domain resmi tenant.
+                <div className="p-4 rounded-xl bg-cyan-50/70 border border-cyan-200 text-slate-700 space-y-1.5">
+                  <div className="font-bold text-cyan-900 text-xs">Validasi Keamanan Webhook:</div>
+                  <p className="text-[11px] text-slate-600 leading-normal">
+                    Setiap ada request SSL handshake baru, Caddy menghubungi endpoint <code className="text-cyan-800 font-bold">/api/v1/caddy/ask</code>. Sertifikat SSL HTTPS On-Demand hanya akan diterbitkan jika domain berakhiran <code className="text-cyan-800 font-bold">.ispsync.id</code> atau telah terdaftar aktif sebagai custom domain resmi tenant.
                   </p>
                 </div>
               </div>
 
-              <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex justify-end">
+              <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end">
                 <button
                   onClick={() => setIsTopologyOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 transition-all cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-xs font-bold text-slate-700 transition-all cursor-pointer shadow-xs"
                 >
                   Tutup
                 </button>
