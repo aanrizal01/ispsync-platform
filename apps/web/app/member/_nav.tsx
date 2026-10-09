@@ -3,22 +3,34 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useMember } from "./context";
-import { Building2, SlidersHorizontal, Network, Globe } from "lucide-react";
+import {
+  Building2,
+  SlidersHorizontal,
+  Network,
+  Globe,
+  LayoutDashboard,
+  Receipt,
+  CreditCard,
+  Radio,
+  Settings,
+  HelpCircle,
+  ExternalLink
+} from "lucide-react";
 
 const mainNavItems = [
-  { href: "/member/dashboard", label: "Dashboard", icon: "▦" },
-  { href: "/member/invoices", label: "Invoice & Billing", icon: "🧾" },
+  { href: "/member/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/member/invoices", label: "Invoice & Billing", icon: Receipt },
 ];
 
 const engineNavItems = [
-  { href: "/member/engine/ledger", label: "Engine Ledger", sub: "Billing & AAA", icon: "💳", key: "ledger" as const },
-  { href: "/member/engine/nexus", label: "Engine Nexus", sub: "Customer & Ops", icon: "🌐", key: "nexus" as const },
-  { href: "/member/engine/fibergrid", label: "Engine FiberGrid", sub: "FTTX & NOC", icon: "📡", key: "fibergrid" as const },
+  { href: "/member/engine/ledger", label: "Engine Ledger", sub: "Billing & AAA", icon: CreditCard, key: "ledger" as const },
+  { href: "/member/engine/nexus", label: "Engine Nexus", sub: "Customer & Ops", icon: Globe, key: "nexus" as const },
+  { href: "/member/engine/fibergrid", label: "Engine FiberGrid", sub: "FTTX & NOC", icon: Radio, key: "fibergrid" as const },
 ];
 
 const accountNavItems = [
-  { href: "/member/profile", label: "Pengaturan Akun & Profil", icon: "⚙️" },
-  { href: "/member/support", label: "Bantuan & Support", icon: "💬" },
+  { href: "/member/profile", label: "Pengaturan Akun & Profil", icon: Settings },
+  { href: "/member/support", label: "Bantuan & Support", icon: HelpCircle },
 ];
 
 function getEngineUrls(domain?: string) {
@@ -176,7 +188,7 @@ export default function MemberNav({ children }: { children: React.ReactNode }) {
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
-                <span className="text-sm">▦</span>
+                <LayoutDashboard className={`w-4 h-4 shrink-0 ${pathname === "/member/dashboard" ? "text-white" : "text-gray-500"}`} />
                 <span>Dashboard</span>
               </Link>
               {!isSuperadmin && (
@@ -188,7 +200,7 @@ export default function MemberNav({ children }: { children: React.ReactNode }) {
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
-                  <span className="text-sm">🧾</span>
+                  <Receipt className={`w-4 h-4 shrink-0 ${pathname === "/member/invoices" ? "text-white" : "text-gray-500"}`} />
                   <span>Invoice &amp; Billing</span>
                 </Link>
               )}
@@ -206,6 +218,7 @@ export default function MemberNav({ children }: { children: React.ReactNode }) {
                 {engineNavItems.map(eng => {
                   const isActive = pathname.startsWith(eng.href);
                   const liveUrl = urls[eng.key];
+                  const Icon = eng.icon;
                   return (
                     <div key={eng.href} className="group relative">
                       <Link
@@ -217,7 +230,7 @@ export default function MemberNav({ children }: { children: React.ReactNode }) {
                         }`}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <span className="text-sm">{eng.icon}</span>
+                          <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-cyan-400" : "text-gray-500"}`} />
                           <div className="truncate">
                             <div className="truncate">{eng.label}</div>
                             <div className={`text-[10px] font-normal ${isActive ? "text-slate-300" : "text-gray-400"}`}>
@@ -237,7 +250,7 @@ export default function MemberNav({ children }: { children: React.ReactNode }) {
                               : "text-gray-400 hover:text-blue-600 hover:bg-gray-200"
                           }`}
                         >
-                          ↗
+                          <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       </Link>
                     </div>
@@ -253,17 +266,21 @@ export default function MemberNav({ children }: { children: React.ReactNode }) {
               Akun &amp; Support
             </div>
             <div className="space-y-0.5">
-              {accountNavItems.map(item => (
-                <Link key={item.href} href={item.href}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    pathname === item.href
-                      ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}>
-                  <span className="text-sm">{item.icon}</span>
-                  <span>{item.label}</span>
-                </Link>
-              ))}
+              {accountNavItems.map(item => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                return (
+                  <Link key={item.href} href={item.href}
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                      isActive
+                        ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    }`}>
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-white" : "text-gray-500"}`} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </div>
