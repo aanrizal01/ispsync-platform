@@ -189,15 +189,21 @@ export async function POST(req: NextRequest) {
       // Execute Auto-Provision on database server
       let provSlug = "";
       if (newMember.domain) {
-        const cleanDomain = newMember.domain.replace(/^https?:\/\//, "").trim();
+        const cleanDomain = newMember.domain.replace(/^https?:\/\//i, "").replace(/\/.*$/, "").split(":")[0].trim().toLowerCase();
         const parts = cleanDomain.split(".");
-        provSlug = parts.length >= 4 ? parts[1] : parts[0];
+        if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "billing" || parts[0] === "hotspot" || parts[0] === "admin" || parts[0] === "portal")) {
+          provSlug = parts[1];
+        } else if (parts.length >= 3 && parts[1] === "ispsync") {
+          provSlug = parts[0];
+        } else {
+          provSlug = parts[0];
+        }
       }
 
       if (provSlug && provSlug !== "ispsync") {
         try {
           const apiBaseUrl = process.env.API_BASE_URL || (process.env.NODE_ENV === "production" ? "http://api:8080" : "http://localhost:8080");
-          await fetch(`${apiBaseUrl}/api/v1/internal/tenants/provision`, {
+          const provRes = await fetch(`${apiBaseUrl}/api/v1/internal/tenants/provision`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -215,6 +221,9 @@ export async function POST(req: NextRequest) {
               plan: newMember.plan,
             }),
           });
+          if (!provRes.ok) {
+            console.error("Auto-provision API returned non-200:", provRes.status, await provRes.text());
+          }
         } catch (provErr) {
           console.error("Auto-provision error during tenant creation:", provErr);
         }
@@ -297,9 +306,15 @@ export async function POST(req: NextRequest) {
       // Determine tenant slug
       let slug = "";
       if (targetMember.domain) {
-        const cleanDomain = targetMember.domain.replace(/^https?:\/\//, "").trim();
+        const cleanDomain = targetMember.domain.replace(/^https?:\/\//i, "").replace(/\/.*$/, "").split(":")[0].trim().toLowerCase();
         const parts = cleanDomain.split(".");
-        slug = parts.length >= 4 ? parts[1] : parts[0];
+        if (parts.length >= 4 && (parts[0] === "ledger" || parts[0] === "billing" || parts[0] === "hotspot" || parts[0] === "admin" || parts[0] === "portal")) {
+          slug = parts[1];
+        } else if (parts.length >= 3 && parts[1] === "ispsync") {
+          slug = parts[0];
+        } else {
+          slug = parts[0];
+        }
       }
 
       // Execute Auto-Purge on database server

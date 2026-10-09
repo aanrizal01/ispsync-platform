@@ -187,6 +187,7 @@ services:
     restart: always
     environment:
       NODE_ENV: production
+      API_BASE_URL: http://api:8080
       NEXT_PUBLIC_API_URL: https://${DOMAIN:-billing.yourisp.id}/api/v1
       PORT: 3000
     ports:
