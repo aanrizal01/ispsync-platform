@@ -311,28 +311,28 @@ export default function GatewayManagementPage() {
               <span>Caddy Gateway &amp; Domain Management</span>
             </h1>
             <p className="text-xs text-slate-500 mt-1">
-              Pemantauan orkestrasi reverse proxy Caddy, otorisasi On-Demand TLS otomatis, serta pemetaan 4 upstream engine platform.
+              Pemantauan orkestrasi reverse proxy Caddy, validasi On-Demand TLS otomatis, serta pemetaan 4 upstream engine platform.
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
               onClick={() => setIsTopologyOpen(true)}
-              className="px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold text-xs transition-all flex items-center gap-2 cursor-pointer shadow-sm bg-white"
+              className="whitespace-nowrap px-3.5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs transition-all flex items-center gap-2 cursor-pointer shadow-xs bg-white shrink-0"
             >
-              <Layers className="w-4 h-4 text-cyan-600" />
+              <Layers className="w-4 h-4 text-cyan-600 shrink-0" />
               <span>Topologi Pipeline</span>
             </button>
             <button
               onClick={() => setIsCustomDomainModalOpen(true)}
-              className="px-4 py-2 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+              className="whitespace-nowrap px-4 py-2.5 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-2 cursor-pointer shrink-0"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 shrink-0" />
               <span>Daftar Custom Domain</span>
             </button>
             <button
               onClick={fetchGatewayData}
-              className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors bg-white shadow-sm cursor-pointer"
+              className="p-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors bg-white shadow-xs cursor-pointer shrink-0"
               title="Perbarui Data"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-cyan-600" : ""}`} />
@@ -354,45 +354,53 @@ export default function GatewayManagementPage() {
         )}
 
         {/* KPI Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Domain Terpantau</span>
-              <Globe className="w-4 h-4 text-slate-400" />
+              <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Domain Terpantau</span>
+              <div className="w-8 h-8 rounded-lg bg-cyan-50 border border-cyan-100 text-cyan-600 flex items-center justify-center">
+                <Globe className="w-4 h-4" />
+              </div>
             </div>
             <div className="text-3xl font-black text-slate-900 tracking-tight">{stats?.totalDomains || 0}</div>
-            <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-2">
-              <span className="text-cyan-700 font-semibold">{stats?.tenantSubdomains || 0} Subdomain</span>
+            <div className="text-[11px] text-slate-500 mt-2 flex items-center gap-2">
+              <span className="text-cyan-700 font-semibold">{stats?.tenantSubdomains || 0} Subdomain Klien</span>
               <span className="text-slate-300">•</span>
-              <span className="text-blue-700 font-semibold">{stats?.customDomains || 0} Custom</span>
+              <span className="text-blue-700 font-semibold">{stats?.systemDomains || 0} Sistem</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Otorisasi On-Demand TLS</span>
-              <Lock className="w-4 h-4 text-emerald-500" />
+              <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Otorisasi On-Demand TLS</span>
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center">
+                <Lock className="w-4 h-4" />
+              </div>
             </div>
             <div className="text-3xl font-black text-emerald-600 tracking-tight">ACTIVE</div>
-            <div className="text-[11px] text-slate-500 mt-1">Zero-Touch ACME Let&apos;s Encrypt &amp; ZeroSSL</div>
+            <div className="text-[11px] text-slate-500 mt-2">Zero-Touch Let&apos;s Encrypt &amp; ZeroSSL</div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Edge Cluster IP</span>
-              <Server className="w-4 h-4 text-blue-500" />
+              <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Edge Cluster IP</span>
+              <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center">
+                <Server className="w-4 h-4" />
+              </div>
             </div>
             <div className="text-2xl font-black text-slate-900 font-mono tracking-tight">{stats?.edgeNodeIp || "103.179.65.73"}</div>
-            <div className="text-[11px] text-emerald-600 font-medium mt-1">Port 80 (HTTP) &amp; Port 443 (HTTPS)</div>
+            <div className="text-[11px] text-emerald-600 font-semibold mt-2">Port 80 (HTTP) &amp; Port 443 (HTTPS)</div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Upstream Reverse Proxy</span>
-              <Cpu className="w-4 h-4 text-cyan-600" />
+              <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Upstream Reverse Proxy</span>
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center">
+                <Cpu className="w-4 h-4" />
+              </div>
             </div>
             <div className="text-3xl font-black text-cyan-700 tracking-tight">4 Engine</div>
-            <div className="text-[11px] text-slate-500 mt-1">Web:3000, API:8080, Nexus, FiberGrid</div>
+            <div className="text-[11px] text-slate-500 mt-2">Web:3000, API:8080, Nexus, FiberGrid</div>
           </div>
         </div>
 
@@ -401,7 +409,7 @@ export default function GatewayManagementPage() {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Radio className="w-4 h-4 text-cyan-600" />
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Caddy Ask Webhook Hook Status</h3>
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Webhook Otorisasi On-Demand TLS Caddy</h3>
               <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
                 ONLINE HTTP 200
               </span>
@@ -410,10 +418,10 @@ export default function GatewayManagementPage() {
               GET http://172.18.0.1:8081/api/v1/caddy/ask?domain=&#123;domain&#125;
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               onClick={() => runDiagnostic("ispsync.id")}
-              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition-all flex items-center gap-1.5 cursor-pointer border border-slate-200"
+              className="whitespace-nowrap px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 transition-all flex items-center gap-1.5 cursor-pointer border border-slate-200 shadow-2xs"
             >
               <Terminal className="w-3.5 h-3.5 text-cyan-600" />
               <span>Uji Host Apex</span>
@@ -423,7 +431,7 @@ export default function GatewayManagementPage() {
                 const firstTenant = domains.find(d => d.type === "TENANT_SUBDOMAIN");
                 if (firstTenant) runDiagnostic(firstTenant.domain);
               }}
-              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition-all flex items-center gap-1.5 cursor-pointer border border-slate-200"
+              className="whitespace-nowrap px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 transition-all flex items-center gap-1.5 cursor-pointer border border-slate-200 shadow-2xs"
             >
               <Terminal className="w-3.5 h-3.5 text-blue-600" />
               <span>Uji Tenant Klien</span>
@@ -435,7 +443,7 @@ export default function GatewayManagementPage() {
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
           {/* Filter and Search Bar */}
           <div className="p-4 border-b border-slate-200 flex flex-col md:flex-row items-center justify-between gap-3 bg-slate-50/50">
-            <div className="flex items-center gap-1 bg-slate-200/70 p-1 rounded-xl w-full md:w-auto">
+            <div className="flex flex-wrap items-center gap-1 bg-slate-200/70 p-1 rounded-xl w-full md:w-auto">
               <button
                 onClick={() => setFilterTab("ALL")}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
@@ -485,7 +493,7 @@ export default function GatewayManagementPage() {
                 placeholder="Cari domain, tenant, atau engine..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-cyan-600 transition-colors"
+                className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-cyan-600 transition-colors shadow-2xs"
               />
             </div>
           </div>
@@ -495,12 +503,12 @@ export default function GatewayManagementPage() {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-                  <th className="py-3 px-4">Domain FQDN</th>
-                  <th className="py-3 px-4">Kategori &amp; Peran</th>
-                  <th className="py-3 px-4">Entitas / Tenant</th>
-                  <th className="py-3 px-4">Target Upstream</th>
-                  <th className="py-3 px-4">Protokol TLS</th>
-                  <th className="py-3 px-4 text-right">Diagnostik</th>
+                  <th className="py-3.5 px-5">Hostname FQDN</th>
+                  <th className="py-3.5 px-5">Peran &amp; Kategori</th>
+                  <th className="py-3.5 px-5">Entitas / Tenant</th>
+                  <th className="py-3.5 px-5">Target Upstream</th>
+                  <th className="py-3.5 px-5">Status SSL (TLS)</th>
+                  <th className="py-3.5 px-5 text-right">Diagnostik</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -513,64 +521,71 @@ export default function GatewayManagementPage() {
                 ) : (
                   filteredDomains.map((d, idx) => (
                     <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
-                        <div className="flex items-center gap-2">
-                          <span>{d.domain}</span>
-                          <button
-                            onClick={() => copyToClipboard(d.domain)}
-                            className="text-slate-400 hover:text-cyan-600 transition-colors p-1"
-                            title="Salin domain"
-                          >
-                            {copiedDomain === d.domain ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-600" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                          <a
-                            href={`https://${d.domain}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-slate-400 hover:text-cyan-600 transition-colors p-1"
-                            title="Buka situs"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </a>
+                      <td className="py-4 px-5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-cyan-50 border border-cyan-100 text-cyan-600 flex items-center justify-center shrink-0">
+                            <Globe className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold font-mono text-slate-900 text-sm">{d.domain}</span>
+                              <button
+                                onClick={() => copyToClipboard(d.domain)}
+                                className="text-slate-400 hover:text-cyan-600 transition-colors p-0.5"
+                                title="Salin domain"
+                              >
+                                {copiedDomain === d.domain ? (
+                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                              <a
+                                href={`https://${d.domain}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-slate-400 hover:text-cyan-600 transition-colors p-0.5"
+                                title="Buka situs"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-0.5">{d.category}</div>
+                          </div>
                         </div>
                       </td>
 
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-slate-800">{d.category}</div>
-                        <div className="text-[10px] text-slate-400">{d.type}</div>
+                      <td className="py-4 px-5 align-middle">
+                        <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
+                          {d.type.replace(/_/g, " ")}
+                        </span>
                       </td>
 
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-800">{d.company}</div>
-                        <div className="text-[10px] text-cyan-600 font-mono">slug: {d.tenantSlug}</div>
+                      <td className="py-4 px-5 align-middle">
+                        <div className="font-semibold text-slate-800 text-xs">{d.company}</div>
+                        <div className="text-[10px] text-cyan-700 font-mono mt-0.5">slug: {d.tenantSlug}</div>
                       </td>
 
-                      <td className="py-3.5 px-4 font-mono">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                      <td className="py-4 px-5 align-middle font-mono">
+                        <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
                           {d.primaryUpstream}
                         </span>
                       </td>
 
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                          <span className="text-[11px] font-bold text-emerald-700">
-                            {d.tlsStatus}
-                          </span>
-                        </div>
-                        <div className="text-[10px] text-slate-400">{d.tlsMode}</div>
+                      <td className="py-4 px-5 align-middle">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          <span>{d.tlsStatus}</span>
+                        </span>
+                        <div className="text-[10px] text-slate-400 mt-0.5">{d.tlsMode}</div>
                       </td>
 
-                      <td className="py-3.5 px-4 text-right">
+                      <td className="py-4 px-5 align-middle text-right">
                         <button
                           onClick={() => runDiagnostic(d.domain)}
-                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-cyan-50 hover:text-cyan-700 hover:border-cyan-300 border border-slate-200 text-[11px] font-semibold text-slate-700 transition-all cursor-pointer inline-flex items-center gap-1 shadow-xs"
+                          className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
                         >
-                          <Terminal className="w-3 h-3 text-cyan-600" />
+                          <Terminal className="w-3.5 h-3.5 text-cyan-600" />
                           <span>Diagnosa</span>
                         </button>
                       </td>

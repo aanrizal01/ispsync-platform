@@ -187,26 +187,26 @@ export default function MemberDashboard() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
               <Link
                 href="/member/tenants"
-                className="px-4 py-2.5 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5"
+                className="whitespace-nowrap px-4 py-2.5 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-2 shrink-0"
               >
-                <Users className="w-4 h-4" />
-                <span>Kelola Pelanggan SaaS</span>
+                <Users className="w-4 h-4 shrink-0" />
+                <span>Kelola Tenant</span>
               </Link>
               <Link
                 href="/member/gateway"
-                className="px-3.5 py-2.5 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-xs bg-white"
+                className="whitespace-nowrap px-3.5 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-xs bg-white shrink-0"
               >
-                <Network className="w-4 h-4 text-cyan-600" />
+                <Network className="w-4 h-4 text-cyan-600 shrink-0" />
                 <span>Gateway &amp; Caddy</span>
               </Link>
               <Link
                 href="/cms-9x7k2"
-                className="px-3.5 py-2.5 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-xs bg-white"
+                className="whitespace-nowrap px-3.5 py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-xs bg-white shrink-0"
               >
-                <SlidersHorizontal className="w-4 h-4 text-slate-500" />
+                <SlidersHorizontal className="w-4 h-4 text-slate-500 shrink-0" />
                 <span>CMS &amp; Paket</span>
               </Link>
             </div>
@@ -260,42 +260,39 @@ export default function MemberDashboard() {
           </div>
 
           {/* Cluster Services Health Card */}
-          <div className="bg-slate-950 text-white rounded-2xl border border-slate-900 p-6 relative overflow-hidden shadow-sm">
-            <div className="absolute -top-32 -right-32 w-80 h-80 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-900">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-700 flex items-center justify-center font-bold shrink-0">
                   <Server className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-sm text-slate-100">
-                    Live Cluster &amp; Engine Health Telemetry
+                  <h3 className="font-extrabold text-sm text-slate-900">
+                    Telemetri Klaster &amp; Status 7 Engine ISPSYNC
                   </h3>
-                  <p className="text-[11px] text-slate-400 font-mono">
-                    Host: 103.179.65.73 &bull; Multi-Tenant Core Architecture &bull; Uptime SLA 99.98%
+                  <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                    Node IP: 103.179.65.73 &bull; Carrier Architecture &bull; Uptime SLA 99.98%
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
                 <Link
                   href="/member/gateway"
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-cyan-500/40 text-cyan-400 text-xs font-semibold transition-all"
+                  className="whitespace-nowrap inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold transition-all shadow-xs"
                 >
-                  <Network className="w-3.5 h-3.5" />
+                  <Network className="w-3.5 h-3.5 text-cyan-600" />
                   <span>Buka Caddy Gateway</span>
-                  <ArrowRight className="w-3 h-3 text-cyan-400" />
+                  <ArrowRight className="w-3 h-3 text-slate-400" />
                 </Link>
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-800 text-emerald-400 text-xs font-semibold">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <div className="whitespace-nowrap inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   <span>Klaster 100% Online</span>
                 </div>
               </div>
             </div>
 
-            <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 pt-5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 pt-5">
               {[
                 { name: "Caddy Proxy", host: "On-Demand TLS", port: "80/443", status: "Online" },
                 { name: "Web Portal", host: "Next.js 16", port: "3000", status: "Online" },
@@ -305,13 +302,13 @@ export default function MemberDashboard() {
                 { name: "FreeRADIUS", host: "Port 1812/1813", port: "3799", status: "Online" },
                 { name: "PostgreSQL", host: "isp_billing", port: "5432", status: "Healthy" },
               ].map((svc, i) => (
-                <div key={i} className="bg-slate-900/80 p-3 rounded-xl border border-slate-800/80">
-                  <div className="flex items-center justify-between text-[11px] mb-1">
-                    <span className="font-bold text-slate-200 truncate">{svc.name}</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                <div key={i} className="bg-slate-50 hover:bg-slate-100/80 p-3 rounded-xl border border-slate-200/80 transition-all">
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="font-bold text-slate-900 truncate">{svc.name}</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                   </div>
-                  <div className="text-[10px] text-slate-400 font-mono truncate">{svc.host}</div>
-                  <div className="text-[10px] text-cyan-400 font-mono mt-1">Port: {svc.port}</div>
+                  <div className="text-[10px] text-slate-500 font-mono truncate">{svc.host}</div>
+                  <div className="text-[10px] text-cyan-700 font-mono font-semibold mt-1">Port: {svc.port}</div>
                 </div>
               ))}
             </div>
