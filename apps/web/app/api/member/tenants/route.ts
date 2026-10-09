@@ -214,9 +214,11 @@ export async function POST(req: NextRequest) {
         });
 
         const urls = [
-          process.env.API_BASE_URL || (process.env.NODE_ENV === "production" ? "http://api:8080" : "http://localhost:8080"),
+          "http://api:8080",
+          process.env.API_BASE_URL || "http://api:8080",
           "http://172.18.0.1:8080",
           "http://127.0.0.1:8080",
+          "http://localhost:8080",
         ];
 
         let provisioned = false;
@@ -344,9 +346,11 @@ export async function POST(req: NextRequest) {
         });
 
         const urls = [
-          process.env.API_BASE_URL || (process.env.NODE_ENV === "production" ? "http://api:8080" : "http://localhost:8080"),
+          "http://api:8080",
+          process.env.API_BASE_URL || "http://api:8080",
           "http://172.18.0.1:8080",
           "http://127.0.0.1:8080",
+          "http://localhost:8080",
         ];
 
         let purged = false;

@@ -1045,11 +1045,11 @@ func handleProvisionTenant(db *pgxpool.Pool, cfg *config.Config, log *slog.Logge
 		// 2. Provision in isp_billing (Current DB)
 		var userID string
 		err = db.QueryRow(ctx, `
-			INSERT INTO public.users (id, email, password_hash, full_name, phone, is_active, created_at, updated_at)
-			VALUES (gen_random_uuid(), $1, $2, $3, $4, true, NOW(), NOW())
-			ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash, is_active = true, updated_at = NOW()
+			INSERT INTO public.users (id, email, password_hash, full_name, phone, is_active, tenant_slug, created_at, updated_at)
+			VALUES (gen_random_uuid(), $1, $2, $3, $4, true, $5, NOW(), NOW())
+			ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash, is_active = true, tenant_slug = EXCLUDED.tenant_slug, updated_at = NOW()
 			RETURNING id
-		`, req.Email, passwordHash, picName, req.Phone).Scan(&userID)
+		`, req.Email, passwordHash, picName, req.Phone, slug).Scan(&userID)
 		if err != nil {
 			log.Error("failed to insert/update user in isp_billing", "error", err)
 		} else {
