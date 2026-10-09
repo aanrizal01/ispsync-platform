@@ -6,6 +6,8 @@ import nodemailer from "nodemailer";
 function getDataDir(): string {
   const containerData = "/app/data";
   if (fs.existsSync(containerData)) return containerData;
+  const webData = path.join(process.cwd(), "apps", "web", "data");
+  if (fs.existsSync(webData)) return webData;
   const localData = path.join(process.cwd(), "data");
   if (!fs.existsSync(localData)) {
     fs.mkdirSync(localData, { recursive: true });

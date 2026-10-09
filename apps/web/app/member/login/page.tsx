@@ -144,15 +144,13 @@ export default function MemberLoginPage() {
 
           <div className="mt-8 pt-6 border-t border-slate-100 text-center">
             <p className="text-xs text-slate-500">
-              Don&apos;t have an enterprise account?{" "}
-              <a
-                href="https://wa.me/6281100000000?text=Halo%20ISPSYNC,%20saya%20tertarik%20berlangganan%20dan%20ingin%20membuat%20akun%20member"
-                target="_blank"
-                rel="noreferrer"
+              Belum punya akun SaaS?{" "}
+              <Link
+                href="/member/register"
                 className="text-blue-600 font-bold hover:underline"
               >
-                Sign Up via WhatsApp
-              </a>
+                Daftar Akun Baru (Free Trial 14 Hari)
+              </Link>
             </p>
           </div>
         </div>
