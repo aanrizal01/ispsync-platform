@@ -38,7 +38,7 @@ export default function AdminFibergridPage() {
   const [searchOdp, setSearchOdp] = useState<string>("");
 
   // OpenStreetMap / Leaflet GIS refs & state
-  const [mapTheme, setMapTheme] = useState<"dark" | "voyager" | "osm">("dark");
+  const [mapTheme, setMapTheme] = useState<"osm" | "dark" | "satellite">("osm");
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const tileLayerRef = useRef<any>(null);
@@ -95,24 +95,27 @@ export default function AdminFibergridPage() {
   useEffect(() => {
     let isMounted = true;
 
-    const tileConfigs: Record<string, { url: string; subdomains: string; maxZoom: number; attr: string }> = {
-      dark: {
-        url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        subdomains: "abcd",
-        maxZoom: 20,
-        attr: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
-      },
-      voyager: {
-        url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-        subdomains: "abcd",
-        maxZoom: 20,
-        attr: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
-      },
+    const tileConfigs: Record<string, { url: string; subdomains: string; maxZoom: number; attr: string; className?: string }> = {
       osm: {
-        url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+        url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         subdomains: "abc",
         maxZoom: 19,
         attr: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+        className: "",
+      },
+      dark: {
+        url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        subdomains: "abc",
+        maxZoom: 19,
+        attr: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
+        className: "dark-map-tiles",
+      },
+      satellite: {
+        url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        subdomains: "",
+        maxZoom: 19,
+        attr: '&copy; <a href="https://www.esri.com" target="_blank">Esri World Imagery</a>',
+        className: "",
       },
     };
 
@@ -146,11 +149,12 @@ export default function AdminFibergridPage() {
       if (tileLayerRef.current) {
         map.removeLayer(tileLayerRef.current);
       }
-      const activeTileCfg = tileConfigs[mapTheme] || tileConfigs.dark;
+      const activeTileCfg = tileConfigs[mapTheme] || tileConfigs.osm;
       tileLayerRef.current = L.tileLayer(activeTileCfg.url, {
         subdomains: activeTileCfg.subdomains,
         maxZoom: activeTileCfg.maxZoom,
         attribution: activeTileCfg.attr,
+        className: activeTileCfg.className || "",
       }).addTo(map);
 
       // Render Fiber Cable Routes (Polylines)
@@ -565,39 +569,39 @@ export default function AdminFibergridPage() {
             <div className="flex items-center gap-0.5 bg-slate-200/80 p-0.5 rounded-lg border border-slate-300">
               <button
                 type="button"
-                onClick={() => setMapTheme("dark")}
-                className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition ${
-                  mapTheme === "dark"
-                    ? "bg-slate-900 text-cyan-400 shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-                title="Linear Telco Dark Basemap (CARTO Dark Matter)"
-              >
-                🌙 Dark
-              </button>
-              <button
-                type="button"
-                onClick={() => setMapTheme("voyager")}
-                className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition ${
-                  mapTheme === "voyager"
-                    ? "bg-white text-blue-600 shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-                title="Clean High-Contrast Voyager Basemap (CARTO Voyager)"
-              >
-                ☀️ Voyager
-              </button>
-              <button
-                type="button"
                 onClick={() => setMapTheme("osm")}
                 className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition ${
                   mapTheme === "osm"
                     ? "bg-emerald-600 text-white shadow-xs"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
-                title="Standard OpenStreetMap Basemap"
+                title="Peta Standar OpenStreetMap (Gratis & Cepat)"
               >
-                🗺️ OSM
+                OSM Standar
+              </button>
+              <button
+                type="button"
+                onClick={() => setMapTheme("dark")}
+                className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition ${
+                  mapTheme === "dark"
+                    ? "bg-slate-900 text-cyan-400 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+                title="Linear Telco Dark Basemap"
+              >
+                Dark Mode
+              </button>
+              <button
+                type="button"
+                onClick={() => setMapTheme("satellite")}
+                className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition ${
+                  mapTheme === "satellite"
+                    ? "bg-blue-600 text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+                title="Citra Satelit Resolusi Tinggi (Esri World Imagery)"
+              >
+                Satelit HD
               </button>
             </div>
 

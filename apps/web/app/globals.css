@@ -40,3 +40,8 @@ body {
     font-size: 16px !important;
   }
 }
+
+/* Linear Telco Dark style filter for Leaflet free OSM tiles without API key */
+.dark-map-tiles {
+  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+}
