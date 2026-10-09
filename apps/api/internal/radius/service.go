@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"net"
 	"time"
 
 	apperrors "github.com/gigabill/isp/internal/shared/errors"
@@ -31,31 +30,23 @@ func (s *Service) ListActiveSessions(ctx context.Context, tenantSlug string, par
 
 func (s *Service) DisconnectSession(ctx context.Context, req DisconnectSessionRequest) error {
 	// Lookup NAS shared secret
+	secret := "testing123"
 	nas, err := s.repo.GetNASByIP(ctx, "", req.NasIPAddress)
 	if err != nil {
 		return apperrors.Internal(err)
 	}
-	if nas == nil {
-		s.logger.Warn("NAS not registered for CoA disconnect", "nas_ip", req.NasIPAddress)
+	if nas != nil && nas.Secret != "" {
+		secret = nas.Secret
+	} else {
+		s.logger.Warn("NAS not registered or has no secret for CoA disconnect, using default", "nas_ip", req.NasIPAddress)
 	}
 
-	// Dispatch RFC 3576 / RFC 5176 Disconnect-Request Packet to UDP port 3799
-	// Simulating packet delivery over UDP
-	go func(targetIP, user, sessID string) {
-		raddr, err := net.ResolveUDPAddr("udp", targetIP+":3799")
-		if err != nil {
-			return
+	// Dispatch RFC 3576 / RFC 5176 Disconnect-Request Packet to UDP port 3799 asynchronously
+	go func(targetIP, sec, user, sessID string) {
+		if err := SendRFC3576Disconnect(targetIP, DefaultCoAPort, sec, user, sessID, "", 3*time.Second); err != nil {
+			s.logger.Warn("RFC 3576 CoA disconnect UDP delivery warning", "nas_ip", targetIP, "user", user, "error", err)
 		}
-		conn, err := net.DialUDP("udp", nil, raddr)
-		if err != nil {
-			return
-		}
-		defer conn.Close()
-
-		// Send simulated PoD / Disconnect notification trigger
-		payload := fmt.Sprintf("User-Name=%s,Acct-Session-Id=%s", user, sessID)
-		_, _ = conn.Write([]byte(payload))
-	}(req.NasIPAddress, req.Username, req.AcctSessionID)
+	}(req.NasIPAddress, secret, req.Username, req.AcctSessionID)
 
 	// Mark session as terminated in radius_sessions
 	if err := s.repo.MarkSessionTerminated(ctx, req.AcctSessionID, req.Username); err != nil {

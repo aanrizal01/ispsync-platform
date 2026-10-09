@@ -341,6 +341,17 @@ Sistem isolir ISPSYNC Ledger bekerja secara multi-layer (*Hybrid Protection*):
 | **MikroTik RouterOS** | Menambahkan IP pelanggan ke Firewall Address List `ISOLIR_LIST`. Web-proxy / NAT me-redirect seluruh trafik HTTP/HTTPS port 80/443 pelanggan ke landing page peringatan tagihan. | Menghapus IP dari Address List dan mengirim paket CoA / Disconnect Session agar pelanggan langsung memperoleh IP publik/normal. |
 | **Juniper Junos BNG** | Menerapkan dynamic policer / filter `COS_ISOLIR` atau memutus sesi pelanggan via Packet of Disconnect (PoD / CoA RFC 3576 port 3799). | Menginisiasi re-autentikasi subscriber profile dengan SLA bandwidth penuh. |
 
+### 9.3. Arsitektur Juniper BNG Adapter (Junos REST API & RFC 3576 CoA PoD)
+ISPSYNC menyediakan adapter khusus carrier-grade untuk **Juniper MX Series BNG** (MX104, MX204, MX480, MX960) dan SRX Services Gateways:
+- **Junos REST XML-RPC API**: Mengakses `/rpc` menggunakan HTTP/HTTPS basic auth untuk:
+  - `get-system-information` & `get-route-engine-information`: Telemetri real-time CPU idle, penggunaan RAM buffer, uptime, model hardware, dan versi Junos OS.
+  - `load-configuration`: Injeksi dynamic-profiles subscriber PPPoE/IPoE, rate-limiting filter, dan firewall policer (`bandwidth-limit` & `burst-size-limit`).
+  - `clear-subscribers-session`: Terminasi sesi pelanggan terotorisasi secara langsung via Junos command engine.
+- **RFC 3576 / RFC 5176 RADIUS Dynamic Authorization (CoA / PoD)**:
+  - Native Go binary packet encoder dengan kalkulasi Request Authenticator MD5 standar RFC 3576 Section 2.1: `MD5(Code + Identifier + Length + 16 zero octets + Attributes + Shared Secret)`.
+  - Mengirimkan paket **Disconnect-Request (Code 40)** langsung ke port UDP `3799` router Juniper BNG dengan atribut `User-Name`, `Acct-Session-Id`, `Framed-IP-Address`, dan `Event-Timestamp`.
+  - **Dual-Mode Disconnect**: Kombinasi pengiriman paket RFC 3576 PoD dan Junos REST RPC `clear-subscribers-session` memastikan sesi pelanggan pasti terputus di segala topologi jaringan (AAA standalone maupun direct control).
+
 ---
 
 ## 10. Modul ACS (TR-069 / CWMP) Manajemen Modem ONT & Portal Mandiri Pelanggan

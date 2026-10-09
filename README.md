@@ -201,7 +201,7 @@ After running migrations and seed:
 | 8 | ✅ Done | Captive Portal & Walled Garden Isolation Engine |
 | 9 | ✅ Done | **Passpoint / Hotspot 2.0 Integration** (EAP-SIM / TTLS, `.mobileconfig` Auto-Installer) |
 | 10 | ✅ Done | MikroTik Adapter (RouterOS API port 8728 + FreeRADIUS NAS Auto-Attachment) |
-| 11 | 🔄 In Progress | Juniper BNG Adapter (Junos REST API / RFC 3576 CoA PoD) |
+| 11 | ✅ Done | Juniper BNG Adapter (Junos REST API / RFC 3576 CoA PoD) |
 | 12 | ✅ Done | **Partnership & Revenue Sharing Module** (Reseller/Sub-ISP, Split Rules, Settlement) |
 | 13 | ✅ Done | Notification Dispatcher (WhatsApp Gateway & Automated Invoice Reminders) |
 | 14 | ✅ Done | Financial Reporting, Ledger & Date-Range Export with Print |

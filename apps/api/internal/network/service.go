@@ -148,7 +148,21 @@ func (s *Service) GetAdapter(dev *Device) (DeviceAdapter, error) {
 	case VendorMikroTik:
 		return NewMikroTikAdapter(dev.IPAddress, dev.APIPort, dev.Username, dev.PasswordEncrypted, dev.UseTLS), nil
 	case VendorJuniper:
-		return NewJuniperAdapter(dev.IPAddress, dev.APIPort, dev.Username, dev.PasswordEncrypted, dev.UseTLS), nil
+		adapter := NewJuniperAdapter(dev.IPAddress, dev.APIPort, dev.Username, dev.PasswordEncrypted, dev.UseTLS)
+		if dev.Metadata != nil {
+			if sec, ok := dev.Metadata["radius_secret"].(string); ok && sec != "" {
+				adapter.SetRadiusSecret(sec)
+			}
+			if p, ok := dev.Metadata["coa_port"]; ok {
+				switch val := p.(type) {
+				case float64:
+					adapter.SetCoAPort(int(val))
+				case int:
+					adapter.SetCoAPort(val)
+				}
+			}
+		}
+		return adapter, nil
 	default:
 		return nil, fmt.Errorf("vendor %s belum didukung", dev.Vendor)
 	}
