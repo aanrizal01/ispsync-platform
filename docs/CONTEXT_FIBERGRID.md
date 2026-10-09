@@ -4,8 +4,8 @@
 * **Nama Resmi**: ISPSYNC FiberGrid
 * **Peran Arsitektur**: Engine 1 (Physical, Infrastructure & Wholesale B2B)
 * **Port Standar**: `8082`
-* **Subdomain Template**: `fttx.{tenant}.ispsync.id`, `noc.{tenant}.ispsync.id`
-* **Domain Staging**: `https://fttx.dev.ispsync.id`
+* **Subdomain Template**: `fibergrid.{tenant}.ispsync.id` *(alias: `fttx.{tenant}.ispsync.id`)*
+* **Domain Staging**: `https://fibergrid.dev.ispsync.id` *(atau `https://fttx.dev.ispsync.id`)*
 * **Target Pengguna**: Core Fiber Engineering, Splicer FO, Admin Wholesale Jartaplok.
 
 ---
@@ -46,5 +46,5 @@
 ---
 
 ## 5. Kredensial Default Staging
-* **URL**: `https://fttx.dev.ispsync.id`
+* **URL**: `https://fibergrid.dev.ispsync.id` *(atau `https://fttx.dev.ispsync.id`)*
 * **VLAN Staging**: `669`

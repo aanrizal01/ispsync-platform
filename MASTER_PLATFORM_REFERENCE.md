@@ -23,7 +23,7 @@
   * Resolves: `ispsync.id`, `*.ispsync.id`, `*.*.ispsync.id` (multi-level subdomains bypass Cloudflare Universal SSL limitation).
 * **Hierarchical Subdomain Routing (The 3-Engine Platform Architecture)**:
   * **Engine 1: ISPSYNC FiberGrid (Physical Infrastructure & FTTX)** (`ispsync-fttx.service` on Port 8082):
-    * `fttx.<tenant>.ispsync.id` $\rightarrow$ FTTX Command Center, Visualisasi Topologi FO GIS (OLT, ODC, ODP, Rute Feeder/Distribusi, Export KML Google Earth), Monitoring OLT Multi-Vendor (Huawei, ZTE, FiberHome, C-Data, VSOL) via SNMP/TR-069, dan Wholesale Jartaplok Management (Billing Sewa Port, e-Faktur Pajak PPN 11%, PPh 23 2%).
+    * `fibergrid.<tenant>.ispsync.id` *(alias: `fttx.<tenant>.ispsync.id`)* $\rightarrow$ FTTX Command Center, Visualisasi Topologi FO GIS (OLT, ODC, ODP, Rute Feeder/Distribusi, Export KML Google Earth), Monitoring OLT Multi-Vendor (Huawei, ZTE, FiberHome, C-Data, VSOL) via SNMP/TR-069, dan Wholesale Jartaplok Management (Billing Sewa Port, e-Faktur Pajak PPN 11%, PPh 23 2%).
   * **Engine 2: ISPSYNC Nexus (Retail Operations, Field & CRM)** (`ispsync-core.service` on Port 8081):
     * `portal.<tenant>.ispsync.id` $\rightarrow$ Registrasi Mandiri Publik & Peta GIS Leaflet ODP Terdekat (Haversine $\le 250\text{ m}$), KTP, Tanda Tangan Kontrak Digital.
     * `nexus.<tenant>.ispsync.id` $\rightarrow$ Pintu Masuk Tunggal Seluruh Operasional Staf & Mitra (Dashboard Terpadu Role-Based: Pimpinan/Owner, Dispatcher NOC, Sales Lapangan & Link Referral WhatsApp, Teknisi SPK & BAST Digital Redaman OPM, serta Rekan Mitra Jartaplok).
@@ -90,7 +90,7 @@
 * **Tenant Staging & R&D Lab Login (`dev`) — Laboratorium ISPSYNC R&D**:
   * Engine 3 Ledger / Billing: `https://billing.dev.ispsync.id/login` (`private@ispsync.id` / `RahasiaAan2026!` atau `admin@dev.ispsync.id` / `DevLab2026!`)
   * Engine 1 Nexus / Portals: `https://nexus.dev.ispsync.id` (`admin`, `noc`, `sales`, `teknisi` / `DevLab2026!`)
-  * Engine 2 FiberGrid GIS: `https://fttx.dev.ispsync.id`
+  * Engine 1 FiberGrid GIS: `https://fibergrid.dev.ispsync.id` *(atau `https://fttx.dev.ispsync.id`)*
   * Member SaaS Portal: `https://dev.ispsync.id/member` (`admin@dev.ispsync.id` / `DevLab2026!`)
   * Loket Kasir Agen: `https://billing.dev.ispsync.id/agent`
   * Passpoint Wi-Fi 2.0: `https://billing.dev.ispsync.id/passpoint` (Admin: `/admin/passpoint`)

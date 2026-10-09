@@ -43,8 +43,8 @@ Tenant **`dev`** (*Laboratorium ISPSYNC R&D / Telecom DevLab*) digunakan untuk p
   * **Sales Lapangan**: `sales` / `DevLab2026!` *(Role: SALES)*
   * **Teknisi Lapangan**: `teknisi` / `DevLab2026!` *(Role: TECHNICIAN)*
 
-### D. Engine 2: ISPSYNC FiberGrid (Infrastruktur Fiber & GIS)
-* **URL**: [https://fttx.dev.ispsync.id](https://fttx.dev.ispsync.id)
+### D. Engine 1: ISPSYNC FiberGrid (Infrastruktur Fiber & GIS)
+* **URL**: [https://fibergrid.dev.ispsync.id](https://fibergrid.dev.ispsync.id) *(atau `https://fttx.dev.ispsync.id`)*
 * Pemetaan rute kabel FO, ODC, ODP testbed, dan monitoring OLT lab.
 
 ### E. Member Portal SaaS (Langganan Platform ISPSYNC)
@@ -66,7 +66,7 @@ Tenant **`dev`** (*Laboratorium ISPSYNC R&D / Telecom DevLab*) digunakan untuk p
 * **Billing & Finance**: [https://billing.ispku.ispsync.id](https://billing.ispku.ispsync.id) *(atau `https://ledger.ispku.ispsync.id`)*
 * **Operasional Internal Terpadu (Nexus)**: [https://nexus.ispku.ispsync.id](https://nexus.ispku.ispsync.id) *(Owner, NOC, Sales & Teknisi)*
 * **Portal Registrasi Pelanggan GIS**: [https://portal.ispku.ispsync.id](https://portal.ispku.ispsync.id)
-* **FTTX Command Center (FiberGrid)**: [https://fttx.ispku.ispsync.id](https://fttx.ispku.ispsync.id)
+* **FTTX Command Center (FiberGrid)**: [https://fibergrid.ispku.ispsync.id](https://fibergrid.ispku.ispsync.id) *(atau `https://fttx.ispku.ispsync.id`)*
 * **Hotspot, Passpoint & Loket Agen**: [https://wifi.ispku.ispsync.id](https://wifi.ispku.ispsync.id) *(atau `/agent`)*
 * **Akun Login (`ispku`)**:
   * `owner` / `Password@123` *(Pimpinan / Owner)*
@@ -79,7 +79,7 @@ Tenant **`dev`** (*Laboratorium ISPSYNC R&D / Telecom DevLab*) digunakan untuk p
 * **Billing & Finance**: [https://billing.ispmu.ispsync.id](https://billing.ispmu.ispsync.id) *(atau `https://ledger.ispmu.ispsync.id`)*
 * **Operasional Internal Terpadu (Nexus)**: [https://nexus.ispmu.ispsync.id](https://nexus.ispmu.ispsync.id) *(Owner, NOC, Sales & Teknisi)*
 * **Portal Registrasi Pelanggan GIS**: [https://portal.ispmu.ispsync.id](https://portal.ispmu.ispsync.id)
-* **FTTX Command Center (FiberGrid)**: [https://fttx.ispmu.ispsync.id](https://fttx.ispmu.ispsync.id)
+* **FTTX Command Center (FiberGrid)**: [https://fibergrid.ispmu.ispsync.id](https://fibergrid.ispmu.ispsync.id) *(atau `https://fttx.ispmu.ispsync.id`)*
 * **Hotspot, Passpoint & Loket Agen**: [https://wifi.ispmu.ispsync.id](https://wifi.ispmu.ispsync.id) *(atau `/agent`)*
 * **Akun Login (`ispmu`)**:
   * `owner` / `Password@123` *(Pimpinan / Owner)*

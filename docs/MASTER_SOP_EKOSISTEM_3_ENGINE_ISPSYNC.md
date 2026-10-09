@@ -77,7 +77,7 @@ Platform ISPSYNC menerapkan arsitektur domain pintu masuk tunggal terpadu per en
 
 | Layanan / Portal | Alamat Domain Resmi | Port Server | Sasaran Pengguna | Kredensial Default |
 |---|---|:---:|---|---|
-| **Engine 1: ISPSYNC FiberGrid (FTTX)** | `https://fttx.{tenant}.ispsync.id` | `8082` | NOC Core & Tim Fiber Engineering | Akun Superuser / Staf FTTX |
+| **Engine 1: ISPSYNC FiberGrid (FTTX)** | `https://fibergrid.{tenant}.ispsync.id` | `8082` | NOC Core & Tim Fiber Engineering | Akun Superuser / Staf FTTX |
 | **Engine 2: Portal Registrasi Publik** | `https://portal.{tenant}.ispsync.id` | `8081` | Calon Pelanggan Baru | Akses Terbuka (Public Self-Service GIS) |
 | **Engine 2: ISPSYNC Nexus (Unified Ops)** | `https://nexus.{tenant}.ispsync.id` | `8081` | Owner, Dispatcher NOC, Sales, Teknisi & Mitra Lapangan | Login Terpadu Berbasis Peran:<br>• `owner` (Owner / Super Admin)<br>• `noc` (Dispatcher & Monitoring)<br>• `sales` (Tim Sales & Referral)<br>• `teknisi` (Teknisi SPK & BAST Digital)<br>• Mitra Jartaplok (API Key / Partner) |
 | **Engine 3: ISPSYNC Ledger (Backoffice)**| `https://ledger.{tenant}.ispsync.id` | `8080` / `3000` | Finance, Kasir POS & Manajemen | Akun Admin Keuangan / Kasir |
@@ -92,7 +92,7 @@ Platform ISPSYNC menerapkan arsitektur domain pintu masuk tunggal terpadu per en
 2. **Kapasitas Standar**:
    - **ODC**: Menggunakan splitter rasio `1:4` atau `1:8` PLC tray.
    - **ODP Tiang**: Menggunakan splitter rasio `1:8` PLC (kapasitas maksimal **8 port per tiang ODP**).
-3. **Perekaman Koordinat**: Teknisi membuka `https://fttx.{tenant}.ispsync.id`, masuk ke menu **ODP**, klik tombol **"Select on Maps"**, lalu pin lokasi tepat tiang pada Google Maps.
+3. **Perekaman Koordinat**: Teknisi membuka `https://fibergrid.{tenant}.ispsync.id` (atau `https://fttx.{tenant}.ispsync.id`), masuk ke menu **ODP**, klik tombol **"Select on Maps"**, lalu pin lokasi tepat tiang pada Google Maps.
 4. **Pemberian Kode Standar**:
    - Format Payakumbuh: `ODP-PYK-xxxx` (misal: `ODP-PYK-0150`).
    - Format Biaro / Bukittinggi: `ODP-BRO-xxxx`.
