@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import LoginForm, { type TenantInfo } from "./login-form";
 
@@ -50,7 +51,7 @@ export default async function LoginPage() {
   }
 
   if (isTenant && !isValidTenant) {
-    import("next/navigation").then(m => m.notFound()); // dynamic import for server component or just use static import if at top
+    notFound();
   }
 
   if (!legalName && isTenant) {
