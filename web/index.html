@@ -2281,11 +2281,9 @@
             <!-- Top: Brand Header (Uniform with Ledger, NOC & Nexus) -->
             <div class="relative z-10">
               <div class="flex items-center gap-3.5">
-                <div class="w-11 h-11 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-center p-2 shrink-0 shadow-sm backdrop-blur-sm">
-                  <img id="sales-login-brand-logo" src="" alt="Logo" class="w-full h-full object-contain shrink-0" onerror="this.style.display='none'; var fb = document.getElementById('sales-login-fallback-logo'); if (fb) fb.classList.remove('hidden');" />
-                  <div id="sales-login-fallback-logo" class="hidden w-full h-full rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shrink-0">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                  </div>
+                <img id="sales-login-brand-logo" src="" alt="Logo" class="h-10 w-auto brightness-0 invert object-contain shrink-0" onerror="this.style.display='none'; var fb = document.getElementById('sales-login-fallback-logo'); if (fb) fb.classList.remove('hidden');" />
+                <div id="sales-login-fallback-logo" class="hidden w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 ring-1 ring-white/20 shrink-0">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                 </div>
                 <div>
                   <div class="flex items-center gap-2.5">
@@ -2312,7 +2310,7 @@
                   try {
                     var s = window.__EARLY_TENANT_SLUG__ || 'dev';
                     var b = window.__EARLY_BRAND_NAME__ || (s === 'dev' ? 'DEV LAB' : s.toUpperCase());
-                    var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_favicon.svg');
+                    var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_logo.svg');
                     var img = document.getElementById('sales-login-brand-logo'); if (img) img.src = logo;
                     var h2 = document.getElementById('sales-login-brand-name'); if (h2) h2.textContent = b;
                     var hl = document.getElementById('sales-login-brand-highlight'); if (hl) hl.textContent = 'Mitra Sales ' + b;
@@ -2376,11 +2374,9 @@
 
               <!-- Mobile Header Brand (lg:hidden) -->
               <div class="lg:hidden flex items-center gap-3 mb-8 pb-6 border-b border-slate-200">
-                <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center p-1.5 shrink-0 shadow-sm">
-                  <img id="sales-mobile-brand-logo" src="" alt="Logo" class="w-full h-full object-contain shrink-0" onerror="this.style.display='none'; var mfb = document.getElementById('sales-mobile-fallback-logo'); if (mfb) mfb.classList.remove('hidden');" />
-                  <div id="sales-mobile-fallback-logo" class="hidden w-full h-full rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-sm text-white shrink-0">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                  </div>
+                <img id="sales-mobile-brand-logo" src="" alt="Logo" class="h-9 w-auto object-contain shrink-0" onerror="this.style.display='none'; var mfb = document.getElementById('sales-mobile-fallback-logo'); if (mfb) mfb.classList.remove('hidden');" />
+                <div id="sales-mobile-fallback-logo" class="hidden w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-sm text-white shrink-0">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                 </div>
                 <div>
                   <div class="flex items-center gap-2">
@@ -2397,7 +2393,7 @@
                   try {
                     var s = window.__EARLY_TENANT_SLUG__ || 'dev';
                     var b = window.__EARLY_BRAND_NAME__ || (s === 'dev' ? 'DEV LAB' : s.toUpperCase());
-                    var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_favicon.svg');
+                    var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_logo.svg');
                     var mImg = document.getElementById('sales-mobile-brand-logo'); if (mImg) mImg.src = logo;
                     var mH2 = document.getElementById('sales-mobile-brand-name'); if (mH2) mH2.textContent = b;
                     var mDesc = document.getElementById('sales-mobile-brand-desc'); if (mDesc) mDesc.textContent = 'Portal Agen & Account Executive ' + b;
@@ -2911,11 +2907,9 @@
             <!-- Top: Brand Header (Uniform with Ledger & Nexus) -->
             <div class="relative z-10">
               <div class="flex items-center gap-3.5">
-                <div class="w-11 h-11 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-center p-2 shrink-0 shadow-sm backdrop-blur-sm">
-                  <img id="noc-login-brand-logo" src="" alt="Logo" class="w-full h-full object-contain shrink-0" onerror="this.style.display='none'; var fb = document.getElementById('noc-login-fallback-logo'); if (fb) fb.classList.remove('hidden');" />
-                  <div id="noc-login-fallback-logo" class="hidden w-full h-full rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shrink-0">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                  </div>
+                <img id="noc-login-brand-logo" src="" alt="Logo" class="h-10 w-auto brightness-0 invert object-contain shrink-0" onerror="this.style.display='none'; var fb = document.getElementById('noc-login-fallback-logo'); if (fb) fb.classList.remove('hidden');" />
+                <div id="noc-login-fallback-logo" class="hidden w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 ring-1 ring-white/20 shrink-0">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                 </div>
                 <div>
                   <div class="flex items-center gap-2.5">
@@ -2942,7 +2936,7 @@
                   try {
                     var s = window.__EARLY_TENANT_SLUG__ || 'dev';
                     var b = window.__EARLY_BRAND_NAME__ || (s === 'dev' ? 'DEV LAB' : s.toUpperCase());
-                    var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_favicon.svg');
+                    var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_logo.svg');
                     var img = document.getElementById('noc-login-brand-logo'); if (img) img.src = logo;
                     var h2 = document.getElementById('noc-login-brand-name'); if (h2) h2.textContent = b;
                     var hl = document.getElementById('noc-login-brand-highlight'); if (hl) hl.textContent = b + ' Command Center';
@@ -3005,11 +2999,9 @@
 
               <!-- Mobile Header Brand (lg:hidden) -->
               <div class="lg:hidden flex items-center gap-3 mb-8 pb-6 border-b border-slate-200">
-                <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center p-1.5 shrink-0 shadow-sm">
-                  <img id="noc-mobile-brand-logo" src="" alt="Logo" class="w-full h-full object-contain shrink-0" onerror="this.style.display='none'; var mfb = document.getElementById('noc-mobile-fallback-logo'); if (mfb) mfb.classList.remove('hidden');" />
-                  <div id="noc-mobile-fallback-logo" class="hidden w-full h-full rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-sm text-white shrink-0">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                  </div>
+                <img id="noc-mobile-brand-logo" src="" alt="Logo" class="h-9 w-auto object-contain shrink-0" onerror="this.style.display='none'; var mfb = document.getElementById('noc-mobile-fallback-logo'); if (mfb) mfb.classList.remove('hidden');" />
+                <div id="noc-mobile-fallback-logo" class="hidden w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-sm text-white shrink-0">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                 </div>
                 <div>
                   <div class="flex items-center gap-2">
@@ -3026,7 +3018,7 @@
                   try {
                     var s = window.__EARLY_TENANT_SLUG__ || 'dev';
                     var b = window.__EARLY_BRAND_NAME__ || (s === 'dev' ? 'DEV LAB' : s.toUpperCase());
-                    var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_favicon.svg');
+                    var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_logo.svg');
                     var mImg = document.getElementById('noc-mobile-brand-logo'); if (mImg) mImg.src = logo;
                     var mH2 = document.getElementById('noc-mobile-brand-name'); if (mH2) mH2.textContent = b;
                     var mDesc = document.getElementById('noc-mobile-brand-desc'); if (mDesc) mDesc.textContent = 'Pusat Operasional Jaringan & Core Network ' + b;
@@ -4899,11 +4891,9 @@
             <!-- Top: Brand Header (Uniform with Ledger, NOC & Nexus) -->
             <div class="relative z-10">
               <div class="flex items-center gap-3.5">
-                <div class="w-11 h-11 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-center p-2 shrink-0 shadow-sm backdrop-blur-sm">
-                  <img id="technician-login-brand-logo" src="" alt="Logo" class="w-full h-full object-contain shrink-0" onerror="this.style.display='none'; var fb = document.getElementById('technician-login-fallback-logo'); if (fb) fb.classList.remove('hidden');" />
-                  <div id="technician-login-fallback-logo" class="hidden w-full h-full rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shrink-0">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                  </div>
+                <img id="technician-login-brand-logo" src="" alt="Logo" class="h-10 w-auto brightness-0 invert object-contain shrink-0" onerror="this.style.display='none'; var fb = document.getElementById('technician-login-fallback-logo'); if (fb) fb.classList.remove('hidden');" />
+                <div id="technician-login-fallback-logo" class="hidden w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 ring-1 ring-white/20 shrink-0">
+                  <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                 </div>
                 <div>
                   <div class="flex items-center gap-2.5">
@@ -4930,7 +4920,7 @@
                   try {
                     var s = window.__EARLY_TENANT_SLUG__ || 'dev';
                     var b = window.__EARLY_BRAND_NAME__ || (s === 'dev' ? 'DEV LAB' : s.toUpperCase());
-                    var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_favicon.svg');
+                    var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_logo.svg');
                     var img = document.getElementById('technician-login-brand-logo'); if (img) img.src = logo;
                     var h2 = document.getElementById('technician-login-brand-name'); if (h2) h2.textContent = b;
                     var hl = document.getElementById('technician-login-brand-highlight'); if (hl) hl.textContent = 'Operasional Lapangan ' + b;
@@ -4991,11 +4981,9 @@
 
               <!-- Mobile Header Brand (lg:hidden) -->
               <div class="lg:hidden flex items-center gap-3 mb-8 pb-6 border-b border-slate-200">
-                <div class="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center p-1.5 shrink-0 shadow-sm">
-                  <img id="technician-mobile-brand-logo" src="" alt="Logo" class="w-full h-full object-contain shrink-0" onerror="this.style.display='none'; var mfb = document.getElementById('technician-mobile-fallback-logo'); if (mfb) mfb.classList.remove('hidden');" />
-                  <div id="technician-mobile-fallback-logo" class="hidden w-full h-full rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-sm text-white shrink-0">
-                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                  </div>
+                <img id="technician-mobile-brand-logo" src="" alt="Logo" class="h-9 w-auto object-contain shrink-0" onerror="this.style.display='none'; var mfb = document.getElementById('technician-mobile-fallback-logo'); if (mfb) mfb.classList.remove('hidden');" />
+                <div id="technician-mobile-fallback-logo" class="hidden w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-sm text-white shrink-0">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                 </div>
                 <div>
                   <div class="flex items-center gap-2">
@@ -5012,7 +5000,7 @@
                   try {
                     var s = window.__EARLY_TENANT_SLUG__ || 'dev';
                     var b = window.__EARLY_BRAND_NAME__ || (s === 'dev' ? 'DEV LAB' : s.toUpperCase());
-                    var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_favicon.svg');
+                    var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_logo.svg');
                     var mImg = document.getElementById('technician-mobile-brand-logo'); if (mImg) mImg.src = logo;
                     var mH2 = document.getElementById('technician-mobile-brand-name'); if (mH2) mH2.textContent = b;
                     var mDesc = document.getElementById('technician-mobile-brand-desc'); if (mDesc) mDesc.textContent = 'Portal Tugas Teknisi & Lapangan ' + b;
@@ -23832,7 +23820,7 @@
         const legalName = injected.company_name || injected.name || legalMap[slug] || ('PT. ' + brandName + ' Data Nusantara');
         const copyrightText = '© 2026 ' + legalName + '. All rights reserved.';
         const supportEmail = injected.contact_email || injected.email || ('sales@' + (slug || 'dev') + '.ispsync.id');
-        const logoSrc = '/web/' + (slug || 'dev') + '_favicon.svg';
+        const logoSrc = '/web/' + (slug || 'dev') + '_logo.svg';
 
         const elLogo = document.getElementById('sales-login-brand-logo');
         if (elLogo) {
@@ -27798,7 +27786,7 @@
         const legalName = injected.company_name || injected.name || legalMap[slug] || ('PT. ' + brandName + ' Data Nusantara');
         const copyrightText = '© 2026 ' + legalName + '. All rights reserved.';
         const supportEmail = injected.contact_email || injected.email || ('admin@' + (slug || 'dev') + '.ispsync.id');
-        const logoSrc = '/web/' + (slug || 'dev') + '_favicon.svg';
+        const logoSrc = '/web/' + (slug || 'dev') + '_logo.svg';
         const fgUrl = 'https://fibergrid.' + (slug || 'dev') + '.ispsync.id';
 
         const elUserInput = document.getElementById('admin-direct-username');
@@ -27807,7 +27795,7 @@
         const elLogo = document.getElementById('noc-login-brand-logo');
         if (elLogo) {
           elLogo.src = logoSrc;
-          elLogo.classList.remove('brightness-0', 'invert');
+          elLogo.classList.add('brightness-0', 'invert');
         }
         const elMobileLogo = document.getElementById('noc-mobile-brand-logo');
         if (elMobileLogo) {
@@ -28132,10 +28120,13 @@
         const legalMap = { ispmu: 'PT. Mitra Usaha Data', ispku: 'PT. ISP Kita Nusantara', dev: 'Laboratorium ISPSYNC R&D' };
         let brandName = (injected.short_name && !injected.short_name.toUpperCase().startsWith('PT')) ? injected.short_name : ((slug === 'dev') ? 'DEV LAB' : (slug ? slug.toUpperCase() : 'ISPSYNC'));
         const legalName = injected.company_name || injected.name || legalMap[slug] || ('PT. ' + brandName + ' Data Nusantara');
-        const logoSrc = '/web/' + (slug || 'dev') + '_favicon.svg';
+        const logoSrc = '/web/' + (slug || 'dev') + '_logo.svg';
 
         const elLogo = document.getElementById('technician-login-brand-logo');
-        if (elLogo) elLogo.src = logoSrc;
+        if (elLogo) {
+          elLogo.src = logoSrc;
+          elLogo.classList.add('brightness-0', 'invert');
+        }
         const elMobileLogo = document.getElementById('technician-mobile-brand-logo');
         if (elMobileLogo) elMobileLogo.src = logoSrc;
 

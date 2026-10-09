@@ -76,7 +76,7 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
         if (initialTenant.logo && initialTenant.logo !== "/logo-prism.png") {
           setTenantLogo(initialTenant.logo);
         } else {
-          setTenantLogo("/logo-prism.png");
+          setTenantLogo(`/web/${detectedSlug}_logo.svg`);
         }
         document.title = `Masuk | ${up} Ledger`;
         const iconEl = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
@@ -127,17 +127,15 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
           {/* Top: Brand Header */}
           <div className="relative z-10">
             <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-center p-2 shrink-0 shadow-sm backdrop-blur-sm">
-                <img
-                  src={tenantLogo || "/logo-prism.png"}
-                  alt={tenantName || "ISPSYNC"}
-                  className="w-full h-full object-contain"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = "/logo-prism.png";
-                  }}
-                />
-              </div>
+              <img
+                src={tenantLogo || `/web/${tenantSlug || "dev"}_logo.svg`}
+                alt={tenantName || "ISPSYNC"}
+                className="h-10 w-auto brightness-0 invert object-contain shrink-0"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = "/logo-prism.png";
+                }}
+              />
               <div>
                 <div className="flex items-center gap-2.5">
                   <h2 className="text-2xl font-black tracking-tight text-white uppercase cust-brand-name-dynamic">
@@ -215,17 +213,15 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
           <div className="w-full max-w-md mx-auto">
             {/* Mobile Brand Header */}
             <div className="lg:hidden flex items-center gap-3 mb-8 pb-6 border-b border-slate-100">
-              <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center p-1.5 shrink-0 shadow-sm">
-                <img
-                  src={tenantLogo || "/logo-prism.png"}
-                  alt={tenantName || "ISPSYNC"}
-                  className="w-full h-full object-contain"
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = "/logo-prism.png";
-                  }}
-                />
-              </div>
+              <img
+                src={tenantLogo || `/web/${tenantSlug || "dev"}_logo.svg`}
+                alt={tenantName || "ISPSYNC"}
+                className="h-9 w-auto object-contain shrink-0"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = "/logo-prism.png";
+                }}
+              />
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-black text-xl text-slate-900 tracking-tight uppercase">
