@@ -67,9 +67,28 @@ export function saveEmailTemplates(tpl: Partial<EmailTemplates>): boolean {
 export function formatTemplate(text: string, vars: Record<string, string>): string {
   let res = text || "";
   for (const [k, v] of Object.entries(vars)) {
-    res = res.replace(new RegExp(`{${k}}`, "g"), v);
+    res = res.split(`{${k}}`).join(v ?? "");
   }
   return res;
+}
+
+export function esc(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** Substitute variables, then HTML-escape the whole result (template text + user input). */
+function fmtHtml(text: string, vars: Record<string, string>): string {
+  return esc(formatTemplate(text, vars));
+}
+
+/** Subjects are plain text: strip CR/LF to prevent header injection. */
+function formatSubject(text: string, vars: Record<string, string>): string {
+  return formatTemplate(text, vars).replace(/[\r\n]+/g, " ").trim();
 }
 
 export function getSmtpConfig() {
@@ -144,23 +163,23 @@ export async function sendOtpEmail({
   to: string;
   name: string;
   otpCode: string;
-}) {
-  const tpl = getEmailTemplates().otp;
+}, override?: Partial<EmailTemplates>) {
+  const tpl = { ...getEmailTemplates().otp, ...((override?.otp as any) || {}) };
   const vars = {
     name: name || "Rekan ISP",
     otp_code: otpCode,
   };
 
-  const subject = formatTemplate(tpl.subject, vars);
-  const headerTitle = formatTemplate(tpl.header_title, vars);
-  const headerSubtitle = formatTemplate(tpl.header_subtitle, vars);
-  const greeting = formatTemplate(tpl.greeting, vars);
-  const bodyMessage = formatTemplate(tpl.body_message, vars);
-  const otpBoxLabel = formatTemplate(tpl.otp_box_label, vars);
-  const expiryNotice = formatTemplate(tpl.expiry_notice, vars);
-  const ignoreNotice = formatTemplate(tpl.ignore_notice, vars);
-  const securityNote = formatTemplate(tpl.security_note, vars);
-  const footerCopyright = formatTemplate(tpl.footer_copyright, vars);
+  const subject = formatSubject(tpl.subject, vars);
+  const headerTitle = fmtHtml(tpl.header_title, vars);
+  const headerSubtitle = fmtHtml(tpl.header_subtitle, vars);
+  const greeting = fmtHtml(tpl.greeting, vars);
+  const bodyMessage = fmtHtml(tpl.body_message, vars);
+  const otpBoxLabel = fmtHtml(tpl.otp_box_label, vars);
+  const expiryNotice = fmtHtml(tpl.expiry_notice, vars);
+  const ignoreNotice = fmtHtml(tpl.ignore_notice, vars);
+  const securityNote = fmtHtml(tpl.security_note, vars);
+  const footerCopyright = fmtHtml(tpl.footer_copyright, vars);
   const style = tpl.model_style || "executive";
 
   let headerHtml = "";
@@ -214,7 +233,7 @@ export async function sendOtpEmail({
 
         <div style="background-color: #f0f9ff; border: 2px dashed #0284c7; border-radius: 12px; padding: 20px; text-align: center; margin: 24px 0;">
           <span style="font-size: 11px; font-weight: 700; color: #0369a1; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">${otpBoxLabel}</span>
-          <span style="font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #0284c7; display: inline-block;">${otpCode}</span>
+          <span style="font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #0284c7; display: inline-block;">${esc(otpCode)}</span>
           <span style="display: block; font-size: 12px; color: #64748b; margin-top: 8px;">${expiryNotice}</span>
         </div>
 
@@ -252,20 +271,20 @@ export async function sendWelcomeEmail({
   name: string;
   company: string;
   subdomain: string;
-}) {
-  const tpl = getEmailTemplates().welcome;
+}, override?: Partial<EmailTemplates>) {
+  const tpl = { ...getEmailTemplates().welcome, ...((override?.welcome as any) || {}) };
   const vars = {
     name: name || "Rekan ISP",
     company: company || "Perusahaan ISP",
     subdomain: subdomain || "tenant",
   };
 
-  const subject = formatTemplate(tpl.subject, vars);
-  const headerTitle = formatTemplate(tpl.header_title, vars);
-  const badgeText = formatTemplate(tpl.badge_text, vars);
-  const greetingMessage = formatTemplate(tpl.greeting_message, vars);
-  const supportNote = formatTemplate(tpl.support_note, vars);
-  const footerCopyright = formatTemplate(tpl.footer_copyright, vars);
+  const subject = formatSubject(tpl.subject, vars);
+  const headerTitle = fmtHtml(tpl.header_title, vars);
+  const badgeText = fmtHtml(tpl.badge_text, vars);
+  const greetingMessage = fmtHtml(tpl.greeting_message, vars);
+  const supportNote = fmtHtml(tpl.support_note, vars);
+  const footerCopyright = fmtHtml(tpl.footer_copyright, vars);
   const style = tpl.model_style || "executive";
 
   let headerBg = "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)";
@@ -290,7 +309,7 @@ export async function sendWelcomeEmail({
           ${badgeText}
         </span>
         <h1 style="margin: 0; color: ${style === "modern" ? "#0f172a" : "#ffffff"}; font-size: 24px; font-weight: 800;">${headerTitle}</h1>
-        <p style="margin: 6px 0 0 0; color: ${style === "modern" ? "#64748b" : "#94a3b8"}; font-size: 13px;">${company}</p>
+        <p style="margin: 6px 0 0 0; color: ${style === "modern" ? "#64748b" : "#94a3b8"}; font-size: 13px;">${esc(company)}</p>
       </td>
     </tr>
     <tr>
@@ -304,7 +323,7 @@ export async function sendWelcomeEmail({
             <td style="padding: 14px 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
               <strong style="color: #0284c7; font-size: 13px; display: block; margin-bottom: 4px;">1. Billing &amp; RADIUS Ledger</strong>
               <span style="font-size: 12px; color: #64748b; display: block; margin-bottom: 8px;">Manajemen invoice, isolasi pembayaran, paket internet, dan sinkronisasi MikroTik AAA.</span>
-              <a href="https://ledger.${subdomain}.ispsync.id" style="display: inline-block; font-size: 12px; color: #ffffff; background-color: #0284c7; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-weight: 600;">Buka Ledger &rarr;</a>
+              <a href="https://ledger.${esc(String(subdomain).replace(/[^a-z0-9-]/gi, ""))}.ispsync.id" style="display: inline-block; font-size: 12px; color: #ffffff; background-color: #0284c7; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-weight: 600;">Buka Ledger &rarr;</a>
             </td>
           </tr>
           <tr><td style="height: 10px;"></td></tr>
@@ -312,7 +331,7 @@ export async function sendWelcomeEmail({
             <td style="padding: 14px 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
               <strong style="color: #4f46e5; font-size: 13px; display: block; margin-bottom: 4px;">2. NOC &amp; Customer Portal Nexus</strong>
               <span style="font-size: 12px; color: #64748b; display: block; margin-bottom: 8px;">Selfcare pelanggan, portal aduan tiket, notifikasi WhatsApp Gateway, dan monitoring.</span>
-              <a href="https://nexus.${subdomain}.ispsync.id" style="display: inline-block; font-size: 12px; color: #ffffff; background-color: #4f46e5; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-weight: 600;">Buka Nexus &rarr;</a>
+              <a href="https://nexus.${esc(String(subdomain).replace(/[^a-z0-9-]/gi, ""))}.ispsync.id" style="display: inline-block; font-size: 12px; color: #ffffff; background-color: #4f46e5; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-weight: 600;">Buka Nexus &rarr;</a>
             </td>
           </tr>
           <tr><td style="height: 10px;"></td></tr>
@@ -320,7 +339,7 @@ export async function sendWelcomeEmail({
             <td style="padding: 14px 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
               <strong style="color: #059669; font-size: 13px; display: block; margin-bottom: 4px;">3. FTTX OLT &amp; CWMP FiberGrid</strong>
               <span style="font-size: 12px; color: #64748b; display: block; margin-bottom: 8px;">Auto-provisioning ONT TR-069, peta ODC/ODP interaktif, redaman fiber optic live.</span>
-              <a href="https://fibergrid.${subdomain}.ispsync.id" style="display: inline-block; font-size: 12px; color: #ffffff; background-color: #059669; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-weight: 600;">Buka FiberGrid &rarr;</a>
+              <a href="https://fibergrid.${esc(String(subdomain).replace(/[^a-z0-9-]/gi, ""))}.ispsync.id" style="display: inline-block; font-size: 12px; color: #ffffff; background-color: #059669; text-decoration: none; padding: 6px 14px; border-radius: 6px; font-weight: 600;">Buka FiberGrid &rarr;</a>
             </td>
           </tr>
         </table>
@@ -361,8 +380,8 @@ export async function sendForgotPasswordEmail({
   name: string;
   resetLink?: string;
   resetToken?: string;
-}) {
-  const tpl = getEmailTemplates().forgot_password;
+}, override?: Partial<EmailTemplates>) {
+  const tpl = { ...getEmailTemplates().forgot_password, ...((override?.forgot_password as any) || {}) };
   const link = resetLink || `https://member.ispsync.id/member/reset-password?token=${resetToken || "sample-token"}`;
   const vars = {
     name: name || "Pengguna ISPSYNC",
@@ -371,16 +390,16 @@ export async function sendForgotPasswordEmail({
     token: resetToken || "839401",
   };
 
-  const subject = formatTemplate(tpl.subject, vars);
-  const headerTitle = formatTemplate(tpl.header_title, vars);
-  const headerSubtitle = formatTemplate(tpl.header_subtitle, vars);
-  const greeting = formatTemplate(tpl.greeting, vars);
-  const bodyMessage = formatTemplate(tpl.body_message, vars);
-  const actionButtonText = formatTemplate(tpl.action_button_text, vars);
-  const resetCodeLabel = formatTemplate(tpl.reset_code_label, vars);
-  const expiryNotice = formatTemplate(tpl.expiry_notice, vars);
-  const securityNote = formatTemplate(tpl.security_note, vars);
-  const footerCopyright = formatTemplate(tpl.footer_copyright, vars);
+  const subject = formatSubject(tpl.subject, vars);
+  const headerTitle = fmtHtml(tpl.header_title, vars);
+  const headerSubtitle = fmtHtml(tpl.header_subtitle, vars);
+  const greeting = fmtHtml(tpl.greeting, vars);
+  const bodyMessage = fmtHtml(tpl.body_message, vars);
+  const actionButtonText = fmtHtml(tpl.action_button_text, vars);
+  const resetCodeLabel = fmtHtml(tpl.reset_code_label, vars);
+  const expiryNotice = fmtHtml(tpl.expiry_notice, vars);
+  const securityNote = fmtHtml(tpl.security_note, vars);
+  const footerCopyright = fmtHtml(tpl.footer_copyright, vars);
   const style = tpl.model_style || "executive";
 
   let headerBg = "linear-gradient(135deg, #1e293b 0%, #334155 100%)";
@@ -414,7 +433,7 @@ export async function sendForgotPasswordEmail({
 
         <!-- Primary Reset Button -->
         <div style="text-align: center; margin: 28px 0;">
-          <a href="${link}" style="display: inline-block; background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%); color: #ffffff; font-size: 14px; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 10px; box-shadow: 0 2px 4px rgba(37,99,235,0.2);">
+          <a href="${esc(link)}" style="display: inline-block; background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%); color: #ffffff; font-size: 14px; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 10px; box-shadow: 0 2px 4px rgba(37,99,235,0.2);">
             ${actionButtonText} &rarr;
           </a>
           <span style="display: block; font-size: 12px; color: #64748b; margin-top: 10px;">${expiryNotice}</span>
@@ -426,7 +445,7 @@ export async function sendForgotPasswordEmail({
             ? `
         <div style="background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 16px; text-align: center; margin: 20px 0;">
           <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 4px;">${resetCodeLabel}</span>
-          <span style="font-family: monospace; font-size: 26px; font-weight: 800; letter-spacing: 6px; color: #0284c7;">${resetToken}</span>
+          <span style="font-family: monospace; font-size: 26px; font-weight: 800; letter-spacing: 6px; color: #0284c7;">${esc(resetToken)}</span>
         </div>
         `
             : ""
@@ -466,8 +485,8 @@ export async function sendSubscriptionExpiringEmail({
   expiryDate: string;
   daysLeft: number;
   paymentLink?: string;
-}) {
-  const tpl = getEmailTemplates().subscription_expiring;
+}, override?: Partial<EmailTemplates>) {
+  const tpl = { ...getEmailTemplates().subscription_expiring, ...((override?.subscription_expiring as any) || {}) };
   const link = paymentLink || "https://member.ispsync.id/member/invoices";
   const vars = {
     name: name || "Pengelola ISP",
@@ -477,16 +496,16 @@ export async function sendSubscriptionExpiringEmail({
     payment_link: link,
   };
 
-  const subject = formatTemplate(tpl.subject, vars);
-  const headerTitle = formatTemplate(tpl.header_title, vars);
-  const headerSubtitle = formatTemplate(tpl.header_subtitle, vars);
-  const badgeText = formatTemplate(tpl.badge_text, vars);
-  const greeting = formatTemplate(tpl.greeting, vars);
-  const bodyMessage = formatTemplate(tpl.body_message, vars);
-  const invoiceBoxTitle = formatTemplate(tpl.invoice_box_title, vars);
-  const actionButtonText = formatTemplate(tpl.action_button_text, vars);
-  const consequenceNotice = formatTemplate(tpl.consequence_notice, vars);
-  const footerCopyright = formatTemplate(tpl.footer_copyright, vars);
+  const subject = formatSubject(tpl.subject, vars);
+  const headerTitle = fmtHtml(tpl.header_title, vars);
+  const headerSubtitle = fmtHtml(tpl.header_subtitle, vars);
+  const badgeText = fmtHtml(tpl.badge_text, vars);
+  const greeting = fmtHtml(tpl.greeting, vars);
+  const bodyMessage = fmtHtml(tpl.body_message, vars);
+  const invoiceBoxTitle = fmtHtml(tpl.invoice_box_title, vars);
+  const actionButtonText = fmtHtml(tpl.action_button_text, vars);
+  const consequenceNotice = fmtHtml(tpl.consequence_notice, vars);
+  const footerCopyright = fmtHtml(tpl.footer_copyright, vars);
   const style = tpl.model_style || "alert";
 
   let headerBg = "linear-gradient(135deg, #d97706 0%, #b45309 100%)";
@@ -527,22 +546,22 @@ export async function sendSubscriptionExpiringEmail({
           <table width="100%" style="font-size: 13px; color: #78350f;">
             <tr>
               <td style="padding: 4px 0; color: #92400e;">Tenant:</td>
-              <td style="padding: 4px 0; font-weight: bold; text-align: right;">${company}</td>
+              <td style="padding: 4px 0; font-weight: bold; text-align: right;">${esc(company)}</td>
             </tr>
             <tr>
               <td style="padding: 4px 0; color: #92400e;">Tanggal Jatuh Tempo:</td>
-              <td style="padding: 4px 0; font-weight: bold; text-align: right; color: #b91c1c;">${vars.expiry_date}</td>
+              <td style="padding: 4px 0; font-weight: bold; text-align: right; color: #b91c1c;">${esc(vars.expiry_date)}</td>
             </tr>
             <tr>
               <td style="padding: 4px 0; color: #92400e;">Sisa Waktu:</td>
-              <td style="padding: 4px 0; font-weight: bold; text-align: right; color: #b45309;">${vars.days_left} Hari Lagi</td>
+              <td style="padding: 4px 0; font-weight: bold; text-align: right; color: #b45309;">${esc(vars.days_left)} Hari Lagi</td>
             </tr>
           </table>
         </div>
 
         <!-- Action Button -->
         <div style="text-align: center; margin: 26px 0;">
-          <a href="${link}" style="display: inline-block; background-color: #d97706; color: #ffffff; font-size: 14px; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 10px; box-shadow: 0 2px 4px rgba(217,119,6,0.25);">
+          <a href="${esc(link)}" style="display: inline-block; background-color: #d97706; color: #ffffff; font-size: 14px; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 10px; box-shadow: 0 2px 4px rgba(217,119,6,0.25);">
             ${actionButtonText} &rarr;
           </a>
         </div>
@@ -579,8 +598,8 @@ export async function sendAccountExpiredEmail({
   company: string;
   expiryDate: string;
   reactivationLink?: string;
-}) {
-  const tpl = getEmailTemplates().account_expired;
+}, override?: Partial<EmailTemplates>) {
+  const tpl = { ...getEmailTemplates().account_expired, ...((override?.account_expired as any) || {}) };
   const link = reactivationLink || "https://member.ispsync.id/member/invoices";
   const vars = {
     name: name || "Pengelola ISP",
@@ -589,16 +608,16 @@ export async function sendAccountExpiredEmail({
     reactivation_link: link,
   };
 
-  const subject = formatTemplate(tpl.subject, vars);
-  const headerTitle = formatTemplate(tpl.header_title, vars);
-  const headerSubtitle = formatTemplate(tpl.header_subtitle, vars);
-  const badgeText = formatTemplate(tpl.badge_text, vars);
-  const greeting = formatTemplate(tpl.greeting, vars);
-  const bodyMessage = formatTemplate(tpl.body_message, vars);
-  const actionButtonText = formatTemplate(tpl.action_button_text, vars);
-  const retentionNotice = formatTemplate(tpl.retention_notice, vars);
-  const supportNote = formatTemplate(tpl.support_note, vars);
-  const footerCopyright = formatTemplate(tpl.footer_copyright, vars);
+  const subject = formatSubject(tpl.subject, vars);
+  const headerTitle = fmtHtml(tpl.header_title, vars);
+  const headerSubtitle = fmtHtml(tpl.header_subtitle, vars);
+  const badgeText = fmtHtml(tpl.badge_text, vars);
+  const greeting = fmtHtml(tpl.greeting, vars);
+  const bodyMessage = fmtHtml(tpl.body_message, vars);
+  const actionButtonText = fmtHtml(tpl.action_button_text, vars);
+  const retentionNotice = fmtHtml(tpl.retention_notice, vars);
+  const supportNote = fmtHtml(tpl.support_note, vars);
+  const footerCopyright = fmtHtml(tpl.footer_copyright, vars);
   const style = tpl.model_style || "alert";
 
   let headerBg = "linear-gradient(135deg, #b91c1c 0%, #991b1b 100%)";
@@ -635,7 +654,7 @@ export async function sendAccountExpiredEmail({
 
         <!-- Reactivation Button -->
         <div style="text-align: center; margin: 28px 0;">
-          <a href="${link}" style="display: inline-block; background-color: #dc2626; color: #ffffff; font-size: 14px; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 10px; box-shadow: 0 2px 4px rgba(220,38,38,0.25);">
+          <a href="${esc(link)}" style="display: inline-block; background-color: #dc2626; color: #ffffff; font-size: 14px; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 10px; box-shadow: 0 2px 4px rgba(220,38,38,0.25);">
             ${actionButtonText} &rarr;
           </a>
         </div>

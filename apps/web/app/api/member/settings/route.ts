@@ -13,6 +13,7 @@ import {
   sendAccountExpiredEmail,
   type EmailTemplates,
 } from "@/lib/mailer";
+import { requireMember } from "@/lib/member-auth";
 
 function getDataDir(): string {
   const containerData = "/app/data";
@@ -118,20 +119,24 @@ function saveSmtpConfig(cfg: any): boolean {
   }
 }
 
+function maskSmtp(cfg: any) {
+  const { smtp_pass, ...rest } = cfg || {};
+  return { ...rest, smtp_pass: "", has_password: Boolean(smtp_pass) };
+}
+
 export async function GET(req: NextRequest) {
+  const auth = requireMember(req, ["SUPERADMIN"]);
+  if (!auth.ok) {
+    return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
+  }
   try {
     const smtp = getSmtpConfig();
     const emailTemplates = getEmailTemplates();
     return NextResponse.json({
       success: true,
-      smtp,
+      smtp: maskSmtp(smtp),
       email_templates: emailTemplates,
       default_templates: DEFAULT_EMAIL_TEMPLATES,
-      envInfo: {
-        domain: "ispsync.id",
-        serverIp: "103.179.65.73",
-        serviceNames: ["isp-prod-api", "isp-prod-worker"]
-      }
     });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
@@ -139,6 +144,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = requireMember(req, ["SUPERADMIN"]);
+  if (!auth.ok) {
+    return NextResponse.json({ success: false, error: auth.error }, { status: auth.status });
+  }
   try {
     const body = await req.json();
     const { action } = body;
@@ -155,16 +164,19 @@ export async function POST(req: NextRequest) {
       }
 
       const current = getSmtpConfig();
+      const newPass = typeof smtp_pass === "string" ? smtp_pass.trim() : "";
       const updated = {
         ...current,
         smtp_host: smtp_host.trim(),
         smtp_port: parseInt(smtp_port, 10) || 587,
         smtp_user: smtp_user.trim(),
-        smtp_pass: smtp_pass !== undefined ? smtp_pass.trim() : current.smtp_pass,
+        // Empty field = keep the stored password (it is never sent to the browser)
+        smtp_pass: newPass || current.smtp_pass,
         smtp_from: smtp_from ? smtp_from.trim() : `ISPSYNC Platform <${smtp_user.trim()}>`,
         provider: provider || (smtp_host.includes("gmail") ? "google_workspace" : "custom"),
         is_active: is_active !== undefined ? Boolean(is_active) : true,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        updated_by: auth.member.email,
       };
 
       saveSmtpConfig(updated);
@@ -181,7 +193,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         message: "Pengaturan SMTP Platform berhasil disimpan dan disinkronkan ke server.",
-        smtp: updated
+        smtp: maskSmtp(updated)
       });
     }
 
@@ -200,8 +212,17 @@ export async function POST(req: NextRequest) {
       const host = (smtp_host || cfg.smtp_host || "").trim();
       const port = parseInt(smtp_port || cfg.smtp_port || "587", 10);
       const user = (smtp_user || cfg.smtp_user || "").trim();
-      const pass = (smtp_pass !== undefined ? smtp_pass : cfg.smtp_pass || "").trim();
+      const typedPass = typeof smtp_pass === "string" ? smtp_pass.trim() : "";
+      // Never forward the stored password to a host/user other than the saved one
+      if (!typedPass && (host !== (cfg.smtp_host || "").trim() || user !== (cfg.smtp_user || "").trim())) {
+        return NextResponse.json({
+          success: false,
+          error: "Host atau username berbeda dari yang tersimpan. Isi kolom password untuk menguji kredensial baru."
+        }, { status: 400 });
+      }
+      const pass = typedPass || (cfg.smtp_pass || "").trim();
       const from = (smtp_from || cfg.smtp_from || `ISPSYNC Platform <${user}>`).trim();
+
 
       if (!host || !user || !pass) {
         return NextResponse.json({
@@ -363,10 +384,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: "Alamat email tujuan pengujian wajib valid." }, { status: 400 });
       }
 
-      // If user passed draft templates, save them first so sendOtpEmail/sendWelcomeEmail renders them
-      if (templates && typeof templates === "object") {
-        saveEmailTemplates(templates);
-      }
+      // Render the unsaved draft for this test only; never persist it here.
+      const draft: Partial<EmailTemplates> | undefined =
+        templates && typeof templates === "object" ? templates : undefined;
 
       const cfg = getSmtpConfig();
       if (!cfg.smtp_user || !cfg.smtp_pass) {
@@ -382,7 +402,7 @@ export async function POST(req: NextRequest) {
             to: to_email.trim(),
             name: "Administrator ISP (Pratinjau)",
             otpCode: "849201"
-          });
+          }, draft);
           return NextResponse.json({
             success: true,
             message: `Email pratinjau OTP berhasil dikirim ke ${to_email}!`
@@ -393,7 +413,7 @@ export async function POST(req: NextRequest) {
             name: "Administrator ISP (Pratinjau)",
             company: "PT Solusi Jaringan Nusantara",
             subdomain: "demo"
-          });
+          }, draft);
           return NextResponse.json({
             success: true,
             message: `Email pratinjau Sambutan & Onboarding berhasil dikirim ke ${to_email}!`
@@ -404,7 +424,7 @@ export async function POST(req: NextRequest) {
             name: "Administrator ISP (Pratinjau)",
             resetLink: "https://member.ispsync.id/member/reset-password?token=sample-reset-token-99",
             resetToken: "482019"
-          });
+          }, draft);
           return NextResponse.json({
             success: true,
             message: `Email pratinjau Reset Kata Sandi berhasil dikirim ke ${to_email}!`
@@ -417,7 +437,7 @@ export async function POST(req: NextRequest) {
             expiryDate: "31 Oktober 2026",
             daysLeft: 3,
             paymentLink: "https://member.ispsync.id/member/invoices"
-          });
+          }, draft);
           return NextResponse.json({
             success: true,
             message: `Email pratinjau Peringatan Jatuh Tempo berhasil dikirim ke ${to_email}!`
@@ -429,7 +449,7 @@ export async function POST(req: NextRequest) {
             company: "PT Solusi Jaringan Nusantara",
             expiryDate: "10 Oktober 2026",
             reactivationLink: "https://member.ispsync.id/member/invoices"
-          });
+          }, draft);
           return NextResponse.json({
             success: true,
             message: `Email pratinjau Akun Suspended / Kedaluwarsa berhasil dikirim ke ${to_email}!`

@@ -38,6 +38,7 @@ type SmtpConfig = {
   smtp_port: number;
   smtp_user: string;
   smtp_pass: string;
+  has_password?: boolean;
   smtp_from: string;
   provider?: string;
   is_active?: boolean;
@@ -49,7 +50,7 @@ type SmtpConfig = {
 type TemplateType = "otp" | "welcome" | "forgot_password" | "subscription_expiring" | "account_expired";
 
 export default function PlatformSettingsPage() {
-  const { member } = useMember();
+  const { member, token } = useMember();
   const [activeTab, setActiveTab] = useState<"smtp" | "templates">("smtp");
   const [activeTemplateTab, setActiveTemplateTab] = useState<TemplateType>("otp");
 
@@ -95,25 +96,35 @@ export default function PlatformSettingsPage() {
     error?: string;
   } | null>(null);
 
+  const authHeaders = (): Record<string, string> => {
+    const t = token || (typeof window !== "undefined" ? localStorage.getItem("member-token") : null);
+    return {
+      "Content-Type": "application/json",
+      ...(t ? { Authorization: `Bearer ${t}` } : {}),
+    };
+  };
+
   const fetchSettings = async () => {
     setLoading(true);
     setActionError(null);
     try {
-      const res = await fetch("/api/member/settings");
+      const res = await fetch("/api/member/settings", { headers: authHeaders() });
       const data = await res.json();
-      if (data.success) {
-        if (data.smtp) {
-          setForm(data.smtp);
-          if (!testEmail && data.smtp.smtp_user) {
-            setTestEmail(data.smtp.smtp_user);
-          }
-          if (!testTemplateEmail && data.smtp.smtp_user) {
-            setTestTemplateEmail(data.smtp.smtp_user);
-          }
+      if (!res.ok || !data.success) {
+        setActionError(data.error || `Gagal memuat pengaturan (HTTP ${res.status}).`);
+        return;
+      }
+      if (data.smtp) {
+        setForm(data.smtp);
+        if (!testEmail && data.smtp.smtp_user) {
+          setTestEmail(data.smtp.smtp_user);
         }
-        if (data.email_templates) {
-          setTemplates(data.email_templates);
+        if (!testTemplateEmail && data.smtp.smtp_user) {
+          setTestTemplateEmail(data.smtp.smtp_user);
         }
+      }
+      if (data.email_templates) {
+        setTemplates(data.email_templates);
       }
     } catch (err: any) {
       setActionError("Gagal memuat pengaturan: " + err.message);
@@ -123,8 +134,8 @@ export default function PlatformSettingsPage() {
   };
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
+    if (token) fetchSettings();
+  }, [token]);
 
   // Quick Preset Handlers for SMTP
   const applyPreset = (preset: "google" | "mailgun" | "sendgrid" | "custom") => {
@@ -169,7 +180,7 @@ export default function PlatformSettingsPage() {
     try {
       const res = await fetch("/api/member/settings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
         body: JSON.stringify({
           action: "update_smtp",
           ...form,
@@ -200,7 +211,7 @@ export default function PlatformSettingsPage() {
     try {
       const res = await fetch("/api/member/settings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
         body: JSON.stringify({
           action: "save_email_templates",
           templates,
@@ -236,7 +247,7 @@ export default function PlatformSettingsPage() {
     try {
       const res = await fetch("/api/member/settings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
         body: JSON.stringify({
           action: "reset_email_templates",
           template_type: type,
@@ -272,7 +283,7 @@ export default function PlatformSettingsPage() {
     try {
       const res = await fetch("/api/member/settings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
         body: JSON.stringify({
           action: "test_email",
           to_email: testEmail.trim(),
@@ -317,7 +328,7 @@ export default function PlatformSettingsPage() {
     try {
       const res = await fetch("/api/member/settings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
         body: JSON.stringify({
           action: "test_template_email",
           template_type: activeTemplateTab,
@@ -585,7 +596,7 @@ export default function PlatformSettingsPage() {
                       <div className="relative">
                         <input
                           type={showPassword ? "text" : "password"}
-                          placeholder="Google App Password (16 karakter)"
+                          placeholder={form.has_password ? "Tersimpan aman (kosongkan jika tidak diubah)" : "Google App Password (16 karakter)"}
                           value={form.smtp_pass}
                           onChange={(e) => setForm({ ...form, smtp_pass: e.target.value })}
                           className="w-full pl-3 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs font-mono focus:outline-none focus:border-cyan-600 focus:bg-white"

@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import crypto from "crypto";
 import { getDataDir, sendOtpEmail, sendWelcomeEmail } from "@/lib/mailer";
+import { signSessionToken, verifySessionToken } from "@/lib/member-auth";
 
 function getMembersPath(): string {
   const p0 = path.join(getDataDir(), "members.json");
@@ -66,45 +67,18 @@ const RESERVED_SUBDOMAINS = new Set([
   "ispsync", "isp", "noc", "fiber", "fibergrid", "nexus", "ledger", "radius"
 ]);
 
-// Secret key for HMAC token signing (persists across container restarts)
-const SESSION_SECRET = process.env.SESSION_SECRET || "ispsync-member-auth-secret-key-2026-carrier-grade";
-
-// Simple in-memory fallback sessions
-const sessions = new Map<string, { memberId: string; expiresAt: number }>();
+// Session tokens are signed with a strong secret from env or a persisted
+// random key (see lib/member-auth.ts). No hardcoded fallback secret.
+const sessions = {
+  set: (_t: string, _v: { memberId: string; expiresAt: number }) => {},
+  delete: (_t: string) => {},
+};
 
 // Rate limiting for member auth
 const authAttempts = new Map<string, { count: number; blockedUntil: number }>();
 
 function signToken(memberId: string): string {
-  const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 days session
-  const data = `${memberId}:${expiresAt}`;
-  const sig = crypto.createHmac("sha256", SESSION_SECRET).update(data).digest("hex");
-  return `${data}:${sig}`;
-}
-
-function verifySessionToken(token: string): string | null {
-  if (!token) return null;
-
-  // Check HMAC format: memberId:expiresAt:signature
-  if (token.includes(":")) {
-    const parts = token.split(":");
-    if (parts.length === 3) {
-      const [memberId, expStr, sig] = parts;
-      const exp = parseInt(expStr, 10);
-      if (!isNaN(exp) && exp > Date.now()) {
-        const expected = crypto.createHmac("sha256", SESSION_SECRET).update(`${memberId}:${expStr}`).digest("hex");
-        if (sig === expected) return memberId;
-      }
-    }
-  }
-
-  // Fallback to in-memory session map
-  const session = sessions.get(token);
-  if (session && session.expiresAt > Date.now()) {
-    return session.memberId;
-  }
-
-  return null;
+  return signSessionToken(memberId);
 }
 
 function getClientIP(req: NextRequest) {
