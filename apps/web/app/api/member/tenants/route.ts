@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { requireMember } from "@/lib/member-auth";
+import { getDataDir } from "@/lib/mailer";
 
-const MEMBERS_PATH = path.join(process.cwd(), "data", "members.json");
+const MEMBERS_PATH = path.join(getDataDir(), "members.json");
 
 function getMembersData() {
   try {
@@ -35,7 +36,8 @@ function getMembersData() {
       saveMembersData(data);
     }
     return data;
-  } catch {
+  } catch (err) {
+    console.error("Error in getMembersData:", err);
     return { members: [] };
   }
 }

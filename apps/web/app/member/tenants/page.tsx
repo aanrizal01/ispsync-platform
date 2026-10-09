@@ -101,7 +101,7 @@ function formatRupiah(amount: number | string): string {
 }
 
 export default function SaaSAdminTenantsPage() {
-  const { member } = useMember();
+  const { member, token } = useMember();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [stats, setStats] = useState<Stats>({
     totalTenants: 0,
@@ -144,13 +144,20 @@ export default function SaaSAdminTenantsPage() {
     member?.role === "SUPERADMIN" || member?.email === "admin@ispsync.id" || member?.id === "mbr_001";
 
   useEffect(() => {
-    fetchTenants();
-  }, []);
+    if (token) {
+      fetchTenants();
+    }
+  }, [token]);
 
   async function fetchTenants() {
     setLoading(true);
     try {
-      const res = await fetch("/api/member/tenants");
+      const res = await fetch("/api/member/tenants", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const data = await res.json();
       if (data.success) {
         setTenants(data.tenants || []);
@@ -174,7 +181,7 @@ export default function SaaSAdminTenantsPage() {
     try {
       const res = await fetch("/api/member/tenants", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ action: "toggle_status", id: tenant.id }),
       });
       const data = await res.json();
@@ -230,7 +237,7 @@ export default function SaaSAdminTenantsPage() {
 
       const apiPromise = fetch("/api/member/tenants", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ action: "delete", id: deleteTarget.id, domain: deleteTarget.domain }),
       }).then((r) => r.json());
 
@@ -369,7 +376,7 @@ export default function SaaSAdminTenantsPage() {
 
       const apiPromise = fetch("/api/member/tenants", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
       }).then((r) => r.json());
 
@@ -449,7 +456,7 @@ export default function SaaSAdminTenantsPage() {
     try {
       const res = await fetch("/api/member/tenants", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
       });
       const data = await res.json();

@@ -87,7 +87,7 @@ function getEngineUrls(domain?: string) {
 }
 
 export default function MemberDashboard() {
-  const { member, loading } = useMember();
+  const { member, loading, token } = useMember();
   const router = useRouter();
   const [copiedEmail, setCopiedEmail] = useState(false);
 
@@ -112,9 +112,11 @@ export default function MemberDashboard() {
   }, [loading, member, router]);
 
   useEffect(() => {
-    if (isSuperadmin) {
+    if (isSuperadmin && token) {
       setLoadingStats(true);
-      fetch("/api/member/tenants")
+      fetch("/api/member/tenants", {
+        headers: { Authorization: `Bearer ${token}` }
+      })
         .then((res) => res.json())
         .then((data) => {
           if (data.success) {
