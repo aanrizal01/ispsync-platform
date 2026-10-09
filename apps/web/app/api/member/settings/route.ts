@@ -249,7 +249,7 @@ export async function POST(req: NextRequest) {
                 </table>
               </div>
               <div style="text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 16px;">
-                &copy; 2026 PT. Mitra Usaha Data. Seluruh hak cipta dilindungi undang-undang.
+                &copy; 2026 ISPSYNC Platform &mdash; PT. Inovasi Sistem Pintar. Seluruh hak cipta dilindungi undang-undang.
               </div>
             </div>
           `

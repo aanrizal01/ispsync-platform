@@ -157,7 +157,7 @@ export default function MemberLoginPage() {
 
         {/* Bottom copyright */}
         <div className="text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2 pt-6">
-          <span>&copy; {new Date().getFullYear()} ISPSYNC Enterprise Platform.</span>
+          <span>&copy; {new Date().getFullYear()} ISPSYNC Platform &mdash; PT. Inovasi Sistem Pintar. All rights reserved.</span>
           <Link href="/" className="hover:text-slate-600 sm:hidden">
             ← Kembali ke Beranda
           </Link>

@@ -645,7 +645,7 @@ export default function MemberRegisterPage() {
 
         {/* Footer */}
         <div className="pt-6 border-t border-slate-100 text-xs text-slate-400 flex flex-col sm:flex-row justify-between items-center gap-2">
-          <span>&copy; 2026 PT. Mitra Usaha Data. All rights reserved.</span>
+          <span>&copy; 2026 ISPSYNC Platform &mdash; PT. Inovasi Sistem Pintar. All rights reserved.</span>
           <div className="flex items-center gap-4 text-[11px]">
             <Link href="/" className="hover:text-slate-600">Beranda</Link>
             <Link href="/member/login" className="hover:text-slate-600">Login Member</Link>

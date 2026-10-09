@@ -134,7 +134,7 @@ export async function sendOtpEmail({
     <!-- Footer -->
     <tr>
       <td style="padding: 20px 32px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center; font-size: 11px; color: #94a3b8;">
-        &copy; 2026 PT. Mitra Usaha Data. Seluruh hak cipta dilindungi undang-undang.<br/>
+        &copy; 2026 ISPSYNC Platform &mdash; PT. Inovasi Sistem Pintar. Seluruh hak cipta dilindungi undang-undang.<br/>
         Layanan resmi otomatisasi ISP &middot; <a href="https://ispsync.id" style="color: #0284c7; text-decoration: none;">ispsync.id</a>
       </td>
     </tr>
@@ -228,7 +228,7 @@ export async function sendWelcomeEmail({
     <!-- Footer -->
     <tr>
       <td style="padding: 20px 32px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center; font-size: 11px; color: #94a3b8;">
-        &copy; 2026 PT. Mitra Usaha Data. Seluruh hak cipta dilindungi undang-undang.<br/>
+        &copy; 2026 ISPSYNC Platform &mdash; PT. Inovasi Sistem Pintar. Seluruh hak cipta dilindungi undang-undang.<br/>
         Layanan resmi otomatisasi ISP &middot; <a href="https://ispsync.id" style="color: #0284c7; text-decoration: none;">ispsync.id</a>
       </td>
     </tr>
