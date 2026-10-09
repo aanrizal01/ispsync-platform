@@ -519,20 +519,27 @@ func main() {
 			// Auto-fallback: If tenant logo does not exist, serve official ISPSYNC SaaS logo
 			if strings.HasSuffix(r.URL.Path, "_logo.svg") || strings.HasSuffix(r.URL.Path, "_logo.png") {
 				if _, errLogo := os.Stat(filepath.Join("web", "logo.png")); errLogo == nil {
+					w.Header().Set("Content-Type", "image/png")
+					w.Header().Set("Cache-Control", "public, max-age=86400")
 					http.ServeFile(w, r, filepath.Join("web", "logo.png"))
 					return
 				}
+				w.Header().Set("Content-Type", "image/svg+xml")
 				http.ServeFile(w, r, filepath.Join("web", "ispsync_logo.svg"))
 				return
 			}
 			// Auto-fallback: If tenant favicon does not exist, serve default ISPSYNC favicon
 			if strings.HasSuffix(r.URL.Path, "_favicon.svg") || strings.HasSuffix(r.URL.Path, "_favicon.ico") || strings.HasSuffix(r.URL.Path, "_favicon.png") {
-				if _, errFav := os.Stat(filepath.Join("web", "logo.png")); errFav == nil {
+				if _, errFav := os.Stat(filepath.Join("web", "ispsync_favicon.svg")); errFav == nil {
+					w.Header().Set("Content-Type", "image/svg+xml")
+					http.ServeFile(w, r, filepath.Join("web", "ispsync_favicon.svg"))
+					return
+				}
+				if _, errLogo := os.Stat(filepath.Join("web", "logo.png")); errLogo == nil {
+					w.Header().Set("Content-Type", "image/png")
 					http.ServeFile(w, r, filepath.Join("web", "logo.png"))
 					return
 				}
-				http.ServeFile(w, r, filepath.Join("web", "ispsync_favicon.svg"))
-				return
 			}
 		}
 		http.FileServer(http.Dir("web")).ServeHTTP(w, r)

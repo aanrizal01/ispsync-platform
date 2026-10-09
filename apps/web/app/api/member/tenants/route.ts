@@ -201,31 +201,50 @@ export async function POST(req: NextRequest) {
       }
 
       if (provSlug && provSlug !== "ispsync") {
-        try {
-          const apiBaseUrl = process.env.API_BASE_URL || (process.env.NODE_ENV === "production" ? "http://api:8080" : "http://localhost:8080");
-          const provRes = await fetch(`${apiBaseUrl}/api/v1/internal/tenants/provision`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-Admin-Key": "isp-onboarding-admin-key",
-            },
-            body: JSON.stringify({
-              tenant_slug: provSlug,
-              company: newMember.company,
-              short_name: provSlug.toUpperCase(),
-              email: newMember.email,
-              password: password.trim(),
-              pic_name: newMember.picName,
-              phone: newMember.phone,
-              address: newMember.address,
-              plan: newMember.plan,
-            }),
-          });
-          if (!provRes.ok) {
-            console.error("Auto-provision API returned non-200:", provRes.status, await provRes.text());
+        const payload = JSON.stringify({
+          tenant_slug: provSlug,
+          company: newMember.company,
+          short_name: provSlug.toUpperCase(),
+          email: newMember.email,
+          password: password.trim(),
+          pic_name: newMember.picName,
+          phone: newMember.phone,
+          address: newMember.address,
+          plan: newMember.plan,
+        });
+
+        const urls = [
+          process.env.API_BASE_URL || (process.env.NODE_ENV === "production" ? "http://api:8080" : "http://localhost:8080"),
+          "http://172.18.0.1:8080",
+          "http://127.0.0.1:8080",
+        ];
+
+        let provisioned = false;
+        for (const baseUrl of urls) {
+          for (let attempt = 1; attempt <= 2; attempt++) {
+            try {
+              const provRes = await fetch(`${baseUrl}/api/v1/internal/tenants/provision`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-Admin-Key": "isp-onboarding-admin-key",
+                },
+                body: payload,
+                signal: AbortSignal.timeout(5000),
+              });
+              if (provRes.ok) {
+                console.log(`Auto-provision successfully executed via ${baseUrl} for tenant ${provSlug}`);
+                provisioned = true;
+                break;
+              } else {
+                console.warn(`Auto-provision attempt ${attempt} at ${baseUrl} returned status ${provRes.status}`);
+              }
+            } catch (err: any) {
+              console.warn(`Auto-provision error at ${baseUrl} (attempt ${attempt}):`, err?.message || err);
+              await new Promise((r) => setTimeout(r, 600));
+            }
           }
-        } catch (provErr) {
-          console.error("Auto-provision error during tenant creation:", provErr);
+          if (provisioned) break;
         }
       }
 

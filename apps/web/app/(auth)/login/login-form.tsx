@@ -73,7 +73,11 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
         setTenantName(up);
         setIsTenant(true);
         setTenantLegalName(clientLegalMap[detectedSlug] || `PT. ${up} Data Nusantara`);
-        setTenantLogo(`/web/${detectedSlug}_logo.svg`);
+        if (initialTenant.logo && initialTenant.logo !== "/logo-prism.png") {
+          setTenantLogo(initialTenant.logo);
+        } else {
+          setTenantLogo("/logo-prism.png");
+        }
         document.title = `Masuk | ${up} Ledger`;
         const iconEl = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
         if (iconEl) {
@@ -118,12 +122,11 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
             <div className="flex items-center gap-3.5">
               <img
                 src={tenantLogo || "/logo-prism.png"}
-                alt="Logo"
+                alt={tenantName || "ISPSYNC"}
                 className="h-10 w-auto object-contain"
                 onError={(e) => {
-                  if (!e.currentTarget.src.includes("logo-prism.png")) {
-                    e.currentTarget.src = "/logo-prism.png";
-                  }
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = "/logo-prism.png";
                 }}
               />
               <div>
@@ -203,18 +206,15 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
           <div className="w-full max-w-md mx-auto">
             {/* Mobile Brand Header */}
             <div className="lg:hidden flex items-center gap-3 mb-8 pb-6 border-b border-slate-100">
-              {tenantLogo ? (
-                <img
-                  src={tenantLogo}
-                  alt="Logo"
-                  className="h-9 w-auto"
-                  onError={(e) => (e.currentTarget.style.display = "none")}
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-              )}
+              <img
+                src={tenantLogo || "/logo-prism.png"}
+                alt={tenantName || "ISPSYNC"}
+                className="h-9 w-auto object-contain"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = "/logo-prism.png";
+                }}
+              />
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-black text-xl text-slate-900 tracking-tight uppercase">

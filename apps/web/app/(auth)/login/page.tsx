@@ -44,11 +44,22 @@ export default async function LoginPage() {
     legalName = `PT. ${upper} Data Nusantara`;
   }
 
+  let tenantLogo = "/logo-prism.png";
+  if (isTenant) {
+    const customSvg = path.join(process.cwd(), "public", "web", `${slug}_logo.svg`);
+    const customPng = path.join(process.cwd(), "public", "web", `${slug}_logo.png`);
+    if (fs.existsSync(customSvg)) {
+      tenantLogo = `/web/${slug}_logo.svg`;
+    } else if (fs.existsSync(customPng)) {
+      tenantLogo = `/web/${slug}_logo.png`;
+    }
+  }
+
   const initialTenant: TenantInfo = {
     name: upper,
     legalName: legalName,
     slug: slug || "",
-    logo: isTenant ? `/web/${slug}_logo.svg` : "/logo-prism.png",
+    logo: tenantLogo,
     isTenant: isTenant,
   };
 

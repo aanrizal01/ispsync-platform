@@ -201,6 +201,11 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 			}
 
 			if tenant == nil {
+				// Izinkan aset statis, favicon, logo, health check, dan hook Caddy tetap lewat tanpa tenant context
+				if strings.HasPrefix(r.URL.Path, "/web/") || r.URL.Path == "/logo.png" || r.URL.Path == "/favicon.ico" || r.URL.Path == "/health" || r.URL.Path == "/ready" || r.URL.Path == "/api/v1/caddy/ask" {
+					next.ServeHTTP(w, r)
+					return
+				}
 				http.Error(w, `{"error":"Tenant not found or inactive on ISPSYNC platform"}`, http.StatusNotFound)
 				return
 			}
