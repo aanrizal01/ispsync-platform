@@ -253,7 +253,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: "Tenant berhasil ditambahkan dan diprovisioning", tenant: newMember });
     }
 
-    if (action === "update") {
+    if (action === "update" || action === "edit") {
       const { id, ...updates } = body;
       const idx = members.findIndex((m: any) => m.id === id);
       if (idx === -1) {
@@ -265,15 +265,19 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Tidak dapat mengubah hak akses Superadmin." }, { status: 403 });
       }
 
+      const existingPassword = members[idx].password;
+
       members[idx] = {
         ...members[idx],
         ...updates,
         updatedAt: new Date().toISOString(),
       };
 
-      // Keep password intact if not provided
-      if (!updates.password) {
-        delete updates.password;
+      // Keep password intact if not provided or blank
+      if (!updates.password || !String(updates.password).trim()) {
+        members[idx].password = existingPassword;
+      } else {
+        members[idx].password = String(updates.password).trim();
       }
 
       db.members = members;

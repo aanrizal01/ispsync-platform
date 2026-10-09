@@ -433,7 +433,7 @@ export default function SaaSAdminTenantsPage() {
     if (!activeTenant) return;
 
     const payload: any = {
-      action: modalMode,
+      action: modalMode === "edit" ? "update" : modalMode,
       ...activeTenant,
     };
     if (formPassword) {
