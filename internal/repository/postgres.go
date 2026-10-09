@@ -3,8 +3,10 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"math"
+	"os"
 	"strings"
 	"time"
 
@@ -531,20 +533,225 @@ func (s *PostgresStorage) seedDefaultTenant() error {
 		}
 	}
 
+	s.syncAllMembers(ctx)
 	return nil
+}
+
+// ── Auto-Provisioning & Synchronization from members.json ──────────────────────
+
+type memberJSONRecord struct {
+	ID           string `json:"id"`
+	Email        string `json:"email"`
+	Password     string `json:"password"`
+	Company      string `json:"company"`
+	PicName      string `json:"picName"`
+	Phone        string `json:"phone"`
+	Status       string `json:"status"`
+	Domain       string `json:"domain"`
+	CustomDomain string `json:"customDomain"`
+}
+
+type membersJSONFile struct {
+	Members []memberJSONRecord `json:"members"`
+}
+
+func getMembersCandidatePaths() []string {
+	var paths []string
+	if envPath := os.Getenv("MEMBERS_FILE_PATH"); envPath != "" {
+		paths = append(paths, envPath)
+	}
+	paths = append(paths,
+		"/home/anri01/ispsync/apps/web/data/members.json",
+		"/home/anri01/ispsync/data/members.json",
+		"/home/anri01/ispsync-core/data/members.json",
+		"apps/web/data/members.json",
+		"data/members.json",
+		"../ispsync/apps/web/data/members.json",
+	)
+	return paths
+}
+
+func (s *PostgresStorage) syncTenantFromMembers(ctx context.Context, slug string) bool {
+	cleanSlug := strings.ToLower(strings.TrimSpace(slug))
+	if cleanSlug == "" {
+		return false
+	}
+
+	var target *memberJSONRecord
+	for _, p := range getMembersCandidatePaths() {
+		raw, err := os.ReadFile(p)
+		if err != nil {
+			continue
+		}
+		var mf membersJSONFile
+		if err := json.Unmarshal(raw, &mf); err != nil {
+			continue
+		}
+		for _, rec := range mf.Members {
+			recDom := strings.ToLower(strings.TrimSpace(rec.Domain))
+			expectedSub := cleanSlug + ".ispsync.id"
+			if recDom == expectedSub || recDom == cleanSlug || strings.HasPrefix(recDom, cleanSlug+".") {
+				target = &rec
+				break
+			}
+		}
+		if target != nil {
+			break
+		}
+	}
+
+	if target == nil || strings.ToLower(target.Status) != "active" {
+		return false
+	}
+
+	// Cek apakah sudah ada di PostgreSQL
+	var existingID string
+	_ = s.db.QueryRowContext(ctx, "SELECT id FROM tenants WHERE LOWER(slug) = $1", cleanSlug).Scan(&existingID)
+	if existingID != "" {
+		return true
+	}
+
+	tenantID := uuid.New().String()
+	now := time.Now()
+	name := strings.TrimSpace(target.Company)
+	if name == "" {
+		name = strings.ToUpper(cleanSlug)
+	}
+	shortName := strings.ToUpper(cleanSlug)
+	prefixID := strings.ToUpper(cleanSlug)
+	if len(prefixID) > 5 {
+		prefixID = prefixID[:5]
+	}
+
+	_, err := s.db.ExecContext(ctx, `
+		INSERT INTO tenants (id, slug, name, short_name, prefix_id, logo_url, brand_color, contact_phone, contact_email, address, status, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, '', '#06b6d4', $6, $7, '', 'ACTIVE', $8, $9)
+		ON CONFLICT (slug) DO NOTHING
+	`, tenantID, cleanSlug, name, shortName, prefixID, target.Phone, target.Email, now, now)
+	if err != nil {
+		fmt.Printf("[PostgresStorage] Failed to auto-provision tenant %s: %v\n", cleanSlug, err)
+		return false
+	}
+
+	_ = s.db.QueryRowContext(ctx, "SELECT id FROM tenants WHERE LOWER(slug) = $1", cleanSlug).Scan(&tenantID)
+	if tenantID == "" {
+		return false
+	}
+
+	rawPass := target.Password
+	if rawPass == "" {
+		rawPass = "Password@123"
+	}
+	pwHash, err := bcrypt.GenerateFromPassword([]byte(rawPass), bcrypt.DefaultCost)
+	if err != nil {
+		pwHash, _ = bcrypt.GenerateFromPassword([]byte("Password@123"), bcrypt.DefaultCost)
+	}
+
+	picName := strings.TrimSpace(target.PicName)
+	if picName == "" {
+		picName = "Pimpinan " + name
+	}
+
+	// Akun owner tunggal (Rule 6)
+	_, _ = s.db.ExecContext(ctx, `
+		INSERT INTO users (id, tenant_id, username, password_hash, full_name, email, phone, role, branch_code, status, created_at)
+		VALUES ($1, $2, 'owner', $3, $4, $5, $6, 'OWNER', 'HQ', 'ACTIVE', $7)
+		ON CONFLICT (tenant_id, username) DO UPDATE SET password_hash = EXCLUDED.password_hash, email = EXCLUDED.email
+	`, uuid.New().String(), tenantID, string(pwHash), picName, target.Email, target.Phone, now)
+
+	// Staff standard (noc, sales, teknisi)
+	staff := []struct{ u, n, r string }{
+		{"noc", "Engineer NOC " + shortName, "NOC"},
+		{"sales", "Sales Officer " + shortName, "SALES"},
+		{"teknisi", "Teknisi Lapangan " + shortName, "TECHNICIAN"},
+	}
+	for _, st := range staff {
+		_, _ = s.db.ExecContext(ctx, `
+			INSERT INTO users (id, tenant_id, username, password_hash, full_name, email, phone, role, branch_code, status, created_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'HQ', 'ACTIVE', $9)
+			ON CONFLICT (tenant_id, username) DO NOTHING
+		`, uuid.New().String(), tenantID, st.u, string(pwHash), st.n, st.u+"@"+cleanSlug+".ispsync.id", target.Phone, st.r, now)
+	}
+
+	// Paket Starter
+	plans := []struct {
+		c, n string
+		d, u int
+		p    float64
+	}{
+		{"HOME-20", "Paket Home 20 Mbps", 20, 20, 175000},
+		{"HOME-50", "Paket Gamer 50 Mbps", 50, 50, 275000},
+		{"BIZ-100", "Paket Kantor 100 Mbps", 100, 100, 550000},
+	}
+	for _, pl := range plans {
+		_, _ = s.db.ExecContext(ctx, `
+			INSERT INTO plans (id, tenant_id, code, name, speed_down_mbps, speed_up_mbps, monthly_price, description, is_active)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, 'Paket internet fiber optik unlimited tanpa FUP', 1)
+			ON CONFLICT (tenant_id, code) DO NOTHING
+		`, uuid.New().String(), tenantID, pl.c, pl.n, pl.d, pl.u, pl.p)
+	}
+
+	// Default OLT & ODP
+	_, _ = s.db.ExecContext(ctx, `
+		INSERT INTO olts (id, tenant_id, name, vendor, host_ip, port, username, password, status, total_pons)
+		VALUES ($1, $2, $3, 'ZTE C320', '10.10.10.2', 23, 'admin', 'admin', 'ONLINE', 8)
+		ON CONFLICT DO NOTHING
+	`, uuid.New().String(), tenantID, "OLT-GPON-"+prefixID)
+
+	_, _ = s.db.ExecContext(ctx, `
+		INSERT INTO odps (id, tenant_id, code, name, latitude, longitude, total_ports, used_ports, status)
+		VALUES ($1, $2, $3, $4, -0.9423, 100.3752, 8, 0, 'ACTIVE')
+		ON CONFLICT (tenant_id, code) DO NOTHING
+	`, uuid.New().String(), tenantID, "ODP-"+prefixID+"-001", "ODP Pusat "+shortName)
+
+	fmt.Printf("[PostgresStorage] Berhasil auto-provision tenant %s (%s) dari members.json\n", cleanSlug, name)
+	return true
+}
+
+func (s *PostgresStorage) syncAllMembers(ctx context.Context) {
+	for _, p := range getMembersCandidatePaths() {
+		raw, err := os.ReadFile(p)
+		if err != nil {
+			continue
+		}
+		var mf membersJSONFile
+		if err := json.Unmarshal(raw, &mf); err != nil {
+			continue
+		}
+		for _, rec := range mf.Members {
+			if strings.ToLower(rec.Status) != "active" {
+				continue
+			}
+			sub := strings.TrimSuffix(strings.ToLower(strings.TrimSpace(rec.Domain)), ".ispsync.id")
+			if sub != "" && sub != "ispsync.id" {
+				s.syncTenantFromMembers(ctx, sub)
+			}
+		}
+		break
+	}
 }
 
 // ── Tenant Methods ─────────────────────────────────────────────────────────────
 
 func (s *PostgresStorage) GetTenantBySlug(ctx context.Context, slug string) (*domain.Tenant, error) {
+	cleanSlug := strings.ToLower(strings.TrimSpace(slug))
 	row := s.db.QueryRowContext(ctx, `
 		SELECT id, slug, name, short_name, prefix_id, logo_url, brand_color, contact_phone, contact_email, address, custom_domain, COALESCE(base_staff_quota, 3), status, created_at, updated_at
 		FROM tenants WHERE LOWER(slug) = LOWER($1)
-	`, strings.ToLower(slug))
+	`, cleanSlug)
 
 	var t domain.Tenant
 	err := row.Scan(&t.ID, &t.Slug, &t.Name, &t.ShortName, &t.PrefixID, &t.LogoURL, &t.BrandColor, &t.ContactPhone, &t.ContactEmail, &t.Address, &t.CustomDomain, &t.BaseStaffQuota, &t.Status, &t.CreatedAt, &t.UpdatedAt)
 	if err != nil {
+		if s.syncTenantFromMembers(ctx, cleanSlug) {
+			rowRetry := s.db.QueryRowContext(ctx, `
+				SELECT id, slug, name, short_name, prefix_id, logo_url, brand_color, contact_phone, contact_email, address, custom_domain, COALESCE(base_staff_quota, 3), status, created_at, updated_at
+				FROM tenants WHERE LOWER(slug) = LOWER($1)
+			`, cleanSlug)
+			if errRetry := rowRetry.Scan(&t.ID, &t.Slug, &t.Name, &t.ShortName, &t.PrefixID, &t.LogoURL, &t.BrandColor, &t.ContactPhone, &t.ContactEmail, &t.Address, &t.CustomDomain, &t.BaseStaffQuota, &t.Status, &t.CreatedAt, &t.UpdatedAt); errRetry == nil {
+				return &t, nil
+			}
+		}
 		return nil, err
 	}
 	return &t, nil
@@ -2051,6 +2258,11 @@ func (s *PostgresStorage) ValidateDomainForTLS(ctx context.Context, domainName s
 			// Only allow if parts[0] is an active tenant slug
 			var count int
 			_ = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM tenants WHERE LOWER(slug) = $1 AND status = 'ACTIVE'", parts[0]).Scan(&count)
+			if count == 0 {
+				if s.syncTenantFromMembers(ctx, parts[0]) {
+					count = 1
+				}
+			}
 			return count > 0
 		}
 		// Multi-level subdomain: {modul}.{tenant}.ispsync.id (or {sub}.{modul}.{tenant}.ispsync.id)
@@ -2060,6 +2272,11 @@ func (s *PostgresStorage) ValidateDomainForTLS(ctx context.Context, domainName s
 		}
 		var count int
 		_ = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM tenants WHERE LOWER(slug) = $1 AND status = 'ACTIVE'", tenantSlug).Scan(&count)
+		if count == 0 {
+			if s.syncTenantFromMembers(ctx, tenantSlug) {
+				count = 1
+			}
+		}
 		return count > 0
 	}
 
