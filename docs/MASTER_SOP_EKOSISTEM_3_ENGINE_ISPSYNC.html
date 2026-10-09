@@ -188,7 +188,7 @@
 <li><a href="#sop-isp-04-standar-k3-teknisi-lapangan--penarikan-kabel-dropcore">SOP-ISP-04: Standar K3 Teknisi Lapangan &amp; Penarikan Kabel Dropcore</a></li>
 <li><a href="#sop-isp-05-pengukuran-redaman-opm-lapangan--berita-acara-bast-digital">SOP-ISP-05: Pengukuran Redaman OPM Lapangan &amp; Berita Acara (BAST) Digital</a></li>
 <li><a href="#sop-isp-06-monitoring-sesi-pppoe-live--fitur-reset--kick-sesi">SOP-ISP-06: Monitoring Sesi PPPoE Live &amp; Fitur Reset / Kick Sesi</a></li>
-<li><a href="#bab-v-bagian-iii--sop-penagihan-pembayaran--aaa-gogigabill-core">Bab V: Bagian III — SOP Penagihan, Pembayaran &amp; AAA (ISPSYNC Ledger)</a></li>
+<li><a href="#bab-v-bagian-iii--sop-penagihan-pembayaran--aaa-ispsync-ledger">Bab V: Bagian III — SOP Penagihan, Pembayaran &amp; AAA (ISPSYNC Ledger)</a></li>
 <li><a href="#sop-bill-01-siklus-otomasi-penagihan-bulanan--notifikasi-whatsapp">SOP-BILL-01: Siklus Otomasi Penagihan Bulanan &amp; Notifikasi WhatsApp</a></li>
 <li><a href="#sop-bill-02-pembayaran-otomatis-via-payment-gateway-tripay-qrisva">SOP-BILL-02: Pembayaran Otomatis via Payment Gateway (Tripay QRIS/VA)</a></li>
 <li><a href="#sop-bill-03-prosedur-penerimaan-pembayaran-tunai--manual-kasir">SOP-BILL-03: Prosedur Penerimaan Pembayaran Tunai / Manual Kasir</a></li>
@@ -199,7 +199,7 @@
 </ol>
 <hr />
 <h2>BAB I: ARSITEKTUR EKOSISTEM 3 ENGINE &amp; SINGLE SOURCE OF TRUTH</h2>
-<p>Ekosistem telekomunikasi <strong>GOGIGANET</strong> dibangun di atas arsitektur <em>microservices</em> terpadu dengan <strong>1 (satu) Database Pusat PostgreSQL (<code>isp_billing</code>)</strong> yang dilengkapi ekstensi geospasial <strong>PostGIS</strong>:</p>
+<p>Ekosistem telekomunikasi <strong>ISPSYNC Platform</strong> dibangun di atas arsitektur <em>microservices</em> terpadu dengan <strong>1 (satu) Database Pusat PostgreSQL (<code>isp_billing</code>)</strong> yang dilengkapi ekstensi geospasial <strong>PostGIS</strong>:</p>
 <pre><code>+-----------------------------------------------------------------------------------+
 |                        CENTRAL POSTGRESQL + POSTGIS (isp_billing)                 |
 |             (ODP Nodes, Fiber Routes, Customers, Invoices, RADIUS AAA)           |
@@ -317,7 +317,7 @@
 </ol>
 <h3>SOP-FTTX-06: Manajemen Sewa Port Wholesale Jartaplok B2B</h3>
 <ol>
-<li>Digunakan jika ada ISP rekanan yang ingin menyewa port optik pasif milik GOGIGANET.</li>
+<li>Digunakan jika ada ISP rekanan yang ingin menyewa port optik pasif milik ISP Provider (Tenant).</li>
 <li>Tarif sewa port per bulan:</li>
 <li>Paket 20 Mbps: Rp 154.000 / port</li>
 <li>Paket 30 Mbps: Rp 169.000 / port</li>
@@ -328,7 +328,7 @@
 <h2>BAB IV: BAGIAN II — SOP RITEL, SALES &amp; OPERASIONAL LAPANGAN (ISP ENGINE)</h2>
 <h3>SOP-ISP-01: Registrasi Mandiri Pelanggan &amp; Cek Coverage Radius 250m</h3>
 <ol>
-<li>Calon pelanggan mengakses <a href="https://portal.{tenant}.ispsync.id">portal.gogiga.net.id</a>.</li>
+<li>Calon pelanggan mengakses <a href="https://portal.{tenant}.ispsync.id">https://portal.{tenant}.ispsync.id</a>.</li>
 <li>Sistem mendeteksi koordinat GPS rumah secara presisi:</li>
 <li><strong>Jarak $\le 250\text{ meter}$</strong>: Status <strong>IN_COVERAGE</strong>. Pelanggan dapat langsung memilih paket internet (Diamond 20M, Epic 30M, Honor 50M, Glory 100M).</li>
 <li><strong>Jarak $&gt; 250\text{ meter}$</strong>: Status <strong>PENDING_SURVEY_OVERDISTANCE</strong>. Sistem memblokir auto-dispatch dan memasukkan permohonan ke antrean survei khusus untuk penentuan penambahan tiang sisipan atau biaya tambahan dropcore.</li>
@@ -402,13 +402,12 @@
 <li>Begitu pembayaran berhasil di Tripay, webhook diterima oleh ISPSYNC Ledger dalam 1 detik.</li>
 <li>Sistem secara otomatis mencatat kwitansi lunas dan mengirimkan tanda terima pembayaran via WhatsApp.</li>
 </ol>
-<h3>SOP-BILL-03: Prosedur Penerimaan Pembayaran Tunai / Manual Kasir</h3>
+<h3>SOP-BILL-03: Prosedur Penerimaan Pembayaran Tunai / Manual Kasir (Loket Kasir POS)</h3>
 <ol>
-<li>Jika pelanggan membayar tunai ke kantor GOGIGANET atau dititipkan ke teknisi:</li>
-<li>Kasir/Admin membuka <a href="https://billing.{tenant}.ispsync.id">billing.gogiga.net.id</a>, cari nama atau ID pelanggan.</li>
-<li>Buka invoice terkait, klik <strong>"Catat Pembayaran Manual"</strong>.</li>
-<li>Pilih metode kas: <code>Kas Kantor</code> atau <code>Transfer Rekening Bank Mandiri GMT</code>.</li>
-<li>Invoice seketika ditandai <code>PAID</code>. Dilarang menunda pencatatan pembayaran tunai lebih dari 1x24 jam untuk mencegah terjadinya isolir keliru.</li>
+<li><strong>Akses Loket Kasir</strong>: Petugas Kasir login ke <a href="https://ledger.{tenant}.ispsync.id">https://ledger.{tenant}.ispsync.id</a> (atau <code>https://billing.{tenant}.ispsync.id</code>) dengan akun peran <strong>Kasir</strong> (hak akses dibatasi hanya ke modul Pembayaran/POS).</li>
+<li><strong>Pencarian Tagihan</strong>: Pindai barcode tagihan dengan scanner atau ketik Nomor Faktur / ID Pelanggan / Nomor HP pada kotak pencarian tab <strong>Loket Kasir POS</strong> (<code>/admin/payments?tab=pos</code>).</li>
+<li><strong>Penerimaan Uang &amp; Hitung Kembalian</strong>: Terima uang fisik dari pelanggan, masukkan nominal pada kalkulator kasir atau klik tombol pecahan cepat uang pas.</li>
+<li><strong>Penyelesaian Transaksi &amp; Struk</strong>: Klik <strong>"Terima Pembayaran &amp; Cetak Struk"</strong>. Sistem seketika menandai status tagihan <code>PAID</code>, membuka isolir di router, dan mencetak struk thermal 58mm/80mm.</li>
 </ol>
 <h3>SOP-BILL-04: Mekanisme Otomasi Isolir Penunggak (FreeRADIUS CoA)</h3>
 <ol>

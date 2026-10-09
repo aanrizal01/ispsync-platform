@@ -30,7 +30,7 @@
    - [SOP-ISP-04: Standar K3 Teknisi Lapangan & Penarikan Kabel Dropcore](#sop-isp-04-standar-k3-teknisi-lapangan--penarikan-kabel-dropcore)
    - [SOP-ISP-05: Pengukuran Redaman OPM Lapangan & Berita Acara (BAST) Digital](#sop-isp-05-pengukuran-redaman-opm-lapangan--berita-acara-bast-digital)
    - [SOP-ISP-06: Monitoring Sesi PPPoE Live & Fitur Reset / Kick Sesi](#sop-isp-06-monitoring-sesi-pppoe-live--fitur-reset--kick-sesi)
-5. [Bab V: Bagian III — SOP Penagihan, Pembayaran & AAA (ISPSYNC Ledger)](#bab-v-bagian-iii--sop-penagihan-pembayaran--aaa-gogigabill-core)
+5. [Bab V: Bagian III — SOP Penagihan, Pembayaran & AAA (ISPSYNC Ledger)](#bab-v-bagian-iii--sop-penagihan-pembayaran--aaa-ispsync-ledger)
    - [SOP-BILL-01: Siklus Otomasi Penagihan Bulanan & Notifikasi WhatsApp](#sop-bill-01-siklus-otomasi-penagihan-bulanan--notifikasi-whatsapp)
    - [SOP-BILL-02: Pembayaran Otomatis via Payment Gateway (Tripay QRIS/VA)](#sop-bill-02-pembayaran-otomatis-via-payment-gateway-tripay-qrisva)
    - [SOP-BILL-03: Prosedur Penerimaan Pembayaran Tunai / Manual Kasir](#sop-bill-03-prosedur-penerimaan-pembayaran-tunai--manual-kasir)
@@ -43,7 +43,7 @@
 
 ## BAB I: ARSITEKTUR EKOSISTEM 3 ENGINE & SINGLE SOURCE OF TRUTH
 
-Ekosistem telekomunikasi **GOGIGANET** dibangun di atas arsitektur *microservices* terpadu dengan **1 (satu) Database Pusat PostgreSQL (`isp_billing`)** yang dilengkapi ekstensi geospasial **PostGIS**:
+Ekosistem telekomunikasi **ISPSYNC Platform** dibangun di atas arsitektur *microservices* terpadu dengan **1 (satu) Database Pusat PostgreSQL (`isp_billing`)** yang dilengkapi ekstensi geospasial **PostGIS**:
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -125,7 +125,7 @@ Sistem FTTX menjalankan daemon SNMP Poller secara otomatis setiap **5 menit** un
    - CS dapat membantu pelanggan mengubah nama Wi-Fi (SSID) dan kata sandi dari jarak jauh tanpa perlu teknisi datang ke rumah.
 
 ### SOP-FTTX-06: Manajemen Sewa Port Wholesale Jartaplok B2B
-1. Digunakan jika ada ISP rekanan yang ingin menyewa port optik pasif milik GOGIGANET.
+1. Digunakan jika ada ISP rekanan yang ingin menyewa port optik pasif milik ISP Provider (Tenant).
 2. Tarif sewa port per bulan:
    - Paket 20 Mbps: Rp 154.000 / port
    - Paket 30 Mbps: Rp 169.000 / port
@@ -137,7 +137,7 @@ Sistem FTTX menjalankan daemon SNMP Poller secara otomatis setiap **5 menit** un
 ## BAB IV: BAGIAN II — SOP RITEL, SALES & OPERASIONAL LAPANGAN (ISP ENGINE)
 
 ### SOP-ISP-01: Registrasi Mandiri Pelanggan & Cek Coverage Radius 250m
-1. Calon pelanggan mengakses [portal.gogiga.net.id](https://portal.{tenant}.ispsync.id).
+1. Calon pelanggan mengakses [https://portal.{tenant}.ispsync.id](https://portal.{tenant}.ispsync.id).
 2. Sistem mendeteksi koordinat GPS rumah secara presisi:
    - **Jarak $\le 250\text{ meter}$**: Status **IN_COVERAGE**. Pelanggan dapat langsung memilih paket internet (Diamond 20M, Epic 30M, Honor 50M, Glory 100M).
    - **Jarak $> 250\text{ meter}$**: Status **PENDING_SURVEY_OVERDISTANCE**. Sistem memblokir auto-dispatch dan memasukkan permohonan ke antrean survei khusus untuk penentuan penambahan tiang sisipan atau biaya tambahan dropcore.
@@ -207,7 +207,7 @@ Sistem FTTX menjalankan daemon SNMP Poller secara otomatis setiap **5 menit** un
 3. Sistem secara otomatis mencatat kwitansi lunas dan mengirimkan tanda terima pembayaran via WhatsApp.
 
 ### SOP-BILL-03: Prosedur Penerimaan Pembayaran Tunai / Manual Kasir (Loket Kasir POS)
-1. **Akses Loket Kasir**: Petugas Kasir login ke `https://billing.{tenant}.ispsync.id` dengan akun peran **Kasir** (hak akses dibatasi hanya ke modul Pembayaran/POS).
+1. **Akses Loket Kasir**: Petugas Kasir login ke `https://ledger.{tenant}.ispsync.id` (atau `https://billing.{tenant}.ispsync.id`) dengan akun peran **Kasir** (hak akses dibatasi hanya ke modul Pembayaran/POS).
 2. **Pencarian Tagihan**:
    - Pindai barcode tagihan dengan barcode scanner atau ketik Nomor Faktur / ID Pelanggan / Nomor HP pada kotak pencarian tab **Loket Kasir POS** (`/admin/payments?tab=pos`).
    - Verifikasi kesesuaian nama pelanggan dan jumlah tagihan yang tampil di layar.

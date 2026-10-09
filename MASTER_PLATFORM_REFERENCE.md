@@ -8,7 +8,7 @@
 | Node / Layanan | IP Address & Port | OS / Spek | Kredensial / Akses | Peran & Keterangan |
 |---|---|---|---|---|
 | **ISPSYNC Production & Demo** | `103.179.65.73`<br>`2001:df1:1cc0:65::73` | Ubuntu 24.04 LTS (x86_64) | User: `anri01`<br>Pass: `Poi123/.,`<br>Sudo: Yes | Host utama untuk Docker Containers + `ispsync-core.service` systemd. |
-| **phpIPAM Server** | `103.179.65.69`<br>`ipam.gogiga.net.id` | Linux | SSH User: `anri01` / `root` | IP Address Management (IPAM) dengan sertifikat SSL Let's Encrypt aktif. |
+| **phpIPAM Server** | `103.179.65.69`<br>`ipam.ispsync.id` | Linux | SSH User: `anri01` / `root` | IP Address Management (IPAM) dengan sertifikat SSL Let's Encrypt aktif. |
 | **ISP Onboarding & OLT Node** | `103.179.65.72`<br>`2001:df1:1cc0:65::72` | Linux | SSH User: `anri01` | Host onboarding lawas & interkoneksi OLT fisik. |
 
 ---
@@ -121,7 +121,7 @@
 1. **`c:\Users\62811\Downloads\ISPSYNC`** (Workspace Utama Saat Ini):
    * Monorepo lengkap: Go Core REST API (`apps/api`), Next.js 16 Web (`apps/web`), Universal Mobile App (`apps/mobile`), Docker configs, Caddyfile, dan database migrations.
 2. **`c:\Users\62811\Documents\GOGIGABILL`**:
-   * Repository arsip migrasi awal.
+   * Repository arsip kode billing awal sebelum transformasi ke platform multi-tenant ISPSYNC.
 3. **`c:\Users\62811\Documents\ISP`**:
    * Data registrasi lama, KML ODP Payakumbuh/Harau, formulir KPI.
 4. **`c:\Users\62811\Documents\FTTX`**:
@@ -136,8 +136,8 @@ Sistem menerapkan pemisahan domain secara ketat antara **Akses Publik** dan **In
 | Wilayah Akses | Format Domain Standar | Contoh Custom Domain | Rute & Peruntukan Layanan |
 |---|---|---|---|
 | **Publik (Hotspot & Mitra)** | `wifi.{tenant}.ispsync.id` | `hotspot.gowifi.id` | `/hotspot/buy`, `/hotspot/login`, `/passpoint`, `/agent/register`, `/agent/login`, `/agent/dashboard` |
-| **Terisolasi (Backoffice ISP)** | `ledger.{tenant}.ispsync.id` | `ledger.gogiga.net.id` | `/login`, `/admin/*` (CRM, Billing, Keuangan, NOC, Konfigurasi Router, Audit Logs) |
-| **Pelanggan Rumahan (FTTH)** | `portal.{tenant}.ispsync.id` | `member.gogiga.net.id` | Cek faktur bulanan PPPoE, riwayat pemakaian & bukti bayar mandiri |
+| **Terisolasi (Backoffice ISP)** | `ledger.{tenant}.ispsync.id` | `ledger.ispku.net` | `/login`, `/admin/*` (CRM, Billing, Keuangan, NOC, Konfigurasi Router, Audit Logs) |
+| **Pelanggan Rumahan (FTTH)** | `portal.{tenant}.ispsync.id` | `portal.ispku.net` | Cek faktur bulanan PPPoE, riwayat pemakaian & bukti bayar mandiri |
 
 ### Mekanisme Keamanan:
 * Pelanggan voucher publik yang mengakses captive portal tidak akan pernah melihat ataupun dapat melakukan probing terhadap form login backoffice internal ISP.
