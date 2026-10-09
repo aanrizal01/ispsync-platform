@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import dns from "dns/promises";
-import { requireMember } from "../../../../../lib/member-auth";
+import { requireMember } from "@/lib/member-auth";
 
 // Determine data directory (container /app/data or local process.cwd()/data)
 function getDataDir(): string {

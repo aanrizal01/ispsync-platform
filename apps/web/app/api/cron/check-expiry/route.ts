@@ -16,7 +16,7 @@ function getMembersPath(): string {
 export async function GET(req: NextRequest) {
   // In production, secure this endpoint with a cron secret token
   const authHeader = req.headers.get("authorization");
-  if (process.env.CRON_SECRET && authHeader !== \`Bearer \${process.env.CRON_SECRET}\`) {
+  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

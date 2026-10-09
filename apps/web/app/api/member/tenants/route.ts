@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-import { requireMember } from "../../../../../lib/member-auth";
+import { requireMember } from "@/lib/member-auth";
 
 const MEMBERS_PATH = path.join(process.cwd(), "data", "members.json");
 
