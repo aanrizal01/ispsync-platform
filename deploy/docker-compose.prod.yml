@@ -194,6 +194,7 @@ services:
       - "127.0.0.1:3001:3000"
     volumes:
       - ../apps/web/data:/app/data
+      - ../.env.production:/app/.env.production
     networks:
       - public_net
     depends_on:
