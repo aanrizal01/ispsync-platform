@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" width="400" height="100">
+  <defs>
+    <linearGradient id="ispGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="50%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="none"/>
+  <g transform="translate(20, 20)">
+    <!-- Hexagonal Node Container with Rounded Corners -->
+    <rect x="0" y="0" width="60" height="60" rx="16" fill="url(#ispGrad)"/>
+    <!-- Dynamic Sync Arrows & Core Network Dot -->
+    <path d="M18,30 C18,22 24,17 32,17 L30,13 M32,17 L36,21 M42,30 C42,38 36,43 28,43 L30,47 M28,43 L24,39" fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="30" cy="30" r="4.5" fill="#ffffff"/>
+    <circle cx="30" cy="30" r="2" fill="#06b6d4"/>
+
+    <!-- Typography -->
+    <text x="80" y="42" font-family="'Inter', 'JetBrains Mono', sans-serif" font-size="42" font-weight="900" fill="#1e293b" letter-spacing="-1">ISPSYNC</text>
+    <text x="83" y="60" font-family="'Inter', sans-serif" font-size="11" font-weight="700" fill="#0284c7" letter-spacing="2.5">TELCO CLOUD PLATFORM</text>
+  </g>
+</svg>

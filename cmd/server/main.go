@@ -511,7 +511,32 @@ func main() {
 	r.Get("/hotspot", pageH.ServeHotspot)
 	r.Get("/isolir", pageH.ServeIsolir)
 	
-	r.Handle("/web/*", http.StripPrefix("/web/", http.FileServer(http.Dir("web"))))
+	// Multi-tenant static assets with auto-fallback to default ISPSYNC SaaS branding
+	r.Handle("/web/*", http.StripPrefix("/web/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cleanPath := filepath.Clean("/" + r.URL.Path)
+		filePath := filepath.Join("web", cleanPath)
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			// Auto-fallback: If tenant logo does not exist, serve official ISPSYNC SaaS logo
+			if strings.HasSuffix(r.URL.Path, "_logo.svg") || strings.HasSuffix(r.URL.Path, "_logo.png") {
+				if _, errLogo := os.Stat(filepath.Join("web", "logo.png")); errLogo == nil {
+					http.ServeFile(w, r, filepath.Join("web", "logo.png"))
+					return
+				}
+				http.ServeFile(w, r, filepath.Join("web", "ispsync_logo.svg"))
+				return
+			}
+			// Auto-fallback: If tenant favicon does not exist, serve default ISPSYNC favicon
+			if strings.HasSuffix(r.URL.Path, "_favicon.svg") || strings.HasSuffix(r.URL.Path, "_favicon.ico") || strings.HasSuffix(r.URL.Path, "_favicon.png") {
+				if _, errFav := os.Stat(filepath.Join("web", "logo.png")); errFav == nil {
+					http.ServeFile(w, r, filepath.Join("web", "logo.png"))
+					return
+				}
+				http.ServeFile(w, r, filepath.Join("web", "ispsync_favicon.svg"))
+				return
+			}
+		}
+		http.FileServer(http.Dir("web")).ServeHTTP(w, r)
+	})))
 
 	// Web UI Multi-Tenant (CMS, Portal, NOC, Sales, Teknisi)
 	r.Get("/*", pageH.ServeApp)

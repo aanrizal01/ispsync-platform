@@ -116,18 +116,16 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
           {/* Top: Brand Header */}
           <div className="relative z-10">
             <div className="flex items-center gap-3.5">
-              {tenantLogo ? (
-                <img
-                  src={tenantLogo}
-                  alt="Logo"
-                  className="h-10 w-auto brightness-0 invert"
-                  onError={(e) => (e.currentTarget.style.display = "none")}
-                />
-              ) : (
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 ring-1 ring-white/20 flex-shrink-0">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-              )}
+              <img
+                src={tenantLogo || "/logo-prism.png"}
+                alt="Logo"
+                className="h-10 w-auto object-contain"
+                onError={(e) => {
+                  if (!e.currentTarget.src.includes("logo-prism.png")) {
+                    e.currentTarget.src = "/logo-prism.png";
+                  }
+                }}
+              />
               <div>
                 <div className="flex items-center gap-2.5">
                   <h2 className="text-2xl font-black tracking-tight text-white uppercase cust-brand-name-dynamic">

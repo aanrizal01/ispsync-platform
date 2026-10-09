@@ -48,7 +48,7 @@ export default async function LoginPage() {
     name: upper,
     legalName: legalName,
     slug: slug || "",
-    logo: isTenant ? `/web/${slug}_logo.svg` : "",
+    logo: isTenant ? `/web/${slug}_logo.svg` : "/logo-prism.png",
     isTenant: isTenant,
   };
 
