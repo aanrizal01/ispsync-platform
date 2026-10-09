@@ -8,6 +8,9 @@ import {
   DEFAULT_EMAIL_TEMPLATES,
   sendOtpEmail,
   sendWelcomeEmail,
+  sendForgotPasswordEmail,
+  sendSubscriptionExpiringEmail,
+  sendAccountExpiredEmail,
   type EmailTemplates,
 } from "@/lib/mailer";
 
@@ -328,10 +331,19 @@ export async function POST(req: NextRequest) {
         current.otp = { ...DEFAULT_EMAIL_TEMPLATES.otp };
       } else if (template_type === "welcome") {
         current.welcome = { ...DEFAULT_EMAIL_TEMPLATES.welcome };
+      } else if (template_type === "forgot_password") {
+        current.forgot_password = { ...DEFAULT_EMAIL_TEMPLATES.forgot_password };
+      } else if (template_type === "subscription_expiring") {
+        current.subscription_expiring = { ...DEFAULT_EMAIL_TEMPLATES.subscription_expiring };
+      } else if (template_type === "account_expired") {
+        current.account_expired = { ...DEFAULT_EMAIL_TEMPLATES.account_expired };
       } else {
         current = {
           otp: { ...DEFAULT_EMAIL_TEMPLATES.otp },
-          welcome: { ...DEFAULT_EMAIL_TEMPLATES.welcome }
+          welcome: { ...DEFAULT_EMAIL_TEMPLATES.welcome },
+          forgot_password: { ...DEFAULT_EMAIL_TEMPLATES.forgot_password },
+          subscription_expiring: { ...DEFAULT_EMAIL_TEMPLATES.subscription_expiring },
+          account_expired: { ...DEFAULT_EMAIL_TEMPLATES.account_expired },
         };
       }
       saveEmailTemplates(current);
@@ -385,6 +397,42 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({
             success: true,
             message: `Email pratinjau Sambutan & Onboarding berhasil dikirim ke ${to_email}!`
+          });
+        } else if (template_type === "forgot_password") {
+          await sendForgotPasswordEmail({
+            to: to_email.trim(),
+            name: "Administrator ISP (Pratinjau)",
+            resetLink: "https://member.ispsync.id/member/reset-password?token=sample-reset-token-99",
+            resetToken: "482019"
+          });
+          return NextResponse.json({
+            success: true,
+            message: `Email pratinjau Reset Kata Sandi berhasil dikirim ke ${to_email}!`
+          });
+        } else if (template_type === "subscription_expiring") {
+          await sendSubscriptionExpiringEmail({
+            to: to_email.trim(),
+            name: "Administrator ISP (Pratinjau)",
+            company: "PT Solusi Jaringan Nusantara",
+            expiryDate: "31 Oktober 2026",
+            daysLeft: 3,
+            paymentLink: "https://member.ispsync.id/member/invoices"
+          });
+          return NextResponse.json({
+            success: true,
+            message: `Email pratinjau Peringatan Jatuh Tempo berhasil dikirim ke ${to_email}!`
+          });
+        } else if (template_type === "account_expired") {
+          await sendAccountExpiredEmail({
+            to: to_email.trim(),
+            name: "Administrator ISP (Pratinjau)",
+            company: "PT Solusi Jaringan Nusantara",
+            expiryDate: "10 Oktober 2026",
+            reactivationLink: "https://member.ispsync.id/member/invoices"
+          });
+          return NextResponse.json({
+            success: true,
+            message: `Email pratinjau Akun Suspended / Kedaluwarsa berhasil dikirim ke ${to_email}!`
           });
         } else {
           return NextResponse.json({ success: false, error: "Tipe template email tidak valid." }, { status: 400 });

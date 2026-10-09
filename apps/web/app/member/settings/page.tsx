@@ -14,17 +14,24 @@ import {
   EyeOff,
   Zap,
   Save,
-  ShieldCheck,
   HelpCircle,
   Sliders,
   Check,
   Copy,
   RotateCcw,
-  FileText,
   Sparkles,
-  ExternalLink,
   Lock,
+  KeyRound,
+  Clock,
+  Ban,
+  Palette,
+  Layers,
 } from "lucide-react";
+import {
+  DEFAULT_EMAIL_TEMPLATES,
+  type EmailTemplates,
+  type TemplateModelStyle,
+} from "@/lib/mailer";
 
 type SmtpConfig = {
   smtp_host: string;
@@ -39,56 +46,12 @@ type SmtpConfig = {
   last_test_message?: string | null;
 };
 
-type EmailTemplates = {
-  otp: {
-    subject: string;
-    header_title: string;
-    header_subtitle: string;
-    greeting: string;
-    body_message: string;
-    otp_box_label: string;
-    expiry_notice: string;
-    ignore_notice: string;
-    security_note: string;
-    footer_copyright: string;
-  };
-  welcome: {
-    subject: string;
-    header_title: string;
-    badge_text: string;
-    greeting_message: string;
-    support_note: string;
-    footer_copyright: string;
-  };
-};
-
-const DEFAULT_TEMPLATES: EmailTemplates = {
-  otp: {
-    subject: "[ISPSYNC] Kode Verifikasi Pendaftaran: {otp_code}",
-    header_title: "ISPSYNC Platform",
-    header_subtitle: "Carrier-Grade ISP Automation & Network Ledger",
-    greeting: "Halo, {name}!",
-    body_message: "Terima kasih telah mendaftar di Platform ISPSYNC. Gunakan kode verifikasi (OTP) berikut untuk menyelesaikan pendaftaran akun Anda:",
-    otp_box_label: "KODE VERIFIKASI OTP ANDA",
-    expiry_notice: "Berlaku selama 15 menit",
-    ignore_notice: "Jika Anda tidak merasa melakukan pendaftaran akun di platform ISPSYNC, Anda dapat mengabaikan email ini dengan aman.",
-    security_note: "Keamanan Akun: Jangan pernah memberikan kode OTP ini kepada siapa pun termasuk staf ISPSYNC.",
-    footer_copyright: "© 2026 ISPSYNC Platform — PT. Inovasi Sistem Pintar. All rights reserved.",
-  },
-  welcome: {
-    subject: "[ISPSYNC] Selamat Datang! Akun Cloud Anda Telah Aktif",
-    header_title: "Selamat Datang di ISPSYNC",
-    badge_text: "TRIAL ENTERPRISE AKTIF (14 HARI)",
-    greeting_message: "Halo {name}, akun cloud enterprise ISPSYNC Anda untuk {company} telah berhasil diverifikasi dan aktif. Lingkungan terisolasi Anda telah dipersiapkan dengan 3 engine utama:",
-    support_note: "Jika Anda memerlukan bantuan konfigurasi awal (RADIUS, WhatsApp Gateway, atau OLT bridge), silakan balas email ini atau hubungi tim teknis kami.",
-    footer_copyright: "© 2026 ISPSYNC Platform — PT. Inovasi Sistem Pintar. All rights reserved.",
-  },
-};
+type TemplateType = "otp" | "welcome" | "forgot_password" | "subscription_expiring" | "account_expired";
 
 export default function PlatformSettingsPage() {
   const { member } = useMember();
   const [activeTab, setActiveTab] = useState<"smtp" | "templates">("smtp");
-  const [activeTemplateTab, setActiveTemplateTab] = useState<"otp" | "welcome">("otp");
+  const [activeTemplateTab, setActiveTemplateTab] = useState<TemplateType>("otp");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -111,9 +74,9 @@ export default function PlatformSettingsPage() {
   });
 
   // Form State: Templates
-  const [templates, setTemplates] = useState<EmailTemplates>(DEFAULT_TEMPLATES);
+  const [templates, setTemplates] = useState<EmailTemplates>(DEFAULT_EMAIL_TEMPLATES);
 
-  // Test Email State
+  // Test Email State (SMTP Handshake)
   const [testEmail, setTestEmail] = useState("");
   const [testLoading, setTestLoading] = useState(false);
   const [testResult, setTestResult] = useState<{
@@ -260,9 +223,9 @@ export default function PlatformSettingsPage() {
   };
 
   // Reset Email Template to Default
-  const handleResetTemplates = async (type?: "otp" | "welcome") => {
+  const handleResetTemplates = async (type?: TemplateType) => {
     const confirmMsg = type
-      ? `Kembalikan template ${type.toUpperCase()} ke pengaturan standar platform?`
+      ? `Kembalikan template ${type.toUpperCase().replace(/_/g, " ")} ke format standar awal?`
       : "Kembalikan semua template email ke format standar sistem?";
     if (!confirm(confirmMsg)) return;
 
@@ -400,7 +363,7 @@ export default function PlatformSettingsPage() {
     return res;
   };
 
-  // Preview Variables Sample
+  // Sample Preview Variables
   const otpPreviewVars = {
     name: "Aan Rizal",
     otp_code: "592814",
@@ -411,6 +374,41 @@ export default function PlatformSettingsPage() {
     company: "PT Solusi Jaringan Nusantara",
     subdomain: "sjn-net",
   };
+
+  const forgotPreviewVars = {
+    name: "Aan Rizal",
+    email: "aan@solusiisp.id",
+    reset_link: "https://member.ispsync.id/member/reset-password?token=sample-reset-token-99",
+    token: "482019",
+  };
+
+  const expiringPreviewVars = {
+    name: "Aan Rizal",
+    company: "PT Solusi Jaringan Nusantara",
+    expiry_date: "31 Oktober 2026",
+    days_left: "3",
+    payment_link: "https://member.ispsync.id/member/invoices",
+  };
+
+  const expiredPreviewVars = {
+    name: "Aan Rizal",
+    company: "PT Solusi Jaringan Nusantara",
+    expiry_date: "10 Oktober 2026",
+    reactivation_link: "https://member.ispsync.id/member/invoices",
+  };
+
+  // Helper to change model style for current active template
+  const setModelStyleForCurrent = (style: TemplateModelStyle) => {
+    setTemplates((prev) => ({
+      ...prev,
+      [activeTemplateTab]: {
+        ...prev[activeTemplateTab],
+        model_style: style,
+      },
+    }));
+  };
+
+  const currentModelStyle = templates[activeTemplateTab]?.model_style || "executive";
 
   return (
     <MemberNav>
@@ -431,7 +429,7 @@ export default function PlatformSettingsPage() {
               <span>Pengaturan Platform &amp; Layanan Email</span>
             </h1>
             <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-normal">
-              Kelola kredensial mail server outgoing (SMTP) dan kustomisasi teks template email otomatis (Kode OTP &amp; Sambutan Aktivasi Tenant) secara visual dengan pratinjau real-time.
+              Kelola kredensial mail server outgoing (SMTP) dan kustomisasi teks serta model desain template email sistem (OTP, Sambutan, Reset Password, Tagihan Jatuh Tempo, dan Akun Kedaluwarsa) secara visual.
             </p>
           </div>
 
@@ -484,9 +482,9 @@ export default function PlatformSettingsPage() {
             }`}
           >
             <Sliders className="w-4 h-4 text-cyan-600" />
-            <span>Editor Template Email (Visual)</span>
+            <span>Editor Template &amp; Model Desain Email</span>
             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-700 border border-cyan-200">
-              Live Preview
+              5 Jenis Template
             </span>
           </button>
         </div>
@@ -810,11 +808,13 @@ export default function PlatformSettingsPage() {
         {/* TAB 2: EMAIL TEMPLATE EDITOR */}
         {activeTab === "templates" && (
           <div className="space-y-6">
-            {/* Template Selector Bar */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Pilih Template:</span>
-                <div className="flex items-center gap-1.5">
+            {/* Top Toolbar: Template Selector & Actions */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">
+                  Pilih Template:
+                </span>
+                <div className="flex flex-wrap items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => setActiveTemplateTab("otp")}
@@ -825,7 +825,7 @@ export default function PlatformSettingsPage() {
                     }`}
                   >
                     <Lock className="w-3.5 h-3.5" />
-                    <span>1. Email Kode OTP Verifikasi</span>
+                    <span>1. OTP Verifikasi</span>
                   </button>
 
                   <button
@@ -838,22 +838,61 @@ export default function PlatformSettingsPage() {
                     }`}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>2. Email Sambutan &amp; Link Engine</span>
+                    <span>2. Sambutan &amp; Engine</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTemplateTab("forgot_password")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      activeTemplateTab === "forgot_password"
+                        ? "bg-cyan-600 text-white shadow-xs"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    <span>3. Lupa Kata Sandi</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTemplateTab("subscription_expiring")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      activeTemplateTab === "subscription_expiring"
+                        ? "bg-amber-600 text-white shadow-xs"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>4. Jatuh Tempo (Expiring)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTemplateTab("account_expired")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      activeTemplateTab === "account_expired"
+                        ? "bg-rose-600 text-white shadow-xs"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    <Ban className="w-3.5 h-3.5" />
+                    <span>5. Akun Expired (Suspended)</span>
                   </button>
                 </div>
               </div>
 
               {/* Actions on bar */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => handleResetTemplates(activeTemplateTab)}
                   disabled={resettingTemplates}
                   className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
-                  title="Kembalikan template ini ke standar sistem"
+                  title="Kembalikan template ini ke format standar"
                 >
                   <RotateCcw className={`w-3.5 h-3.5 ${resettingTemplates ? "animate-spin" : ""}`} />
-                  <span>Reset ke Standar</span>
+                  <span>Reset Standar</span>
                 </button>
 
                 <button
@@ -872,9 +911,61 @@ export default function PlatformSettingsPage() {
               </div>
             </div>
 
+            {/* Model / Style Selector Bar */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Palette className="w-4 h-4 text-cyan-600" />
+                <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                  Model Desain Template Visual:
+                </span>
+                <span className="text-xs text-slate-400">Pilih tata letak &amp; nuansa kartu email:</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setModelStyleForCurrent("executive")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border ${
+                    currentModelStyle === "executive"
+                      ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                      : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Model 1: Telco Executive (Gradient Aurora)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setModelStyleForCurrent("modern")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border ${
+                    currentModelStyle === "modern"
+                      ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                      : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Model 2: Corporate Minimalist Clean</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setModelStyleForCurrent("alert")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border ${
+                    currentModelStyle === "alert"
+                      ? "bg-slate-900 text-white border-slate-900 shadow-xs"
+                      : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                  }`}
+                >
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Model 3: High-Priority Alert Banner</span>
+                </button>
+              </div>
+            </div>
+
             {/* Main Split Grid: Editor (Left) & Live Preview (Right) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              {/* Left Column: Form Editor (5 cols) */}
+              {/* Left Column: Form Editor (6 cols) */}
               <div className="lg:col-span-6 space-y-4">
                 {/* Variable Helper Pills */}
                 <div className="bg-slate-100/70 border border-slate-200 rounded-xl p-3">
@@ -890,13 +981,12 @@ export default function PlatformSettingsPage() {
                     )}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {activeTemplateTab === "otp" ? (
+                    {activeTemplateTab === "otp" && (
                       <>
                         <button
                           type="button"
                           onClick={() => copyVariable("{otp_code}")}
                           className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono font-bold text-cyan-700 hover:border-cyan-400 transition-colors flex items-center gap-1 cursor-pointer"
-                          title="Kode OTP 6 Digit"
                         >
                           <Copy className="w-2.5 h-2.5 text-slate-400" />
                           {"{otp_code}"}
@@ -906,51 +996,165 @@ export default function PlatformSettingsPage() {
                           type="button"
                           onClick={() => copyVariable("{name}")}
                           className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono font-bold text-cyan-700 hover:border-cyan-400 transition-colors flex items-center gap-1 cursor-pointer"
-                          title="Nama Pendaftar"
                         >
                           <Copy className="w-2.5 h-2.5 text-slate-400" />
                           {"{name}"}
                           <span className="text-[9px] text-slate-400 font-sans font-normal">(Nama Lengkap)</span>
                         </button>
                       </>
-                    ) : (
+                    )}
+
+                    {activeTemplateTab === "welcome" && (
                       <>
                         <button
                           type="button"
                           onClick={() => copyVariable("{name}")}
                           className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono font-bold text-cyan-700 hover:border-cyan-400 transition-colors flex items-center gap-1 cursor-pointer"
-                          title="Nama Pendaftar"
                         >
                           <Copy className="w-2.5 h-2.5 text-slate-400" />
                           {"{name}"}
-                          <span className="text-[9px] text-slate-400 font-sans font-normal">(Nama)</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => copyVariable("{company}")}
                           className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono font-bold text-cyan-700 hover:border-cyan-400 transition-colors flex items-center gap-1 cursor-pointer"
-                          title="Nama Perusahaan / PT"
                         >
                           <Copy className="w-2.5 h-2.5 text-slate-400" />
                           {"{company}"}
-                          <span className="text-[9px] text-slate-400 font-sans font-normal">(Perusahaan)</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => copyVariable("{subdomain}")}
                           className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono font-bold text-cyan-700 hover:border-cyan-400 transition-colors flex items-center gap-1 cursor-pointer"
-                          title="Subdomain Tenant"
                         >
                           <Copy className="w-2.5 h-2.5 text-slate-400" />
                           {"{subdomain}"}
-                          <span className="text-[9px] text-slate-400 font-sans font-normal">(Subdomain)</span>
+                        </button>
+                      </>
+                    )}
+
+                    {activeTemplateTab === "forgot_password" && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => copyVariable("{name}")}
+                          className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono font-bold text-cyan-700 hover:border-cyan-400 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy className="w-2.5 h-2.5 text-slate-400" />
+                          {"{name}"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => copyVariable("{email}")}
+                          className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono font-bold text-cyan-700 hover:border-cyan-400 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy className="w-2.5 h-2.5 text-slate-400" />
+                          {"{email}"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => copyVariable("{reset_link}")}
+                          className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono font-bold text-cyan-700 hover:border-cyan-400 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy className="w-2.5 h-2.5 text-slate-400" />
+                          {"{reset_link}"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => copyVariable("{token}")}
+                          className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono font-bold text-cyan-700 hover:border-cyan-400 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy className="w-2.5 h-2.5 text-slate-400" />
+                          {"{token}"}
+                        </button>
+                      </>
+                    )}
+
+                    {activeTemplateTab === "subscription_expiring" && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => copyVariable("{name}")}
+                          className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono font-bold text-amber-700 hover:border-amber-400 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy className="w-2.5 h-2.5 text-slate-400" />
+                          {"{name}"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => copyVariable("{company}")}
+                          className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono font-bold text-amber-700 hover:border-amber-400 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy className="w-2.5 h-2.5 text-slate-400" />
+                          {"{company}"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => copyVariable("{expiry_date}")}
+                          className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono font-bold text-amber-700 hover:border-amber-400 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy className="w-2.5 h-2.5 text-slate-400" />
+                          {"{expiry_date}"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => copyVariable("{days_left}")}
+                          className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono font-bold text-amber-700 hover:border-amber-400 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy className="w-2.5 h-2.5 text-slate-400" />
+                          {"{days_left}"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => copyVariable("{payment_link}")}
+                          className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono font-bold text-amber-700 hover:border-amber-400 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy className="w-2.5 h-2.5 text-slate-400" />
+                          {"{payment_link}"}
+                        </button>
+                      </>
+                    )}
+
+                    {activeTemplateTab === "account_expired" && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => copyVariable("{name}")}
+                          className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono font-bold text-rose-700 hover:border-rose-400 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy className="w-2.5 h-2.5 text-slate-400" />
+                          {"{name}"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => copyVariable("{company}")}
+                          className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono font-bold text-rose-700 hover:border-rose-400 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy className="w-2.5 h-2.5 text-slate-400" />
+                          {"{company}"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => copyVariable("{expiry_date}")}
+                          className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono font-bold text-rose-700 hover:border-rose-400 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy className="w-2.5 h-2.5 text-slate-400" />
+                          {"{expiry_date}"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => copyVariable("{reactivation_link}")}
+                          className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[11px] font-mono font-bold text-rose-700 hover:border-rose-400 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy className="w-2.5 h-2.5 text-slate-400" />
+                          {"{reactivation_link}"}
                         </button>
                       </>
                     )}
                   </div>
                 </div>
 
-                {/* Form Fields: OTP Template */}
+                {/* FORM FIELDS: 1. OTP */}
                 {activeTemplateTab === "otp" && (
                   <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
                     <div>
@@ -973,7 +1177,7 @@ export default function PlatformSettingsPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                          Judul Header Banner
+                          Judul Banner Header
                         </label>
                         <input
                           type="text"
@@ -1025,7 +1229,7 @@ export default function PlatformSettingsPage() {
 
                     <div>
                       <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                        Pesan Tubuh / Pengantar (Body Message)
+                        Pesan Pengantar (Body Message)
                       </label>
                       <textarea
                         rows={3}
@@ -1078,7 +1282,7 @@ export default function PlatformSettingsPage() {
 
                     <div>
                       <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                        Pemberitahuan Abaikan (Bila Bukan Dia)
+                        Pemberitahuan Abaikan (Bila Bukan Pengguna)
                       </label>
                       <input
                         type="text"
@@ -1129,7 +1333,7 @@ export default function PlatformSettingsPage() {
                   </div>
                 )}
 
-                {/* Form Fields: Welcome Template */}
+                {/* FORM FIELDS: 2. WELCOME */}
                 {activeTemplateTab === "welcome" && (
                   <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
                     <div>
@@ -1152,7 +1356,7 @@ export default function PlatformSettingsPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                          Judul Header Banner
+                          Judul Banner Header
                         </label>
                         <input
                           type="text"
@@ -1238,14 +1442,521 @@ export default function PlatformSettingsPage() {
                   </div>
                 )}
 
+                {/* FORM FIELDS: 3. FORGOT PASSWORD */}
+                {activeTemplateTab === "forgot_password" && (
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                        Subjek Email (Subject Line)
+                      </label>
+                      <input
+                        type="text"
+                        value={templates.forgot_password.subject}
+                        onChange={(e) =>
+                          setTemplates({
+                            ...templates,
+                            forgot_password: { ...templates.forgot_password, subject: e.target.value },
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs font-semibold focus:outline-none focus:border-cyan-600 focus:bg-white"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                          Judul Banner Header
+                        </label>
+                        <input
+                          type="text"
+                          value={templates.forgot_password.header_title}
+                          onChange={(e) =>
+                            setTemplates({
+                              ...templates,
+                              forgot_password: { ...templates.forgot_password, header_title: e.target.value },
+                            })
+                          }
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-cyan-600 focus:bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                          Sub-Judul Header
+                        </label>
+                        <input
+                          type="text"
+                          value={templates.forgot_password.header_subtitle}
+                          onChange={(e) =>
+                            setTemplates({
+                              ...templates,
+                              forgot_password: { ...templates.forgot_password, header_subtitle: e.target.value },
+                            })
+                          }
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-cyan-600 focus:bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                        Sapaan Penerima (Greeting)
+                      </label>
+                      <input
+                        type="text"
+                        value={templates.forgot_password.greeting}
+                        onChange={(e) =>
+                          setTemplates({
+                            ...templates,
+                            forgot_password: { ...templates.forgot_password, greeting: e.target.value },
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-cyan-600 focus:bg-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                        Pesan Instruksi (Body Message)
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={templates.forgot_password.body_message}
+                        onChange={(e) =>
+                          setTemplates({
+                            ...templates,
+                            forgot_password: { ...templates.forgot_password, body_message: e.target.value },
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs leading-relaxed focus:outline-none focus:border-cyan-600 focus:bg-white resize-y"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                          Teks Tombol Aksi
+                        </label>
+                        <input
+                          type="text"
+                          value={templates.forgot_password.action_button_text}
+                          onChange={(e) =>
+                            setTemplates({
+                              ...templates,
+                              forgot_password: { ...templates.forgot_password, action_button_text: e.target.value },
+                            })
+                          }
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-cyan-600 focus:bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                          Label Kode Token Alternatif
+                        </label>
+                        <input
+                          type="text"
+                          value={templates.forgot_password.reset_code_label}
+                          onChange={(e) =>
+                            setTemplates({
+                              ...templates,
+                              forgot_password: { ...templates.forgot_password, reset_code_label: e.target.value },
+                            })
+                          }
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-cyan-600 focus:bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                          Keterangan Masa Berlaku
+                        </label>
+                        <input
+                          type="text"
+                          value={templates.forgot_password.expiry_notice}
+                          onChange={(e) =>
+                            setTemplates({
+                              ...templates,
+                              forgot_password: { ...templates.forgot_password, expiry_notice: e.target.value },
+                            })
+                          }
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-cyan-600 focus:bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                          Catatan Keamanan Akun
+                        </label>
+                        <input
+                          type="text"
+                          value={templates.forgot_password.security_note}
+                          onChange={(e) =>
+                            setTemplates({
+                              ...templates,
+                              forgot_password: { ...templates.forgot_password, security_note: e.target.value },
+                            })
+                          }
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-cyan-600 focus:bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                        Copyright Footer Resmi
+                      </label>
+                      <input
+                        type="text"
+                        value={templates.forgot_password.footer_copyright}
+                        onChange={(e) =>
+                          setTemplates({
+                            ...templates,
+                            forgot_password: { ...templates.forgot_password, footer_copyright: e.target.value },
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-cyan-600 focus:bg-white"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* FORM FIELDS: 4. SUBSCRIPTION EXPIRING */}
+                {activeTemplateTab === "subscription_expiring" && (
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                        Subjek Email (Subject Line)
+                      </label>
+                      <input
+                        type="text"
+                        value={templates.subscription_expiring.subject}
+                        onChange={(e) =>
+                          setTemplates({
+                            ...templates,
+                            subscription_expiring: { ...templates.subscription_expiring, subject: e.target.value },
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs font-semibold focus:outline-none focus:border-amber-600 focus:bg-white"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                          Judul Banner Header
+                        </label>
+                        <input
+                          type="text"
+                          value={templates.subscription_expiring.header_title}
+                          onChange={(e) =>
+                            setTemplates({
+                              ...templates,
+                              subscription_expiring: { ...templates.subscription_expiring, header_title: e.target.value },
+                            })
+                          }
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-amber-600 focus:bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                          Teks Badge Peringatan
+                        </label>
+                        <input
+                          type="text"
+                          value={templates.subscription_expiring.badge_text}
+                          onChange={(e) =>
+                            setTemplates({
+                              ...templates,
+                              subscription_expiring: { ...templates.subscription_expiring, badge_text: e.target.value },
+                            })
+                          }
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-amber-600 focus:bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                        Sapaan Penerima (Greeting)
+                      </label>
+                      <input
+                        type="text"
+                        value={templates.subscription_expiring.greeting}
+                        onChange={(e) =>
+                          setTemplates({
+                            ...templates,
+                            subscription_expiring: { ...templates.subscription_expiring, greeting: e.target.value },
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-amber-600 focus:bg-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                        Isi Pesan Peringatan (Body Message)
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={templates.subscription_expiring.body_message}
+                        onChange={(e) =>
+                          setTemplates({
+                            ...templates,
+                            subscription_expiring: { ...templates.subscription_expiring, body_message: e.target.value },
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs leading-relaxed focus:outline-none focus:border-amber-600 focus:bg-white resize-y"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                          Label Kotak Tagihan
+                        </label>
+                        <input
+                          type="text"
+                          value={templates.subscription_expiring.invoice_box_title}
+                          onChange={(e) =>
+                            setTemplates({
+                              ...templates,
+                              subscription_expiring: { ...templates.subscription_expiring, invoice_box_title: e.target.value },
+                            })
+                          }
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-amber-600 focus:bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                          Teks Tombol Pembayaran
+                        </label>
+                        <input
+                          type="text"
+                          value={templates.subscription_expiring.action_button_text}
+                          onChange={(e) =>
+                            setTemplates({
+                              ...templates,
+                              subscription_expiring: { ...templates.subscription_expiring, action_button_text: e.target.value },
+                            })
+                          }
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-amber-600 focus:bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                        Pemberitahuan Konsekuensi Isolasi (Consequence Notice)
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={templates.subscription_expiring.consequence_notice}
+                        onChange={(e) =>
+                          setTemplates({
+                            ...templates,
+                            subscription_expiring: { ...templates.subscription_expiring, consequence_notice: e.target.value },
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs leading-relaxed focus:outline-none focus:border-amber-600 focus:bg-white resize-y"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                        Copyright Footer Resmi
+                      </label>
+                      <input
+                        type="text"
+                        value={templates.subscription_expiring.footer_copyright}
+                        onChange={(e) =>
+                          setTemplates({
+                            ...templates,
+                            subscription_expiring: { ...templates.subscription_expiring, footer_copyright: e.target.value },
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-amber-600 focus:bg-white"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* FORM FIELDS: 5. ACCOUNT EXPIRED */}
+                {activeTemplateTab === "account_expired" && (
+                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                        Subjek Email (Subject Line)
+                      </label>
+                      <input
+                        type="text"
+                        value={templates.account_expired.subject}
+                        onChange={(e) =>
+                          setTemplates({
+                            ...templates,
+                            account_expired: { ...templates.account_expired, subject: e.target.value },
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs font-semibold focus:outline-none focus:border-rose-600 focus:bg-white"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                          Judul Banner Header
+                        </label>
+                        <input
+                          type="text"
+                          value={templates.account_expired.header_title}
+                          onChange={(e) =>
+                            setTemplates({
+                              ...templates,
+                              account_expired: { ...templates.account_expired, header_title: e.target.value },
+                            })
+                          }
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-rose-600 focus:bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                          Teks Badge Isolasi
+                        </label>
+                        <input
+                          type="text"
+                          value={templates.account_expired.badge_text}
+                          onChange={(e) =>
+                            setTemplates({
+                              ...templates,
+                              account_expired: { ...templates.account_expired, badge_text: e.target.value },
+                            })
+                          }
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-rose-600 focus:bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                        Sapaan Penerima (Greeting)
+                      </label>
+                      <input
+                        type="text"
+                        value={templates.account_expired.greeting}
+                        onChange={(e) =>
+                          setTemplates({
+                            ...templates,
+                            account_expired: { ...templates.account_expired, greeting: e.target.value },
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-rose-600 focus:bg-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                        Pesan Penangguhan (Body Message)
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={templates.account_expired.body_message}
+                        onChange={(e) =>
+                          setTemplates({
+                            ...templates,
+                            account_expired: { ...templates.account_expired, body_message: e.target.value },
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs leading-relaxed focus:outline-none focus:border-rose-600 focus:bg-white resize-y"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                          Teks Tombol Reaktivasi
+                        </label>
+                        <input
+                          type="text"
+                          value={templates.account_expired.action_button_text}
+                          onChange={(e) =>
+                            setTemplates({
+                              ...templates,
+                              account_expired: { ...templates.account_expired, action_button_text: e.target.value },
+                            })
+                          }
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-rose-600 focus:bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                          Pemberitahuan Retensi Data
+                        </label>
+                        <input
+                          type="text"
+                          value={templates.account_expired.retention_notice}
+                          onChange={(e) =>
+                            setTemplates({
+                              ...templates,
+                              account_expired: { ...templates.account_expired, retention_notice: e.target.value },
+                            })
+                          }
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-rose-600 focus:bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                        Catatan Dukungan / Bantuan Teknis
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={templates.account_expired.support_note}
+                        onChange={(e) =>
+                          setTemplates({
+                            ...templates,
+                            account_expired: { ...templates.account_expired, support_note: e.target.value },
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs leading-relaxed focus:outline-none focus:border-rose-600 focus:bg-white resize-y"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                        Copyright Footer Resmi
+                      </label>
+                      <input
+                        type="text"
+                        value={templates.account_expired.footer_copyright}
+                        onChange={(e) =>
+                          setTemplates({
+                            ...templates,
+                            account_expired: { ...templates.account_expired, footer_copyright: e.target.value },
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-rose-600 focus:bg-white"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* Test Send Preview Box */}
                 <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
                   <div className="flex items-center gap-2">
                     <Send className="w-4 h-4 text-cyan-600" />
-                    <h3 className="font-black text-slate-900 text-sm">Kirim Pratinjau ke Email Nyata</h3>
+                    <h3 className="font-black text-slate-900 text-sm">
+                      Kirim Pratinjau Model Ini ke Inbox Nyata
+                    </h3>
                   </div>
                   <p className="text-xs text-slate-500 leading-normal">
-                    Kirim contoh email sesuai template saat ini langsung ke kotak masuk (inbox) Anda untuk memeriksa tampilan di aplikasi Gmail, Apple Mail, atau Outlook.
+                    Kirim contoh email sesuai template &amp; model desain saat ini langsung ke inbox Anda untuk memeriksa tampilan di aplikasi Gmail, Apple Mail, atau Outlook.
                   </p>
                   <div className="flex gap-2">
                     <input
@@ -1293,8 +2004,8 @@ export default function PlatformSettingsPage() {
                       Pratinjau Langsung (Live Visual Preview)
                     </span>
                   </div>
-                  <span className="text-[11px] font-semibold text-slate-500">
-                    Contoh Render Klien Email
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                    Model: {currentModelStyle.toUpperCase()}
                   </span>
                 </div>
 
@@ -1306,9 +2017,11 @@ export default function PlatformSettingsPage() {
                       <div className="flex items-center gap-1.5">
                         <span className="font-bold text-slate-700">Subjek:</span>
                         <span className="font-semibold text-slate-900 truncate max-w-[320px]">
-                          {activeTemplateTab === "otp"
-                            ? previewFormat(templates.otp.subject, otpPreviewVars)
-                            : previewFormat(templates.welcome.subject, welcomePreviewVars)}
+                          {activeTemplateTab === "otp" && previewFormat(templates.otp.subject, otpPreviewVars)}
+                          {activeTemplateTab === "welcome" && previewFormat(templates.welcome.subject, welcomePreviewVars)}
+                          {activeTemplateTab === "forgot_password" && previewFormat(templates.forgot_password.subject, forgotPreviewVars)}
+                          {activeTemplateTab === "subscription_expiring" && previewFormat(templates.subscription_expiring.subject, expiringPreviewVars)}
+                          {activeTemplateTab === "account_expired" && previewFormat(templates.account_expired.subject, expiredPreviewVars)}
                         </span>
                       </div>
                       <span className="text-[10px] text-slate-400">Baru saja</span>
@@ -1323,29 +2036,48 @@ export default function PlatformSettingsPage() {
                       </div>
                       <div className="flex items-center gap-1 text-[10px] text-slate-400 shrink-0">
                         <span>Kepada:</span>
-                        <span className="font-mono text-slate-600">
-                          {activeTemplateTab === "otp" ? "aan@solusiisp.id" : "aan@solusiisp.id"}
-                        </span>
+                        <span className="font-mono text-slate-600">aan@solusiisp.id</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Mail Body Container */}
                   <div className="bg-slate-100/60 p-4 md:p-6 overflow-y-auto max-h-[700px]">
-                    {/* OTP PREVIEW */}
+                    {/* 1. OTP PREVIEW */}
                     {activeTemplateTab === "otp" && (
                       <div className="max-w-[540px] mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-slate-800">
-                        {/* Header Banner */}
-                        <div className="p-6 bg-gradient-to-r from-sky-600 to-blue-600 text-center text-white">
-                          <h1 className="text-xl font-extrabold tracking-tight">
-                            {previewFormat(templates.otp.header_title, otpPreviewVars)}
-                          </h1>
-                          <p className="text-xs text-sky-100 mt-1 font-medium">
-                            {previewFormat(templates.otp.header_subtitle, otpPreviewVars)}
-                          </p>
-                        </div>
+                        {currentModelStyle === "modern" ? (
+                          <div className="p-6 bg-white border-t-4 border-cyan-600 border-b border-slate-100 text-left">
+                            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                              {previewFormat(templates.otp.header_title, otpPreviewVars)}
+                            </h1>
+                            <p className="text-xs text-slate-500 mt-1 font-medium">
+                              {previewFormat(templates.otp.header_subtitle, otpPreviewVars)}
+                            </p>
+                          </div>
+                        ) : currentModelStyle === "alert" ? (
+                          <div className="p-6 bg-gradient-to-r from-sky-700 to-cyan-700 text-center text-white">
+                            <span className="inline-block bg-white/20 text-white text-[10px] font-bold px-2.5 py-0.5 rounded uppercase tracking-wider mb-2">
+                              VERIFIKASI SISTEM
+                            </span>
+                            <h1 className="text-xl font-extrabold tracking-tight">
+                              {previewFormat(templates.otp.header_title, otpPreviewVars)}
+                            </h1>
+                            <p className="text-xs text-sky-100 mt-1">
+                              {previewFormat(templates.otp.header_subtitle, otpPreviewVars)}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="p-6 bg-gradient-to-r from-sky-600 to-blue-600 text-center text-white">
+                            <h1 className="text-xl font-extrabold tracking-tight">
+                              {previewFormat(templates.otp.header_title, otpPreviewVars)}
+                            </h1>
+                            <p className="text-xs text-sky-100 mt-1 font-medium">
+                              {previewFormat(templates.otp.header_subtitle, otpPreviewVars)}
+                            </p>
+                          </div>
+                        )}
 
-                        {/* Body */}
                         <div className="p-6 space-y-4">
                           <h2 className="text-base font-bold text-slate-900">
                             {previewFormat(templates.otp.greeting, otpPreviewVars)}
@@ -1355,7 +2087,6 @@ export default function PlatformSettingsPage() {
                             {previewFormat(templates.otp.body_message, otpPreviewVars)}
                           </p>
 
-                          {/* OTP Code Box */}
                           <div className="bg-sky-50 border-2 border-dashed border-sky-500 rounded-xl p-5 text-center my-4">
                             <span className="text-[10px] font-bold text-sky-800 uppercase tracking-widest block mb-1">
                               {previewFormat(templates.otp.otp_box_label, otpPreviewVars)}
@@ -1377,7 +2108,6 @@ export default function PlatformSettingsPage() {
                           </div>
                         </div>
 
-                        {/* Footer */}
                         <div className="p-4 bg-slate-50 border-t border-slate-100 text-center text-[10px] text-slate-400 space-y-1">
                           <div>{previewFormat(templates.otp.footer_copyright, otpPreviewVars)}</div>
                           <div>
@@ -1388,29 +2118,40 @@ export default function PlatformSettingsPage() {
                       </div>
                     )}
 
-                    {/* WELCOME PREVIEW */}
+                    {/* 2. WELCOME PREVIEW */}
                     {activeTemplateTab === "welcome" && (
                       <div className="max-w-[540px] mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-slate-800">
-                        {/* Header Banner */}
-                        <div className="p-6 bg-slate-900 text-center text-white">
-                          <span className="inline-block bg-cyan-500/20 text-cyan-300 text-[10px] font-bold px-3 py-1 rounded-full border border-cyan-400/30 uppercase tracking-wider mb-2">
-                            {previewFormat(templates.welcome.badge_text, welcomePreviewVars)}
-                          </span>
-                          <h1 className="text-xl font-extrabold tracking-tight">
-                            {previewFormat(templates.welcome.header_title, welcomePreviewVars)}
-                          </h1>
-                          <p className="text-xs text-slate-400 mt-1">
-                            {previewFormat("{company}", welcomePreviewVars)}
-                          </p>
-                        </div>
+                        {currentModelStyle === "modern" ? (
+                          <div className="p-6 bg-white border-t-4 border-cyan-600 border-b border-slate-100 text-center">
+                            <span className="inline-block bg-sky-50 text-sky-700 text-[10px] font-bold px-3 py-1 rounded-full border border-sky-200 uppercase tracking-wider mb-2">
+                              {previewFormat(templates.welcome.badge_text, welcomePreviewVars)}
+                            </span>
+                            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                              {previewFormat(templates.welcome.header_title, welcomePreviewVars)}
+                            </h1>
+                            <p className="text-xs text-slate-500 mt-1 font-medium">
+                              {previewFormat("{company}", welcomePreviewVars)}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="p-6 bg-slate-900 text-center text-white">
+                            <span className="inline-block bg-cyan-500/20 text-cyan-300 text-[10px] font-bold px-3 py-1 rounded-full border border-cyan-400/30 uppercase tracking-wider mb-2">
+                              {previewFormat(templates.welcome.badge_text, welcomePreviewVars)}
+                            </span>
+                            <h1 className="text-xl font-extrabold tracking-tight">
+                              {previewFormat(templates.welcome.header_title, welcomePreviewVars)}
+                            </h1>
+                            <p className="text-xs text-slate-400 mt-1">
+                              {previewFormat("{company}", welcomePreviewVars)}
+                            </p>
+                          </div>
+                        )}
 
-                        {/* Body */}
                         <div className="p-6 space-y-4">
                           <p className="text-xs text-slate-700 leading-relaxed">
                             {previewFormat(templates.welcome.greeting_message, welcomePreviewVars)}
                           </p>
 
-                          {/* 3 Engine Cards */}
                           <div className="space-y-2.5 my-3">
                             <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
                               <div className="font-bold text-sky-700 text-xs">1. Billing &amp; RADIUS Ledger</div>
@@ -1449,7 +2190,6 @@ export default function PlatformSettingsPage() {
                             </div>
                           </div>
 
-                          {/* SaaS Portal Access */}
                           <div className="p-3.5 bg-slate-100 rounded-xl text-xs text-slate-600 space-y-1">
                             <div className="font-bold text-slate-900">Portal Manajemen SaaS Member:</div>
                             <div className="text-[11px]">
@@ -1465,9 +2205,223 @@ export default function PlatformSettingsPage() {
                           </p>
                         </div>
 
-                        {/* Footer */}
                         <div className="p-4 bg-slate-50 border-t border-slate-100 text-center text-[10px] text-slate-400 space-y-1">
                           <div>{previewFormat(templates.welcome.footer_copyright, welcomePreviewVars)}</div>
+                          <div>
+                            Layanan resmi otomatisasi ISP &middot;{" "}
+                            <span className="text-sky-600 underline">ispsync.id</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 3. FORGOT PASSWORD PREVIEW */}
+                    {activeTemplateTab === "forgot_password" && (
+                      <div className="max-w-[540px] mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-slate-800">
+                        {currentModelStyle === "modern" ? (
+                          <div className="p-6 bg-white border-t-4 border-blue-600 border-b border-slate-100 text-left">
+                            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                              {previewFormat(templates.forgot_password.header_title, forgotPreviewVars)}
+                            </h1>
+                            <p className="text-xs text-slate-500 mt-1 font-medium">
+                              {previewFormat(templates.forgot_password.header_subtitle, forgotPreviewVars)}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="p-6 bg-slate-900 text-center text-white">
+                            <h1 className="text-xl font-extrabold tracking-tight">
+                              {previewFormat(templates.forgot_password.header_title, forgotPreviewVars)}
+                            </h1>
+                            <p className="text-xs text-slate-400 mt-1">
+                              {previewFormat(templates.forgot_password.header_subtitle, forgotPreviewVars)}
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="p-6 space-y-4">
+                          <h2 className="text-base font-bold text-slate-900">
+                            {previewFormat(templates.forgot_password.greeting, forgotPreviewVars)}
+                          </h2>
+
+                          <p className="text-xs text-slate-600 leading-relaxed">
+                            {previewFormat(templates.forgot_password.body_message, forgotPreviewVars)}
+                          </p>
+
+                          {/* Primary Reset CTA Button */}
+                          <div className="text-center my-6">
+                            <span className="inline-block bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold text-xs px-6 py-3 rounded-xl shadow-xs cursor-pointer">
+                              {previewFormat(templates.forgot_password.action_button_text, forgotPreviewVars)} &rarr;
+                            </span>
+                            <span className="block text-[11px] text-slate-500 mt-2">
+                              {previewFormat(templates.forgot_password.expiry_notice, forgotPreviewVars)}
+                            </span>
+                          </div>
+
+                          {/* Alternative Token Box */}
+                          <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-4 text-center">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
+                              {previewFormat(templates.forgot_password.reset_code_label, forgotPreviewVars)}
+                            </span>
+                            <span className="font-mono text-2xl font-bold tracking-widest text-cyan-700">
+                              482019
+                            </span>
+                          </div>
+
+                          <div className="border-t border-slate-100 pt-3 text-[11px] text-slate-400">
+                            <strong>{previewFormat(templates.forgot_password.security_note, forgotPreviewVars)}</strong>
+                          </div>
+                        </div>
+
+                        <div className="p-4 bg-slate-50 border-t border-slate-100 text-center text-[10px] text-slate-400 space-y-1">
+                          <div>{previewFormat(templates.forgot_password.footer_copyright, forgotPreviewVars)}</div>
+                          <div>
+                            Layanan resmi otomatisasi ISP &middot;{" "}
+                            <span className="text-sky-600 underline">ispsync.id</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 4. SUBSCRIPTION EXPIRING PREVIEW */}
+                    {activeTemplateTab === "subscription_expiring" && (
+                      <div className="max-w-[540px] mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-slate-800">
+                        {currentModelStyle === "modern" ? (
+                          <div className="p-6 bg-white border-t-4 border-amber-500 border-b border-slate-100 text-left">
+                            <span className="inline-block bg-amber-50 text-amber-800 text-[10px] font-bold px-2.5 py-0.5 rounded border border-amber-200 uppercase tracking-wider mb-2">
+                              {previewFormat(templates.subscription_expiring.badge_text, expiringPreviewVars)}
+                            </span>
+                            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                              {previewFormat(templates.subscription_expiring.header_title, expiringPreviewVars)}
+                            </h1>
+                            <p className="text-xs text-slate-500 mt-1 font-medium">
+                              {previewFormat(templates.subscription_expiring.header_subtitle, expiringPreviewVars)}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="p-6 bg-gradient-to-r from-amber-600 to-amber-700 text-center text-white">
+                            <span className="inline-block bg-white/20 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+                              {previewFormat(templates.subscription_expiring.badge_text, expiringPreviewVars)}
+                            </span>
+                            <h1 className="text-xl font-extrabold tracking-tight">
+                              {previewFormat(templates.subscription_expiring.header_title, expiringPreviewVars)}
+                            </h1>
+                            <p className="text-xs text-amber-100 mt-1">
+                              {previewFormat(templates.subscription_expiring.header_subtitle, expiringPreviewVars)}
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="p-6 space-y-4">
+                          <h2 className="text-base font-bold text-slate-900">
+                            {previewFormat(templates.subscription_expiring.greeting, expiringPreviewVars)}
+                          </h2>
+
+                          <p className="text-xs text-slate-600 leading-relaxed">
+                            {previewFormat(templates.subscription_expiring.body_message, expiringPreviewVars)}
+                          </p>
+
+                          {/* Invoice Box */}
+                          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-900 space-y-2">
+                            <span className="font-bold text-[11px] uppercase tracking-wider text-amber-950 block border-b border-amber-200/60 pb-1">
+                              {previewFormat(templates.subscription_expiring.invoice_box_title, expiringPreviewVars)}
+                            </span>
+                            <div className="flex justify-between">
+                              <span className="text-amber-800">Tenant / Instansi:</span>
+                              <span className="font-bold text-slate-900">PT Solusi Jaringan Nusantara</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-amber-800">Tanggal Jatuh Tempo:</span>
+                              <span className="font-bold text-rose-700">31 Oktober 2026</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-amber-800">Sisa Masa Aktif:</span>
+                              <span className="font-bold text-amber-800">3 Hari Lagi</span>
+                            </div>
+                          </div>
+
+                          {/* Action Button */}
+                          <div className="text-center my-6">
+                            <span className="inline-block bg-amber-600 text-white font-bold text-xs px-6 py-3 rounded-xl shadow-xs cursor-pointer">
+                              {previewFormat(templates.subscription_expiring.action_button_text, expiringPreviewVars)} &rarr;
+                            </span>
+                          </div>
+
+                          <div className="bg-slate-50 border-l-4 border-amber-500 p-3 rounded-r-xl text-[11px] text-slate-600">
+                            {previewFormat(templates.subscription_expiring.consequence_notice, expiringPreviewVars)}
+                          </div>
+                        </div>
+
+                        <div className="p-4 bg-slate-50 border-t border-slate-100 text-center text-[10px] text-slate-400 space-y-1">
+                          <div>{previewFormat(templates.subscription_expiring.footer_copyright, expiringPreviewVars)}</div>
+                          <div>
+                            Layanan resmi otomatisasi ISP &middot;{" "}
+                            <span className="text-sky-600 underline">ispsync.id</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 5. ACCOUNT EXPIRED PREVIEW */}
+                    {activeTemplateTab === "account_expired" && (
+                      <div className="max-w-[540px] mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-slate-800">
+                        {currentModelStyle === "modern" ? (
+                          <div className="p-6 bg-white border-t-4 border-rose-600 border-b border-slate-100 text-left">
+                            <span className="inline-block bg-rose-50 text-rose-800 text-[10px] font-bold px-2.5 py-0.5 rounded border border-rose-200 uppercase tracking-wider mb-2">
+                              {previewFormat(templates.account_expired.badge_text, expiredPreviewVars)}
+                            </span>
+                            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                              {previewFormat(templates.account_expired.header_title, expiredPreviewVars)}
+                            </h1>
+                            <p className="text-xs text-slate-500 mt-1 font-medium">
+                              {previewFormat(templates.account_expired.header_subtitle, expiredPreviewVars)}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="p-6 bg-gradient-to-r from-rose-700 to-rose-800 text-center text-white">
+                            <span className="inline-block bg-white/20 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
+                              {previewFormat(templates.account_expired.badge_text, expiredPreviewVars)}
+                            </span>
+                            <h1 className="text-xl font-extrabold tracking-tight">
+                              {previewFormat(templates.account_expired.header_title, expiredPreviewVars)}
+                            </h1>
+                            <p className="text-xs text-rose-100 mt-1">
+                              {previewFormat(templates.account_expired.header_subtitle, expiredPreviewVars)}
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="p-6 space-y-4">
+                          <h2 className="text-base font-bold text-slate-900">
+                            {previewFormat(templates.account_expired.greeting, expiredPreviewVars)}
+                          </h2>
+
+                          <p className="text-xs text-slate-600 leading-relaxed">
+                            {previewFormat(templates.account_expired.body_message, expiredPreviewVars)}
+                          </p>
+
+                          {/* Action Button */}
+                          <div className="text-center my-6">
+                            <span className="inline-block bg-rose-600 text-white font-bold text-xs px-6 py-3 rounded-xl shadow-xs cursor-pointer">
+                              {previewFormat(templates.account_expired.action_button_text, expiredPreviewVars)} &rarr;
+                            </span>
+                          </div>
+
+                          <div className="bg-slate-100 rounded-xl p-3 text-xs text-slate-600 space-y-1">
+                            <span className="font-bold text-slate-900 block text-[11px]">
+                              Perlindungan Database &amp; Data Jaringan:
+                            </span>
+                            <p className="text-[11px] leading-relaxed">
+                              {previewFormat(templates.account_expired.retention_notice, expiredPreviewVars)}
+                            </p>
+                          </div>
+
+                          <p className="text-xs text-slate-500 leading-relaxed">
+                            {previewFormat(templates.account_expired.support_note, expiredPreviewVars)}
+                          </p>
+                        </div>
+
+                        <div className="p-4 bg-slate-50 border-t border-slate-100 text-center text-[10px] text-slate-400 space-y-1">
+                          <div>{previewFormat(templates.account_expired.footer_copyright, expiredPreviewVars)}</div>
                           <div>
                             Layanan resmi otomatisasi ISP &middot;{" "}
                             <span className="text-sky-600 underline">ispsync.id</span>
