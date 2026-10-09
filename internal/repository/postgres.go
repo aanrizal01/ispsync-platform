@@ -608,7 +608,10 @@ func (s *PostgresStorage) CreateTenant(ctx context.Context, tenant *domain.Tenan
 func (s *PostgresStorage) GetUserByUsername(ctx context.Context, tenantID, username string) (*domain.User, error) {
 	row := s.db.QueryRowContext(ctx, `
 		SELECT id, tenant_id, username, password_hash, full_name, email, phone, role, COALESCE(branch_code, 'ALL'), status, created_at
-		FROM users WHERE tenant_id = $1 AND username = $2
+		FROM users 
+		WHERE tenant_id = $1 AND (LOWER(username) = LOWER($2) OR LOWER(email) = LOWER($2))
+		ORDER BY CASE WHEN LOWER(username) = LOWER($2) THEN 0 ELSE 1 END
+		LIMIT 1
 	`, tenantID, username)
 
 	var u domain.User
@@ -2191,7 +2194,7 @@ func (s *PostgresStorage) ResetUserPassword(ctx context.Context, tenantID, usern
 	if err != nil {
 		return err
 	}
-	_, err = s.db.ExecContext(ctx, "UPDATE users SET password_hash = $1 WHERE tenant_id = $2 AND LOWER(username) = LOWER($3)", string(pwHash), tenantID, username)
+	_, err = s.db.ExecContext(ctx, "UPDATE users SET password_hash = $1 WHERE tenant_id = $2 AND (LOWER(username) = LOWER($3) OR LOWER(email) = LOWER($3))", string(pwHash), tenantID, username)
 	return err
 }
 

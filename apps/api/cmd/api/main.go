@@ -1090,17 +1090,10 @@ func handleProvisionTenant(db *pgxpool.Pool, cfg *config.Config, log *slog.Logge
 				return err
 			}
 
-			// Insert owner/admin user
+			// Insert single owner/admin user (login query supports both username and email)
 			_, _ = pool.Exec(ctx, `
 				INSERT INTO public.users (id, tenant_id, username, password_hash, full_name, email, phone, role, status)
 				VALUES (gen_random_uuid(), $1, 'admin', $2, $3, $4, $5, 'OWNER', 'ACTIVE')
-				ON CONFLICT (tenant_id, username) DO UPDATE SET password_hash = EXCLUDED.password_hash, status = 'ACTIVE'
-			`, tenantID, passwordHash, picName, req.Email, req.Phone)
-
-			// Also allow login with email as username
-			_, _ = pool.Exec(ctx, `
-				INSERT INTO public.users (id, tenant_id, username, password_hash, full_name, email, phone, role, status)
-				VALUES (gen_random_uuid(), $1, $4, $2, $3, $4, $5, 'OWNER', 'ACTIVE')
 				ON CONFLICT (tenant_id, username) DO UPDATE SET password_hash = EXCLUDED.password_hash, status = 'ACTIVE'
 			`, tenantID, passwordHash, picName, req.Email, req.Phone)
 

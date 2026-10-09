@@ -674,8 +674,11 @@ func (s *SQLiteStorage) CreateTenant(ctx context.Context, tenant *domain.Tenant)
 func (s *SQLiteStorage) GetUserByUsername(ctx context.Context, tenantID, username string) (*domain.User, error) {
 	row := s.db.QueryRowContext(ctx, `
 		SELECT id, tenant_id, username, password_hash, full_name, email, phone, role, COALESCE(branch_code, 'ALL'), status, created_at
-		FROM users WHERE tenant_id = ? AND username = ?
-	`, tenantID, username)
+		FROM users 
+		WHERE tenant_id = ? AND (LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?))
+		ORDER BY CASE WHEN LOWER(username) = LOWER(?) THEN 0 ELSE 1 END
+		LIMIT 1
+	`, tenantID, username, username, username)
 
 	var u domain.User
 	err := row.Scan(&u.ID, &u.TenantID, &u.Username, &u.PasswordHash, &u.FullName, &u.Email, &u.Phone, &u.Role, &u.BranchCode, &u.Status, &u.CreatedAt)
@@ -1667,7 +1670,7 @@ func (s *SQLiteStorage) ResetUserPassword(ctx context.Context, tenantID, usernam
 	if err != nil {
 		return err
 	}
-	_, err = s.db.ExecContext(ctx, "UPDATE users SET password_hash = ? WHERE tenant_id = ? AND LOWER(username) = LOWER(?)", string(pwHash), tenantID, username)
+	_, err = s.db.ExecContext(ctx, "UPDATE users SET password_hash = ? WHERE tenant_id = ? AND (LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?))", string(pwHash), tenantID, username, username)
 	return err
 }
 
