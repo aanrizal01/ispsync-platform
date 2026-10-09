@@ -93,9 +93,9 @@ export async function GET(req: NextRequest) {
           host: "172.18.0.1:8082",
           port: 8082,
           protocol: "HTTP/1.1",
-          routingPattern: "fttx.*, fibergrid.*, noc-fo.*",
+          routingPattern: "fibergrid.<tenant>.ispsync.id",
           status: "ONLINE",
-          description: "FTTX GIS topology, OLT/ODN optical network management, and passive splitters"
+          description: "Topologi optik FTTX GIS, manajemen OLT/ODN, dan pemetaan jalur kabel fiber pelanggan"
         }
       ]
     };
@@ -150,8 +150,7 @@ export async function GET(req: NextRequest) {
     const showcaseEngines = [
       { prefix: "ledger", name: "Billing & Ledger Engine Showcase" },
       { prefix: "nexus", name: "NOC & Customer Engine Showcase" },
-      { prefix: "fibergrid", name: "FTTX & Optical Grid Engine Showcase" },
-      { prefix: "fttx", name: "FTTX GIS Topology Showcase" },
+      { prefix: "fibergrid", name: "FiberGrid Optical Grid Showcase" },
       { prefix: "portal", name: "Subscriber Portal Showcase" }
     ];
 
