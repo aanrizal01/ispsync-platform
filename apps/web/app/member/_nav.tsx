@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useMember } from "./context";
-import { Building2, SlidersHorizontal, Network } from "lucide-react";
+import { Building2, SlidersHorizontal, Network, Globe } from "lucide-react";
 
 const mainNavItems = [
   { href: "/member/dashboard", label: "Dashboard", icon: "▦" },
@@ -135,6 +135,17 @@ export default function MemberNav({ children }: { children: React.ReactNode }) {
                 >
                   <Network className="w-4 h-4 text-cyan-600 shrink-0" />
                   <span>Gateway &amp; Caddy Domains</span>
+                </Link>
+                <Link
+                  href="/member/dns"
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    pathname === "/member/dns"
+                      ? "bg-slate-900 text-cyan-400 shadow-sm"
+                      : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                  }`}
+                >
+                  <Globe className="w-4 h-4 text-cyan-600 shrink-0" />
+                  <span>DNS Server &amp; Zones</span>
                 </Link>
                 <Link
                   href="/cms-9x7k2"

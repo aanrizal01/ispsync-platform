@@ -291,6 +291,19 @@ services:
       - api
       - web
 
+  # ──────────────────────────────────────────────
+  # CoreDNS Authoritative Server (Port 53)
+  # ──────────────────────────────────────────────
+  dns:
+    image: coredns/coredns:latest
+    container_name: ispsync-dns
+    restart: always
+    network_mode: host
+    volumes:
+      - ../apps/web/data/Corefile:/etc/coredns/Corefile:ro
+    command: ["-conf", "/etc/coredns/Corefile"]
+
+
 # ──────────────────────────────────────────────
 # Named Volumes
 # ──────────────────────────────────────────────

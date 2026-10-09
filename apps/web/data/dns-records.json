@@ -1,0 +1,111 @@
+{
+  "zone": "ispsync.id",
+  "nameservers": [
+    "ns1.ispsync.id",
+    "ns2.ispsync.id"
+  ],
+  "serverIpv4": "103.179.65.73",
+  "serverIpv6": "2001:df1:1cc0:65::73",
+  "records": [
+    {
+      "id": "rec_ns1",
+      "name": "ns1",
+      "type": "A",
+      "value": "103.179.65.73",
+      "ttl": 3600,
+      "priority": 0,
+      "isSystem": true,
+      "comment": "Primary Authoritative Nameserver (ns1.ispsync.id)"
+    },
+    {
+      "id": "rec_ns2",
+      "name": "ns2",
+      "type": "A",
+      "value": "103.179.65.73",
+      "ttl": 3600,
+      "priority": 0,
+      "isSystem": true,
+      "comment": "Secondary Authoritative Nameserver (ns2.ispsync.id)"
+    },
+    {
+      "id": "rec_apex_a",
+      "name": "@",
+      "type": "A",
+      "value": "103.179.65.73",
+      "ttl": 60,
+      "priority": 0,
+      "isSystem": true,
+      "comment": "Apex Domain IPv4 Node"
+    },
+    {
+      "id": "rec_wildcard_a",
+      "name": "*",
+      "type": "A",
+      "value": "103.179.65.73",
+      "ttl": 60,
+      "priority": 0,
+      "isSystem": true,
+      "comment": "Wildcard Multi-Tenant IPv4 (*.ispsync.id)"
+    },
+    {
+      "id": "rec_apex_aaaa",
+      "name": "@",
+      "type": "AAAA",
+      "value": "2001:df1:1cc0:65::73",
+      "ttl": 60,
+      "priority": 0,
+      "isSystem": true,
+      "comment": "Apex Domain IPv6 Node"
+    },
+    {
+      "id": "rec_wildcard_aaaa",
+      "name": "*",
+      "type": "AAAA",
+      "value": "2001:df1:1cc0:65::73",
+      "ttl": 60,
+      "priority": 0,
+      "isSystem": true,
+      "comment": "Wildcard Multi-Tenant IPv6 (*.ispsync.id)"
+    },
+    {
+      "id": "rec_caa_letsencrypt",
+      "name": "@",
+      "type": "CAA",
+      "value": "0 issue \"letsencrypt.org\"",
+      "ttl": 3600,
+      "priority": 0,
+      "isSystem": true,
+      "comment": "SSL Certificate Authority (Let's Encrypt)"
+    },
+    {
+      "id": "rec_caa_zerossl",
+      "name": "@",
+      "type": "CAA",
+      "value": "0 issue \"zerossl.com\"",
+      "ttl": 3600,
+      "priority": 0,
+      "isSystem": true,
+      "comment": "SSL Certificate Authority (ZeroSSL)"
+    },
+    {
+      "id": "rec_txt_google",
+      "name": "@",
+      "type": "TXT",
+      "value": "google-site-verification=jDM1n9QLqiBH6uKVavK0LioCgZV1cf4u2wlt62QpiHs",
+      "ttl": 300,
+      "priority": 0,
+      "isSystem": false,
+      "comment": "Google Workspace Domain Verification"
+    },
+    {
+      "id": "rec_cname_google",
+      "name": "cbirujfqln4d",
+      "type": "CNAME",
+      "value": "gv-slkmet6ytw7fvh.dv.googlehosted.com.",
+      "ttl": 300,
+      "priority": 0,
+      "isSystem": false,
+      "comment": "Google Workspace CNAME Verification Token"
+    }
+  ]
+}
