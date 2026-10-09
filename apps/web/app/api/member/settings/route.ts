@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import nodemailer from "nodemailer";
+import {
+  getEmailTemplates,
+  saveEmailTemplates,
+  DEFAULT_EMAIL_TEMPLATES,
+  sendOtpEmail,
+  sendWelcomeEmail,
+  type EmailTemplates,
+} from "@/lib/mailer";
 
 function getDataDir(): string {
   const containerData = "/app/data";
@@ -110,9 +118,12 @@ function saveSmtpConfig(cfg: any): boolean {
 export async function GET(req: NextRequest) {
   try {
     const smtp = getSmtpConfig();
+    const emailTemplates = getEmailTemplates();
     return NextResponse.json({
       success: true,
       smtp,
+      email_templates: emailTemplates,
+      default_templates: DEFAULT_EMAIL_TEMPLATES,
       envInfo: {
         domain: "ispsync.id",
         serverIp: "103.179.65.73",
@@ -288,6 +299,100 @@ export async function POST(req: NextRequest) {
           success: false,
           latencyMs,
           error: userFriendlyMsg
+        }, { status: 400 });
+      }
+    }
+
+    // 3. SAVE EMAIL TEMPLATES
+    if (action === "save_email_templates") {
+      const { templates } = body;
+      if (!templates || typeof templates !== "object") {
+        return NextResponse.json({ success: false, error: "Format data template email tidak valid." }, { status: 400 });
+      }
+      const ok = saveEmailTemplates(templates);
+      if (!ok) {
+        return NextResponse.json({ success: false, error: "Gagal menyimpan berkas template email ke sistem." }, { status: 500 });
+      }
+      return NextResponse.json({
+        success: true,
+        message: "Template email berhasil disimpan dan diterapkan pada sistem.",
+        email_templates: getEmailTemplates()
+      });
+    }
+
+    // 4. RESET EMAIL TEMPLATES TO DEFAULT
+    if (action === "reset_email_templates") {
+      const { template_type } = body;
+      let current = getEmailTemplates();
+      if (template_type === "otp") {
+        current.otp = { ...DEFAULT_EMAIL_TEMPLATES.otp };
+      } else if (template_type === "welcome") {
+        current.welcome = { ...DEFAULT_EMAIL_TEMPLATES.welcome };
+      } else {
+        current = {
+          otp: { ...DEFAULT_EMAIL_TEMPLATES.otp },
+          welcome: { ...DEFAULT_EMAIL_TEMPLATES.welcome }
+        };
+      }
+      saveEmailTemplates(current);
+      return NextResponse.json({
+        success: true,
+        message: template_type
+          ? `Template ${template_type.toUpperCase()} berhasil dikembalikan ke format standar.`
+          : "Semua template email berhasil dikembalikan ke format standar sistem.",
+        email_templates: getEmailTemplates()
+      });
+    }
+
+    // 5. TEST PREVIEW EMAIL WITH TEMPLATE
+    if (action === "test_template_email") {
+      const { template_type, to_email, templates } = body;
+      if (!to_email || !to_email.includes("@")) {
+        return NextResponse.json({ success: false, error: "Alamat email tujuan pengujian wajib valid." }, { status: 400 });
+      }
+
+      // If user passed draft templates, save them first so sendOtpEmail/sendWelcomeEmail renders them
+      if (templates && typeof templates === "object") {
+        saveEmailTemplates(templates);
+      }
+
+      const cfg = getSmtpConfig();
+      if (!cfg.smtp_user || !cfg.smtp_pass) {
+        return NextResponse.json({
+          success: false,
+          error: "Server SMTP belum dikonfigurasi. Atur kredensial SMTP terlebih dahulu di tab Pengaturan SMTP."
+        }, { status: 400 });
+      }
+
+      try {
+        if (template_type === "otp") {
+          await sendOtpEmail({
+            to: to_email.trim(),
+            name: "Administrator ISP (Pratinjau)",
+            otpCode: "849201"
+          });
+          return NextResponse.json({
+            success: true,
+            message: `Email pratinjau OTP berhasil dikirim ke ${to_email}!`
+          });
+        } else if (template_type === "welcome") {
+          await sendWelcomeEmail({
+            to: to_email.trim(),
+            name: "Administrator ISP (Pratinjau)",
+            company: "PT Solusi Jaringan Nusantara",
+            subdomain: "demo"
+          });
+          return NextResponse.json({
+            success: true,
+            message: `Email pratinjau Sambutan & Onboarding berhasil dikirim ke ${to_email}!`
+          });
+        } else {
+          return NextResponse.json({ success: false, error: "Tipe template email tidak valid." }, { status: 400 });
+        }
+      } catch (err: any) {
+        return NextResponse.json({
+          success: false,
+          error: "Gagal mengirim email pengujian: " + (err.message || String(err))
         }, { status: 400 });
       }
     }
