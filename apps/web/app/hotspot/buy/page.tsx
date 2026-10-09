@@ -48,8 +48,9 @@ function HotspotBuyForm() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const [tenantLogo, setTenantLogo] = useState("");
+  const [tenantLogo, setTenantLogo] = useState("/logo-prism.png");
   const [tenantName, setTenantName] = useState("ISPSYNC");
+  const [tenantLegalName, setTenantLegalName] = useState("ISPSYNC Platform");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -63,10 +64,19 @@ function HotspotBuyForm() {
         detectedSlug = parts[0].toLowerCase();
       }
 
+      const TENANT_LEGAL_MAP: Record<string, string> = {
+        ispmu: "PT. Mitra Usaha Data",
+        ispku: "PT. ISP Kita Nusantara",
+        gogiga: "PT. GOGIGA MEDIA TEKNOLOGI",
+        gbd: "PT GNET BIARO DATA",
+        dev: "Laboratorium ISPSYNC R&D",
+      };
+
       if (detectedSlug && detectedSlug !== "ispsync") {
         const tenantSlug = detectedSlug;
         const tenantUpper = detectedSlug.toUpperCase();
         setTenantName(tenantUpper);
+        setTenantLegalName(TENANT_LEGAL_MAP[tenantSlug] || `PT. ${tenantUpper} Data Nusantara`);
         
         // Use SAME-ORIGIN paths so browser doesn't block cross-origin favicons/logos
         const logoUrl = `/web/${tenantSlug}_logo.svg`;
@@ -467,15 +477,15 @@ function HotspotBuyForm() {
         {/* Brand Header */}
           <div className="text-center mb-6">
             <div className="flex items-center justify-center mx-auto mb-4">
-              {tenantLogo ? (
-                <img src={tenantLogo} alt="Logo" className="h-10 w-auto" onError={(e) => e.currentTarget.style.display = 'none'} />
-              ) : (
-                <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-md shadow-blue-500/20">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-              )}
+              <img
+                src={tenantLogo || "/logo-prism.png"}
+                alt={tenantName || "ISPSYNC"}
+                className="h-10 w-auto object-contain"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = "/logo-prism.png";
+                }}
+              />
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Beli Voucher WiFi</h1>
             <p className="text-slate-500 text-xs mt-1">
@@ -939,7 +949,7 @@ function HotspotBuyForm() {
           <span>Ingin jadi agen voucher? Raih cashback 15% &amp; komisi 10%</span>
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
         </Link>
-        <p className="text-[11px] text-slate-500">&copy; {new Date().getFullYear()} PT. Mitra Usaha Data. All rights reserved.</p>
+        <p className="text-[11px] text-slate-500">&copy; {new Date().getFullYear()} {tenantLegalName || (tenantName ? `PT. ${tenantName} Data Nusantara` : "ISPSYNC Platform")}. All rights reserved.</p>
       </footer>
     </div>
   );

@@ -6,6 +6,7 @@ const TENANT_LEGAL_MAP: Record<string, string> = {
   ispmu: "PT. Mitra Usaha Data",
   ispku: "PT. ISP Kita Nusantara",
   gogiga: "PT. GOGIGA MEDIA TEKNOLOGI",
+  gbd: "PT GNET BIARO DATA",
   dev: "Laboratorium ISPSYNC R&D",
 };
 
