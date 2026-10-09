@@ -1,6 +1,13 @@
 {
-  "logo": { "type": "text", "text": "IS", "url": "" },
-  "navbar": { "brand": "ISPSYNC", "badge": "ENTERPRISE SAAS" },
+  "logo": {
+    "type": "text",
+    "text": "IS",
+    "url": ""
+  },
+  "navbar": {
+    "brand": "ISPSYNC",
+    "badge": "ENTERPRISE SAAS"
+  },
   "hero": {
     "badge": "Enterprise Telecom Infrastructure & ISP Operations Orchestration Platform",
     "title": "Kuasai Seluruh Ekosistem Broadband & Operasional ISP dalam",
