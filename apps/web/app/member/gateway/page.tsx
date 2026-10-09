@@ -279,8 +279,8 @@ export default function GatewayManagementPage() {
   if (!isSuperadmin && !memberLoading) {
     return (
       <MemberNav>
-        <div className="flex-1 ml-64 p-8 min-h-screen bg-slate-50 flex items-center justify-center">
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center max-w-lg">
+        <div className="max-w-6xl space-y-6">
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center max-w-lg mx-auto">
             <ShieldCheck className="w-12 h-12 text-red-500 mx-auto mb-3" />
             <h2 className="text-lg font-bold text-red-900 mb-1">Akses Terbatas Administrator Master</h2>
             <p className="text-sm text-red-700">
@@ -294,7 +294,7 @@ export default function GatewayManagementPage() {
 
   return (
     <MemberNav>
-      <div className="flex-1 ml-64 p-8 min-h-screen bg-slate-50 text-slate-800 space-y-6">
+      <div className="max-w-6xl space-y-6">
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200">
           <div>
