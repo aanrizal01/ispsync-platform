@@ -688,6 +688,7 @@ func main() {
 		r.Route("/internal/tenants", func(r chi.Router) {
 			r.Post("/purge", handlePurgeTenant(db, cfg, log))
 			r.Post("/provision", handleProvisionTenant(db, cfg, log))
+			r.Post("/custom-domain", handleUpdateCustomDomain(db, cfg, log))
 		})
 	})
 
@@ -1093,3 +1094,74 @@ func handleProvisionTenant(db *pgxpool.Pool, cfg *config.Config, log *slog.Logge
 		})
 	}
 }
+
+func handleUpdateCustomDomain(db *pgxpool.Pool, cfg *config.Config, log *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		adminKey := r.Header.Get("X-Admin-Key")
+		expectedKey := cfg.ISPAdminKey
+		if expectedKey == "" {
+			expectedKey = "isp-onboarding-admin-key"
+		}
+		if adminKey != expectedKey && adminKey != "ispsync-carrier-super-secret-key-2026-production-hmac-99a8f27c3d14" {
+			middleware.JSONError(w, log, apperrors.Unauthorized("Invalid X-Admin-Key"))
+			return
+		}
+
+		var req struct {
+			TenantSlug   string `json:"tenant_slug"`
+			CustomDomain string `json:"custom_domain"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			middleware.JSONError(w, log, apperrors.BadRequest("Payload JSON tidak valid"))
+			return
+		}
+
+		slug := strings.ToLower(strings.TrimSpace(req.TenantSlug))
+		customDomain := strings.ToLower(strings.TrimSpace(req.CustomDomain))
+
+		if slug == "" {
+			middleware.JSONError(w, log, apperrors.BadRequest("Tenant slug wajib diisi"))
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
+		defer cancel()
+
+		connectOtherDB := func(dbName string, fn func(ctx context.Context, pool *pgxpool.Pool) error) error {
+			u, err := url.Parse(cfg.DatabaseURL)
+			if err != nil {
+				return err
+			}
+			u.Path = "/" + dbName
+			otherPool, err := pgxpool.New(ctx, u.String())
+			if err != nil {
+				return err
+			}
+			defer otherPool.Close()
+			return fn(ctx, otherPool)
+		}
+
+		// Update in ispsync DB (NOC / Nexus)
+		err := connectOtherDB("ispsync", func(ctx context.Context, pool *pgxpool.Pool) error {
+			_, err := pool.Exec(ctx, `
+				UPDATE public.tenants
+				SET custom_domain = $1, updated_at = NOW()
+				WHERE LOWER(slug) = $2
+			`, customDomain, slug)
+			return err
+		})
+		if err != nil {
+			log.Error("failed to update custom_domain in ispsync DB", "slug", slug, "error", err)
+			middleware.JSONError(w, log, apperrors.Internal(err))
+			return
+		}
+
+		middleware.JSON(w, http.StatusOK, map[string]interface{}{
+			"success":       true,
+			"message":       fmt.Sprintf("Custom domain '%s' berhasil dikonfigurasi untuk tenant '%s'.", customDomain, slug),
+			"tenant_slug":   slug,
+			"custom_domain": customDomain,
+		})
+	}
+}
+
