@@ -45,6 +45,7 @@ import {
   settingsApi,
   InvoiceTemplateSettings,
   defaultInvoiceTemplateSettings,
+  getDefaultInvoiceTemplateSettings,
   BillingAddonSettings,
   defaultBillingAddonSettings,
   SecuritySettings,
@@ -53,6 +54,8 @@ import {
   defaultPaymentGatewaySettings,
   DomainSettings,
   defaultDomainSettings,
+  getDefaultDomainSettings,
+  getTenantSlug,
   FiberGridIntegrationSettings,
   defaultFiberGridIntegrationSettings,
   TaxRegimeMode,
@@ -70,7 +73,7 @@ export default function AdminSettingsPage() {
   >("general");
 
   const [invoiceTemplate, setInvoiceTemplate] =
-    useState<InvoiceTemplateSettings>(defaultInvoiceTemplateSettings);
+    useState<InvoiceTemplateSettings>(() => getDefaultInvoiceTemplateSettings());
   const [billingAddons, setBillingAddons] =
     useState<BillingAddonSettings>(defaultBillingAddonSettings);
   const [securitySettings, setSecuritySettings] =
@@ -78,7 +81,7 @@ export default function AdminSettingsPage() {
   const [pgSettings, setPgSettings] =
     useState<PaymentGatewaySettings>(defaultPaymentGatewaySettings);
   const [domainSettings, setDomainSettings] =
-    useState<DomainSettings>(defaultDomainSettings);
+    useState<DomainSettings>(() => getDefaultDomainSettings());
   const [copiedWebhook, setCopiedWebhook] = useState<string | null>(null);
   const [copiedScript, setCopiedScript] = useState<string | null>(null);
   const [clientIP, setClientIP] = useState<string>("");
@@ -356,10 +359,11 @@ export default function AdminSettingsPage() {
             const defaultLogo =
               currentSlug && currentSlug !== "dev"
                 ? `/web/${currentSlug}_logo.svg`
-                : defaultInvoiceTemplateSettings.logo_url;
+                : "/web/dev_logo.svg";
 
+            const defTpl = getDefaultInvoiceTemplateSettings(currentSlug);
             setInvoiceTemplate({
-              ...defaultInvoiceTemplateSettings,
+              ...defTpl,
               ...data,
               logo_url: data.logo_url || defaultLogo,
               enable_qr_verification: data.enable_qr_verification !== false,
@@ -1038,7 +1042,7 @@ export default function AdminSettingsPage() {
             </div>
             <button
               type="button"
-              onClick={() => setInvoiceTemplate(defaultInvoiceTemplateSettings)}
+              onClick={() => setInvoiceTemplate(getDefaultInvoiceTemplateSettings())}
               className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition flex items-center gap-1.5 shrink-0"
               title="Kembalikan nilai ke bawaan sistem"
             >

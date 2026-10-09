@@ -233,6 +233,34 @@ func DefaultPaymentGatewaySettings() PaymentGatewaySettings {
     }
 }
 
+func DefaultPaymentGatewaySettingsForTenant(tenantSlug string) PaymentGatewaySettings {
+    slug := strings.ToLower(strings.TrimSpace(tenantSlug))
+    if slug == "" || slug == "dev" {
+        return DefaultPaymentGatewaySettings()
+    }
+    return PaymentGatewaySettings{
+        PPPoEProvider:      "midtrans",
+        VoucherProvider:    "duitku",
+        PasspointProvider:  "duitku",
+        MidtransMerchantID: "",
+        MidtransServerKey:  "",
+        MidtransClientKey:  "",
+        MidtransEnv:        "sandbox",
+        DuitkuMerchantCode: "",
+        DuitkuAPIKey:       "",
+        DuitkuEnv:          "sandbox",
+        XenditSecretKey:    "",
+        XenditWebhookToken: "",
+        TripayApiKey:       "",
+        TripayPrivateKey:   "",
+        TripayMerchantCode: "",
+        TripayEnv:          "sandbox",
+        NicepayImid:        "",
+        NicepayMerchantKey: "",
+        NicepayEnv:         "sandbox",
+    }
+}
+
 type DomainSettings struct {
     PrimaryDomain   string    `json:"primary_domain"`
     LedgerDomain    string    `json:"ledger_domain"`
@@ -289,9 +317,18 @@ type NotificationSettings struct {
 }
 
 func DefaultNotificationSettings() NotificationSettings {
+    return DefaultNotificationSettingsForTenant("dev")
+}
+
+func DefaultNotificationSettingsForTenant(tenantSlug string) NotificationSettings {
+    slug := strings.ToLower(strings.TrimSpace(tenantSlug))
+    waToken := ""
+    if slug == "" || slug == "dev" {
+        waToken = os.Getenv("FONNTE_TOKEN")
+    }
     return NotificationSettings{
         WAProvider:             "FONNTE",
-        WAApiToken:             os.Getenv("FONNTE_TOKEN"),
+        WAApiToken:             waToken,
         WAServerURL:            "https://api.wablas.com",
         NotifyDueDateH3:        true,
         NotifyInvoiceIssued:    true,

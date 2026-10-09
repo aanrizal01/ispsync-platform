@@ -30,52 +30,94 @@ export interface InvoiceTemplateSettings {
   updated_at?: string;
 }
 
-export function getTenantDefaultLogo(): string {
+export function getTenantSlug(): string {
   if (typeof window !== "undefined") {
     const host = window.location.hostname.toLowerCase();
     const parts = host.split(".");
-    let slug = "";
     if (parts.length >= 4) {
-      slug = parts[1];
+      return parts[1];
     } else if (parts.length === 3 && parts[1] === "ispsync") {
-      slug = parts[0];
+      return parts[0];
     }
-    if (slug && slug !== "dev") {
-      return `/web/${slug}_logo.svg`;
-    }
+  }
+  return "dev";
+}
+
+export function getTenantDefaultLogo(tenantSlug?: string): string {
+  const slug = (tenantSlug || getTenantSlug()).toLowerCase().trim();
+  if (slug && slug !== "dev") {
+    return `/web/${slug}_logo.svg`;
   }
   return "/web/dev_logo.svg";
 }
 
-export const defaultInvoiceTemplateSettings: InvoiceTemplateSettings = {
-  brand_name: "ISPSYNC",
-  company_name: "PT Inovasi Sistem Pintar",
-  license_no: "Izin Penyelenggaraan Jasa Telekomunikasi & Jaringan Internet (ISP)",
-  tax_id: "03.882.194.5-014.000",
-  address: "Jl. Pulutan, Koto Tuo, Kec. Harau, Kab. 50 Kota, Sumatera Barat 26271",
-  phone: "+62 811-660-1234",
-  email: "info@ispsync.id",
-  website: "https://ispsync.id",
-  logo_url: "/logo.png",
-  bank_name: "Bank Central Asia (BCA)",
-  bank_account_number: "8001234567",
-  bank_account_holder: "PT Inovasi Sistem Pintar",
-  bank_accounts: [
-    {
+export function getDefaultInvoiceTemplateSettings(tenantSlug?: string): InvoiceTemplateSettings {
+  const slug = (tenantSlug || getTenantSlug()).toLowerCase().trim();
+  if (!slug || slug === "dev") {
+    return {
+      brand_name: "ISPSYNC",
+      company_name: "PT Inovasi Sistem Pintar",
+      license_no: "Izin Penyelenggaraan Jasa Telekomunikasi & Jaringan Internet (ISP)",
+      tax_id: "03.882.194.5-014.000",
+      address: "Jl. Pulutan, Koto Tuo, Kec. Harau, Kab. 50 Kota, Sumatera Barat 26271",
+      phone: "+62 811-660-1234",
+      email: "info@ispsync.id",
+      website: "https://ispsync.id",
+      logo_url: "/web/dev_logo.svg",
       bank_name: "Bank Central Asia (BCA)",
       bank_account_number: "8001234567",
       bank_account_holder: "PT Inovasi Sistem Pintar",
-      branch: "KCU Harau",
-    },
-  ],
-  footer_notes:
-    "Faktur ini diterbitkan secara elektronik dan sah tanpa memerlukan stempel basah.\nMohon melakukan pembayaran sebelum tanggal jatuh tempo guna menghindari isolir otomatis.\nHubungi Helpdesk Layanan di +62 811-660-1234 jika membutuhkan bantuan pembayaran.",
-  accent_color: "#2563eb",
-  header_image_url: "",
-  letterhead_html: "",
-  enable_qr_verification: true,
-  layout: "modern",
-};
+      bank_accounts: [
+        {
+          bank_name: "Bank Central Asia (BCA)",
+          bank_account_number: "8001234567",
+          bank_account_holder: "PT Inovasi Sistem Pintar",
+          branch: "KCU Harau",
+        },
+      ],
+      footer_notes:
+        "Faktur ini diterbitkan secara elektronik dan sah tanpa memerlukan stempel basah.\nMohon melakukan pembayaran sebelum tanggal jatuh tempo guna menghindari isolir otomatis.\nHubungi Helpdesk Layanan di +62 811-660-1234 jika membutuhkan bantuan pembayaran.",
+      accent_color: "#2563eb",
+      header_image_url: "",
+      letterhead_html: "",
+      enable_qr_verification: true,
+      layout: "modern",
+    };
+  }
+
+  const brandName = slug.toUpperCase();
+  const legalName = `PT ${brandName} Data Nusantara`;
+  return {
+    brand_name: brandName,
+    company_name: legalName,
+    license_no: "Izin Penyelenggaraan Jasa Telekomunikasi & Jaringan Internet (ISP)",
+    tax_id: "00.000.000.0-000.000",
+    address: `Kantor Pusat ${brandName}, Gedung Cyber Lt. 2, Indonesia`,
+    phone: "+62 812-3456-7890",
+    email: `billing@${slug}.ispsync.id`,
+    website: `https://ledger.${slug}.ispsync.id`,
+    logo_url: `/web/${slug}_logo.svg`,
+    bank_name: "Bank Central Asia (BCA)",
+    bank_account_number: "8001234567",
+    bank_account_holder: legalName,
+    bank_accounts: [
+      {
+        bank_name: "Bank Central Asia (BCA)",
+        bank_account_number: "8001234567",
+        bank_account_holder: legalName,
+        branch: "KCU Operasional",
+      },
+    ],
+    footer_notes: `Faktur ini diterbitkan secara elektronik dan sah tanpa memerlukan stempel basah.\nMohon melakukan pembayaran sebelum tanggal jatuh tempo guna menghindari isolir otomatis.\nHubungi Helpdesk Layanan ${brandName} jika membutuhkan bantuan pembayaran.`,
+    accent_color: "#06b6d4",
+    header_image_url: "",
+    letterhead_html: "",
+    enable_qr_verification: true,
+    layout: "modern",
+  };
+}
+
+export const defaultInvoiceTemplateSettings: InvoiceTemplateSettings = getDefaultInvoiceTemplateSettings("dev");
 
 export const settingsApi = {
   getInvoiceTemplate: () =>
@@ -341,15 +383,31 @@ export interface DomainSettings {
   updated_at?: string;
 }
 
-export const defaultDomainSettings: DomainSettings = {
-  primary_domain: "ispsync.id",
-  ledger_domain: "ledger.dev.ispsync.id",
-  wifi_domain: "wifi.dev.ispsync.id",
-  wifi_brand_name: "@isphotspot",
-  portal_domain: "portal.dev.ispsync.id",
-  fibergrid_domain: "fibergrid.dev.ispsync.id",
-  server_ip: "103.179.65.73",
-};
+export function getDefaultDomainSettings(tenantSlug?: string): DomainSettings {
+  const slug = (tenantSlug || getTenantSlug()).toLowerCase().trim();
+  if (!slug || slug === "dev") {
+    return {
+      primary_domain: "ispsync.id",
+      ledger_domain: "ledger.dev.ispsync.id",
+      wifi_domain: "wifi.dev.ispsync.id",
+      wifi_brand_name: "@gowifi",
+      portal_domain: "portal.dev.ispsync.id",
+      fibergrid_domain: "fibergrid.dev.ispsync.id",
+      server_ip: "103.179.65.73",
+    };
+  }
+  return {
+    primary_domain: "ispsync.id",
+    ledger_domain: `ledger.${slug}.ispsync.id`,
+    wifi_domain: `wifi.${slug}.ispsync.id`,
+    wifi_brand_name: `@${slug}`,
+    portal_domain: `portal.${slug}.ispsync.id`,
+    fibergrid_domain: `fibergrid.${slug}.ispsync.id`,
+    server_ip: "103.179.65.73",
+  };
+}
+
+export const defaultDomainSettings: DomainSettings = getDefaultDomainSettings("dev");
 
 export interface NotificationSettings {
   wa_provider: "FONNTE" | "WABLAS" | "INTERNAL";

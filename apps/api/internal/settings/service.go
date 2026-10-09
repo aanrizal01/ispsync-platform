@@ -238,7 +238,7 @@ func (s *Service) TestWhatsApp(ctx context.Context, tenantSlug string, input Tes
 
 	saved, err := s.repo.GetNotificationSettings(ctx, tenantSlug)
 	if err != nil && saved == nil {
-		def := DefaultNotificationSettings()
+		def := DefaultNotificationSettingsForTenant(tenantSlug)
 		saved = &def
 	}
 

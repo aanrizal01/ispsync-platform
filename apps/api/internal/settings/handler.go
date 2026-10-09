@@ -3,6 +3,7 @@ package settings
 import (
 	"log/slog"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -200,8 +201,8 @@ func (h *Handler) GetMapsConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := sec.GoogleMapsAPIKey
-	if key == "" {
-		key = "AIzaSyBJQS0oth3gW6P0aKsZGG5FiDbVhmZI6yA"
+	if key == "" && (tenantSlug == "" || tenantSlug == "dev") {
+		key = os.Getenv("GOOGLE_MAPS_API_KEY")
 	}
 	middleware.JSON(w, http.StatusOK, map[string]interface{}{
 		"success":             true,

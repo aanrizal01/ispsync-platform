@@ -166,11 +166,30 @@ func (r *Repository) GetBillingAddonSettings(ctx context.Context, tenantSlug ...
 		slug = resolveTenantSlugFromContext(ctx)
 	}
 
-	key := "billing_addons"
-	if slug != "" && slug != "dev" {
-		key = "billing_addons_" + slug
+	if slug == "" || slug == "dev" {
+		var valBytes []byte
+		var updatedAt time.Time
+		err := r.db.QueryRow(ctx, "SELECT value, updated_at FROM app_settings WHERE key = 'billing_addons_dev'").Scan(&valBytes, &updatedAt)
+		if err != nil && errors.Is(err, pgx.ErrNoRows) {
+			err = r.db.QueryRow(ctx, "SELECT value, updated_at FROM app_settings WHERE key = 'billing_addons'").Scan(&valBytes, &updatedAt)
+		}
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				def := DefaultBillingAddonSettings()
+				return &def, nil
+			}
+			return nil, err
+		}
+
+		var s BillingAddonSettings
+		if err := json.Unmarshal(valBytes, &s); err != nil {
+			return nil, err
+		}
+		s.UpdatedAt = updatedAt
+		return &s, nil
 	}
 
+	key := "billing_addons_" + slug
 	var valBytes []byte
 	var updatedAt time.Time
 	err := r.db.QueryRow(ctx, "SELECT value, updated_at FROM app_settings WHERE key = $1", key).Scan(&valBytes, &updatedAt)
@@ -197,11 +216,21 @@ func (r *Repository) SaveBillingAddonSettings(ctx context.Context, tenantSlug st
 	}
 
 	slug := strings.ToLower(strings.TrimSpace(tenantSlug))
-	key := "billing_addons"
-	if slug != "" && slug != "dev" {
-		key = "billing_addons_" + slug
+	if slug == "" || slug == "dev" {
+		const query = `
+			INSERT INTO app_settings (key, value, updated_at)
+			VALUES ($1, $2, NOW())
+			ON CONFLICT (key) DO UPDATE
+			SET value = EXCLUDED.value, updated_at = NOW()
+		`
+		if _, err := r.db.Exec(ctx, query, "billing_addons_dev", valBytes); err != nil {
+			return err
+		}
+		_, err = r.db.Exec(ctx, query, "billing_addons", valBytes)
+		return err
 	}
 
+	key := "billing_addons_" + slug
 	const query = `
 		INSERT INTO app_settings (key, value, updated_at)
 		VALUES ($1, $2, NOW())
@@ -225,11 +254,30 @@ func (r *Repository) GetSecuritySettings(ctx context.Context, tenantSlug ...stri
 		slug = resolveTenantSlugFromContext(ctx)
 	}
 
-	key := "security_settings"
-	if slug != "" && slug != "dev" {
-		key = "security_settings_" + slug
+	if slug == "" || slug == "dev" {
+		var valBytes []byte
+		var updatedAt time.Time
+		err := r.db.QueryRow(ctx, "SELECT value, updated_at FROM app_settings WHERE key = 'security_settings_dev'").Scan(&valBytes, &updatedAt)
+		if err != nil && errors.Is(err, pgx.ErrNoRows) {
+			err = r.db.QueryRow(ctx, "SELECT value, updated_at FROM app_settings WHERE key = 'security_settings'").Scan(&valBytes, &updatedAt)
+		}
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				def := DefaultSecuritySettingsForTenant("dev")
+				return &def, nil
+			}
+			return nil, err
+		}
+
+		s := DefaultSecuritySettingsForTenant("dev")
+		if err := json.Unmarshal(valBytes, &s); err != nil {
+			return nil, err
+		}
+		s.UpdatedAt = updatedAt
+		return &s, nil
 	}
 
+	key := "security_settings_" + slug
 	var valBytes []byte
 	var updatedAt time.Time
 	err := r.db.QueryRow(ctx, "SELECT value, updated_at FROM app_settings WHERE key = $1", key).Scan(&valBytes, &updatedAt)
@@ -256,11 +304,21 @@ func (r *Repository) SaveSecuritySettings(ctx context.Context, tenantSlug string
 	}
 
 	slug := strings.ToLower(strings.TrimSpace(tenantSlug))
-	key := "security_settings"
-	if slug != "" && slug != "dev" {
-		key = "security_settings_" + slug
+	if slug == "" || slug == "dev" {
+		const query = `
+			INSERT INTO app_settings (key, value, updated_at)
+			VALUES ($1, $2, NOW())
+			ON CONFLICT (key) DO UPDATE
+			SET value = EXCLUDED.value, updated_at = NOW()
+		`
+		if _, err := r.db.Exec(ctx, query, "security_settings_dev", valBytes); err != nil {
+			return err
+		}
+		_, err = r.db.Exec(ctx, query, "security_settings", valBytes)
+		return err
 	}
 
+	key := "security_settings_" + slug
 	const query = `
 		INSERT INTO app_settings (key, value, updated_at)
 		VALUES ($1, $2, NOW())
@@ -284,23 +342,42 @@ func (r *Repository) GetPaymentGatewaySettings(ctx context.Context, tenantSlug .
 		slug = resolveTenantSlugFromContext(ctx)
 	}
 
-	key := "payment_gateway"
-	if slug != "" && slug != "dev" {
-		key = "payment_gateway_" + slug
+	if slug == "" || slug == "dev" {
+		var valBytes []byte
+		var updatedAt time.Time
+		err := r.db.QueryRow(ctx, "SELECT value, updated_at FROM app_settings WHERE key = 'payment_gateway_dev'").Scan(&valBytes, &updatedAt)
+		if err != nil && errors.Is(err, pgx.ErrNoRows) {
+			err = r.db.QueryRow(ctx, "SELECT value, updated_at FROM app_settings WHERE key = 'payment_gateway'").Scan(&valBytes, &updatedAt)
+		}
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				def := DefaultPaymentGatewaySettings()
+				return &def, nil
+			}
+			return nil, err
+		}
+
+		s := DefaultPaymentGatewaySettings()
+		if err := json.Unmarshal(valBytes, &s); err != nil {
+			return nil, err
+		}
+		s.UpdatedAt = updatedAt
+		return &s, nil
 	}
 
+	key := "payment_gateway_" + slug
 	var valBytes []byte
 	var updatedAt time.Time
 	err := r.db.QueryRow(ctx, "SELECT value, updated_at FROM app_settings WHERE key = $1", key).Scan(&valBytes, &updatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			def := DefaultPaymentGatewaySettings()
+			def := DefaultPaymentGatewaySettingsForTenant(slug)
 			return &def, nil
 		}
 		return nil, err
 	}
 
-	s := DefaultPaymentGatewaySettings()
+	s := DefaultPaymentGatewaySettingsForTenant(slug)
 	if err := json.Unmarshal(valBytes, &s); err != nil {
 		return nil, err
 	}
@@ -315,11 +392,21 @@ func (r *Repository) SavePaymentGatewaySettings(ctx context.Context, tenantSlug 
 	}
 
 	slug := strings.ToLower(strings.TrimSpace(tenantSlug))
-	key := "payment_gateway"
-	if slug != "" && slug != "dev" {
-		key = "payment_gateway_" + slug
+	if slug == "" || slug == "dev" {
+		const query = `
+			INSERT INTO app_settings (key, value, updated_at)
+			VALUES ($1, $2, NOW())
+			ON CONFLICT (key) DO UPDATE
+			SET value = EXCLUDED.value, updated_at = NOW()
+		`
+		if _, err := r.db.Exec(ctx, query, "payment_gateway_dev", valBytes); err != nil {
+			return err
+		}
+		_, err = r.db.Exec(ctx, query, "payment_gateway", valBytes)
+		return err
 	}
 
+	key := "payment_gateway_" + slug
 	const query = `
 		INSERT INTO app_settings (key, value, updated_at)
 		VALUES ($1, $2, NOW())
@@ -431,23 +518,42 @@ func (r *Repository) GetNotificationSettings(ctx context.Context, tenantSlug ...
 		slug = resolveTenantSlugFromContext(ctx)
 	}
 
-	key := "notification_settings"
-	if slug != "" && slug != "dev" {
-		key = "notification_settings_" + slug
+	if slug == "" || slug == "dev" {
+		var valBytes []byte
+		var updatedAt time.Time
+		err := r.db.QueryRow(ctx, "SELECT value, updated_at FROM app_settings WHERE key = 'notification_settings_dev'").Scan(&valBytes, &updatedAt)
+		if err != nil && errors.Is(err, pgx.ErrNoRows) {
+			err = r.db.QueryRow(ctx, "SELECT value, updated_at FROM app_settings WHERE key = 'notification_settings'").Scan(&valBytes, &updatedAt)
+		}
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				def := DefaultNotificationSettings()
+				return &def, nil
+			}
+			return nil, err
+		}
+
+		s := DefaultNotificationSettings()
+		if err := json.Unmarshal(valBytes, &s); err != nil {
+			return nil, err
+		}
+		s.UpdatedAt = updatedAt
+		return &s, nil
 	}
 
+	key := "notification_settings_" + slug
 	var valBytes []byte
 	var updatedAt time.Time
 	err := r.db.QueryRow(ctx, "SELECT value, updated_at FROM app_settings WHERE key = $1", key).Scan(&valBytes, &updatedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			def := DefaultNotificationSettings()
+			def := DefaultNotificationSettingsForTenant(slug)
 			return &def, nil
 		}
 		return nil, err
 	}
 
-	s := DefaultNotificationSettings()
+	s := DefaultNotificationSettingsForTenant(slug)
 	if err := json.Unmarshal(valBytes, &s); err != nil {
 		return nil, err
 	}
@@ -462,11 +568,21 @@ func (r *Repository) SaveNotificationSettings(ctx context.Context, tenantSlug st
 	}
 
 	slug := strings.ToLower(strings.TrimSpace(tenantSlug))
-	key := "notification_settings"
-	if slug != "" && slug != "dev" {
-		key = "notification_settings_" + slug
+	if slug == "" || slug == "dev" {
+		const query = `
+			INSERT INTO app_settings (key, value, updated_at)
+			VALUES ($1, $2, NOW())
+			ON CONFLICT (key) DO UPDATE
+			SET value = EXCLUDED.value, updated_at = NOW()
+		`
+		if _, err := r.db.Exec(ctx, query, "notification_settings_dev", valBytes); err != nil {
+			return err
+		}
+		_, err = r.db.Exec(ctx, query, "notification_settings", valBytes)
+		return err
 	}
 
+	key := "notification_settings_" + slug
 	const query = `
 		INSERT INTO app_settings (key, value, updated_at)
 		VALUES ($1, $2, NOW())
@@ -490,16 +606,36 @@ func (r *Repository) GetFiberGridSettings(ctx context.Context, tenantSlug ...str
 		slug = resolveTenantSlugFromContext(ctx)
 	}
 
-	key := "fibergrid_integration"
-	if slug != "" && slug != "dev" {
-		key = "fibergrid_integration_" + slug
-		var exists bool
-		_ = r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM app_settings WHERE key = $1)", key).Scan(&exists)
-		if !exists {
-			def := DefaultFiberGridIntegrationSettings()
-			def.TenantCode = slug
-			return &def, nil
+	if slug == "" || slug == "dev" {
+		var valBytes []byte
+		var updatedAt time.Time
+		err := r.db.QueryRow(ctx, "SELECT value, updated_at FROM app_settings WHERE key = 'fibergrid_integration_dev'").Scan(&valBytes, &updatedAt)
+		if err != nil && errors.Is(err, pgx.ErrNoRows) {
+			err = r.db.QueryRow(ctx, "SELECT value, updated_at FROM app_settings WHERE key = 'fibergrid_integration'").Scan(&valBytes, &updatedAt)
 		}
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				def := DefaultFiberGridIntegrationSettings()
+				return &def, nil
+			}
+			return nil, err
+		}
+
+		var s FiberGridIntegrationSettings
+		if err := json.Unmarshal(valBytes, &s); err != nil {
+			return nil, err
+		}
+		s.UpdatedAt = updatedAt
+		return &s, nil
+	}
+
+	key := "fibergrid_integration_" + slug
+	var exists bool
+	_ = r.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM app_settings WHERE key = $1)", key).Scan(&exists)
+	if !exists {
+		def := DefaultFiberGridIntegrationSettings()
+		def.TenantCode = slug
+		return &def, nil
 	}
 
 	const query = `SELECT value, updated_at FROM app_settings WHERE key = $1`
@@ -509,9 +645,7 @@ func (r *Repository) GetFiberGridSettings(ctx context.Context, tenantSlug ...str
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			def := DefaultFiberGridIntegrationSettings()
-			if slug != "" && slug != "dev" {
-				def.TenantCode = slug
-			}
+			def.TenantCode = slug
 			return &def, nil
 		}
 		return nil, err
@@ -527,16 +661,26 @@ func (r *Repository) GetFiberGridSettings(ctx context.Context, tenantSlug ...str
 
 func (r *Repository) SaveFiberGridSettings(ctx context.Context, tenantSlug string, s *FiberGridIntegrationSettings) error {
 	slug := strings.ToLower(strings.TrimSpace(tenantSlug))
-	key := "fibergrid_integration"
-	if slug != "" && slug != "dev" {
-		key = "fibergrid_integration_" + slug
-	}
-
 	valBytes, err := json.Marshal(s)
 	if err != nil {
 		return err
 	}
 
+	if slug == "" || slug == "dev" {
+		const query = `
+			INSERT INTO app_settings (key, value, updated_at)
+			VALUES ($1, $2, NOW())
+			ON CONFLICT (key) DO UPDATE
+			SET value = EXCLUDED.value, updated_at = NOW()
+		`
+		if _, err := r.db.Exec(ctx, query, "fibergrid_integration_dev", valBytes); err != nil {
+			return err
+		}
+		_, err = r.db.Exec(ctx, query, "fibergrid_integration", valBytes)
+		return err
+	}
+
+	key := "fibergrid_integration_" + slug
 	const query = `
 		INSERT INTO app_settings (key, value, updated_at)
 		VALUES ($1, $2, NOW())

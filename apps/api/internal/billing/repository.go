@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/gigabill/isp/internal/auth"
 	"github.com/gigabill/isp/internal/shared/pagination"
 	"github.com/gigabill/isp/pkg/money"
 )
@@ -551,9 +552,23 @@ func (r *Repository) GetSubscriptionsDueForBilling(ctx context.Context) ([]DueSu
 }
 
 func (r *Repository) GetPublicIPAddonPrice(ctx context.Context) (int64, string) {
-	const query = `SELECT value FROM app_settings WHERE key = 'billing_addons'`
+	slug := "dev"
+	claims := auth.ClaimsFromContext(ctx)
+	if claims != nil && claims.TenantSlug != "" {
+		slug = strings.ToLower(claims.TenantSlug)
+	}
+
+	key := "billing_addons"
+	if slug != "" && slug != "dev" {
+		key = "billing_addons_" + slug
+	}
+
 	var valBytes []byte
-	err := r.db.QueryRow(ctx, query).Scan(&valBytes)
+	err := r.db.QueryRow(ctx, "SELECT value FROM app_settings WHERE key = $1", key).Scan(&valBytes)
+	if err != nil && slug != "" && slug != "dev" {
+		// Fallback to dev/default key
+		err = r.db.QueryRow(ctx, "SELECT value FROM app_settings WHERE key = 'billing_addons'").Scan(&valBytes)
+	}
 	if err != nil {
 		return 50000, "Sewa Add-on IP Publik Statik"
 	}

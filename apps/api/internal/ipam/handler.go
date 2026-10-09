@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -35,8 +36,22 @@ func (h *Handler) Routes(r chi.Router, authMW *auth.Middleware) {
 	})
 }
 
+func extractTenantSlug(r *http.Request) string {
+	if q := r.URL.Query().Get("tenant"); q != "" {
+		return strings.ToLower(strings.TrimSpace(q))
+	}
+	if q := r.URL.Query().Get("tenant_slug"); q != "" {
+		return strings.ToLower(strings.TrimSpace(q))
+	}
+	if q := r.URL.Query().Get("slug"); q != "" {
+		return strings.ToLower(strings.TrimSpace(q))
+	}
+	return auth.ExtractTenantSlug(r)
+}
+
 func (h *Handler) GetSettings(w http.ResponseWriter, r *http.Request) {
-	settings, err := h.service.GetSettings(r.Context())
+	tenantSlug := extractTenantSlug(r)
+	settings, err := h.service.GetSettings(r.Context(), tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -51,7 +66,8 @@ func (h *Handler) SaveSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	saved, err := h.service.SaveSettings(r.Context(), &req)
+	tenantSlug := extractTenantSlug(r)
+	saved, err := h.service.SaveSettings(r.Context(), tenantSlug, &req)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -68,7 +84,8 @@ func (h *Handler) TestConnection(w http.ResponseWriter, r *http.Request) {
 	var req IPAMSettings
 	_ = middleware.DecodeJSON(r, &req)
 
-	result, err := h.service.TestConnection(r.Context(), &req)
+	tenantSlug := extractTenantSlug(r)
+	result, err := h.service.TestConnection(r.Context(), tenantSlug, &req)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -78,7 +95,8 @@ func (h *Handler) TestConnection(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetSubnets(w http.ResponseWriter, r *http.Request) {
-	subnets, err := h.service.GetSubnets(r.Context())
+	tenantSlug := extractTenantSlug(r)
+	subnets, err := h.service.GetSubnets(r.Context(), tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -96,7 +114,8 @@ func (h *Handler) GetFirstFreeIP(w http.ResponseWriter, r *http.Request) {
 		subnetID, _ = strconv.Atoi(subnetIDStr)
 	}
 
-	resp, err := h.service.GetFirstFreeIP(r.Context(), subnetID)
+	tenantSlug := extractTenantSlug(r)
+	resp, err := h.service.GetFirstFreeIP(r.Context(), subnetID, tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
