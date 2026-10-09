@@ -162,6 +162,9 @@ func (s *Service) CheckAll(ctx context.Context) (*SystemStatusResponse, error) {
 	ispStart := time.Now()
 	ispStatus, ispLatency, ispDetails := checkHTTPService(strings.TrimRight(ispURL, "/")+"/health", "Layanan pendaftaran & onboarding aktif", ispStart)
 	if ispStatus == "DOWN" {
+		ispStatus, ispLatency, ispDetails = checkHTTPService("http://172.18.0.1:8081/health", "Layanan pendaftaran & onboarding aktif", ispStart)
+	}
+	if ispStatus == "DOWN" {
 		ispStatus, ispLatency, ispDetails = checkHTTPService("http://127.0.0.1:8081/health", "Layanan pendaftaran & onboarding aktif", ispStart)
 	}
 
@@ -183,7 +186,19 @@ func (s *Service) CheckAll(ctx context.Context) (*SystemStatusResponse, error) {
 		fttxURL = "http://172.18.0.1:8082"
 	}
 	fttxStart := time.Now()
-	fttxStatus, fttxLatency, fttxDetails := checkHTTPService(strings.TrimRight(fttxURL, "/")+"/", "Layanan manajemen FTTX & OLT aktif", fttxStart)
+	fttxStatus, fttxLatency, fttxDetails := checkHTTPService(strings.TrimRight(fttxURL, "/")+"/health", "Layanan manajemen FTTX & OLT aktif", fttxStart)
+	if fttxStatus == "DOWN" {
+		fttxStatus, fttxLatency, fttxDetails = checkHTTPService(strings.TrimRight(fttxURL, "/")+"/", "Layanan manajemen FTTX & OLT aktif", fttxStart)
+	}
+	if fttxStatus == "DOWN" {
+		fttxStatus, fttxLatency, fttxDetails = checkHTTPService("http://172.18.0.1:8082/health", "Layanan manajemen FTTX & OLT aktif", fttxStart)
+	}
+	if fttxStatus == "DOWN" {
+		fttxStatus, fttxLatency, fttxDetails = checkHTTPService("http://172.18.0.1:8082/", "Layanan manajemen FTTX & OLT aktif", fttxStart)
+	}
+	if fttxStatus == "DOWN" {
+		fttxStatus, fttxLatency, fttxDetails = checkHTTPService("http://127.0.0.1:8082/health", "Layanan manajemen FTTX & OLT aktif", fttxStart)
+	}
 	if fttxStatus == "DOWN" {
 		fttxStatus, fttxLatency, fttxDetails = checkHTTPService("http://127.0.0.1:8082/", "Layanan manajemen FTTX & OLT aktif", fttxStart)
 	}
