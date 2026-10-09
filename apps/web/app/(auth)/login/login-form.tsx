@@ -68,7 +68,7 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
       };
 
       if (detectedSlug && detectedSlug !== "ispsync") {
-        const up = detectedSlug.toUpperCase();
+        const up = detectedSlug === "dev" ? "DEV LAB" : detectedSlug.toUpperCase();
         setTenantSlug(detectedSlug);
         setTenantName(up);
         setIsTenant(true);
@@ -96,7 +96,11 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      const identifier = email.trim();
+      const resolvedEmail = identifier.includes("@")
+        ? identifier
+        : (tenantSlug ? `${identifier}@${tenantSlug}.ispsync.id` : identifier);
+      await login(resolvedEmail, password);
     } catch (err) {
       const apiErr = err as ApiError;
       setError(apiErr.message || "Email atau kata sandi tidak cocok. Silakan coba kembali.");
@@ -114,7 +118,7 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
         {/* ========================================================
             LEFT SIDE: Showcase (Dynamic Brand Authority)
            ======================================================== */}
-        <div className="hidden lg:flex lg:w-1/2 xl:w-7/12 relative flex-col justify-between p-12 xl:p-16 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/40 text-white overflow-hidden border-r border-slate-800/80">
+        <div className="hidden lg:flex lg:w-7/12 relative flex-col justify-between p-12 xl:p-16 bg-gradient-to-br from-slate-950 via-slate-900 to-cyan-950/40 text-white overflow-hidden border-r border-slate-800/80">
           {/* Ambient Gradient Glows */}
           <div className="absolute -top-32 -left-32 w-96 h-96 bg-cyan-600/20 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute top-1/2 -right-32 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
@@ -205,7 +209,7 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
         {/* ========================================================
             RIGHT SIDE: Login Form
            ======================================================== */}
-        <div className="flex-1 flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-16 xl:px-24 bg-white relative">
+        <div className="flex-1 lg:w-5/12 flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-16 xl:px-24 bg-white relative">
           <div className="w-full max-w-md mx-auto">
             {/* Mobile Brand Header */}
             <div className="lg:hidden flex items-center gap-3 mb-8 pb-6 border-b border-slate-100">
@@ -235,27 +239,19 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
 
             {/* Form Header */}
             <div className="mb-8">
-              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-                Login Administrator {tenantName}
+              <h2 className="text-3xl font-black tracking-tight text-slate-900">
+                Masuk ke Akun
               </h2>
               <p className="text-slate-500 text-sm mt-2 leading-relaxed">
-                Masuk ke backoffice untuk mengelola operasional, pelanggan, dan penagihan {tenantName}.
+                Masukkan username atau email dan kata sandi akun backoffice {tenantName} untuk mengakses dashboard operasional &amp; billing.
               </p>
-            </div>
-
-            {/* Demo Account Box for Demo Mode */}
-            {tenantSlug === "ispku" && (
-              <div className="mb-6 p-4 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-900 text-xs space-y-1.5">
-                <div className="flex items-center justify-between font-mono">
-                  <span className="text-slate-500">Email:</span>
-                  <span className="font-bold text-cyan-900">{dynamicEmailPlaceholder}</span>
-                </div>
-                <div className="flex items-center justify-between font-mono">
-                  <span className="text-slate-500">Password:</span>
-                  <span className="font-bold text-cyan-900">Admin123456!</span>
-                </div>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-cyan-50 text-cyan-700 border border-cyan-200">
+                  SSO TERINTEGRASI
+                </span>
+                <span className="text-xs text-slate-500 font-normal">Autentikasi Terpusat Staf &amp; Administrator</span>
               </div>
-            )}
+            </div>
 
             {/* Error Message Box */}
             {error && (
@@ -274,22 +270,22 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                  Email Akun
+                  Username atau Email
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
                   <input
                     id="email"
-                    type="email"
+                    type="text"
                     required
-                    autoComplete="email"
+                    autoComplete="username"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder={dynamicEmailPlaceholder}
+                    placeholder={`admin atau ${dynamicEmailPlaceholder}`}
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-600 focus:border-cyan-600 text-sm transition-all shadow-sm"
                   />
                 </div>
@@ -320,7 +316,7 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
                     title={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
                   >
                     {showPassword ? (
@@ -352,7 +348,7 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:from-cyan-400 disabled:to-blue-400 text-white font-semibold py-3 px-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2 mt-4 shadow-md shadow-cyan-500/20 cursor-pointer"
+                className="w-full bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2 mt-4 shadow-md shadow-cyan-600/20 cursor-pointer"
               >
                 {isLoading ? (
                   <>
@@ -370,6 +366,19 @@ export default function LoginForm({ initialTenant }: { initialTenant: TenantInfo
                 )}
               </button>
             </form>
+
+            {/* Quick Switcher to Nexus NOC */}
+            <div className="mt-5 pt-5 border-t border-slate-100 text-center space-y-2">
+              <p className="text-xs text-slate-500">Perlu mengontrol perangkat OLT, BRAS, atau monitoring NOC?</p>
+              <a
+                href={`https://nexus.${tenantSlug || "dev"}.ispsync.id`}
+                className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-xs font-bold text-cyan-700 bg-cyan-50 hover:bg-cyan-100 border border-cyan-200 transition-colors shadow-sm cursor-pointer"
+              >
+                <Server className="w-4 h-4 text-cyan-600" />
+                <span>Buka Platform Nexus NOC Command Center</span>
+                <ArrowRight className="w-3.5 h-3.5 text-cyan-600" />
+              </a>
+            </div>
 
             {/* Security & Support Note */}
             <div className="mt-8 pt-6 border-t border-slate-100">

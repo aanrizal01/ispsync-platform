@@ -26,7 +26,11 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*User, s
 		SELECT id, email, password_hash, full_name, phone, is_active,
 		       customer_id, last_login_at, created_at, updated_at, COALESCE(tenant_slug, '')
 		FROM users
-		WHERE email = $1 AND deleted_at IS NULL
+		WHERE (LOWER(email) = LOWER($1)
+		       OR (tenant_slug IS NOT NULL AND tenant_slug != '' AND LOWER(email) = LOWER($1) || '@' || LOWER(tenant_slug) || '.ispsync.id'))
+		  AND deleted_at IS NULL
+		ORDER BY CASE WHEN LOWER(email) = LOWER($1) THEN 0 ELSE 1 END
+		LIMIT 1
 	`
 	var u User
 	var passwordHash string

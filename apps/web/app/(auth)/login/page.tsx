@@ -27,7 +27,7 @@ export default async function LoginPage() {
   }
 
   const isTenant = !!slug && slug !== "ispsync";
-  const upper = slug ? slug.toUpperCase() : "ISPSYNC";
+  const upper = slug ? (slug === "dev" ? "DEV LAB" : slug.toUpperCase()) : "ISPSYNC";
 
   let legalName = TENANT_LEGAL_MAP[slug] || "";
   if (!legalName && slug) {

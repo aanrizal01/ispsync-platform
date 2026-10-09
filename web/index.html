@@ -38,9 +38,9 @@
         }
         if (!favSlug || favSlug === 'localhost' || favSlug === '103') favSlug = 'dev';
 
-        var earlyBrand = (favSlug && favSlug !== 'dev') ? favSlug.toUpperCase() : 'ISPSYNC';
+        var earlyBrand = favSlug ? (favSlug === 'dev' ? 'DEV LAB' : favSlug.toUpperCase()) : 'ISPSYNC';
         var tCtxEarly = window.__ISPSYNC_TENANT__ || {};
-        if (tCtxEarly.short_name && tCtxEarly.short_name !== 'DEVLAB' && tCtxEarly.short_name !== 'DEV' && !tCtxEarly.short_name.toUpperCase().startsWith('PT')) {
+        if (tCtxEarly.short_name && !tCtxEarly.short_name.toUpperCase().startsWith('PT')) {
           earlyBrand = tCtxEarly.short_name.toUpperCase();
         }
 
@@ -2934,11 +2934,11 @@
                 (function() {
                   try {
                     var s = window.__EARLY_TENANT_SLUG__ || 'dev';
-                    var b = window.__EARLY_BRAND_NAME__ || 'ISPSYNC';
+                    var b = window.__EARLY_BRAND_NAME__ || (s === 'dev' ? 'DEV LAB' : s.toUpperCase());
                     var logo = window.__EARLY_LOGO_URL__ || ('/web/' + s + '_logo.svg');
                     var img = document.getElementById('noc-login-brand-logo'); if (img) img.src = logo;
                     var h2 = document.getElementById('noc-login-brand-name'); if (h2) h2.textContent = b;
-                    var hl = document.getElementById('noc-login-brand-highlight'); if (hl) hl.textContent = 'Command Center ' + b;
+                    var hl = document.getElementById('noc-login-brand-highlight'); if (hl) hl.textContent = b + ' Command Center';
                     var desc = document.getElementById('noc-login-brand-desc'); if (desc) desc.textContent = 'Pusat Kontrol Operasional & Infrastruktur ' + b;
                     var sub = document.getElementById('noc-login-hero-sub'); if (sub) sub.textContent = 'Akses backoffice terpusat ' + b + ' untuk monitoring perangkat OLT, uplink backbone, sesi aktif RADIUS, pemetaan distribusi ODP/FO, disposisi teknisi lapangan, dan audit validasi BAST.';
                     var legalMap = { ispmu: 'PT. Mitra Usaha Data', ispku: 'PT. ISP Kita Nusantara', dev: 'Laboratorium ISPSYNC R&D' };
@@ -3040,12 +3040,12 @@
               <!-- Login Form -->
               <form onsubmit="handleAdminDirectLogin(event)" class="space-y-5">
                 <div>
-                  <label for="admin-direct-username" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Username Operator</label>
+                  <label for="admin-direct-username" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">Username atau Email</label>
                   <div class="relative">
                     <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                     </div>
-                    <input id="admin-direct-username" type="text" required autocomplete="username" placeholder="Masukkan username"
+                    <input id="admin-direct-username" type="text" required autocomplete="username" placeholder="admin atau admin@dev.ispsync.id"
                            class="w-full pl-10 pr-4 py-2.5 rounded-md border border-slate-300 text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 text-sm transition-all shadow-sm">
                   </div>
                 </div>
@@ -3102,8 +3102,10 @@
                   (function() {
                     try {
                       var s = window.__EARLY_TENANT_SLUG__ || 'dev';
+                      var uInput = document.getElementById('admin-direct-username');
+                      if (uInput) uInput.placeholder = 'admin atau admin@' + s + '.ispsync.id';
                       var em = document.getElementById('noc-support-email');
-                      if (em) em.textContent = 'noc@' + s + '.ispsync.id';
+                      if (em) em.textContent = 'admin@' + s + '.ispsync.id';
                       var fgl = document.getElementById('noc-fibergrid-link');
                       if (fgl) fgl.href = 'https://fibergrid.' + s + '.ispsync.id';
                     } catch(e) {}
@@ -27702,17 +27704,20 @@
           dev: 'Laboratorium ISPSYNC R&D'
         };
 
-        // Always use short uppercase brand acronym (ISPMU, ISPKU), fallback to ISPSYNC for dev/platform
-        let brandName = (slug && slug !== 'dev') ? slug.toUpperCase() : 'ISPSYNC';
-        if (injected.short_name && injected.short_name !== 'DEVLAB' && injected.short_name !== 'DEV' && !injected.short_name.toUpperCase().startsWith('PT')) {
+        // Always use short uppercase brand acronym (ISPMU, ISPKU), fallback to DEV LAB or ISPSYNC
+        let brandName = slug ? (slug === 'dev' ? 'DEV LAB' : slug.toUpperCase()) : 'ISPSYNC';
+        if (injected.short_name && !injected.short_name.toUpperCase().startsWith('PT')) {
           brandName = injected.short_name.toUpperCase();
         }
 
         const legalName = injected.company_name || injected.name || legalMap[slug] || ('PT. ' + brandName + ' Data Nusantara');
         const copyrightText = '© 2026 ' + legalName + '. All rights reserved.';
-        const supportEmail = injected.contact_email || injected.email || ('noc@' + (slug || 'dev') + '.ispsync.id');
+        const supportEmail = injected.contact_email || injected.email || ('admin@' + (slug || 'dev') + '.ispsync.id');
         const logoSrc = '/web/' + (slug || 'dev') + '_logo.svg';
         const fgUrl = 'https://fibergrid.' + (slug || 'dev') + '.ispsync.id';
+
+        const elUserInput = document.getElementById('admin-direct-username');
+        if (elUserInput) elUserInput.placeholder = 'admin atau admin@' + (slug || 'dev') + '.ispsync.id';
 
         const elLogo = document.getElementById('noc-login-brand-logo');
         if (elLogo) {
