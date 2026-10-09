@@ -30,16 +30,29 @@ export default async function LoginPage() {
   const upper = slug ? (slug === "dev" ? "DEV LAB" : slug.toUpperCase()) : "ISPSYNC";
 
   let legalName = TENANT_LEGAL_MAP[slug] || "";
+  let isValidTenant = !!TENANT_LEGAL_MAP[slug];
+
   if (!legalName && slug) {
     try {
-      const p = path.join(process.cwd(), "data", "members.json");
-      if (fs.existsSync(p)) {
-        const d = JSON.parse(fs.readFileSync(p, "utf-8"));
+      // Use standard data lookup instead of process.cwd() directly for safety
+      const dPath = process.env.NODE_ENV === "production" ? "/app/data/members.json" : path.join(process.cwd(), "data", "members.json");
+      if (fs.existsSync(dPath)) {
+        const d = JSON.parse(fs.readFileSync(dPath, "utf-8"));
         const found = d.members?.find((m: any) => m.domain && m.domain.toLowerCase().includes(slug));
-        if (found && found.company) legalName = found.company;
+        if (found && found.company) {
+          legalName = found.company;
+          isValidTenant = true;
+        }
       }
-    } catch {}
+    } catch (e) {
+      console.error(e);
+    }
   }
+
+  if (isTenant && !isValidTenant) {
+    import("next/navigation").then(m => m.notFound()); // dynamic import for server component or just use static import if at top
+  }
+
   if (!legalName && isTenant) {
     legalName = `PT. ${upper} Data Nusantara`;
   }
