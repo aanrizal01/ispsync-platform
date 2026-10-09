@@ -3455,7 +3455,7 @@
             <span id="badge-count-waiting-noc" class="px-1.5 py-0.5 rounded text-[10px] bg-amber-50 text-amber-700 border border-amber-200 font-bold font-mono">0</span>
           </button>
           <button id="reg-filter-btn-WAITING_DIRECTOR" type="button" onclick="setAdminRegFilter('WAITING_DIRECTOR')" class="px-3 py-1.5 rounded-md text-xs font-mono font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
-            <span>👑 ACC Manager / Direksi</span>
+            <span>ACC Manager / Direksi</span>
             <span id="badge-count-waiting-director" class="px-1.5 py-0.5 rounded text-[10px] bg-amber-100 text-amber-900 border border-amber-300 font-bold font-mono">0</span>
           </button>
           <button id="reg-filter-btn-ACTIVE" type="button" onclick="setAdminRegFilter('ACTIVE')" class="px-3 py-1.5 rounded-md text-xs font-mono font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 transition flex items-center gap-1.5 shadow-2xs">
@@ -3488,23 +3488,23 @@
             <!-- Filter Status Sesi PPPoE -->
             <div class="relative shrink-0">
               <select id="admin-reg-filter-session" onchange="adminRegCurrentPage = 1; renderAdminRegistrationsTable()" class="pl-2.5 pr-7 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-mono text-slate-700 shadow-2xs cursor-pointer">
-                <option value="ALL">⚡ Status Sesi: Semua</option>
-                <option value="ONLINE">🟢 Sesi: Online Saja</option>
-                <option value="OFFLINE">⚪ Sesi: Offline Saja</option>
+                <option value="ALL">Status Sesi: Semua</option>
+                <option value="ONLINE">Sesi: Online Saja</option>
+                <option value="OFFLINE">Sesi: Offline Saja</option>
               </select>
             </div>
 
             <!-- Filter Paket Layanan -->
             <div class="relative shrink-0">
               <select id="admin-reg-filter-plan" onchange="adminRegCurrentPage = 1; renderAdminRegistrationsTable()" class="pl-2.5 pr-7 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-mono text-slate-700 shadow-2xs cursor-pointer">
-                <option value="ALL">📦 Paket: Semua</option>
+                <option value="ALL">Paket: Semua</option>
               </select>
             </div>
 
             <!-- Filter Jenis Jaringan / Kemitraan -->
             <div class="relative shrink-0">
               <select id="admin-reg-filter-network" onchange="adminRegCurrentPage = 1; renderAdminRegistrationsTable()" class="pl-2.5 pr-7 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 font-mono text-slate-700 shadow-2xs cursor-pointer">
-                <option value="ALL">🌐 Jaringan: Semua</option>
+                <option value="ALL">Jaringan: Semua</option>
                 <option value="DIRECT">Direct (Internal Retail)</option>
                 <option value="PARTNER">Mitra Jartaplok</option>
               </select>
@@ -11361,9 +11361,9 @@
 
       // Layer Control (Pojok Kanan Atas Peta)
       const baseMaps = {
-        "📍 Google Satelit": googleHybrid,
-        "🌐 Peta Standar (Jalan)": osmStandard,
-        "🛰️ Satelit HD (Alternatif)": satelitHD
+        "Google Satelit": googleHybrid,
+        "Peta Standar (Jalan)": osmStandard,
+        "Satelit HD (Alternatif)": satelitHD
       };
       L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
@@ -15227,7 +15227,7 @@
       const existingOptions = Array.from(sel.options).slice(1).map(o => o.value);
       const isSame = existingOptions.length === sorted.length && existingOptions.every((v, idx) => v === sorted[idx]);
       if (!isSame) {
-        let html = '<option value="ALL">📦 Paket: Semua</option>';
+        let html = '<option value="ALL">Paket: Semua</option>';
         sorted.forEach(p => {
           html += `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`;
         });
@@ -15743,7 +15743,7 @@
           statusLabel = 'JEDA / ISOLIR';
         } else if (r.status === 'WAITING_DIRECTOR_APPROVAL') {
           statusBadgeClass = 'bg-amber-100 text-amber-900 border-amber-300 font-bold';
-          statusLabel = '👑 ACC MANAGER / DIREKSI';
+          statusLabel = 'ACC MANAGER / DIREKSI';
         } else if (r.status === 'WAITING_APPROVAL_NOC') {
           statusBadgeClass = 'bg-amber-50 text-amber-700 border-amber-200';
           statusLabel = 'APPROVAL NOC';
@@ -16344,7 +16344,7 @@
             </div>
             <div class="font-bold text-sm text-slate-900 mb-0.5">${r.full_name}</div>
             <div class="text-slate-500 text-[11px] mb-2 flex items-center gap-1">
-              <span>📞</span>
+              <span class="text-slate-400 font-mono text-[10px]">Telp:</span>
               ${cleanPhone ? `<a href="https://wa.me/${cleanPhone}" target="_blank" class="text-emerald-700 hover:underline font-mono font-semibold">${r.phone} (WhatsApp)</a>` : `<span class="font-mono">${r.phone || '-'}</span>`}
             </div>
             <div class="bg-slate-50 p-2 rounded-lg border border-slate-200 space-y-1 text-[11px] mb-3">
@@ -17350,7 +17350,7 @@
           statusBadge.innerText = 'AKTIF ONLINE';
           statusBadge.className = "mt-0.5 inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200";
         } else if (r.status === 'WAITING_DIRECTOR_APPROVAL') {
-          statusBadge.innerText = '👑 MENUNGGU ACC MANAGER / DIREKSI';
+          statusBadge.innerText = 'MENUNGGU ACC MANAGER / DIREKSI';
           statusBadge.className = "mt-0.5 inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-amber-100 text-amber-900 border border-amber-300";
         } else if (r.status === 'WAITING_APPROVAL_NOC') {
           statusBadge.innerText = 'MENUNGGU APPROVAL NOC';
@@ -18790,8 +18790,8 @@
         });
 
         L.control.layers({
-          "📍 Satelit Google": googleHybrid,
-          "🌐 Peta Jalan": osmRoads
+          "Satelit Google": googleHybrid,
+          "Peta Jalan": osmRoads
         }, null, { position: 'topright' }).addTo(reassignMapInstance);
       }
 
@@ -19050,7 +19050,7 @@
           const distStr = o.distToCustomer > 0 ? ` (~${Math.round(o.distToCustomer)}m)` : '';
           const portsLeft = o.total_ports - o.used_ports;
           return `<option value="${o.code}" data-dist="${o.distToCustomer}" ${isCurrent ? 'selected' : ''}>
-            📍 ${o.code}${distStr} • ${o.name || o.cluster_area} (Sisa: ${portsLeft}/${o.total_ports} Port) ${isCurrent ? '★ ODP Saat Ini' : ''}
+            ${o.code}${distStr} • ${o.name || o.cluster_area} (Sisa: ${portsLeft}/${o.total_ports} Port) ${isCurrent ? '[ODP Saat Ini]' : ''}
           </option>`;
         }).join('');
       }
@@ -19230,7 +19230,7 @@
       }
       optionsHtml += `
         <optgroup label="Layanan Khusus &amp; B2B">
-          <option value="CUSTOM_SPEED" data-speed="custom" data-name="Custom Bandwidth (On-Demand)" data-price="0">🏢 Custom Bandwidth / Dedicated (Input Bebas)</option>
+          <option value="CUSTOM_SPEED" data-speed="custom" data-name="Custom Bandwidth (On-Demand)" data-price="0">Custom Bandwidth / Dedicated (Input Bebas)</option>
         </optgroup>
       `;
       select.innerHTML = optionsHtml;
@@ -25313,8 +25313,8 @@
 
       optionsHtml += `
         <optgroup label="Layanan Bisnis &amp; Khusus">
-          <option value="paket-custom-enterprise" data-name="Custom Enterprise (Dedicated)" data-price="0">🏢 Custom Enterprise / Dedicated Corporate</option>
-          <option value="OFFER_BY_SALES" data-name="Penawaran Khusus Sales (Survei Lapangan)" data-price="0">📋 Penawaran Khusus Sales (Hasil Survei)</option>
+          <option value="paket-custom-enterprise" data-name="Custom Enterprise (Dedicated)" data-price="0">Custom Enterprise / Dedicated Corporate</option>
+          <option value="OFFER_BY_SALES" data-name="Penawaran Khusus Sales (Survei Lapangan)" data-price="0">Penawaran Khusus Sales (Hasil Survei)</option>
         </optgroup>
       `;
 
@@ -26317,7 +26317,7 @@
         const distStr = o.distToCustomer > 0 ? ` (~${Math.round(o.distToCustomer)}m)` : '';
         const portsLeft = o.total_ports - o.used_ports;
         return `<option value="${o.code}" data-dist="${o.distToCustomer}" ${isCurrent ? 'selected' : ''}>
-          📍 ${o.code}${distStr} • ${o.name || o.cluster_area} (Sisa: ${portsLeft}/${o.total_ports} Port) ${isCurrent ? '★ Rekomendasi Peta' : ''}
+          ${o.code}${distStr} • ${o.name || o.cluster_area} (Sisa: ${portsLeft}/${o.total_ports} Port) ${isCurrent ? '[Rekomendasi Peta]' : ''}
         </option>`;
       }).join('');
     }
