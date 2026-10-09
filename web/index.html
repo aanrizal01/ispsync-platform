@@ -2894,66 +2894,28 @@
     <!-- ══════════════════════════════════════════════════════════ -->
     <section id="tab-admin" class="hidden">
       <!-- 1. ADMIN / NEXUS MULTI-ROLE GATEWAY (Light Theme & Minimal) -->
-      <div id="admin-login-container" class="fixed inset-0 z-[9999999] overflow-y-auto bg-slate-50 font-sans selection:bg-blue-600 selection:text-white flex flex-col justify-between min-h-screen">
+      <div id="admin-login-container" class="fixed inset-0 z-[9999999] overflow-y-auto bg-slate-50 font-sans selection:bg-blue-600 selection:text-white flex items-center justify-center min-h-screen p-4 sm:p-6 md:p-8">
         
         <!-- Ambient Subtle Background Glows (Light Theme) -->
         <div class="fixed -top-40 -left-40 w-96 h-96 bg-cyan-200/40 rounded-full blur-3xl pointer-events-none"></div>
         <div class="fixed top-1/2 -right-40 w-96 h-96 bg-blue-200/40 rounded-full blur-3xl pointer-events-none"></div>
         <div class="fixed -bottom-40 left-1/3 w-96 h-96 bg-indigo-200/30 rounded-full blur-3xl pointer-events-none"></div>
 
-        <!-- Top Header Navigation Bar (Light Theme) -->
-        <header class="relative z-20 w-full px-5 sm:px-8 py-4 flex items-center justify-between border-b border-slate-200/80 bg-white/80 backdrop-blur-md shadow-2xs">
-          <div class="flex items-center gap-3.5">
-            <img id="nexus-topbar-brand-logo" src="" alt="Logo" class="h-9 w-auto object-contain shrink-0" onerror="this.style.display='none'; var fb = document.getElementById('nexus-topbar-fallback-logo'); if (fb) fb.classList.remove('hidden');" />
-            <div id="nexus-topbar-fallback-logo" class="hidden w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shrink-0">
-              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-            </div>
-            <div class="flex items-center gap-2.5">
-              <span id="nexus-topbar-brand-name" class="text-xl font-black tracking-tight text-slate-900 uppercase cust-brand-name-dynamic">DEV LAB</span>
-              <span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 text-cyan-700 border border-slate-200 shrink-0 whitespace-nowrap">
-                NEXUS OPERATIONAL GATEWAY
-              </span>
-            </div>
-          </div>
-          <div></div>
-        </header>
-
-        <!-- Central Showcase: 3 Interactive Division Cards (Minimal & Clean) -->
-        <main class="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-8 sm:py-12 max-w-7xl mx-auto w-full">
-          <!-- Central Headline (Minimal, No Subtitle / Badge as marked in red) -->
-          <div class="text-center mb-8 sm:mb-12 max-w-2xl px-2">
-            <h1 class="text-3xl sm:text-4xl xl:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
-              Pilih Divisi Penugasan <span id="nexus-hero-brand-name" class="bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">DEV LAB</span>
-            </h1>
-          </div>
-
-          <!-- 3 Cards Grid -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-6xl">
+        <!-- 3 Interactive Division Cards (Minimal & Clean) -->
+        <main class="relative z-10 flex items-center justify-center w-full max-w-6xl my-auto">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 w-full">
 
             <!-- CARD 1: SALES & MARKETING -->
-            <div onclick="openNexusLoginModal('sales')" class="group relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 hover:border-emerald-500 transition-all duration-300 shadow-md hover:shadow-2xl cursor-pointer flex flex-col justify-end min-h-[360px] sm:min-h-[420px] p-6 sm:p-7 text-left transform hover:-translate-y-1.5">
+            <div onclick="openNexusLoginModal('sales')" class="group relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 hover:border-emerald-500 transition-all duration-300 shadow-md hover:shadow-2xl cursor-pointer flex flex-col justify-end min-h-[380px] sm:min-h-[440px] p-6 sm:p-8 text-left transform hover:-translate-y-1.5">
               <!-- Background Image -->
               <img src="/web/nexus_sales.png" alt="Sales & Marketing" class="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105" />
               <!-- Dark Gradient Vignette Overlay inside Card -->
               <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/20 group-hover:via-slate-950/50 transition-all"></div>
-              
-              <!-- Card Badge (Top Left) -->
-              <div class="absolute top-5 left-5 z-10 flex items-center gap-2">
-                <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-slate-900/90 text-emerald-400 border border-emerald-500/40 backdrop-blur-md shadow-md flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                  PORTAL SALES
-                </span>
-              </div>
 
-              <!-- Card Content (Bottom - Clean without description text) -->
-              <div class="relative z-10 space-y-3">
-                <div class="w-11 h-11 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0 shadow-sm backdrop-blur-sm">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                </div>
-                <div>
-                  <h3 class="text-xl font-bold text-white group-hover:text-emerald-300 transition-colors">Sales &amp; Kemitraan</h3>
-                </div>
-                <div class="pt-1 flex items-center text-xs font-bold text-emerald-400 group-hover:text-emerald-300 gap-1.5">
+              <!-- Card Content (Bottom - Clean without badges or icons) -->
+              <div class="relative z-10 space-y-2">
+                <h3 class="text-2xl font-bold text-white group-hover:text-emerald-300 transition-colors">Sales &amp; Kemitraan</h3>
+                <div class="flex items-center text-xs font-bold text-emerald-400 group-hover:text-emerald-300 gap-1.5">
                   <span>Buka Login Sales</span>
                   <svg class="w-4 h-4 transform group-hover:translate-x-1.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                 </div>
@@ -2961,29 +2923,16 @@
             </div>
 
             <!-- CARD 2: NOC COMMAND CENTER -->
-            <div onclick="openNexusLoginModal('noc')" class="group relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 hover:border-cyan-500 transition-all duration-300 shadow-md hover:shadow-2xl cursor-pointer flex flex-col justify-end min-h-[360px] sm:min-h-[420px] p-6 sm:p-7 text-left transform hover:-translate-y-1.5">
+            <div onclick="openNexusLoginModal('noc')" class="group relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 hover:border-cyan-500 transition-all duration-300 shadow-md hover:shadow-2xl cursor-pointer flex flex-col justify-end min-h-[380px] sm:min-h-[440px] p-6 sm:p-8 text-left transform hover:-translate-y-1.5">
               <!-- Background Image -->
               <img src="/web/nexus_noc.png" alt="NOC Command Center" class="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105" />
               <!-- Dark Gradient Vignette Overlay inside Card -->
               <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/20 group-hover:via-slate-950/50 transition-all"></div>
 
-              <!-- Card Badge (Top Left) -->
-              <div class="absolute top-5 left-5 z-10 flex items-center gap-2">
-                <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-slate-900/90 text-cyan-400 border border-cyan-500/40 backdrop-blur-md shadow-md flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-                  NOC COMMAND
-                </span>
-              </div>
-
-              <!-- Card Content (Bottom - Clean without description text) -->
-              <div class="relative z-10 space-y-3">
-                <div class="w-11 h-11 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 flex items-center justify-center shrink-0 shadow-sm backdrop-blur-sm">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                </div>
-                <div>
-                  <h3 class="text-xl font-bold text-white group-hover:text-cyan-300 transition-colors">NOC Command Center</h3>
-                </div>
-                <div class="pt-1 flex items-center text-xs font-bold text-cyan-400 group-hover:text-cyan-300 gap-1.5">
+              <!-- Card Content (Bottom - Clean without badges or icons) -->
+              <div class="relative z-10 space-y-2">
+                <h3 class="text-2xl font-bold text-white group-hover:text-cyan-300 transition-colors">NOC Command Center</h3>
+                <div class="flex items-center text-xs font-bold text-cyan-400 group-hover:text-cyan-300 gap-1.5">
                   <span>Buka Login NOC</span>
                   <svg class="w-4 h-4 transform group-hover:translate-x-1.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                 </div>
@@ -2991,29 +2940,16 @@
             </div>
 
             <!-- CARD 3: TEKNISI LAPANGAN -->
-            <div onclick="openNexusLoginModal('technician')" class="group relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 hover:border-amber-500 transition-all duration-300 shadow-md hover:shadow-2xl cursor-pointer flex flex-col justify-end min-h-[360px] sm:min-h-[420px] p-6 sm:p-7 text-left transform hover:-translate-y-1.5">
+            <div onclick="openNexusLoginModal('technician')" class="group relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-900 hover:border-amber-500 transition-all duration-300 shadow-md hover:shadow-2xl cursor-pointer flex flex-col justify-end min-h-[380px] sm:min-h-[440px] p-6 sm:p-8 text-left transform hover:-translate-y-1.5">
               <!-- Background Image -->
               <img src="/web/nexus_teknisi.png" alt="Teknisi Lapangan" class="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105" />
               <!-- Dark Gradient Vignette Overlay inside Card -->
               <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/20 group-hover:via-slate-950/50 transition-all"></div>
 
-              <!-- Card Badge (Top Left) -->
-              <div class="absolute top-5 left-5 z-10 flex items-center gap-2">
-                <span class="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-slate-900/90 text-amber-400 border border-amber-500/40 backdrop-blur-md shadow-md flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-                  PORTAL TEKNISI
-                </span>
-              </div>
-
-              <!-- Card Content (Bottom - Clean without description text) -->
-              <div class="relative z-10 space-y-3">
-                <div class="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0 shadow-sm backdrop-blur-sm">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"/></svg>
-                </div>
-                <div>
-                  <h3 class="text-xl font-bold text-white group-hover:text-amber-300 transition-colors">Teknisi &amp; Lapangan</h3>
-                </div>
-                <div class="pt-1 flex items-center text-xs font-bold text-amber-400 group-hover:text-amber-300 gap-1.5">
+              <!-- Card Content (Bottom - Clean without badges or icons) -->
+              <div class="relative z-10 space-y-2">
+                <h3 class="text-2xl font-bold text-white group-hover:text-amber-300 transition-colors">Teknisi &amp; Lapangan</h3>
+                <div class="flex items-center text-xs font-bold text-amber-400 group-hover:text-amber-300 gap-1.5">
                   <span>Buka Login Teknisi</span>
                   <svg class="w-4 h-4 transform group-hover:translate-x-1.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                 </div>
@@ -3022,12 +2958,6 @@
 
           </div>
         </main>
-
-        <!-- Footer Bar (Light Theme) -->
-        <footer class="relative z-20 w-full px-5 sm:px-8 py-4 flex flex-col sm:flex-row items-center justify-between border-t border-slate-200/80 bg-white/80 backdrop-blur-md text-xs text-slate-500 gap-2">
-          <p id="nexus-copyright" class="text-[11px] text-slate-500"></p>
-          <span class="font-mono text-[11px] text-slate-400">v3.2-carrier &bull; ISPSYNC Nexus Engine</span>
-        </footer>
 
         <!-- ══════════════════════════════════════════════════════════ -->
         <!-- FLOATING LOGIN MODAL WITH BLURRED BACKDROP (Light Theme)  -->
@@ -3040,25 +2970,10 @@
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
 
-            <!-- Modal Header Brand -->
-            <div class="flex items-center gap-3 mb-4">
-              <img id="nexus-modal-brand-logo" src="" alt="Logo" class="h-9 w-auto object-contain shrink-0" onerror="this.style.display='none'" />
-              <div>
-                <div class="flex items-center gap-2">
-                  <span id="nexus-modal-brand-name" class="font-black text-lg text-slate-900 tracking-tight uppercase">DEV LAB</span>
-                  <span id="nexus-modal-badge" class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 text-cyan-700 border border-slate-200">
-                    NOC COMMAND
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Modal Title & Description -->
-            <div class="mb-6">
-              <h2 id="nexus-modal-title" class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">NOC COMMAND CENTER</h2>
-              <p id="nexus-modal-desc" class="text-xs text-slate-500 mt-1 leading-relaxed">
-                Masukkan identitas operator NOC untuk mengakses dashboard monitoring jaringan.
-              </p>
+            <!-- Centered Modal Brand Logo & Title -->
+            <div class="text-center mb-6 pt-1">
+              <img id="nexus-modal-brand-logo" src="" alt="Logo" class="h-10 w-auto max-w-[200px] object-contain mx-auto mb-3.5" onerror="this.style.display='none'" />
+              <h2 id="nexus-modal-title" class="text-xl sm:text-2xl font-black tracking-tight text-slate-900 uppercase">NOC COMMAND CENTER</h2>
             </div>
 
             <!-- 1. FORM NOC -->
