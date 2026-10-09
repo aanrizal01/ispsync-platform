@@ -32,6 +32,7 @@ const routeMap: Record<string, { category: string; title: string }> = {
   "/admin/partners": { category: "Jaringan & Infra", title: "Mitra ISP" },
   "/admin/notifications": { category: "Sistem & Keamanan", title: "Pusat Notifikasi" },
   "/admin/users": { category: "Sistem & Keamanan", title: "Pengguna & Staf" },
+  "/admin/roles": { category: "Sistem & Keamanan", title: "Peran & Hak Akses" },
   "/admin/audit-logs": { category: "Sistem & Keamanan", title: "Audit Trail Log" },
   "/admin/settings": { category: "Sistem & Keamanan", title: "Pengaturan Sistem" },
 };
@@ -74,7 +75,8 @@ export default function AdminLayout({
 
       const up = slug && slug !== "ispsync" ? slug.toUpperCase() : "ISPSYNC";
       setTenantName(up);
-      document.title = `${up} Ledger | Admin Dashboard`;
+      const pageInfo = routeMap[pathname];
+      document.title = pageInfo ? `${pageInfo.title} | ${up} Ledger` : `${up} Ledger | Admin Dashboard`;
 
       const iconEl = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
       if (iconEl) {
@@ -88,7 +90,7 @@ export default function AdminLayout({
         }
       }
     }
-  }, [user]);
+  }, [user, pathname]);
 
   // Tenant Domain Redirection Guard (Prevent accidental cross-tenant dashboard access)
   useEffect(() => {

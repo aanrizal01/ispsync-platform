@@ -31,6 +31,7 @@ type Role struct {
 	Slug        string       `json:"slug"`
 	Description string       `json:"description"`
 	IsSystem    bool         `json:"is_system"`
+	TenantSlug  string       `json:"tenant_slug,omitempty"`
 	UserCount   int          `json:"user_count"`
 	Permissions []Permission `json:"permissions"`
 }
@@ -74,7 +75,8 @@ func (c *Claims) HasPermission(perm string) bool {
 	// Fallback for active admin sessions minted before new permission slugs were introduced
 	if !c.IsCustomer() && c.hasRawPermission("admin:users") {
 		switch perm {
-		case "partners:read", "partners:write",
+		case "admin:roles",
+			"partners:read", "partners:write",
 			"billing:read", "billing:write",
 			"notifications:read", "notifications:write",
 			"network:write":

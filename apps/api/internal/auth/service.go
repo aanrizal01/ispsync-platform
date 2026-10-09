@@ -428,9 +428,9 @@ func (s *Service) DeleteUser(ctx context.Context, id uuid.UUID, callerEmail stri
 	return s.repo.DeleteUser(ctx, id)
 }
 
-// ListRoles returns available system roles.
-func (s *Service) ListRoles(ctx context.Context) ([]Role, error) {
-	return s.repo.ListRoles(ctx)
+// ListRoles returns available system roles and tenant custom roles.
+func (s *Service) ListRoles(ctx context.Context, tenantSlug, callerEmail string) ([]Role, error) {
+	return s.repo.ListRoles(ctx, tenantSlug, callerEmail)
 }
 
 // ListPermissions returns all available system permissions.
@@ -438,8 +438,8 @@ func (s *Service) ListPermissions(ctx context.Context) ([]Permission, error) {
 	return s.repo.ListPermissions(ctx)
 }
 
-// CreateRole creates a new custom role.
-func (s *Service) CreateRole(ctx context.Context, req CreateRoleRequest) (*Role, error) {
+// CreateRole creates a new custom role scoped to tenantSlug.
+func (s *Service) CreateRole(ctx context.Context, req CreateRoleRequest, tenantSlug string) (*Role, error) {
 	name := strings.TrimSpace(req.Name)
 	if name == "" {
 		return nil, apperrors.BadRequest("Nama peran wajib diisi")
@@ -450,19 +450,46 @@ func (s *Service) CreateRole(ctx context.Context, req CreateRoleRequest) (*Role,
 	}
 	slug = strings.ToLower(regexp.MustCompile(`[^a-zA-Z0-9_-]`).ReplaceAllString(slug, "_"))
 
-	return s.repo.CreateRole(ctx, name, slug, strings.TrimSpace(req.Description), req.PermissionIDs)
+	return s.repo.CreateRole(ctx, name, slug, strings.TrimSpace(req.Description), tenantSlug, req.PermissionIDs)
 }
 
-// UpdateRole updates an existing role.
-func (s *Service) UpdateRole(ctx context.Context, id uuid.UUID, req UpdateRoleRequest) error {
+// UpdateRole updates an existing role with tenant protection.
+func (s *Service) UpdateRole(ctx context.Context, id uuid.UUID, req UpdateRoleRequest, tenantSlug, callerEmail string) error {
 	name := strings.TrimSpace(req.Name)
 	if name == "" {
 		return apperrors.BadRequest("Nama peran wajib diisi")
 	}
+
+	targetRole, err := s.repo.GetRoleByID(ctx, id)
+	if err != nil {
+		return apperrors.NotFound("Peran")
+	}
+
+	isRoot := strings.EqualFold(callerEmail, "private@ispsync.id") || strings.EqualFold(callerEmail, "admin@ispsync.id")
+	if targetRole.IsSystem && !isRoot {
+		return apperrors.Forbidden("Peran sistem bawaan platform dilindungi dan tidak dapat diubah oleh tenant")
+	}
+	if !isRoot && targetRole.TenantSlug != "" && tenantSlug != "" && !strings.EqualFold(targetRole.TenantSlug, tenantSlug) {
+		return apperrors.Forbidden("Peran ini bukan milik organisasi/tenant Anda")
+	}
+
 	return s.repo.UpdateRole(ctx, id, name, strings.TrimSpace(req.Description), req.PermissionIDs)
 }
 
-// DeleteRole deletes a role.
-func (s *Service) DeleteRole(ctx context.Context, id uuid.UUID) error {
+// DeleteRole deletes a role with tenant protection.
+func (s *Service) DeleteRole(ctx context.Context, id uuid.UUID, tenantSlug, callerEmail string) error {
+	targetRole, err := s.repo.GetRoleByID(ctx, id)
+	if err != nil {
+		return apperrors.NotFound("Peran")
+	}
+
+	isRoot := strings.EqualFold(callerEmail, "private@ispsync.id") || strings.EqualFold(callerEmail, "admin@ispsync.id")
+	if targetRole.IsSystem {
+		return apperrors.Forbidden("Peran sistem bawaan platform dilindungi dan tidak dapat dihapus")
+	}
+	if !isRoot && targetRole.TenantSlug != "" && tenantSlug != "" && !strings.EqualFold(targetRole.TenantSlug, tenantSlug) {
+		return apperrors.Forbidden("Peran ini bukan milik organisasi/tenant Anda")
+	}
+
 	return s.repo.DeleteRole(ctx, id)
 }

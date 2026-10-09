@@ -321,17 +321,24 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) RoleRoutes(r chi.Router, authMW *Middleware) {
 	r.Group(func(r chi.Router) {
 		r.Use(authMW.Authenticate)
-		r.With(authMW.RequirePermission("admin:users")).Get("/", h.ListRoles)
-		r.With(authMW.RequirePermission("admin:users")).Get("/permissions", h.ListPermissions)
-		r.With(authMW.RequirePermission("admin:users")).Post("/", h.CreateRole)
-		r.With(authMW.RequirePermission("admin:users")).Put("/{id}", h.UpdateRole)
-		r.With(authMW.RequirePermission("admin:users")).Delete("/{id}", h.DeleteRole)
+		r.With(authMW.RequireAnyPermission("admin:roles", "admin:users")).Get("/", h.ListRoles)
+		r.With(authMW.RequireAnyPermission("admin:roles", "admin:users")).Get("/permissions", h.ListPermissions)
+		r.With(authMW.RequirePermission("admin:roles")).Post("/", h.CreateRole)
+		r.With(authMW.RequirePermission("admin:roles")).Put("/{id}", h.UpdateRole)
+		r.With(authMW.RequirePermission("admin:roles")).Delete("/{id}", h.DeleteRole)
 	})
 }
 
 // ListRoles handles GET /api/v1/users/roles or GET /api/v1/roles
 func (h *Handler) ListRoles(w http.ResponseWriter, r *http.Request) {
-	roles, err := h.service.ListRoles(r.Context())
+	claims := ClaimsFromContext(r.Context())
+	callerEmail := ""
+	if claims != nil {
+		callerEmail = claims.Email
+	}
+	tenantSlug := ExtractTenantSlug(r)
+
+	roles, err := h.service.ListRoles(r.Context(), tenantSlug, callerEmail)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -357,13 +364,15 @@ func (h *Handler) ListPermissions(w http.ResponseWriter, r *http.Request) {
 
 // CreateRole handles POST /api/v1/roles
 func (h *Handler) CreateRole(w http.ResponseWriter, r *http.Request) {
+	tenantSlug := ExtractTenantSlug(r)
+
 	var req CreateRoleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		middleware.JSONError(w, h.logger, apperrors.BadRequest("Format payload peran tidak valid"))
 		return
 	}
 
-	role, err := h.service.CreateRole(r.Context(), req)
+	role, err := h.service.CreateRole(r.Context(), req, tenantSlug)
 	if err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
@@ -374,6 +383,13 @@ func (h *Handler) CreateRole(w http.ResponseWriter, r *http.Request) {
 
 // UpdateRole handles PUT /api/v1/roles/{id}
 func (h *Handler) UpdateRole(w http.ResponseWriter, r *http.Request) {
+	claims := ClaimsFromContext(r.Context())
+	callerEmail := ""
+	if claims != nil {
+		callerEmail = claims.Email
+	}
+	tenantSlug := ExtractTenantSlug(r)
+
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -387,7 +403,7 @@ func (h *Handler) UpdateRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.UpdateRole(r.Context(), id, req); err != nil {
+	if err := h.service.UpdateRole(r.Context(), id, req, tenantSlug, callerEmail); err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
 	}
@@ -400,6 +416,13 @@ func (h *Handler) UpdateRole(w http.ResponseWriter, r *http.Request) {
 
 // DeleteRole handles DELETE /api/v1/roles/{id}
 func (h *Handler) DeleteRole(w http.ResponseWriter, r *http.Request) {
+	claims := ClaimsFromContext(r.Context())
+	callerEmail := ""
+	if claims != nil {
+		callerEmail = claims.Email
+	}
+	tenantSlug := ExtractTenantSlug(r)
+
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -407,7 +430,7 @@ func (h *Handler) DeleteRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.DeleteRole(r.Context(), id); err != nil {
+	if err := h.service.DeleteRole(r.Context(), id, tenantSlug, callerEmail); err != nil {
 		middleware.JSONError(w, h.logger, err)
 		return
 	}

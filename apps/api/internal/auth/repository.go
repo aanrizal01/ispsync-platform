@@ -377,14 +377,35 @@ func (r *Repository) DeleteUser(ctx context.Context, id uuid.UUID) error {
 }
 
 // ListRoles returns all roles with their assigned permissions and active user count.
-func (r *Repository) ListRoles(ctx context.Context) ([]Role, error) {
-	const q = `
-		SELECT r.id, r.name, r.slug, COALESCE(r.description, ''), r.is_system,
-		       (SELECT COUNT(*) FROM user_roles ur WHERE ur.role_id = r.id) as user_count
-		FROM roles r
-		ORDER BY r.is_system DESC, r.name ASC
-	`
-	rows, err := r.db.Query(ctx, q)
+// ListRoles returns all roles with their assigned permissions and active user count.
+// For tenant users, returns system roles (excluding super_admin) plus custom roles for the tenant.
+// User count is scoped to users belonging to the caller's tenant.
+func (r *Repository) ListRoles(ctx context.Context, tenantSlug, callerEmail string) ([]Role, error) {
+	isRoot := strings.EqualFold(callerEmail, "private@ispsync.id") || strings.EqualFold(callerEmail, "admin@ispsync.id")
+
+	var q string
+	var args []interface{}
+
+	if isRoot {
+		q = `
+			SELECT r.id, r.name, r.slug, COALESCE(r.description, ''), r.is_system, COALESCE(r.tenant_slug, ''),
+			       (SELECT COUNT(*) FROM user_roles ur JOIN users u ON ur.user_id = u.id WHERE ur.role_id = r.id AND u.deleted_at IS NULL) as user_count
+			FROM roles r
+			ORDER BY r.is_system DESC, r.name ASC
+		`
+	} else {
+		q = `
+			SELECT r.id, r.name, r.slug, COALESCE(r.description, ''), r.is_system, COALESCE(r.tenant_slug, ''),
+			       (SELECT COUNT(*) FROM user_roles ur JOIN users u ON ur.user_id = u.id WHERE ur.role_id = r.id AND u.deleted_at IS NULL AND (u.tenant_slug = $1 OR ($1 = '' AND u.tenant_slug = 'dev'))) as user_count
+			FROM roles r
+			WHERE (r.is_system = TRUE AND r.slug != 'super_admin')
+			   OR (r.tenant_slug != '' AND r.tenant_slug = $1)
+			ORDER BY r.is_system DESC, r.name ASC
+		`
+		args = append(args, tenantSlug)
+	}
+
+	rows, err := r.db.Query(ctx, q, args...)
 	if err != nil {
 		return nil, fmt.Errorf("list roles: %w", err)
 	}
@@ -394,7 +415,7 @@ func (r *Repository) ListRoles(ctx context.Context) ([]Role, error) {
 	roleMap := make(map[uuid.UUID]int)
 	for rows.Next() {
 		var role Role
-		if err := rows.Scan(&role.ID, &role.Name, &role.Slug, &role.Description, &role.IsSystem, &role.UserCount); err != nil {
+		if err := rows.Scan(&role.ID, &role.Name, &role.Slug, &role.Description, &role.IsSystem, &role.TenantSlug, &role.UserCount); err != nil {
 			return nil, fmt.Errorf("scan role: %w", err)
 		}
 		role.Permissions = []Permission{}
@@ -429,6 +450,21 @@ func (r *Repository) ListRoles(ctx context.Context) ([]Role, error) {
 	return roles, nil
 }
 
+// GetRoleByID returns a single role by ID.
+func (r *Repository) GetRoleByID(ctx context.Context, id uuid.UUID) (*Role, error) {
+	const q = `
+		SELECT id, name, slug, COALESCE(description, ''), is_system, COALESCE(tenant_slug, '')
+		FROM roles
+		WHERE id = $1
+	`
+	var role Role
+	err := r.db.QueryRow(ctx, q, id).Scan(&role.ID, &role.Name, &role.Slug, &role.Description, &role.IsSystem, &role.TenantSlug)
+	if err != nil {
+		return nil, err
+	}
+	return &role, nil
+}
+
 // ListPermissions returns all available system permissions grouped by module.
 func (r *Repository) ListPermissions(ctx context.Context) ([]Permission, error) {
 	const q = `
@@ -453,8 +489,8 @@ func (r *Repository) ListPermissions(ctx context.Context) ([]Permission, error) 
 	return perms, rows.Err()
 }
 
-// CreateRole creates a new custom role with associated permissions.
-func (r *Repository) CreateRole(ctx context.Context, name, slug, description string, permIDs []uuid.UUID) (*Role, error) {
+// CreateRole creates a new custom role scoped to tenantSlug with associated permissions.
+func (r *Repository) CreateRole(ctx context.Context, name, slug, description, tenantSlug string, permIDs []uuid.UUID) (*Role, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
@@ -466,14 +502,15 @@ func (r *Repository) CreateRole(ctx context.Context, name, slug, description str
 	role.Slug = slug
 	role.Description = description
 	role.IsSystem = false
+	role.TenantSlug = tenantSlug
 	role.Permissions = []Permission{}
 
 	const insertRole = `
-		INSERT INTO roles (name, slug, description, is_system, created_at, updated_at)
-		VALUES ($1, $2, $3, FALSE, NOW(), NOW())
+		INSERT INTO roles (name, slug, description, is_system, tenant_slug, created_at, updated_at)
+		VALUES ($1, $2, $3, FALSE, $4, NOW(), NOW())
 		RETURNING id
 	`
-	if err := tx.QueryRow(ctx, insertRole, name, slug, description).Scan(&role.ID); err != nil {
+	if err := tx.QueryRow(ctx, insertRole, name, slug, description, tenantSlug).Scan(&role.ID); err != nil {
 		return nil, fmt.Errorf("insert role: %w", err)
 	}
 
