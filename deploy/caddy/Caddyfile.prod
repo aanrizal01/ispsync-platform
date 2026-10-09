@@ -93,12 +93,12 @@ https:// {
         Pragma "no-cache"
     }
 
-    # 0. Block legacy cms.* subdomain
-    @legacy_cms {
-        header_regexp Host ^cms\.
+    # 0. Policy Subdomain Tunggal: Block deprecated single-level non-tenant subdomains
+    @deprecated_single_level {
+        header_regexp Host ^(cms|portal|sales|teknisi|technician|billing|ledger|noc|noc-fo|fttx|fibergrid|nexus|rekan|carrier|wifi|hotspot|passpoint|admin)\.ispsync\.id$
     }
-    handle @legacy_cms {
-        respond "Subdomain 'cms' sudah diganti! Gunakan billing.*, portal.*, atau fttx.* sesuai arsitektur 3 Engine ISPSYNC." 403 {
+    handle @deprecated_single_level {
+        respond "Subdomain single-level tanpa nama tenant telah dinonaktifkan. Seluruh operasional wajib menggunakan format multi-tenant: {modul}.{tenant}.ispsync.id atau {tenant}.ispsync.id" 404 {
             close
         }
     }

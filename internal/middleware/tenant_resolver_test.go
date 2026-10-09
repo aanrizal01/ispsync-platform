@@ -75,3 +75,40 @@ func TestNexusSubdomainResolution(t *testing.T) {
 		handler.ServeHTTP(w, req)
 	}
 }
+
+func TestDeprecatedSingleLevelSubdomainsBlocked(t *testing.T) {
+	mock := &mockStorage{}
+	handler := middleware.TenantResolver(mock, "ispsync.id")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("OK"))
+	}))
+
+	blockedHosts := []string{
+		"portal.ispsync.id",
+		"nexus.ispsync.id",
+		"cms.ispsync.id",
+		"sales.ispsync.id",
+		"teknisi.ispsync.id",
+		"billing.ispsync.id",
+		"ledger.ispsync.id",
+		"noc.ispsync.id",
+		"fttx.ispsync.id",
+		"fibergrid.ispsync.id",
+		"wifi.ispsync.id",
+		"hotspot.ispsync.id",
+		"passpoint.ispsync.id",
+		"rekan.ispsync.id",
+		"carrier.ispsync.id",
+		"admin.ispsync.id",
+	}
+
+	for _, host := range blockedHosts {
+		req := httptest.NewRequest("GET", "http://"+host+"/", nil)
+		w := httptest.NewRecorder()
+		handler.ServeHTTP(w, req)
+
+		if w.Code != http.StatusNotFound {
+			t.Errorf("Host %s: expected status 404, got %d", host, w.Code)
+		}
+	}
+}

@@ -4,8 +4,9 @@
 * **Nama Resmi**: ISPSYNC Ledger
 * **Peran Arsitektur**: Engine 3 (Financial, Invoicing, Billing & AAA)
 * **Port Standar**: `8080` (API Backend) & `3000` (Next.js Frontend)
-* **Subdomain Template**: `billing.{tenant}.ispsync.id`, `ispsync.id/member`
-* **Domain Staging**: `https://billing.dev.ispsync.id`
+* **Subdomain Template**: `billing.{tenant}.ispsync.id`, `ledger.{tenant}.ispsync.id`, `wifi.{tenant}.ispsync.id`
+* **Policy Subdomain**: Subdomain single-level tanpa nama tenant (`billing.ispsync.id`, `ledger.ispsync.id`, `cms.ispsync.id`, `wifi.ispsync.id`) resmi **dinonaktifkan & diblokir** (HTTP 404 & ditolak On-Demand TLS). Seluruh operasional wajib menggunakan format `{tenant}` aktif.
+* **Domain Staging**: `https://billing.dev.ispsync.id` & `https://ledger.dev.ispsync.id`
 * **Target Pengguna**: Bagian Keuangan/Finance, Kasir Loket Resmi, Superadmin Billing.
 
 ---

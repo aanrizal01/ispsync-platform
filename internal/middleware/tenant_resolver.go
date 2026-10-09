@@ -143,14 +143,19 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 						}
 					} else {
 						// Subdomain tunggal level 1 (contoh: nexus.ispsync.id, portal.ispsync.id, ispku.ispsync.id)
-						if sub == "nexus" || sub == "portal" || sub == "sales" || sub == "teknisi" {
-							// Subdomain engine master tanpa tenant tidak boleh membajak tenant tertentu
-							tenantSlug = ""
-						} else {
-							// Subdomain murni tenant: ispku.ispsync.id
-							tenantSlug = sub
-							appType = domain.AppPortal
+						blockedSingleLevel := map[string]bool{
+							"cms": true, "portal": true, "sales": true, "teknisi": true, "technician": true,
+							"billing": true, "ledger": true, "noc": true, "noc-fo": true, "fttx": true,
+							"fibergrid": true, "nexus": true, "rekan": true, "carrier": true, "wifi": true,
+							"hotspot": true, "passpoint": true, "admin": true,
 						}
+						if blockedSingleLevel[sub] {
+							http.Error(w, `{"error":"Policy Subdomain Tunggal: Subdomain single-level tanpa nama tenant telah dinonaktifkan. Silakan gunakan format {modul}.{tenant}.ispsync.id atau {tenant}.ispsync.id"}`, http.StatusNotFound)
+							return
+						}
+						// Subdomain murni tenant: ispku.ispsync.id
+						tenantSlug = sub
+						appType = domain.AppPortal
 					}
 				} else if len(parts) >= 3 && (parts[len(parts)-1] == "localhost" || parts[len(parts)-1] == "test") {
 					// {app}.{tenant}.localhost
@@ -193,9 +198,8 @@ func TenantResolver(store repository.Storage, baseDomain string) func(http.Handl
 			}
 
 			if err != nil || tenant == nil {
-				// Fallback HANYA untuk root platform, localhost, atau dev environment.
-				// Jangan pernah bocorkan tenant 'ispku' jika request memiliki subdomain tenant spesifik!
-				if tenantSlug == "" || tenantSlug == "localhost" || tenantSlug == "dev" {
+				// Fallback HANYA untuk root platform, localhost, atau dev environment murni tanpa subdomain
+				if (host == baseDomain || host == "www."+baseDomain || host == "localhost" || host == "127.0.0.1") && (tenantSlug == "" || tenantSlug == "ispku") {
 					tenant, _ = store.GetTenantBySlug(r.Context(), "ispku")
 				}
 			}

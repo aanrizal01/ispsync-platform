@@ -1488,13 +1488,56 @@ func (s *SQLiteStorage) ValidateDomainForTLS(ctx context.Context, domainName str
 	if d == "" {
 		return false
 	}
-	// Reject non-tenant subdomains that have been deactivated
-	if d == "cms.ispsync.id" {
-		return false
-	}
-	if d == "ispsync.id" || strings.HasSuffix(d, ".ispsync.id") {
+	// Platform / System canonical root domains
+	if d == "ispsync.id" || d == "www.ispsync.id" || d == "member.ispsync.id" || d == "ipam.ispsync.id" {
 		return true
 	}
+
+	// Policy Subdomain Tunggal Tanpa Tenant: Blokir domain single-level tanpa nama tenant
+	blockedSingleLevel := map[string]bool{
+		"cms":        true,
+		"portal":     true,
+		"sales":      true,
+		"teknisi":    true,
+		"technician": true,
+		"billing":    true,
+		"ledger":     true,
+		"noc":        true,
+		"noc-fo":     true,
+		"fttx":       true,
+		"fibergrid":  true,
+		"nexus":      true,
+		"rekan":      true,
+		"carrier":    true,
+		"wifi":       true,
+		"hotspot":    true,
+		"passpoint":  true,
+		"admin":      true,
+	}
+
+	if strings.HasSuffix(d, ".ispsync.id") {
+		sub := strings.TrimSuffix(d, ".ispsync.id")
+		parts := strings.Split(sub, ".")
+		if len(parts) == 1 {
+			// Single-level subdomain: parts[0].ispsync.id
+			if blockedSingleLevel[parts[0]] {
+				return false
+			}
+			// Only allow if parts[0] is an active tenant slug
+			var count int
+			_ = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM tenants WHERE LOWER(slug) = ? AND status = 'ACTIVE'", parts[0]).Scan(&count)
+			return count > 0
+		}
+		// Multi-level subdomain: {modul}.{tenant}.ispsync.id (or {sub}.{modul}.{tenant}.ispsync.id)
+		tenantSlug := parts[len(parts)-1]
+		if blockedSingleLevel[tenantSlug] {
+			return false
+		}
+		var count int
+		_ = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM tenants WHERE LOWER(slug) = ? AND status = 'ACTIVE'", tenantSlug).Scan(&count)
+		return count > 0
+	}
+
 	var count int
 	_ = s.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM tenants WHERE (LOWER(custom_domain) = ? OR ? LIKE '%.' || LOWER(custom_domain)) AND status = 'ACTIVE'", d, d).Scan(&count)
 	return count > 0

@@ -5,6 +5,7 @@
 * **Peran Arsitektur**: Engine 1 (Physical, Infrastructure & Wholesale B2B)
 * **Port Standar**: `8082`
 * **Subdomain Template**: `fibergrid.{tenant}.ispsync.id` *(alias: `fttx.{tenant}.ispsync.id`)*
+* **Policy Subdomain**: Subdomain single-level tanpa nama tenant (`fibergrid.ispsync.id`, `fttx.ispsync.id`) resmi **dinonaktifkan & diblokir** (HTTP 404 & ditolak On-Demand TLS). Seluruh operasional wajib menggunakan format `{tenant}` aktif.
 * **Domain Staging**: `https://fibergrid.dev.ispsync.id` *(atau `https://fttx.dev.ispsync.id`)*
 * **Target Pengguna**: Core Fiber Engineering, Splicer FO, Admin Wholesale Jartaplok.
 

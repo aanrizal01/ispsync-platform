@@ -34,8 +34,10 @@
   * Tenant dapat memetakan domain sendiri (contoh: `billing.ispku.net` CNAME $\rightarrow$ `ispsync.id`).
   * **Zero-Touch On-Demand TLS**: Caddy Web Server mengonfirmasi kepemilikan domain via webhook `GET http://172.18.0.1:8082/api/v1/caddy/ask?domain={domain}`.
 * **Policy Subdomain Tunggal Tanpa Tenant (DEPRECATED & NON-AKTIF)**:
-  * Subdomain single-level tanpa nama tenant (`cms.ispsync.id`, `portal.ispsync.id`, `sales.ispsync.id`, `teknisi.ispsync.id`, `billing.ispsync.id`, `noc.ispsync.id`, `fttx.ispsync.id`) telah **resmi dinonaktifkan & diblokir** (HTTP 404 & On-Demand TLS ditolak otomatis via webhook ask).
+  * Subdomain single-level tanpa nama tenant (`cms.ispsync.id`, `portal.ispsync.id`, `sales.ispsync.id`, `teknisi.ispsync.id`, `billing.ispsync.id`, `ledger.ispsync.id`, `noc.ispsync.id`, `noc-fo.ispsync.id`, `fttx.ispsync.id`, `fibergrid.ispsync.id`, `nexus.ispsync.id`, `rekan.ispsync.id`, `carrier.ispsync.id`, `wifi.ispsync.id`, `hotspot.ispsync.id`, `passpoint.ispsync.id`, `admin.ispsync.id`) telah **resmi dinonaktifkan & diblokir** (HTTP 404 & On-Demand TLS ditolak otomatis via webhook ask).
   * Seluruh operasional wajib menggunakan format multi-tenant: `{modul}.{tenant}.ispsync.id` atau `{tenant}.ispsync.id`.
+  * Endpoint webhook Caddy `/api/v1/caddy/ask` menolak On-Demand TLS (HTTP 403 Forbidden) untuk seluruh single-level modul tanpa tenant, mencegah penerbitan sertifikat SSL otomatis.
+  * Router Edge Caddy mengembalikan HTTP 404 langsung di perimeter gateway sebelum request diteruskan ke engine backend.
 
 ---
 
