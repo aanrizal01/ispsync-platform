@@ -382,8 +382,9 @@ export async function POST(req: NextRequest) {
 
       // Safely delete ONLY the single target tenant at targetIdx
       members.splice(targetIdx, 1);
-      db.members = members;
-      saveMembersData(db);
+      if (!saveMembersData(db)) {
+        return NextResponse.json({ error: "Gagal menyimpan perubahan ke database file server (EACCES/Permission Denied)." }, { status: 500 });
+      }
 
       return NextResponse.json({
         success: true,
