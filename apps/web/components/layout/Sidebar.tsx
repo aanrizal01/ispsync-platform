@@ -158,6 +158,12 @@ const navSections: NavSection[] = [
         permission: "radius:read",
       },
       {
+        label: "Integrasi VPN & NAS",
+        href: "/admin/vpn",
+        icon: Server,
+        permission: "network:read",
+      },
+      {
         label: "Mitra ISP",
         href: "/admin/partners",
         icon: Handshake,
