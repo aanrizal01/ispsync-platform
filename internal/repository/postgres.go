@@ -2774,10 +2774,3 @@ func (s *PostgresStorage) UpdateTicket(ctx context.Context, t *domain.Ticket) er
 		t.Title, nilIfEmpty(t.Description), t.Status, t.Priority, nilIfEmpty(t.Category), nilIfEmpty(t.AssigneeID), t.UpdatedAt, t.ID, t.TenantID)
 	return err
 }
-
-func nilIfEmpty(s string) interface{} {
-	if s == "" {
-		return nil
-	}
-	return s
-}

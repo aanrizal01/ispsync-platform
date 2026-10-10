@@ -112,3 +112,10 @@ type Storage interface {
 }
 
 
+
+func nilIfEmpty(s string) interface{} {
+	if s == "" {
+		return nil
+	}
+	return s
+}
