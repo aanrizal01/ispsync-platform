@@ -818,7 +818,7 @@ export default function SaaSAdminTenantsPage() {
                           <div className="relative inline-block text-left">
                             <button
                               onClick={(e) => {
-                                e.stopPropagation();
+                                e.stopPropagation(); e.nativeEvent.stopImmediatePropagation();
                                 setOpenDropdownId(openDropdownId === t.id ? null : t.id);
                               }}
                               className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors"
@@ -872,7 +872,7 @@ export default function SaaSAdminTenantsPage() {
                                 </div>
                                 <button
                                   onClick={(e) => {
-                                    e.stopPropagation();
+                                    e.stopPropagation(); e.nativeEvent.stopImmediatePropagation();
                                     openEditModal(t);
                                     setOpenDropdownId(null);
                                   }}
@@ -887,7 +887,7 @@ export default function SaaSAdminTenantsPage() {
                                   <>
                                     <button
                                       onClick={(e) => {
-                                        e.stopPropagation();
+                                        e.stopPropagation(); e.nativeEvent.stopImmediatePropagation();
                                         handleToggleStatus(t);
                                         setOpenDropdownId(null);
                                       }}
@@ -902,7 +902,7 @@ export default function SaaSAdminTenantsPage() {
                                     
                                     <button
                                       onClick={(e) => {
-                                        e.stopPropagation();
+                                        e.stopPropagation(); e.nativeEvent.stopImmediatePropagation();
                                         openDeleteModal(t);
                                         setOpenDropdownId(null);
                                       }}
