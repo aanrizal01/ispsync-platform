@@ -73,7 +73,7 @@ type GatewayStats = {
 };
 
 export default function GatewayManagementPage() {
-  const { member, loading: memberLoading } = useMember();
+  const { member, loading: memberLoading, token } = useMember();
   const [gatewayInfo, setGatewayInfo] = useState<GatewayMeta | null>(null);
   const [stats, setStats] = useState<GatewayStats | null>(null);
   const [domains, setDomains] = useState<DomainItem[]>([]);
@@ -105,7 +105,12 @@ export default function GatewayManagementPage() {
   const fetchGatewayData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/member/gateway");
+      const res = await fetch("/api/member/gateway", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        }
+      });
       const data = await res.json();
       if (data.success) {
         setGatewayInfo(data.gatewayInfo);
@@ -120,8 +125,10 @@ export default function GatewayManagementPage() {
   };
 
   useEffect(() => {
-    fetchGatewayData();
-  }, []);
+    if (token) {
+      fetchGatewayData();
+    }
+  }, [token]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -145,7 +152,7 @@ export default function GatewayManagementPage() {
       // 1. Verify DNS
       const dnsRes = await fetch("/api/member/gateway", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ action: "verify_dns", domain: domainToTest })
       });
       const dnsData = await dnsRes.json();
@@ -169,7 +176,7 @@ export default function GatewayManagementPage() {
 
       const askRes = await fetch("/api/member/gateway", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ action: "test_caddy_ask", domain: domainToTest })
       });
       const askData = await askRes.json();
@@ -191,7 +198,7 @@ export default function GatewayManagementPage() {
 
       const sslRes = await fetch("/api/member/gateway", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ action: "probe_ssl", domain: domainToTest })
       });
       const sslData = await sslRes.json();
@@ -223,7 +230,7 @@ export default function GatewayManagementPage() {
     try {
       const res = await fetch("/api/member/gateway", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           action: "set_custom_domain",
           tenantSlug: selectedTenantSlug,
