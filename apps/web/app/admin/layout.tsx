@@ -16,6 +16,7 @@ import {
 const routeMap: Record<string, { category: string; title: string }> = {
   "/admin/dashboard": { category: "Utama", title: "Dashboard Monitoring" },
   "/admin/customers": { category: "Pelanggan & Layanan", title: "Data Pelanggan" },
+  "/admin/vpn": { category: "Pelanggan & Layanan", title: "VPN Pelanggan" },
   "/admin/subscriptions": { category: "Pelanggan & Layanan", title: "Langganan Internet" },
   "/admin/plans": { category: "Pelanggan & Layanan", title: "Paket Internet" },
   "/admin/billing": { category: "Billing & Keuangan", title: "Invoice Tagihan" },

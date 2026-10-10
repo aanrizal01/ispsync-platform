@@ -24,7 +24,7 @@ type Staff = {
 };
 
 export default function StaffManagementPage() {
-  const { member, loading } = useMember();
+  const { member, loading, token } = useMember();
   const router = useRouter();
   
   const [staff, setStaff] = useState<Staff[]>([]);
@@ -43,13 +43,18 @@ export default function StaffManagementPage() {
   }, [loading, member, router]);
 
   useEffect(() => {
-    if (member) fetchStaff();
-  }, [member]);
+    if (token) fetchStaff();
+  }, [token]);
 
   async function fetchStaff() {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/member/staff");
+      const res = await fetch("/api/member/staff", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        }
+      });
       const data = await res.json();
       if (data.success) {
         setStaff(data.staff);
@@ -82,7 +87,7 @@ export default function StaffManagementPage() {
     try {
       const res = await fetch("/api/member/staff", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ action: modalMode, ...formData }),
       });
       const data = await res.json();
@@ -104,7 +109,7 @@ export default function StaffManagementPage() {
     try {
       const res = await fetch("/api/member/staff", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ action: "delete", id }),
       });
       const data = await res.json();
