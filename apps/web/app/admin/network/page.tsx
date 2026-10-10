@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import {
+import {\n  Terminal,\n  Copy,\n  Check,
   Server,
   Plus,
   Activity,
@@ -42,34 +42,20 @@ import {
 import { acsApi, CustomerONT } from "@/lib/api/acs";
 
 export default function AdminNetworkPage() {
-  const [networkTab, setNetworkTab] = useState<"routers" | "onts" | "fttx_map">("routers");
+  const [networkTab, setNetworkTab] = useState<"routers" | "onts" | "vpn">("routers");
   const [devices, setDevices] = useState<NetworkDevice[]>([]);
   const [onts, setOnts] = useState<CustomerONT[]>([]);
-  const [odpNodes, setOdpNodes] = useState<ODPNode[]>([]);
-  const [fiberRoutes, setFiberRoutes] = useState<FiberRoute[]>([]);
-  const [fttxStats, setFttxStats] = useState<FTTXStats | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [loadingOnts, setLoadingOnts] = useState(false);
-  const [loadingFTTX, setLoadingFTTX] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // ODP Filters & Search
-  const [networkScope, setNetworkScope] = useState<"inhouse" | "all">("inhouse");
-  const [clusterFilter, setClusterFilter] = useState<string>("ALL");
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [searchOdp, setSearchOdp] = useState<string>("");
 
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showAddODPModal, setShowAddODPModal] = useState(false);
   const [testResult, setTestResult] = useState<TestConnectionResponse | null>(null);
   const [testingDeviceId, setTestingDeviceId] = useState<string | null>(null);
 
-  // Leaflet map refs
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const markersRef = useRef<{ [key: string]: any }>({});
 
   // Edit WiFi Modal for ONT
   const [selectedOnt, setSelectedOnt] = useState<CustomerONT | null>(null);
@@ -91,22 +77,6 @@ export default function AdminNetworkPage() {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  // ODP Form State
-  const [odpForm, setOdpForm] = useState<CreateODPInput>({
-    name: "",
-    code: "",
-    cluster: "Harau",
-    latitude: -0.2185,
-    longitude: 100.655,
-    total_ports: 8,
-    used_ports: 0,
-    status: "ACTIVE",
-    splitter_spec: "1:8 PLC",
-    optical_power_dbm: -19.5,
-    address: "",
-    notes: "",
-  });
-  const [submittingODP, setSubmittingODP] = useState(false);
 
   const fetchDevices = async () => {
     setLoading(true);
@@ -133,28 +103,10 @@ export default function AdminNetworkPage() {
     }
   };
 
-  const fetchFTTXData = async () => {
-    setLoadingFTTX(true);
-    try {
-      const [odpRes, routesRes, statsRes] = await Promise.all([
-        networkApi.listODPs(),
-        networkApi.listFiberRoutes(),
-        networkApi.getFTTXStats(),
-      ]);
-      setOdpNodes(odpRes.data || []);
-      setFiberRoutes(routesRes.data || []);
-      setFttxStats(statsRes || null);
-    } catch (err: any) {
-      console.error("Gagal memuat data FTTX:", err);
-    } finally {
-      setLoadingFTTX(false);
-    }
-  };
 
   useEffect(() => {
     fetchDevices();
     fetchONTs();
-    fetchFTTXData();
   }, []);
 
   const handleRebootOnt = async (id: string) => {
@@ -267,335 +219,44 @@ export default function AdminNetworkPage() {
     }
   };
 
-  // Filter helper: in-house FiberGrid ODPs (excludes shared/rekanan wholesale Jartaplok)
-  const isFibergridInhouse = (odp: ODPNode) => {
-    const cluster = (odp.cluster || odp.cluster_area || "").toLowerCase();
-    const name = (odp.name || "").toLowerCase();
-    const code = (odp.code || "").toUpperCase();
-    if (
-      cluster.includes("jartaplok") ||
-      cluster.includes("golden") ||
-      cluster.includes("biaro") ||
-      cluster.includes("geringging")
-    ) {
-      return false;
-    }
-    if (
-      name.includes("golden net") ||
-      name.includes("biaro") ||
-      name.includes("geringging")
-    ) {
-      return false;
-    }
-    if (code.startsWith("ODP-BIO") || code.startsWith("ODP-SGG")) {
-      return false;
-    }
-    return true;
-  };
 
-  const scopedODPs = odpNodes.filter((odp) => {
-    if (networkScope === "inhouse") {
-      return isFibergridInhouse(odp);
-    }
-    return true;
-  });
 
-  const inhouseCount = odpNodes.filter(isFibergridInhouse).length;
 
-  // Dynamically load Leaflet and render map when tab is fttx_map
-  useEffect(() => {
-    if (networkTab !== "fttx_map") return;
 
-    let isMounted = true;
 
-    const initLeafletMap = () => {
-      const L = (window as any).L;
-      if (!L || !mapContainerRef.current) return;
 
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
 
-      // Default center around Harau / Payakumbuh (-0.2185, 100.655)
-      const map = L.map(mapContainerRef.current).setView([-0.2185, 100.655], 13);
-      mapInstanceRef.current = map;
+  // VPN States
+  const [vpnScript, setVpnScript] = useState<string>("");
+  const [vpnLoading, setVpnLoading] = useState(false);
+  const [vpnCopied, setVpnCopied] = useState(false);
+  const [vpnError, setVpnError] = useState("");
 
-      // Add OpenStreetMap tile layer
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19,
-      }).addTo(map);
-
-      // Render Fiber Cable Routes (Polylines)
-      fiberRoutes.forEach((route) => {
-        if (!route.coordinates || route.coordinates.length < 2) return;
-
-        let strokeColor = route.color || "#0284c7";
-        let weight = 3.5;
-        let dashArray = undefined;
-
-        if (route.cable_type === "BACKBONE") {
-          strokeColor = "#d97706";
-          weight = 5;
-        } else if (route.cable_type === "FEEDER") {
-          strokeColor = "#0284c7";
-          weight = 3.5;
-        } else {
-          strokeColor = "#059669";
-          weight = 2.5;
-        }
-
-        if (route.status === "CUT") {
-          strokeColor = "#dc2626";
-          dashArray = "6, 6";
-        } else if (route.status === "DEGRADED") {
-          strokeColor = "#ea580c";
-        }
-
-        const polyline = L.polyline(route.coordinates, {
-          color: strokeColor,
-          weight: weight,
-          opacity: 0.85,
-          dashArray: dashArray,
-        }).addTo(map);
-
-        const routePopup = `
-          <div style="font-family: inherit; font-size: 12px; min-width: 200px; padding: 2px;">
-            <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px; font-size: 13px;">${route.name}</div>
-            <div style="display: flex; gap: 4px; margin-bottom: 6px;">
-              <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #334155;">${route.cable_type}</span>
-              <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #e0f2fe; color: #0369a1;">${route.core_count} Core</span>
-              <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: ${route.status === 'ACTIVE' ? '#dcfce7' : '#fee2e2'}; color: ${route.status === 'ACTIVE' ? '#15803d' : '#b91c1c'};">${route.status}</span>
-            </div>
-            <div style="font-size: 11px; color: #64748b;">Panjang Jalur: <strong style="color: #0f172a;">${(route.length_meters / 1000).toFixed(2)} km (${route.length_meters} m)</strong></div>
-          </div>
-        `;
-        polyline.bindPopup(routePopup);
-      });
-
-      // Filter ODP nodes based on UI filters and active scope
-      const filtered = scopedODPs.filter((odp) => {
-        const cName = odp.cluster || odp.cluster_area;
-        if (clusterFilter !== "ALL" && cName !== clusterFilter) return false;
-        if (statusFilter !== "ALL" && odp.status !== statusFilter) return false;
-        if (searchOdp.trim() !== "") {
-          const q = searchOdp.toLowerCase();
-          const matchCode = odp.code.toLowerCase().includes(q);
-          const matchName = odp.name.toLowerCase().includes(q);
-          const matchAddr = odp.address.toLowerCase().includes(q);
-          if (!matchCode && !matchName && !matchAddr) return false;
-        }
-        return true;
-      });
-
-      markersRef.current = {};
-      const markerGroup: any[] = [];
-
-      filtered.forEach((odp) => {
-        const pct = odp.total_ports > 0 ? (odp.used_ports / odp.total_ports) * 100 : 0;
-        let pinBg = "#10b981";
-        let statusBadgeBg = "#dcfce7";
-        let statusBadgeText = "#15803d";
-
-        if (odp.status === "MAINTENANCE") {
-          pinBg = "#f97316";
-          statusBadgeBg = "#ffedd5";
-          statusBadgeText = "#c2410c";
-        } else if (odp.status === "FULL" || odp.used_ports >= odp.total_ports) {
-          pinBg = "#ef4444";
-          statusBadgeBg = "#fee2e2";
-          statusBadgeText = "#b91c1c";
-        } else if (pct >= 80) {
-          pinBg = "#f59e0b";
-          statusBadgeBg = "#fef3c7";
-          statusBadgeText = "#b45309";
-        }
-
-        const iconHtml = `
-          <div style="
-            background: ${pinBg};
-            border: 2px solid #ffffff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-            border-radius: 9999px;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #ffffff;
-            font-weight: 800;
-            font-size: 10px;
-            cursor: pointer;
-          " title="${odp.code} - ${odp.name}">
-            ${odp.used_ports}/${odp.total_ports}
-          </div>
-        `;
-
-        const customIcon = L.divIcon({
-          className: "custom-odp-pin",
-          html: iconHtml,
-          iconSize: [32, 32],
-          iconAnchor: [16, 16],
-          popupAnchor: [0, -16],
-        });
-
-        const marker = L.marker([odp.latitude, odp.longitude], { icon: customIcon }).addTo(map);
-        markersRef.current[odp.id] = marker;
-        markerGroup.push([odp.latitude, odp.longitude]);
-
-        const popupContent = `
-          <div style="font-family: inherit; font-size: 12px; min-width: 230px; padding: 2px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:6px; margin-bottom:8px;">
-              <span style="font-weight:700; color:#0f172a; font-size:13px;">${odp.code}</span>
-              <span style="font-size:10px; font-weight:700; padding:2px 6px; border-radius:4px; background:${statusBadgeBg}; color:${statusBadgeText};">${odp.status}</span>
-            </div>
-            <div style="color:#1e293b; font-weight:600; margin-bottom:4px;">${odp.name}</div>
-            <div style="color:#64748b; font-size:11px; margin-bottom:6px;">Cluster: <strong style="color:#0f172a;">${odp.cluster}</strong> | Splitter: <strong style="color:#0f172a;">${odp.splitter_spec}</strong></div>
-            
-            <div style="background:#f8fafc; border: 1px solid #e2e8f0; padding:6px 8px; border-radius:6px; margin-bottom:8px;">
-              <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
-                <span>Port Terpakai:</span>
-                <strong>${odp.used_ports} / ${odp.total_ports} (${Math.round(pct)}%)</strong>
-              </div>
-              <div style="background:#e2e8f0; height:6px; border-radius:3px; overflow:hidden;">
-                <div style="background:${pinBg}; width:${Math.min(100, Math.round(pct))}%; height:100%;"></div>
-              </div>
-              <div style="display:flex; justify-content:space-between; font-size:10px; color:#64748b; margin-top:5px;">
-                <span>Port Bebas: <strong style="color:#0f172a;">${odp.available_ports}</strong></span>
-                <span>Redaman Optik: <strong style="color:#0f172a;">${odp.optical_power_dbm !== undefined ? odp.optical_power_dbm + ' dBm' : '-'}</strong></span>
-              </div>
-            </div>
-
-            <div style="color:#64748b; font-size:11px; line-height: 1.4; margin-bottom: 6px;">
-              Lokasi: <span style="color:#334155;">${odp.address || '-'}</span>
-            </div>
-            <div style="font-size:10px; color:#94a3b8; font-family: monospace;">
-              Lat: ${odp.latitude.toFixed(6)}, Lng: ${odp.longitude.toFixed(6)}
-            </div>
-          </div>
-        `;
-        marker.bindPopup(popupContent);
-      });
-
-      if (markerGroup.length > 0) {
-        map.fitBounds(markerGroup, { padding: [50, 50], maxZoom: 15 });
-      }
-
-      map.on("click", (e: any) => {
-        setOdpForm((prev) => ({
-          ...prev,
-          latitude: Number(e.latlng.lat.toFixed(6)),
-          longitude: Number(e.latlng.lng.toFixed(6)),
-        }));
-      });
-    };
-
-    if ((window as any).L) {
-      initLeafletMap();
-    } else {
-      if (!document.getElementById("leaflet-css")) {
-        const link = document.createElement("link");
-        link.id = "leaflet-css";
-        link.rel = "stylesheet";
-        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-        document.head.appendChild(link);
-      }
-
-      if (!document.getElementById("leaflet-js")) {
-        const script = document.createElement("script");
-        script.id = "leaflet-js";
-        script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-        script.onload = () => {
-          if (isMounted) initLeafletMap();
-        };
-        document.head.appendChild(script);
-      } else {
-        const existing = document.getElementById("leaflet-js");
-        existing?.addEventListener("load", () => {
-          if (isMounted) initLeafletMap();
-        });
-      }
-    }
-
-    return () => {
-      isMounted = false;
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-    };
-  }, [networkTab, odpNodes, fiberRoutes, clusterFilter, statusFilter, searchOdp, networkScope]);
-
-  const focusOnODP = (odp: ODPNode) => {
-    if (!mapInstanceRef.current) return;
-    mapInstanceRef.current.setView([odp.latitude, odp.longitude], 17);
-    const marker = markersRef.current[odp.id];
-    if (marker) {
-      marker.openPopup();
-    }
-  };
-
-  const handleDeleteODP = async (id: string, code: string) => {
-    if (!confirm(`Hapus titik ODP ${code}? Tindakan ini tidak dapat dibatalkan.`)) return;
+  const generateVpnScript = async () => {
+    setVpnLoading(true);
+    setVpnError("");
     try {
-      await networkApi.deleteODP(id);
-      fetchFTTXData();
-    } catch (err: any) {
-      alert(err.message || "Gagal menghapus titik ODP");
-    }
-  };
-
-  const handleCreateODP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmittingODP(true);
-    try {
-      await networkApi.createODP(odpForm);
-      setShowAddODPModal(false);
-      setOdpForm({
-        name: "",
-        code: "",
-        cluster: "Harau",
-        latitude: -0.2185,
-        longitude: 100.655,
-        total_ports: 8,
-        used_ports: 0,
-        status: "ACTIVE",
-        splitter_spec: "1:8 PLC",
-        optical_power_dbm: -19.5,
-        address: "",
-        notes: "",
+      const res = await fetch("/internal-api/vpn-generate", {
+        method: "POST",
       });
-      fetchFTTXData();
+      if (!res.ok) {
+        throw new Error("Gagal generate script");
+      }
+      const data = await res.json();
+      setVpnScript(data.script || data.data?.script || JSON.stringify(data, null, 2));
     } catch (err: any) {
-      alert(err.message || "Gagal menambahkan titik ODP");
+      setVpnError(err.message || "Terjadi kesalahan.");
     } finally {
-      setSubmittingODP(false);
+      setVpnLoading(false);
     }
   };
 
-  const clusters = Array.from(new Set(scopedODPs.map((o) => o.cluster || o.cluster_area).filter(Boolean)));
-
-  const filteredODPs = scopedODPs.filter((odp) => {
-    const cName = odp.cluster || odp.cluster_area;
-    if (clusterFilter !== "ALL" && cName !== clusterFilter) return false;
-    if (statusFilter !== "ALL" && odp.status !== statusFilter) return false;
-    if (searchOdp.trim() !== "") {
-      const q = searchOdp.toLowerCase();
-      const matchCode = odp.code.toLowerCase().includes(q);
-      const matchName = odp.name.toLowerCase().includes(q);
-      const matchAddr = odp.address.toLowerCase().includes(q);
-      if (!matchCode && !matchName && !matchAddr) return false;
-    }
-    return true;
-  });
-
-  const scopedTotalPorts = scopedODPs.reduce((acc, o) => acc + (o.total_ports || 8), 0);
-  const scopedUsedPorts = scopedODPs.reduce((acc, o) => acc + (o.used_ports || 0), 0);
-  const scopedAvailPorts = Math.max(0, scopedTotalPorts - scopedUsedPorts);
-  const scopedTotalFiberKm = fiberRoutes.reduce((acc, r) => acc + (r.length_meters || 0), 0) / 1000;
-
-  const formatBytes = (bytes: number) => {
+  const copyVpnToClipboard = () => {
+    navigator.clipboard.writeText(vpnScript);
+    setVpnCopied(true);
+    setTimeout(() => setVpnCopied(false), 2000);
+  };
+\n  const formatBytes = (bytes: number) => {
     if (bytes === 0) return "0 MB";
     const mb = bytes / (1024 * 1024);
     if (mb > 1024) {
@@ -633,15 +294,6 @@ export default function AdminNetworkPage() {
             <RefreshCw className="w-4 h-4" />
           </button>
 
-          {networkTab === "fttx_map" && (
-            <button
-              onClick={() => setShowAddODPModal(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition flex items-center gap-2 shadow-sm"
-            >
-              <Plus className="w-4 h-4" />
-              Tambah Titik ODP
-            </button>
-          )}
 
           {networkTab === "routers" && (
             <button
@@ -693,66 +345,7 @@ export default function AdminNetworkPage() {
       </div>
 
       {/* Metrics Cards based on Active Tab */}
-      {networkTab === "fttx_map" ? (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-              <MapPin className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">
-                {networkScope === "inhouse" ? "ODP In-House" : "Total ODP"}
-              </p>
-              <p className="text-xl font-bold text-slate-900">{scopedODPs.length} Titik</p>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-              <Layers className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Kapasitas Port</p>
-              <p className="text-xl font-bold text-slate-900">{scopedTotalPorts} Port</p>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-              <Activity className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Port Terpakai</p>
-              <p className="text-xl font-bold text-amber-600">
-                {scopedUsedPorts}{" "}
-                <span className="text-xs font-semibold text-slate-400">
-                  ({Math.round((scopedUsedPorts / (scopedTotalPorts || 1)) * 100)}%)
-                </span>
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Port Bebas</p>
-              <p className="text-xl font-bold text-emerald-600">{scopedAvailPorts} Port</p>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3.5 col-span-2 sm:col-span-1">
-            <div className="w-11 h-11 rounded-lg bg-cyan-50 text-cyan-600 flex items-center justify-center shrink-0">
-              <Navigation className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Jalur Kabel FO</p>
-              <p className="text-xl font-bold text-cyan-600">{scopedTotalFiberKm.toFixed(1)} km</p>
-            </div>
-          </div>
-        </div>
-      ) : networkTab === "routers" ? (
+      {networkTab === "routers" ? (
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
             <div className="w-12 h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
@@ -870,328 +463,67 @@ export default function AdminNetworkPage() {
 
         <button
           type="button"
-          onClick={() => setNetworkTab("fttx_map")}
+          onClick={() => setNetworkTab("vpn")}
           className={`flex items-center gap-2 px-4 py-3 text-sm font-bold border-b-2 transition whitespace-nowrap ${
-            networkTab === "fttx_map"
+            networkTab === "vpn"
               ? "border-blue-600 text-blue-600 bg-blue-50/50 rounded-t-xl"
               : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
-          <MapPin className="w-4 h-4" />
-          <span>Distribusi FiberGrid (In-House)</span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-bold">
-            {networkScope === "inhouse" ? inhouseCount : odpNodes.length}
-          </span>
+          <Shield className="w-4 h-4" />
+          <span>Integrasi VPN & NAS</span>
         </button>
       </div>
 
-      {/* Main Content: FTTX Map & ODP Table */}
-      {networkTab === "fttx_map" && (
-        <div className="space-y-6">
-          {/* Filter Toolbar */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2.5">
-              {/* Scope Switcher: FiberGrid In-House vs Semua Rekanan */}
-              <div className="p-1 bg-slate-100 rounded-xl flex items-center border border-slate-200/80">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setNetworkScope("inhouse");
-                    setClusterFilter("ALL");
-                  }}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                    networkScope === "inhouse"
-                      ? "bg-white text-blue-600 shadow-xs border border-slate-200 font-extrabold"
-                      : "text-slate-500 hover:text-slate-800"
-                  }`}
-                >
-                  FiberGrid In-House ({inhouseCount})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setNetworkScope("all");
-                    setClusterFilter("ALL");
-                  }}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                    networkScope === "all"
-                      ? "bg-white text-blue-600 shadow-xs border border-slate-200 font-extrabold"
-                      : "text-slate-500 hover:text-slate-800"
-                  }`}
-                >
-                  Semua + Rekanan ({odpNodes.length})
-                </button>
-              </div>
-
-              <div className="relative min-w-[180px]">
-                <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Cari kode ODP / nama..."
-                  value={searchOdp}
-                  onChange={(e) => setSearchOdp(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                <Filter className="w-3.5 h-3.5 text-slate-400" />
-                <select
-                  value={clusterFilter}
-                  onChange={(e) => setClusterFilter(e.target.value)}
-                  className="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="ALL">Semua Cluster ({scopedODPs.length})</option>
-                  {clusters.map((c) => (
-                    <option key={c} value={c}>
-                      Cluster {c} ({scopedODPs.filter((o) => (o.cluster || o.cluster_area) === c).length})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="ALL">Semua Status</option>
-                  <option value="ACTIVE">ACTIVE (Normal)</option>
-                  <option value="FULL">FULL (Penuh)</option>
-                  <option value="MAINTENANCE">MAINTENANCE</option>
-                </select>
-              </div>
+      {/* Main Content: VPN Integration */}
+      {networkTab === "vpn" && (
+        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col gap-4">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-cyan-50 border border-cyan-100 flex items-center justify-center shrink-0 text-cyan-600">
+              <Server className="w-6 h-6" />
             </div>
-
-            <div className="flex items-center justify-between md:justify-end gap-3 text-xs text-slate-500">
-              <span>Menampilkan <strong>{filteredODPs.length}</strong> dari <strong>{odpNodes.length}</strong> titik ODP</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setClusterFilter("ALL");
-                  setStatusFilter("ALL");
-                  setSearchOdp("");
-                }}
-                className="text-blue-600 hover:underline font-semibold"
-              >
-                Reset Filter
-              </button>
+            <div className="flex-1">
+              <h3 className="text-base font-bold text-slate-900">Generate MikroTik Setup Script</h3>
+              <p className="text-sm text-slate-500 mt-1">
+                Hasilkan script konfigurasi otomatis untuk menghubungkan router MikroTik ke jaringan VPN Core ISPSYNC.
+              </p>
+              <div className="mt-4">
+                <button
+                  onClick={generateVpnScript}
+                  disabled={vpnLoading}
+                  className="px-4 py-2 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 text-white text-sm font-semibold rounded-xl shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {vpnLoading ? "Memproses..." : "Generate Script"}
+                </button>
+              </div>
+              {vpnError && (
+                <p className="text-xs text-rose-500 mt-2 font-medium">{vpnError}</p>
+              )}
             </div>
           </div>
 
-          {/* Interactive GIS Map */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-5 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-blue-600" />
-                <h2 className="text-sm font-bold text-slate-800">Peta Topologi Distribusi Jalur Fiber Optik & Titik ODP</h2>
-              </div>
-              <span className="text-[11px] text-slate-500">
-                Klik ikon ODP untuk melihat info teknis port & redaman sinyal
-              </span>
-            </div>
-
-            <div className="relative">
-              <div
-                ref={mapContainerRef}
-                className="w-full h-[540px] bg-slate-100 z-0"
-                style={{ minHeight: "540px" }}
-              />
-
-              {/* Map Legend Overlay */}
-              <div className="absolute bottom-4 right-4 z-[400] bg-white/95 backdrop-blur-sm p-3.5 rounded-xl border border-slate-200 shadow-md text-xs space-y-2 max-w-xs pointer-events-auto">
-                <p className="font-bold text-slate-800 text-[11px] uppercase tracking-wider pb-1 border-b border-slate-100">
-                  Legenda Topologi FTTX
-                </p>
-                <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px]">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-emerald-500 shrink-0"></span>
-                    <span className="text-slate-600">ODP Normal (&lt;80%)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-amber-500 shrink-0"></span>
-                    <span className="text-slate-600">ODP Padat (&ge;80%)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-rose-500 shrink-0"></span>
-                    <span className="text-slate-600">ODP Penuh (100%)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-orange-500 shrink-0"></span>
-                    <span className="text-slate-600">Maintenance</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-4 h-1 bg-amber-600 rounded shrink-0"></span>
-                    <span className="text-slate-600">FO Backbone</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-4 h-1 bg-sky-600 rounded shrink-0"></span>
-                    <span className="text-slate-600">FO Feeder</span>
-                  </div>
-                  <div className="flex items-center gap-2 col-span-2">
-                    <span className="w-4 h-1 bg-emerald-600 rounded shrink-0"></span>
-                    <span className="text-slate-600">FO Distribusi Pelanggan</span>
-                  </div>
+          {vpnScript && (
+            <div className="mt-4 pt-4 border-t border-slate-100 relative group">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 text-slate-700">
+                  <Terminal className="w-4 h-4" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Terminal Script</span>
                 </div>
+                <button
+                  onClick={copyVpnToClipboard}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                >
+                  {vpnCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  {vpnCopied ? "Tersalin!" : "Salin Script"}
+                </button>
               </div>
+              <pre className="p-4 rounded-xl bg-slate-950 text-slate-50 overflow-x-auto text-xs font-mono border border-slate-800">
+                <code>{vpnScript}</code>
+              </pre>
             </div>
-          </div>
-
-          {/* ODP Table */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-semibold text-slate-800">
-                  {networkScope === "inhouse"
-                    ? "Daftar Titik Distribusi FiberGrid (In-House)"
-                    : "Daftar Titik Distribusi ODP (Agregasi Seluruh Jaringan)"}
-                </h2>
-                <p className="text-xs text-slate-500">
-                  {networkScope === "inhouse"
-                    ? `${filteredODPs.length} titik ODP in-house FiberGrid tercatat dalam sistem`
-                    : `${filteredODPs.length} titik ODP (agregasi internal & mitra Jartaplok)`}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowAddODPModal(true)}
-                className="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Tambah ODP
-              </button>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-700">
-                <thead className="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase text-slate-500">
-                  <tr>
-                    <th className="px-6 py-3">Kode ODP</th>
-                    <th className="px-6 py-3">Nama &amp; Cluster</th>
-                    <th className="px-6 py-3">Kapasitas &amp; Utilisasi Port</th>
-                    <th className="px-6 py-3">Splitter</th>
-                    <th className="px-6 py-3">Redaman Optik</th>
-                    <th className="px-6 py-3">Status</th>
-                    <th className="px-6 py-3">Lokasi Fisik</th>
-                    <th className="px-6 py-3 text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {loadingFTTX ? (
-                    <tr>
-                      <td colSpan={8} className="px-6 py-8 text-center text-slate-400">
-                        Memuat data ODP dan jalur FTTX...
-                      </td>
-                    </tr>
-                  ) : filteredODPs.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="px-6 py-8 text-center text-slate-400">
-                        Tidak ada titik ODP yang sesuai kriteria pencarian.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredODPs.map((odp) => {
-                      const pct = odp.total_ports > 0 ? (odp.used_ports / odp.total_ports) * 100 : 0;
-                      let barColor = "bg-emerald-500";
-                      if (pct >= 100 || odp.status === "FULL") barColor = "bg-rose-500";
-                      else if (pct >= 80) barColor = "bg-amber-500";
-
-                      return (
-                        <tr key={odp.id} className="hover:bg-slate-50/70 transition">
-                          <td className="px-6 py-4">
-                            <span className="font-mono text-xs font-bold px-2.5 py-1 rounded bg-slate-100 text-slate-800 border border-slate-200">
-                              {odp.code}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="font-semibold text-slate-900">{odp.name}</div>
-                            <div className="text-xs text-slate-500">Cluster {odp.cluster}</div>
-                          </td>
-                          <td className="px-6 py-4 min-w-[160px]">
-                            <div className="flex items-center justify-between text-xs mb-1">
-                              <span className="font-bold text-slate-800">
-                                {odp.used_ports} / {odp.total_ports} Port
-                              </span>
-                              <span className="text-slate-500 font-medium">{Math.round(pct)}%</span>
-                            </div>
-                            <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full ${barColor}`}
-                                style={{ width: `${Math.min(100, Math.round(pct))}%` }}
-                              />
-                            </div>
-                            <div className="text-[11px] text-slate-400 mt-1">
-                              Tersedia: <strong className="text-slate-700">{odp.available_ports} port</strong>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-xs font-medium text-slate-700">
-                            {odp.splitter_spec}
-                          </td>
-                          <td className="px-6 py-4">
-                            {odp.optical_power_dbm !== undefined ? (
-                              <span
-                                className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
-                                  odp.optical_power_dbm >= -24
-                                    ? "bg-emerald-50 text-emerald-700"
-                                    : odp.optical_power_dbm >= -27
-                                    ? "bg-amber-50 text-amber-700"
-                                    : "bg-rose-50 text-rose-700"
-                                }`}
-                              >
-                                {odp.optical_power_dbm.toFixed(1)} dBm
-                              </span>
-                            ) : (
-                              <span className="text-xs text-slate-400">-</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span
-                              className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
-                                odp.status === "ACTIVE"
-                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                  : odp.status === "FULL"
-                                  ? "bg-rose-50 text-rose-700 border border-rose-200"
-                                  : "bg-amber-50 text-amber-700 border border-amber-200"
-                              }`}
-                            >
-                              {odp.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 max-w-[200px] truncate text-xs text-slate-500" title={odp.address}>
-                            {odp.address || "-"}
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => focusOnODP(odp)}
-                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                                title="Fokus di Peta"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteODP(odp.id, odp.code)}
-                                className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                                title="Hapus Titik ODP"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          )}
         </div>
       )}
-
 
       {/* Main Table Card (Routers) */}
       {networkTab === "routers" && (

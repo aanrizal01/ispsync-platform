@@ -29,7 +29,6 @@ const routeMap: Record<string, { category: string; title: string }> = {
   "/admin/nexusgis": { category: "Jaringan & Infra", title: "NexusGIS & Topologi ODP" },
   "/admin/fibergrid": { category: "Jaringan & Infra", title: "NexusGIS & Topologi ODP" },
   "/admin/radius": { category: "Jaringan & Infra", title: "Server RADIUS" },
-  "/admin/vpn": { category: "Jaringan & Infra", title: "Integrasi VPN & NAS" },
   "/admin/partners": { category: "Jaringan & Infra", title: "Mitra ISP" },
   "/admin/notifications": { category: "Sistem & Keamanan", title: "Pusat Notifikasi" },
   "/admin/users": { category: "Sistem & Keamanan", title: "Pengguna & Staf" },
