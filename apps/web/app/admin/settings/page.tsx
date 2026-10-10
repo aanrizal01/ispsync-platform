@@ -40,6 +40,7 @@ import {
   Eye,
   EyeOff,
   Calculator,
+  Edit,
 } from "lucide-react";
 import {
   settingsApi,
