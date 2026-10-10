@@ -1013,9 +1013,14 @@ export default function SaaSAdminTenantsPage() {
                             onChange={(e) => {
                               const raw = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "");
                               const newDomain = raw ? `${raw}.ispsync.id` : "";
+                              let newEmail = activeTenant.email || "";
+                              if (!activeTenant.email || activeTenant.email.includes(".ispsync.id")) {
+                                newEmail = raw ? `admin@${newDomain}` : "";
+                              }
                               setActiveTenant({
                                 ...activeTenant,
                                 domain: newDomain,
+                                email: newEmail,
                               });
                             }}
                             placeholder="primafiber"
@@ -1042,7 +1047,14 @@ export default function SaaSAdminTenantsPage() {
                             type="text"
                             required
                             value={activeTenant.domain || ""}
-                            onChange={(e) => setActiveTenant({ ...activeTenant, domain: e.target.value.trim() })}
+                            onChange={(e) => {
+                              const newDomain = e.target.value.trim();
+                              let newEmail = activeTenant.email || "";
+                              if (!activeTenant.email || activeTenant.email.includes(".ispsync.id") || activeTenant.email.startsWith("admin@")) {
+                                newEmail = newDomain ? `admin@${newDomain}` : "";
+                              }
+                              setActiveTenant({ ...activeTenant, domain: newDomain, email: newEmail });
+                            }}
                             placeholder="Contoh: gogiga.net.id"
                             className="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-mono focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                           />
