@@ -4,6 +4,29 @@ Semua perubahan, penambahan fitur, dan perbaikan bug pada platform ISPSYNC / GoG
 
 ---
 
+## [2026-10-11] - Pembaruan Trouble Ticketing, Asisten Virtual Diagnosa Mandiri & Penugasan Teknisi SPK WhatsApp
+
+### Ditambahkan & Ditingkatkan
+1. **Asisten Virtual / Chatbot Diagnosa Mandiri Tiket (`apps/api/cmd/api/tickets_handler.go`, `apps/web/app/ticket/[id]/page.tsx`):**
+   - Implementasi logika asisten virtual bot pada endpoint pesan tiket (`generateBotReply`).
+   - Fitur *Quick Action Chips* di antarmuka portal tiket pelanggan: Cek Koneksi, Cek Tagihan, Restart Modem, dan Eskalasi Teknisi.
+   - Pengecekan status langganan aktif dan tunggakan invoice belum lunas (`UNPAID`) langsung ke basis data PostgreSQL secara real-time.
+   - Deteksi permohonan kunjungan fisik teknisi dengan eskalasi otomatis tiket ke prioritas `HIGH` dan status `IN_PROGRESS`.
+   - Standarisasi tampilan bot menggunakan *soft slate light theme* dengan pemformatan teks tebal (*bold markdown*) yang rapi dan bebas polusi emoji.
+
+2. **Penugasan Teknisi & Dispatcher SPK WhatsApp (`apps/web/app/admin/tickets/page.tsx`):**
+   - Penambahan selector penugasan teknisi (*Assigned Technician*) pada modal pembuatan tiket baru dan modal detail tiket admin NOC.
+   - Integrasi daftar staf teknisi aktif via `usersApi.getUsers()`.
+   - Fitur **"Kirim SPK WhatsApp"** satu-klik yang menyusun dokumen Surat Perintah Kerja (SPK) formal lengkap (Nomor Tiket, Tanggal, Nama Pelanggan, Nomor Kontak, Alamat, Kategori, Prioritas, dan Deskripsi Keluhan) dan langsung membuka WhatsApp ke nomor teknisi bersangkutan.
+   - Tombol **"Salin Format SPK"** untuk integrasi manual ke aplikasi internal.
+   - Tampilan badge teknisi penanggung jawab pada tabel data tiket di Helpdesk Admin.
+
+3. **Kebijakan Keamanan & Penguncian Chat Tiket (`apps/api/cmd/api/tickets_handler.go`, `apps/web/app/ticket/[id]/page.tsx`):**
+   - Validasi backend: Penolakan pengiriman pesan baru (`HTTP 400 Bad Request`) apabila status tiket telah berada pada tahap `CLOSED` atau `RESOLVED`.
+   - Antarmuka pelanggan otomatis menyembunyikan input form chat dan menampilkan banner pengarsipan tiket dengan opsi cepat **"Buka Tiket Baru"**.
+
+---
+
 ## [2026-10-09] - Phase 11: Juniper BNG Adapter (Junos REST API / RFC 3576 CoA PoD)
 
 ### Ditambahkan & Ditingkatkan

@@ -38,6 +38,11 @@
 6. **Loket Kasir POS & Keamanan Peran Kasir (Cashier Role)**:
    - Antarmuka register loket cepat di menu Pembayaran (`/admin/payments?tab=pos`) dengan pencarian barcode, kalkulator kembalian, dan cetak struk thermal 58mm/80mm & kwitansi A4.
    - Hak akses peran Kasir (`payments:read`, `payments:write`) terisolasi aman dengan pembatasan menu berprinsip *Least Privilege*.
+7. **Modul Trouble Ticketing, Asisten Virtual & Dispatcher SPK Teknisi**:
+   - **Portal Tiket Mandiri Pelanggan (`/ticket/[id]`)**: Ruang komunikasi dua arah interaktif antara pelanggan dan Helpdesk NOC.
+   - **Asisten Virtual (Chatbot Diagnosa Mandiri)**: Memandu pelanggan melakukan verifikasi koneksi, status tagihan live di database, prosedur restart modem ONT, dan eskalasi otomatis ke prioritas `HIGH` bila membutuhkan kunjungan fisik.
+   - **Helpdesk Admin NOC (`/admin/tickets`)**: Manajemen antrean tiket, penugasan teknisi (*assigned technician*), dan satu klik **"Kirim SPK WhatsApp"** yang membuka chat WhatsApp ke teknisi lengkap dengan format formal Surat Perintah Kerja (SPK).
+   - **Proteksi Status Tiket Selesai**: Penguncian otomatis kolom kirim pesan saat status tiket `CLOSED` atau `RESOLVED` dengan banner informatif dan opsi pembukaan tiket baru.
 
 ---
 

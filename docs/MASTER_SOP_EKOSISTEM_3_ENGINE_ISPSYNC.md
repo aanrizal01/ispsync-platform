@@ -37,6 +37,7 @@
    - [SOP-BILL-04: Mekanisme Otomasi Isolir Penunggak (FreeRADIUS CoA)](#sop-bill-04-mekanisme-otomasi-isolir-penunggak-freeradius-coa)
    - [SOP-BILL-05: Mekanisme Pemulihan Otomatis Pasca Pelunasan (Auto-Restore)](#sop-bill-05-mekanisme-pemulihan-otomatis-pasca-pelunasan-auto-restore)
    - [SOP-BILL-06: Rekonsiliasi Keuangan, Settlement Bank & Laporan Pajak](#sop-bill-06-rekonsiliasi-keuangan-settlement-bank--laporan-pajak)
+   - [SOP-BILL-07: Penanganan Tiket Gangguan, Asisten Virtual Diagnosa Mandiri & Dispatcher SPK Teknisi WhatsApp](#sop-bill-07-penanganan-tiket-gangguan-asisten-virtual-diagnosa-mandiri--dispatcher-spk-teknisi-whatsapp)
 6. [Bab VI: Matriks Eskalasi Insiden, Disaster Recovery & Pemeliharaan Server](#bab-vi-matriks-eskalasi-insiden-disaster-recovery--pemeliharaan-server)
 
 ---
@@ -240,6 +241,45 @@ Sistem FTTX menjalankan daemon SNMP Poller secara otomatis setiap **5 menit** un
    - Rekap PPN Keluaran 11% atas tagihan ritel pelanggan.
    - Rekap PPh 23 (2%) atas transaksi sewa port wholesale Jartaplok.
    - Rekap pengeluaran operasional dan komisi sales.
+
+### SOP-BILL-07: Penanganan Tiket Gangguan, Asisten Virtual Diagnosa Mandiri & Dispatcher SPK Teknisi WhatsApp
+1. **Saluran Tiket Keluhan Pelanggan (Self-Service Portal)**:
+   - Setiap pelanggan yang mengalami kendala dapat membuka portal tiket mandiri di `https://ledger.{tenant}.ispsync.id/ticket/[id]` (tanpa login rumit, cukup dengan tautan tiket atau nomor tiket).
+   - Tiket memfasilitasi komunikasi dua arah real-time antara pelanggan dan Helpdesk NOC.
+
+2. **Asisten Virtual (Chatbot Diagnosa Mandiri)**:
+   - Sistem dilengkapi bot interaktif dengan *Quick Action Chips* untuk memandu pelanggan melakukan diagnosa mandiri sebelum eskalasi ke teknisi:
+     - **Cek Koneksi**: Memeriksa status langganan aktif pelanggan di database secara instan.
+     - **Cek Tagihan**: Memeriksa tunggakan invoice yang belum lunas (`UNPAID`) beserta nominal dan tautan pelunasan.
+     - **Restart Modem**: Memberikan instruksi panduan langkah demi langkah mematikan ONT selama 30 detik dan memeriksa indikator lampu PON/LOS.
+     - **Eskalasi Teknisi**: Apabila kendala belum teratasi, bot otomatis meningkatkan prioritas tiket menjadi `HIGH` dan status `IN_PROGRESS`, serta mencatat kebutuhan kunjungan teknisi.
+   - Desain tampilan bot mengikuti standar visual korporat yang tenang (soft slate light theme) tanpa emoji berlebihan demi kenyamanan membaca pelanggan.
+
+3. **Penugasan Teknisi & Penerbitan Surat Perintah Kerja (SPK) WhatsApp oleh NOC**:
+   - Tim Dispatcher / Helpdesk NOC di dashboard `https://ledger.{tenant}.ispsync.id/admin/tickets` meninjau keluhan tiket.
+   - NOC memilih personil teknisi yang bertugas melalui dropdown penugasan (*Assigned Technician*).
+   - Fitur **"Kirim SPK WhatsApp"**: NOC mengklik satu tombol untuk membuka obrolan WhatsApp resmi langsung ke nomor kontak teknisi dengan format baku:
+     ```text
+     *SURAT PERINTAH KERJA (SPK) — {TENANT}*
+     No. Tiket: TIKET-XXXXXX
+     Tanggal: DD/MM/YYYY HH:mm WIB
+     ----------------------------------------
+     Pelanggan: [Nama Pelanggan]
+     Kontak/WA: [Nomor HP]
+     Alamat: [Alamat Lengkap Pelanggan]
+     Kategori: [Kategori Gangguan]
+     Prioritas: [URGENT / HIGH / NORMAL]
+     
+     Keluhan / Catatan NOC:
+     "[Isi keluhan pelanggan / instruksi perbaikan]"
+     ----------------------------------------
+     Instruksi: Segera lakukan pemeriksaan di lokasi pelanggan dan konfirmasi setelah penanganan selesai. Terima kasih.
+     ```
+   - Fitur **"Salin Format SPK"** disediakan untuk kemudahan salin-tempel ke aplikasi memo atau grup chat koordinasi lapangan.
+
+4. **Kebijakan Penguncian Chat Tiket (Status CLOSED / RESOLVED)**:
+   - Tiket yang telah dinyatakan selesai atau ditutup (`RESOLVED` / `CLOSED`) otomatis mengunci kolom input pesan di sisi pelanggan dan menolak pesan baru (`HTTP 400`).
+   - Portal pelanggan menampilkan banner resmi bahwa tiket telah diarsipkan, disertai tombol **"Buka Tiket Baru"** apabila pelanggan membutuhkan bantuan baru di masa mendatang.
 
 ---
 

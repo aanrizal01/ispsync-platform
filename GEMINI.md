@@ -100,6 +100,11 @@ Whenever creating or modifying frontend interfaces across the ISPSYNC platform (
    * Isolasi data fisik FiberGrid berakar dari tabel `fttx_olt_devices.tenant_slug`. Node turunan (ODC, ODP, Rute Kabel, ONT) diisolasi secara relasional berbasis ID OLT milik tenant yang bersangkutan.
    * Setiap pendaftaran tenant baru wajib otomatis meng-upsert profil legalitas ke `ispsync_fibergrid.fttx_jartaplok_profile` agar data instansi, website, dan domain kustom langsung tersaji dinamis.
 
+9. **Trouble Ticketing, Chatbot Standards & WhatsApp SPK Dispatch:**
+   * Tampilan bubble chat Asisten Virtual / Chatbot wajib menggunakan tone tenang dan profesional (*soft slate light theme*), dilarang menggunakan warna hitam pekat yang kontras tinggi dan dilarang menggunakan emoji berlebih.
+   * Format Surat Perintah Kerja (SPK) WhatsApp wajib dinamis memuat nama tenant yang relevan, nomor tiket resmi, data lengkap pelanggan, serta nama dan kontak teknisi yang ditugaskan.
+   * Tiket dengan status `CLOSED` atau `RESOLVED` wajib mengunci form chat pelanggan (*read-only*) untuk mencegah percakapan berlanjut di tiket yang sudah diarsipkan.
+
 ---
 
 ## 🚀 3. Deployment & Build Procedures (VPS)
