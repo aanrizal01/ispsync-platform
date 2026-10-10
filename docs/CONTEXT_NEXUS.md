@@ -16,7 +16,7 @@
 * **Lokasi Kode Lokal**: `C:\Users\62811\Documents\ISP` & `C:\Users\62811\Downloads\ISPSYNC\cmd`
 * **Lokasi Server VPS**: `/home/anri01/ispsync-core`
 * **Service Systemd**: `ispsync-core.service` (Port 8081)
-* **Database Engine**: Central PostgreSQL 16 + PostGIS (Port `5432`, Database: `ispsync`, Schema: `public` - `tenants`, `users`, `plans`, `odps`, `subscribers`, `work_orders`, `jartaplok_agreements`)
+* **Database Engine**: Central PostgreSQL 16 + PostGIS (Port `5432`, Database: `isp_billing`, Schema: `public` - `tenants`, `users`, `plans`, `odps`, `subscribers`, `work_orders`, `jartaplok_agreements`)
 
 ---
 
@@ -44,3 +44,4 @@
 * **URL**: `https://portal.dev.ispsync.id`
 * **User**: `owner` / `noc` / `sales` / `teknisi`
 * **Password**: `DevLab2026!`
+

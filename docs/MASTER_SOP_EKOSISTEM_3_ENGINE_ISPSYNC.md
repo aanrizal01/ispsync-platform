@@ -278,7 +278,7 @@ Sistem FTTX menjalankan daemon SNMP Poller secara otomatis setiap **5 menit** un
   ```bash
   pm2 logs ispsync-nexus      # Log ISPSYNC Nexus (Port 8081)
   pm2 logs ispsync-fibergrid     # Log FTTX Command Center (Port 8082)
-  pm2 logs ispsync-ledger-api  # Log Billing Engine Core (Port 8080)
+  pm2 logs ispsync-ledger-api  # Log Ledger Engine Core (Port 8080)
   ```
 * **Restart Bersih Layanan**:
   ```bash

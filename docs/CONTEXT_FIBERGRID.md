@@ -15,7 +15,7 @@
 * **Source Reference**: Proyek `FTTX` / `ispsync-fttx`
 * **Lokasi Server VPS**: `/home/anri01/ispsync-fttx`
 * **Service Systemd**: `ispsync-fttx.service` (Port 8082)
-* **Database Engine**: Central PostgreSQL 16 + PostGIS (Port `5432`, Host: `127.0.0.1`, Database: `ispsync_fibergrid` - `fttx_olt_devices`, `fttx_odc_nodes`, `fttx_odp_nodes`, `fttx_fiber_routes`, `fttx_ont_devices`, `fttx_staff_users`, `fttx_jartaplok_profile`)
+* **Database Engine**: Central PostgreSQL 16 + PostGIS (Port `5432`, Host: `127.0.0.1`, Database: `isp_billing`, Schema: `ispsync_fibergrid` - `fttx_olt_devices`, `fttx_odc_nodes`, `fttx_odp_nodes`, `fttx_fiber_routes`, `fttx_ont_devices`, `fttx_staff_users`, `fttx_jartaplok_profile`)
 * **Koneksi Antar-Engine**: Terhubung ke Nexus di `ISP_BASE_URL=http://127.0.0.1:8081`
 
 ---
@@ -49,3 +49,4 @@
 ## 5. Kredensial Default Staging
 * **URL**: `https://fibergrid.dev.ispsync.id` *(atau `https://fttx.dev.ispsync.id`)*
 * **VLAN Staging**: `669`
+
