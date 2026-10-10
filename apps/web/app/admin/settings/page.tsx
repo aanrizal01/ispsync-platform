@@ -62,6 +62,10 @@ import {
   TenantIntegrationSettings,
   defaultTenantIntegrationSettings,
 } from "@/lib/api/settings";
+import {
+  notificationApi,
+  NotificationTemplate,
+} from "@/lib/api/notifications";
 import { ipamApi, type IPAMSettings, type Subnet, type TestResult } from "@/lib/api/ipam";
 import { InvoicePrintDocument } from "@/components/invoice/InvoicePrintDocument";
 import { useAuth } from "@/lib/auth/context";
@@ -89,6 +93,10 @@ export default function AdminSettingsPage() {
   const [showMapsKey, setShowMapsKey] = useState<boolean>(false);
   const [copiedMapsKey, setCopiedMapsKey] = useState<boolean>(false);
   const [loadingTemplate, setLoadingTemplate] = useState(false);
+  const [templates, setTemplates] = useState<NotificationTemplate[]>([]);
+  const [editingTemplate, setEditingTemplate] = useState<NotificationTemplate | null>(null);
+  const [templateForm, setTemplateForm] = useState({ subject: "", body: "", is_active: true });
+  const [savingTemplate, setSavingTemplate] = useState(false);
 
   // phpIPAM State
   const [ipamSettings, setIpamSettings] = useState<IPAMSettings>({
@@ -213,6 +221,69 @@ export default function AdminSettingsPage() {
   } | null>(null);
   const [syncingSaaS, setSyncingSaaS] = useState(false);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
+
+  const fetchTemplates = async () => {
+    try {
+      const res = await notificationApi.listTemplates();
+      setTemplates(res.data || []);
+    } catch (err: any) {
+      console.error("Failed to load templates:", err);
+    }
+  };
+
+  const handleSaveTemplate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTemplate) return;
+
+    setSavingTemplate(true);
+    try {
+      await notificationApi.updateTemplate(editingTemplate.code, templateForm);
+      setEditingTemplate(null);
+      fetchTemplates();
+    } catch (err: any) {
+      alert(err.message || "Gagal memperbarui template");
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
+  const openEditTemplate = (tmpl: NotificationTemplate) => {
+    setEditingTemplate(tmpl);
+    setTemplateForm({
+      subject: tmpl.subject || "",
+      body: tmpl.body,
+      is_active: tmpl.is_active,
+    });
+  };
+
+  const renderChannelBadge = (ch: any) => {
+    switch (ch) {
+      case "TELEGRAM":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800">
+            Telegram
+          </span>
+        );
+      case "WHATSAPP":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+            WhatsApp
+          </span>
+        );
+      case "EMAIL":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
+            Email
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-800">
+            Webhook
+          </span>
+        );
+    }
+  };
 
   const handleSyncFromSaaS = (profileToUse?: any) => {
     const prof = profileToUse || saasProfile;
@@ -468,6 +539,9 @@ export default function AdminSettingsPage() {
       .catch((err) => {
         console.error("Failed to load notification settings:", err);
       });
+
+    // Load Notification Templates
+    fetchTemplates();
 
     // Load FiberGrid integration settings
     settingsApi
@@ -3141,24 +3215,57 @@ export default function AdminSettingsPage() {
             </p>
           </div>
 
-          {/* Quick Link Banner ke Editor Template Pesan */}
-          <div className="p-4 rounded-2xl bg-cyan-950/5 border border-cyan-800/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <h3 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <FileText className="w-4 h-4 text-cyan-600" />
-                Template Pesan Otomatis (Isolir, Tagihan, & Passpoint)
-              </h3>
-              <p className="text-[11px] text-slate-500">
-                Susunan kata, variabel pelanggan, dan redaksi pesan WhatsApp dapat disesuaikan pada Pusat Notifikasi.
-              </p>
+          {/* Template Pesan Otomatis (Isolir, Tagihan, & Passpoint) */}
+          <div className="space-y-4 pt-4 border-t border-slate-100">
+            <h3 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <FileText className="w-4 h-4 text-cyan-600" />
+              Template Pesan Otomatis (Isolir, Tagihan, & Passpoint)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {templates.map((t) => (
+                <div
+                  key={t.id}
+                  className="bg-slate-50 rounded-xl p-5 border border-slate-200 hover:border-blue-300 transition flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="font-mono text-xs font-bold text-slate-900 bg-white px-2.5 py-1 rounded border border-slate-200">
+                        {t.code}
+                      </span>
+                      {renderChannelBadge(t.channel)}
+                    </div>
+                    {t.subject && (
+                      <div className="text-xs font-semibold text-slate-700 mb-2">
+                        Subjek: {t.subject}
+                      </div>
+                    )}
+                    <div className="bg-white p-3 rounded-lg border border-slate-200 text-xs text-slate-700 font-sans whitespace-pre-wrap leading-relaxed mb-3 max-h-36 overflow-y-auto">
+                      {t.body}
+                    </div>
+                    <div className="flex flex-wrap gap-1 mb-4">
+                      {t.variables &&
+                        t.variables.map((v) => (
+                          <span
+                            key={v}
+                            className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[11px] font-mono"
+                          >
+                            {"{{" + v + "}}"}
+                          </span>
+                        ))}
+                    </div>
+                  </div>
+                  <div className="flex justify-end pt-2 border-t border-slate-200">
+                    <button
+                      onClick={() => openEditTemplate(t)}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 cursor-pointer"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                      Edit Template
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-            <a
-              href="/admin/notifications?tab=templates"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-cyan-400 border border-slate-700 text-xs font-bold rounded-xl shadow-xs transition-all shrink-0 cursor-pointer"
-            >
-              <span>Buka Editor Template</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
           </div>
 
           <div className="space-y-4">
@@ -4458,6 +4565,71 @@ add dst-host=tripay.co.id action=allow comment="Tripay Payment Gateway"`}
                 {saving ? "Menyimpan..." : "Simpan Pengaturan Google Maps"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Template */}
+      {editingTemplate && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-200">
+            <h3 className="text-lg font-bold text-slate-900 mb-1">Edit Template Notifikasi</h3>
+            <p className="text-xs font-mono text-blue-600 mb-4">{editingTemplate.code}</p>
+
+            <form onSubmit={handleSaveTemplate} className="space-y-3">
+              {editingTemplate.channel !== "WHATSAPP" && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Subjek</label>
+                  <input
+                    type="text"
+                    value={templateForm.subject}
+                    onChange={(e) => setTemplateForm({ ...templateForm, subject: e.target.value })}
+                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Konten Pesan</label>
+                <textarea
+                  rows={6}
+                  value={templateForm.body}
+                  onChange={(e) => setTemplateForm({ ...templateForm, body: e.target.value })}
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg font-mono text-xs"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="tmpl_active"
+                  checked={templateForm.is_active}
+                  onChange={(e) => setTemplateForm({ ...templateForm, is_active: e.target.checked })}
+                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                />
+                <label htmlFor="tmpl_active" className="text-xs font-medium text-slate-700">
+                  Template Aktif Digunakan Otomatis
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingTemplate(null)}
+                  className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingTemplate}
+                  className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg disabled:opacity-50 cursor-pointer"
+                >
+                  {savingTemplate ? "Menyimpan..." : "Simpan Perubahan"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
