@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import { 
   Plus, Search, Filter, LifeBuoy, MoreVertical, MessageSquare, 
   Clock, CheckCircle2, AlertCircle, User, Wifi, FileText, ChevronRight, X,
-  Send, Share2, Copy, Check, Phone, MessageCircle, RefreshCw
+  Send, Share2, Copy, Check, Phone, MessageCircle, RefreshCw, Wrench
 } from "lucide-react";
 import { ticketsApi, type Ticket, type TicketMessage } from "@/lib/api/tickets";
 import { customerApi, type Customer } from "@/lib/api/customers";
 import { subscriptionApi, type Subscription } from "@/lib/api/subscriptions";
+import { usersApi, type UserItem } from "@/lib/api/users";
 
 export default function TicketsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -29,6 +30,10 @@ export default function TicketsPage() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
 
+  const [staffList, setStaffList] = useState<UserItem[]>([]);
+  const [assigningTechnician, setAssigningTechnician] = useState(false);
+  const [copiedSPK, setCopiedSPK] = useState(false);
+
   const [form, setForm] = useState({
     customer_id: "",
     subscription_id: "",
@@ -36,6 +41,7 @@ export default function TicketsPage() {
     category: "Koneksi Internet",
     priority: "MEDIUM",
     description: "",
+    assignee_id: "",
   });
 
   useEffect(() => {
@@ -107,12 +113,34 @@ export default function TicketsPage() {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
+  const handleAssignTechnician = async (assigneeId: string) => {
+    if (!selectedTicketDetail) return;
+    setAssigningTechnician(true);
+    try {
+      await ticketsApi.updateTicket(selectedTicketDetail.id, { assignee_id: assigneeId || "" });
+      setSelectedTicketDetail(prev => prev ? { ...prev, assignee_id: assigneeId } : null);
+      setTickets(prev => prev.map(t => t.id === selectedTicketDetail.id ? { ...t, assignee_id: assigneeId } : t));
+    } catch (err) {
+      console.error("Gagal menugaskan teknisi:", err);
+      alert("Gagal memperbarui penugasan teknisi.");
+    } finally {
+      setAssigningTechnician(false);
+    }
+  };
+
+  const handleCopySPK = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedSPK(true);
+    setTimeout(() => setCopiedSPK(false), 2000);
+  };
+
   const fetchInitialData = async () => {
     setLoading(true);
     try {
-      const [ticketsRes, customersRes] = await Promise.allSettled([
+      const [ticketsRes, customersRes, staffRes] = await Promise.allSettled([
         ticketsApi.getTickets(),
         customerApi.list({ limit: 500 }),
+        usersApi.getUsers(),
       ]);
 
       if (ticketsRes.status === "fulfilled" && ticketsRes.value?.data) {
@@ -120,6 +148,9 @@ export default function TicketsPage() {
       }
       if (customersRes.status === "fulfilled" && Array.isArray(customersRes.value)) {
         setCustomers(customersRes.value);
+      }
+      if (staffRes.status === "fulfilled" && staffRes.value?.users) {
+        setStaffList(staffRes.value.users);
       }
     } catch (err) {
       console.error("Gagal memuat data:", err);
@@ -165,7 +196,8 @@ export default function TicketsPage() {
         category: form.category,
         priority: form.priority,
         description: finalDesc,
-        status: "OPEN",
+        assignee_id: form.assignee_id || undefined,
+        status: form.assignee_id ? "IN_PROGRESS" : "OPEN",
       });
 
       setShowModal(false);
@@ -176,6 +208,7 @@ export default function TicketsPage() {
         category: "Koneksi Internet",
         priority: "MEDIUM",
         description: "",
+        assignee_id: "",
       });
       setCustomerSubscriptions([]);
       
@@ -323,7 +356,17 @@ export default function TicketsPage() {
                         {getStatusBadge(ticket.status)}
                       </td>
                       <td className="px-5 py-4">
-                        <div className="text-xs font-medium text-slate-600">{ticket.assignee_id ? "Teknisi Ditugaskan" : "Belum Ditugaskan"}</div>
+                        {(() => {
+                          const tech = staffList.find(s => s.id === ticket.assignee_id);
+                          return tech ? (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-cyan-50 text-cyan-800 border border-cyan-200 text-[10px] font-bold">
+                              <Wrench className="w-3 h-3 text-cyan-600" />
+                              <span>{tech.full_name}</span>
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-xs italic">Belum Ditugaskan</span>
+                          );
+                        })()}
                       </td>
                       <td className="px-5 py-4 text-right">
                         <button 
@@ -476,6 +519,23 @@ export default function TicketsPage() {
                   placeholder="Tuliskan catatan teknis atau kronologi keluhan pelanggan..."
                 />
               </div>
+
+              {/* 6. Penugasan Teknisi */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Penugasan Teknisi Lapangan (Opsional)</label>
+                <select 
+                  value={form.assignee_id}
+                  onChange={e => setForm({...form, assignee_id: e.target.value})}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                >
+                  <option value="">-- Belum Ditugaskan --</option>
+                  {staffList.map(st => (
+                    <option key={st.id} value={st.id}>
+                      {st.full_name} ({st.role?.name || "Teknisi"}) {st.phone ? `• ${st.phone}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
               
               <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
                 <button 
@@ -504,6 +564,27 @@ export default function TicketsPage() {
         const cleanPhone = cust?.phone?.replace(/\D/g, '') || '';
         const waNumber = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
         const waText = encodeURIComponent(`Halo Bapak/Ibu ${cust?.full_name || 'Pelanggan'}, kami dari Tim Helpdesk terkait tiket komplain #${selectedTicketDetail.id} (${selectedTicketDetail.title})...\n\nPelacakan tiket dapat diakses melalui: ${typeof window !== 'undefined' ? window.location.origin : ''}/ticket/${selectedTicketDetail.id}`);
+
+        const assignedTech = staffList.find(s => s.id === selectedTicketDetail.assignee_id);
+        const techPhone = assignedTech?.phone?.replace(/\D/g, '') || '';
+        const techWaNumber = techPhone.startsWith('0') ? '62' + techPhone.slice(1) : techPhone;
+
+        const rawSpkText = `*SURAT PERINTAH KERJA (SPK) PENANGANAN GANGGUAN*\n` +
+          `Nomor Tiket : #${selectedTicketDetail.id}\n` +
+          `Prioritas   : ${selectedTicketDetail.priority}\n` +
+          `Kategori    : ${selectedTicketDetail.category || "Koneksi Internet"}\n\n` +
+          `*DATA PELANGGAN:*\n` +
+          `Nama Pelanggan : ${cust?.full_name || "Pelanggan"}\n` +
+          `No. Telepon    : ${cust?.phone || "-"}\n` +
+          `Alamat         : ${cust?.address || "Lihat data sistem"}\n\n` +
+          `*RINCIAN GANGGUAN:*\n` +
+          `Judul   : ${selectedTicketDetail.title}\n` +
+          `Keluhan : ${selectedTicketDetail.description || "-"}\n\n` +
+          `*INSTRUKSI NOC:*\n` +
+          `Mohon segera lakukan pemeriksaan fisik di lokasi pelanggan atau ODP terkait. Koordinasikan hasil pekerjaan dengan tim NOC.\n\n` +
+          `Link Tiket: ${typeof window !== 'undefined' ? window.location.origin : ''}/ticket/${selectedTicketDetail.id}`;
+
+        const spkText = encodeURIComponent(rawSpkText);
 
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-150">
@@ -603,6 +684,75 @@ export default function TicketsPage() {
                     <p className="text-slate-700 whitespace-pre-wrap leading-relaxed font-sans bg-white p-2.5 rounded-lg border border-slate-100 text-xs">
                       {selectedTicketDetail.description || "Tidak ada deskripsi rinci."}
                     </p>
+                  </div>
+                </div>
+
+                {/* Technician Assignment & SPK Work Order Dispatch */}
+                <div className="p-3.5 bg-cyan-50/40 rounded-xl border border-cyan-200/70 text-xs space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-cyan-100 pb-2">
+                    <div className="flex items-center gap-2">
+                      <Wrench className="w-3.5 h-3.5 text-cyan-700" />
+                      <span className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">
+                        Penugasan Teknisi Lapangan (SPK)
+                      </span>
+                    </div>
+                    {assignedTech && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white text-cyan-800 border border-cyan-200 shadow-2xs">
+                        Ditugaskan ke: {assignedTech.full_name}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <div className="flex-1">
+                      <select
+                        value={selectedTicketDetail.assignee_id || ""}
+                        onChange={(e) => handleAssignTechnician(e.target.value)}
+                        disabled={assigningTechnician}
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-500 shadow-2xs"
+                      >
+                        <option value="">-- Pilih Staf Teknisi Lapangan --</option>
+                        {staffList.map((st) => (
+                          <option key={st.id} value={st.id}>
+                            {st.full_name} ({st.role?.name || "Teknisi"}) {st.phone ? `• ${st.phone}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {techWaNumber ? (
+                        <a
+                          href={`https://wa.me/${techWaNumber}?text=${spkText}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs shrink-0 cursor-pointer"
+                          title="Kirim Surat Perintah Kerja via WhatsApp ke Teknisi"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Kirim SPK WhatsApp</span>
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled
+                          className="px-3 py-2 bg-slate-100 text-slate-400 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-slate-200 shrink-0 cursor-not-allowed"
+                          title="Pilih teknisi yang memiliki nomor HP terdaftar"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Kirim SPK WhatsApp</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleCopySPK(rawSpkText)}
+                        className="p-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center justify-center transition-colors shadow-2xs cursor-pointer shrink-0"
+                        title="Salin Teks Format SPK ke Clipboard"
+                      >
+                        {copiedSPK ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-slate-500" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
