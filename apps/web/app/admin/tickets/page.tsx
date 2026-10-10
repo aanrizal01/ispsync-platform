@@ -568,6 +568,9 @@ export default function TicketsPage() {
         const assignedTech = staffList.find(s => s.id === selectedTicketDetail.assignee_id);
         const techPhone = assignedTech?.phone?.replace(/\D/g, '') || '';
         const techWaNumber = techPhone.startsWith('0') ? '62' + techPhone.slice(1) : techPhone;
+        const custAddress = (cust?.addresses && cust.addresses.length > 0)
+          ? `${cust.addresses[0].street || ''}${cust.addresses[0].city ? ', ' + cust.addresses[0].city : ''}`
+          : ((cust as any)?.address || "Lihat data sistem");
 
         const rawSpkText = `*SURAT PERINTAH KERJA (SPK) PENANGANAN GANGGUAN*\n` +
           `Nomor Tiket : #${selectedTicketDetail.id}\n` +
@@ -576,7 +579,7 @@ export default function TicketsPage() {
           `*DATA PELANGGAN:*\n` +
           `Nama Pelanggan : ${cust?.full_name || "Pelanggan"}\n` +
           `No. Telepon    : ${cust?.phone || "-"}\n` +
-          `Alamat         : ${cust?.address || "Lihat data sistem"}\n\n` +
+          `Alamat         : ${custAddress}\n\n` +
           `*RINCIAN GANGGUAN:*\n` +
           `Judul   : ${selectedTicketDetail.title}\n` +
           `Keluhan : ${selectedTicketDetail.description || "-"}\n\n` +
