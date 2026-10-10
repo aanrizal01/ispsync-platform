@@ -30,6 +30,31 @@ body {
   nav, header, aside, .sidebar, [role="navigation"], .print\:hidden, .no-print {
     display: none !important;
   }
+
+  /* Thermal Printer Sharp High-Contrast Rule (No Dithering / Pure Black) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Force solid crisp black for printable areas so thermal pins burn sharply */
+  [id*="printable"], [id*="printable"] *, .thermal-receipt, .thermal-receipt * {
+    color: #000000 !important;
+    border-color: #000000 !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+
+  /* Ensure small labels and details are crisp and legible on 58mm thermal rolls */
+  [id*="printable"] span,
+  [id*="printable"] p,
+  [id*="printable"] strong,
+  [id*="printable"] td,
+  [id*="printable"] th {
+    color: #000000 !important;
+    font-weight: 700 !important;
+    -webkit-font-smoothing: antialiased;
+  }
 }
 
 /* Prevent iOS Safari auto-zoom when tapping inputs on mobile */
