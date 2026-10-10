@@ -30,6 +30,7 @@ import {
   Database,
   Globe,
   ArrowRight,
+  MoreVertical,
 } from "lucide-react";
 
 const PROVISIONING_STAGES = [
@@ -116,6 +117,7 @@ export default function SaaSAdminTenantsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [planFilter, setPlanFilter] = useState<string>("ALL");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -150,6 +152,14 @@ export default function SaaSAdminTenantsPage() {
       fetchTenants();
     }
   }, [token]);
+
+  useEffect(() => {
+    function handleClickOutside() {
+      setOpenDropdownId(null);
+    }
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
 
   async function fetchTenants() {
     setLoading(true);
@@ -805,88 +815,106 @@ export default function SaaSAdminTenantsPage() {
 
                         {/* Aksi */}
                         <td className="py-4 px-4 align-top text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {/* Launch 3 Engines menu */}
-                            {!t.isOwner && (
-                              <div className="flex items-center gap-1 border border-slate-200 rounded-lg p-0.5 bg-slate-50 text-[10px]">
-                                <a
-                                  href={ledgerUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className={`px-1.5 py-1 rounded hover:bg-blue-600 hover:text-white text-slate-600 font-bold transition-colors ${
-                                    t.status === "provisioning" || t.status === "purging"
-                                      ? "pointer-events-none opacity-40"
-                                      : ""
-                                  }`}
-                                  title="Buka Ledger"
-                                >
-                                  Ledger
-                                </a>
-                                <a
-                                  href={nexusUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className={`px-1.5 py-1 rounded hover:bg-purple-600 hover:text-white text-slate-600 font-bold transition-colors ${
-                                    t.status === "provisioning" || t.status === "purging"
-                                      ? "pointer-events-none opacity-40"
-                                      : ""
-                                  }`}
-                                  title="Buka Nexus"
-                                >
-                                  Nexus
-                                </a>
-                                <a
-                                  href={fibergridUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className={`px-1.5 py-1 rounded hover:bg-emerald-600 hover:text-white text-slate-600 font-bold transition-colors ${
-                                    t.status === "provisioning" || t.status === "purging"
-                                      ? "pointer-events-none opacity-40"
-                                      : ""
-                                  }`}
-                                  title="Buka FiberGrid"
-                                >
-                                  Fiber
-                                </a>
-                              </div>
-                            )}
-
-                            {/* Edit Button */}
+                          <div className="relative inline-block text-left">
                             <button
-                              onClick={() => openEditModal(t)}
-                              disabled={t.status === "provisioning" || t.status === "purging"}
-                              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                              title="Edit Data Tenant"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenDropdownId(openDropdownId === t.id ? null : t.id);
+                              }}
+                              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors"
+                              title="Menu Aksi"
                             >
-                              <Edit3 className="w-3.5 h-3.5" />
+                              <MoreVertical className="w-4 h-4" />
                             </button>
-
-                            {/* Suspend / Resume Button */}
-                            {!t.isOwner && (
-                              <button
-                                onClick={() => handleToggleStatus(t)}
-                                disabled={t.status === "provisioning" || t.status === "purging"}
-                                className={`p-1.5 rounded-lg border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-                                  t.status === "active"
-                                    ? "border-amber-200 hover:bg-amber-50 text-amber-600"
-                                    : "border-emerald-200 hover:bg-emerald-50 text-emerald-600"
-                                }`}
-                                title={t.status === "active" ? "Suspend Tenant" : "Aktifkan Tenant"}
-                              >
-                                <Power className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-
-                            {/* Delete Button */}
-                            {!t.isOwner && (
-                              <button
-                                onClick={() => openDeleteModal(t)}
-                                disabled={t.status === "provisioning" || t.status === "purging"}
-                                className="p-1.5 rounded-lg border border-red-200 hover:bg-red-50 text-red-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                                title="Pemusnahan Data Tenant (Auto-Purge)"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                            
+                            {openDropdownId === t.id && (
+                              <div className="absolute right-0 mt-2 w-48 bg-white shadow-xl border border-slate-200 rounded-xl z-50 overflow-hidden py-1">
+                                {!t.isOwner && (
+                                  <>
+                                    <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50 border-b border-slate-100 mb-1">
+                                      Launch Engine
+                                    </div>
+                                    <a
+                                      href={ledgerUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className={`flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-blue-700 font-medium ${
+                                        t.status === "provisioning" || t.status === "purging" ? "opacity-40 pointer-events-none" : ""
+                                      }`}
+                                    >
+                                      Ledger
+                                    </a>
+                                    <a
+                                      href={nexusUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className={`flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-purple-50 hover:text-purple-700 font-medium ${
+                                        t.status === "provisioning" || t.status === "purging" ? "opacity-40 pointer-events-none" : ""
+                                      }`}
+                                    >
+                                      Nexus
+                                    </a>
+                                    <a
+                                      href={fibergridUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className={`flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 font-medium border-b border-slate-100 mb-1 ${
+                                        t.status === "provisioning" || t.status === "purging" ? "opacity-40 pointer-events-none" : ""
+                                      }`}
+                                    >
+                                      FiberGrid
+                                    </a>
+                                  </>
+                                )}
+                                
+                                <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50 border-b border-slate-100 mb-1 mt-1">
+                                  Manajemen
+                                </div>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openEditModal(t);
+                                    setOpenDropdownId(null);
+                                  }}
+                                  disabled={t.status === "provisioning" || t.status === "purging"}
+                                  className="w-full text-left flex items-center gap-2 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                  Edit Data Tenant
+                                </button>
+                                
+                                {!t.isOwner && (
+                                  <>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleToggleStatus(t);
+                                        setOpenDropdownId(null);
+                                      }}
+                                      disabled={t.status === "provisioning" || t.status === "purging"}
+                                      className={`w-full text-left flex items-center gap-2 px-4 py-2 text-xs font-medium disabled:opacity-40 disabled:cursor-not-allowed ${
+                                        t.status === "active" ? "text-amber-600 hover:bg-amber-50" : "text-emerald-600 hover:bg-emerald-50"
+                                      }`}
+                                    >
+                                      <Power className="w-3.5 h-3.5" />
+                                      {t.status === "active" ? "Suspend Tenant" : "Aktifkan Tenant"}
+                                    </button>
+                                    
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openDeleteModal(t);
+                                        setOpenDropdownId(null);
+                                      }}
+                                      disabled={t.status === "provisioning" || t.status === "purging"}
+                                      className="w-full text-left flex items-center gap-2 px-4 py-2 text-xs text-red-600 hover:bg-red-50 font-medium disabled:opacity-40 disabled:cursor-not-allowed border-t border-slate-100 mt-1"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                      Pemusnahan Data
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                             )}
                           </div>
                         </td>
