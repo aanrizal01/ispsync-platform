@@ -4,7 +4,8 @@ import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { 
   LifeBuoy, MessageSquare, Send, CheckCircle2, Clock, 
-  AlertCircle, ShieldCheck, User, RefreshCw, ChevronLeft, Lock
+  AlertCircle, ShieldCheck, User, RefreshCw, ChevronLeft, Lock,
+  Bot, Zap, CreditCard, RotateCcw, Wrench, Sparkles
 } from "lucide-react";
 import { ticketsApi, type Ticket, type TicketMessage } from "@/lib/api/tickets";
 import Link from "next/link";
@@ -121,12 +122,46 @@ export default function PublicTicketTrackingPage() {
       });
 
       if (res.data) {
-        setMessages(prev => [...prev, res.data]);
+        if (res.bot_reply) {
+          setMessages(prev => [...prev, res.data, res.bot_reply!]);
+        } else {
+          setMessages(prev => [...prev, res.data]);
+        }
         setReplyText("");
+        setTimeout(() => {
+          loadTicketData(false);
+        }, 1200);
       }
     } catch (err) {
       console.error("Gagal mengirim balasan:", err);
       alert("Gagal mengirim pesan balasan. Silakan coba kembali.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleQuickAction = async (actionText: string) => {
+    if (!ticketId || isTicketClosed || sending) return;
+    setSending(true);
+    try {
+      const res = await ticketsApi.sendPublicMessage(ticketId, {
+        message: actionText,
+        sender_type: "CUSTOMER",
+        sender_name: senderName.trim() || customerName || "Pelanggan",
+      });
+
+      if (res.data) {
+        if (res.bot_reply) {
+          setMessages(prev => [...prev, res.data, res.bot_reply!]);
+        } else {
+          setMessages(prev => [...prev, res.data]);
+        }
+        setTimeout(() => {
+          loadTicketData(false);
+        }, 1200);
+      }
+    } catch (err) {
+      console.error("Gagal mengirim aksi diagnosa:", err);
     } finally {
       setSending(false);
     }
@@ -316,10 +351,17 @@ export default function PublicTicketTrackingPage() {
                 ) : (
                   messages.map((m) => {
                     const isStaff = m.sender_type === "STAFF";
+                    const isBot = m.sender_type === "BOT";
                     return (
-                      <div key={m.id} className={`flex flex-col ${isStaff ? "items-start" : "items-end"}`}>
+                      <div key={m.id} className={`flex flex-col ${isStaff || isBot ? "items-start" : "items-end"}`}>
                         <div className="flex items-center gap-1.5 mb-1 px-1">
-                          {isStaff ? (
+                          {isBot ? (
+                            <span className="text-[10px] font-bold text-indigo-700 flex items-center gap-1">
+                              <Bot className="w-3.5 h-3.5 text-indigo-600" />
+                              <span>{m.sender_name || "Asisten Virtual"}</span>
+                              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-600 border border-indigo-200 ml-0.5">AI BOT</span>
+                            </span>
+                          ) : isStaff ? (
                             <span className="text-[10px] font-bold text-cyan-700 flex items-center gap-1">
                               <ShieldCheck className="w-3.5 h-3.5 text-cyan-600" />
                               <span>{m.sender_name || "Tim Dukungan Teknis"}</span>
@@ -337,7 +379,9 @@ export default function PublicTicketTrackingPage() {
                         </div>
                         <div
                           className={`p-3.5 rounded-2xl text-xs max-w-[85%] sm:max-w-[75%] leading-relaxed whitespace-pre-wrap shadow-2xs ${
-                            isStaff
+                            isBot
+                              ? "bg-slate-900 text-slate-100 border border-slate-800 rounded-tl-xs shadow-md selection:bg-indigo-500"
+                              : isStaff
                               ? "bg-white text-slate-800 border border-slate-200 rounded-tl-xs"
                               : "bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 text-white rounded-tr-xs"
                           }`}
@@ -350,6 +394,52 @@ export default function PublicTicketTrackingPage() {
                 )}
                 <div ref={chatBottomRef} />
               </div>
+
+              {/* Quick Action Diagnosa Chips */}
+              {!isTicketClosed && (
+                <div className="px-3 sm:px-4 py-2.5 bg-slate-50/80 border-t border-slate-200/80 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+                  <span className="text-[10px] font-bold text-slate-500 shrink-0 flex items-center gap-1 mr-1">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
+                    <span>Diagnosa Cepat:</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickAction("Cek Status Koneksi")}
+                    disabled={sending}
+                    className="px-2.5 py-1 rounded-lg bg-white hover:bg-cyan-50 text-cyan-800 hover:text-cyan-900 text-[11px] font-bold border border-slate-200 hover:border-cyan-300 transition-colors shrink-0 flex items-center gap-1 cursor-pointer shadow-2xs disabled:opacity-50"
+                  >
+                    <Zap className="w-3 h-3 text-cyan-600" />
+                    <span>Cek Koneksi</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickAction("Cek Status Tagihan")}
+                    disabled={sending}
+                    className="px-2.5 py-1 rounded-lg bg-white hover:bg-emerald-50 text-emerald-800 hover:text-emerald-900 text-[11px] font-bold border border-slate-200 hover:border-emerald-300 transition-colors shrink-0 flex items-center gap-1 cursor-pointer shadow-2xs disabled:opacity-50"
+                  >
+                    <CreditCard className="w-3 h-3 text-emerald-600" />
+                    <span>Cek Tagihan</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickAction("Panduan Restart Modem")}
+                    disabled={sending}
+                    className="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-50 text-amber-800 hover:text-amber-900 text-[11px] font-bold border border-slate-200 hover:border-amber-300 transition-colors shrink-0 flex items-center gap-1 cursor-pointer shadow-2xs disabled:opacity-50"
+                  >
+                    <RotateCcw className="w-3 h-3 text-amber-600" />
+                    <span>Restart Modem</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleQuickAction("Bantuan Teknisi Lapangan")}
+                    disabled={sending}
+                    className="px-2.5 py-1 rounded-lg bg-white hover:bg-indigo-50 text-indigo-800 hover:text-indigo-900 text-[11px] font-bold border border-slate-200 hover:border-indigo-300 transition-colors shrink-0 flex items-center gap-1 cursor-pointer shadow-2xs disabled:opacity-50"
+                  >
+                    <Wrench className="w-3 h-3 text-indigo-600" />
+                    <span>Eskalasi Teknisi</span>
+                  </button>
+                </div>
+              )}
 
               {/* Closed State Banner or Reply Form */}
               {isTicketClosed ? (

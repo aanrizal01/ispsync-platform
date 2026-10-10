@@ -17,7 +17,7 @@ export interface Ticket {
 export interface TicketMessage {
   id: string;
   ticket_id: string;
-  sender_type: "STAFF" | "CUSTOMER";
+  sender_type: "STAFF" | "CUSTOMER" | "BOT";
   sender_id?: string;
   sender_name: string;
   message: string;
@@ -44,7 +44,7 @@ export const ticketsApi = {
   getMessages: (ticketId: string) =>
     request<{ data: TicketMessage[] }>(`/admin/tickets/${ticketId}/messages`),
 
-  sendMessage: (ticketId: string, data: { message: string; sender_type?: "STAFF" | "CUSTOMER"; sender_name?: string }) =>
+  sendMessage: (ticketId: string, data: { message: string; sender_type?: "STAFF" | "CUSTOMER" | "BOT"; sender_name?: string }) =>
     request<{ message: string; data: TicketMessage }>(`/admin/tickets/${ticketId}/messages`, {
       method: "POST",
       body: JSON.stringify(data),
@@ -54,7 +54,7 @@ export const ticketsApi = {
     request<{ data: { ticket: Ticket; customer_name: string; customer_phone?: string; messages: TicketMessage[] } }>(`/public/tickets/${id}`),
 
   sendPublicMessage: (ticketId: string, data: { message: string; sender_type: "CUSTOMER"; sender_name: string }) =>
-    request<{ message: string; data: TicketMessage }>(`/public/tickets/${ticketId}/messages`, {
+    request<{ message: string; data: TicketMessage; bot_reply?: TicketMessage }>(`/public/tickets/${ticketId}/messages`, {
       method: "POST",
       body: JSON.stringify(data),
     }),

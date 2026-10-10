@@ -634,11 +634,12 @@ export default function TicketsPage() {
                   ) : (
                     messages.map((m) => {
                       const isStaff = m.sender_type === "STAFF";
+                      const isBot = m.sender_type === "BOT";
                       return (
                         <div key={m.id} className={`flex flex-col ${isStaff ? "items-end" : "items-start"}`}>
                           <div className="flex items-center gap-1.5 mb-1 px-1">
-                            <span className={`text-[10px] font-bold uppercase tracking-wider ${isStaff ? "text-cyan-700" : "text-slate-600"}`}>
-                              {isStaff ? `👨‍💻 ${m.sender_name || "Staf Helpdesk"}` : `👤 ${m.sender_name || "Pelanggan"}`}
+                            <span className={`text-[10px] font-bold uppercase tracking-wider ${isStaff ? "text-cyan-700" : isBot ? "text-indigo-600" : "text-slate-600"}`}>
+                              {isStaff ? `👨‍💻 ${m.sender_name || "Staf Helpdesk"}` : isBot ? `🤖 ${m.sender_name || "Asisten Virtual"}` : `👤 ${m.sender_name || "Pelanggan"}`}
                             </span>
                             <span className="text-slate-300 text-[10px]">&bull;</span>
                             <span className="text-[10px] text-slate-400 font-mono">
@@ -649,6 +650,8 @@ export default function TicketsPage() {
                             className={`p-3 rounded-2xl text-xs max-w-[85%] leading-relaxed whitespace-pre-wrap shadow-2xs ${
                               isStaff
                                 ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-tr-xs"
+                                : isBot
+                                ? "bg-slate-900 text-slate-100 border border-slate-800 rounded-tl-xs shadow-md"
                                 : "bg-white text-slate-800 border border-slate-200 rounded-tl-xs"
                             }`}
                           >
