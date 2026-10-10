@@ -48,7 +48,9 @@ export default function AdminLayout({
   const { isAuthenticated, isLoading, isCustomer, isAgent, isAdmin, user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -127,13 +129,17 @@ export default function AdminLayout({
   useEffect(() => {
     setMobileMenuOpen(false);
     setUserDropdownOpen(false);
+    setNotificationDropdownOpen(false);
   }, [pathname]);
 
-  // Click outside to close user dropdown
+  // Click outside to close user dropdowns
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setUserDropdownOpen(false);
+      }
+      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
+        setNotificationDropdownOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -215,16 +221,42 @@ export default function AdminLayout({
 
 
 
-          {/* Right Header: User Profile Dropdown */}
+          {/* Right Header: Actions & User Profile */}
           <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => alert("Tidak ada notifikasi sistem yang baru.")}
-              className="p-2 rounded-xl bg-slate-900/60 hover:bg-slate-800 border border-slate-800/80 hover:border-slate-700 text-slate-300 hover:text-white transition-all shadow-2xs relative cursor-pointer"
-            >
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-slate-900 shadow-[0_0_8px_rgba(244,63,94,0.6)]"></span>
-            </button>
+            
+            {/* Notification Dropdown */}
+            <div className="relative" ref={notifRef}>
+              <button
+                type="button"
+                onClick={() => setNotificationDropdownOpen((prev) => !prev)}
+                className="p-2 rounded-xl bg-slate-900/60 hover:bg-slate-800 border border-slate-800/80 hover:border-slate-700 text-slate-300 hover:text-white transition-all shadow-2xs relative cursor-pointer"
+                aria-expanded={notificationDropdownOpen}
+                aria-label="Notifikasi"
+              >
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-slate-900 shadow-[0_0_8px_rgba(244,63,94,0.6)]"></span>
+              </button>
+
+              {/* Notification Popover */}
+              {notificationDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-72 bg-slate-900/95 backdrop-blur-xl rounded-xl shadow-2xl border border-slate-800 z-50 animate-in fade-in-50 zoom-in-95 duration-150 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-white">Notifikasi Sistem</h3>
+                    <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-semibold">0 Baru</span>
+                  </div>
+                  
+                  <div className="p-6 flex flex-col items-center justify-center text-center gap-2">
+                    <div className="w-12 h-12 rounded-full bg-slate-800/50 flex items-center justify-center text-slate-500 mb-1">
+                      <Bell className="w-5 h-5 opacity-50" />
+                    </div>
+                    <p className="text-sm font-semibold text-slate-300">Kosong</p>
+                    <p className="text-xs text-slate-500 max-w-[200px]">
+                      Tidak ada notifikasi atau peringatan sistem yang baru untuk saat ini.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setUserDropdownOpen((prev) => !prev)}
