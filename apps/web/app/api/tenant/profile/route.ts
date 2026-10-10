@@ -43,6 +43,8 @@ interface MemberRecord {
   domain: string;
   logoUrl?: string;
   brandColor?: string;
+  plan?: string;
+  planCapacity?: string;
 }
 
 function getMembers(): MemberRecord[] {
