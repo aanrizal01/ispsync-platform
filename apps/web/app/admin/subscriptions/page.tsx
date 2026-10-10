@@ -2,12 +2,13 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { Zap, Globe, RefreshCw, Search, X, ChevronLeft, ChevronRight, ArrowUpCircle, CreditCard } from "lucide-react";
+import { Zap, Globe, RefreshCw, Search, X, ChevronLeft, ChevronRight, ArrowUpCircle, CreditCard, Eye, Activity, Power, Clock } from "lucide-react";
 import { subscriptionApi, type Subscription, type CreateSubscriptionInput, type AccessAccount } from "@/lib/api/subscriptions";
 import { customerApi, type Customer } from "@/lib/api/customers";
 import { planApi, type Plan } from "@/lib/api/plans";
 import { ipamApi } from "@/lib/api/ipam";
 import { settingsApi, type BillingAddonSettings, defaultBillingAddonSettings } from "@/lib/api/settings";
+import { radiusApi, type RadiusSession } from "@/lib/api/radius";
 import { formatDate, formatRupiah, cn } from "@/lib/utils";
 
 function formatDuration(seconds?: number) {
@@ -17,6 +18,28 @@ function formatDuration(seconds?: number) {
   if (h > 0) return `${h}j ${m}m`;
   if (m > 0) return `${m}m`;
   return `${seconds}d`;
+}
+
+function formatBytes(bytes: number): string {
+  if (!bytes || bytes <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let i = 0;
+  let val = bytes;
+  while (val >= 1024 && i < units.length - 1) {
+    val /= 1024;
+    i++;
+  }
+  return `${val.toFixed(1)} ${units[i]}`;
+}
+
+function formatSeconds(sec: number): string {
+  if (!sec || sec <= 0) return "0 detik";
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if (h > 0) return `${h}j ${m}m ${s}d`;
+  if (m > 0) return `${m}m ${s}d`;
+  return `${s} detik`;
 }
 
 export default function SubscriptionsPage() {
@@ -56,6 +79,54 @@ export default function SubscriptionsPage() {
   const [ipModalError, setIpModalError] = useState<string | null>(null);
   const [fetchingIpamIP, setFetchingIpamIP] = useState(false);
   const [addonSettings, setAddonSettings] = useState<BillingAddonSettings>(defaultBillingAddonSettings);
+
+  // Session Inspection Modal State
+  const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
+  const [sessionLoading, setSessionLoading] = useState(false);
+  const [sessionAccount, setSessionAccount] = useState<AccessAccount | null>(null);
+  const [sessionHistory, setSessionHistory] = useState<RadiusSession[]>([]);
+  const [kickLoadingId, setKickLoadingId] = useState<string | null>(null);
+
+  const handleOpenSessionInspection = async (account: AccessAccount) => {
+    setSessionAccount(account);
+    setIsSessionModalOpen(true);
+    setSessionLoading(true);
+    try {
+      const res = await radiusApi.listSessions({ search: account.identity });
+      setSessionHistory(res.data || []);
+    } catch (err: any) {
+      alert(err.message || "Gagal memuat riwayat sesi");
+      setIsSessionModalOpen(false);
+    } finally {
+      setSessionLoading(false);
+    }
+  };
+
+  const handleKickSession = async (account: AccessAccount, sessionId: string, nasIp: string) => {
+    if (!nasIp) {
+      alert("NAS IP Address tidak tersedia untuk sesi ini.");
+      return;
+    }
+    if (!confirm(`Putuskan paksa (Kick CoA) sesi login aktif untuk "${account.identity}"? Koneksi internet perangkat terkait akan langsung diputus.`)) {
+      return;
+    }
+    setKickLoadingId(sessionId);
+    try {
+      await radiusApi.disconnectSession({
+        username: account.identity,
+        nas_ip_address: nasIp,
+        acct_session_id: sessionId
+      });
+      alert("Sesi login berhasil diputuskan");
+      const res = await radiusApi.listSessions({ search: account.identity });
+      setSessionHistory(res.data || []);
+      loadData();
+    } catch (err: any) {
+      alert(err.message || "Gagal memutuskan sesi");
+    } finally {
+      setKickLoadingId(null);
+    }
+  };
 
   const handleFetchFirstFreeIP = async () => {
     setFetchingIpamIP(true);
@@ -518,6 +589,14 @@ export default function SubscriptionsPage() {
                                   Offline
                                 </span>
                               )}
+                              <button
+                                type="button"
+                                onClick={() => handleOpenSessionInspection(a)}
+                                className="p-1 text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 rounded transition-colors"
+                                title="Inspeksi Sesi & Riwayat Login"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                             {a.password && (
                               <div className="flex items-center gap-1 font-mono text-[11px] text-slate-500">
@@ -1200,6 +1279,193 @@ export default function SubscriptionsPage() {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Session Inspection Modal */}
+      {isSessionModalOpen && sessionAccount && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="relative bg-white border border-slate-200 rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="relative px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/90 shrink-0">
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-cyan-50 text-cyan-700 border border-cyan-200">
+                  INSPEKSI SESI PPPOE
+                </span>
+                <span className="font-mono text-lg font-black text-slate-900 tracking-wide">
+                  {sessionAccount.identity}
+                </span>
+                {sessionAccount.is_online ? (
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    ONLINE SEKARANG
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-medium uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                    OFFLINE
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSessionModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="relative p-6 overflow-y-auto space-y-6 flex-1 text-slate-800 bg-slate-50/50">
+              {sessionLoading ? (
+                <div className="py-16 text-center">
+                  <div className="w-8 h-8 border-2 border-cyan-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-xs text-slate-500 font-medium">Memuat status sesi FreeRADIUS & riwayat login...</p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Active Session Info */}
+                    <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                          <Activity className="w-3.5 h-3.5 text-cyan-600" /> Sesi Koneksi
+                        </span>
+                      </div>
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">IP Client (Active):</span>
+                          <span className="font-mono font-bold text-slate-900">
+                            {sessionAccount.current_ip || "—"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Gateway NAS (Active):</span>
+                          <span className="font-mono text-slate-700">
+                            {sessionHistory.find(s => s.is_active)?.nasipaddress || "—"}
+                          </span>
+                        </div>
+                      </div>
+                      {sessionAccount.is_online && (
+                        <button
+                          type="button"
+                          disabled={kickLoadingId !== null}
+                          onClick={() => {
+                            const activeSess = sessionHistory.find(s => s.is_active);
+                            handleKickSession(sessionAccount, activeSess?.acctsessionid || "", activeSess?.nasipaddress || "");
+                          }}
+                          className="w-full mt-2 py-1.5 px-3 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                        >
+                          <Power className="w-3.5 h-3.5" />
+                          {kickLoadingId ? "Memutuskan Sesi..." : "Putuskan Sesi (Kick CoA)"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Riwayat Sesi Login (FreeRADIUS Accounting) */}
+                  <div className="space-y-3 pt-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-slate-900">Riwayat Sesi Login</h4>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-cyan-50 text-cyan-700 border border-cyan-200">
+                          {sessionHistory.length} Sesi Tercatat
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-slate-500">
+                        Sumber data: FreeRADIUS Accounting (`radius_sessions`)
+                      </span>
+                    </div>
+
+                    <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                          <tr>
+                            <th className="px-4 py-2.5">Waktu Mulai</th>
+                            <th className="px-4 py-2.5">Waktu Selesai</th>
+                            <th className="px-4 py-2.5">Durasi</th>
+                            <th className="px-4 py-2.5">IP Client</th>
+                            <th className="px-4 py-2.5">MAC Perangkat</th>
+                            <th className="px-4 py-2.5 text-right">Upload</th>
+                            <th className="px-4 py-2.5 text-right">Download</th>
+                            <th className="px-4 py-2.5">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-mono">
+                          {sessionHistory.length === 0 ? (
+                            <tr>
+                              <td colSpan={8} className="px-4 py-8 text-center text-slate-400 font-sans text-xs">
+                                Belum ada riwayat sesi login pada FreeRADIUS.
+                              </td>
+                            </tr>
+                          ) : (
+                            sessionHistory.map((sess) => (
+                              <tr key={sess.radacctid} className="hover:bg-slate-50 transition">
+                                <td className="px-4 py-2.5 text-slate-800">
+                                  {formatDate(sess.acctstarttime)}
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  {sess.is_active ? (
+                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-[10px]">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                      ONLINE
+                                    </span>
+                                  ) : sess.acctstoptime ? (
+                                    <span className="text-slate-600">{formatDate(sess.acctstoptime)}</span>
+                                  ) : (
+                                    <span className="text-slate-400">—</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-2.5 text-slate-800 font-sans font-medium">
+                                  {formatSeconds(sess.acctsessiontime)}
+                                </td>
+                                <td className="px-4 py-2.5 text-slate-900 font-bold">
+                                  {sess.framedipaddress || "—"}
+                                </td>
+                                <td className="px-4 py-2.5 text-cyan-700 font-semibold">
+                                  {sess.callingstationid || "—"}
+                                </td>
+                                <td className="px-4 py-2.5 text-right text-slate-600">
+                                  {formatBytes(sess.acctinputoctets)}
+                                </td>
+                                <td className="px-4 py-2.5 text-right text-cyan-700 font-bold">
+                                  {formatBytes(sess.acctoutputoctets)}
+                                </td>
+                                <td className="px-4 py-2.5 font-sans">
+                                  {sess.is_active && sess.nasipaddress && (
+                                    <button
+                                      type="button"
+                                      disabled={kickLoadingId === sess.acctsessionid}
+                                      onClick={() => handleKickSession(sessionAccount, sess.acctsessionid, sess.nasipaddress)}
+                                      className="text-rose-600 hover:text-rose-800 font-semibold text-[10px] uppercase cursor-pointer disabled:opacity-50"
+                                    >
+                                      {kickLoadingId === sess.acctsessionid ? "Disconnecting..." : "Kick"}
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-3.5 border-t border-slate-200 bg-white flex items-center justify-end shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsSessionModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold text-xs transition cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}
