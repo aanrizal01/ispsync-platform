@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import {\n  Terminal,\n  Copy,\n  Check,
+import {  Terminal,  Copy,  Check,
   Server,
   Plus,
   Activity,
@@ -256,7 +256,7 @@ export default function AdminNetworkPage() {
     setVpnCopied(true);
     setTimeout(() => setVpnCopied(false), 2000);
   };
-\n  const formatBytes = (bytes: number) => {
+  const formatBytes = (bytes: number) => {
     if (bytes === 0) return "0 MB";
     const mb = bytes / (1024 * 1024);
     if (mb > 1024) {
