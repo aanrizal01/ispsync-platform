@@ -10,6 +10,9 @@ import {
   ChevronDown,
   LogOut,
   ChevronRight,
+  UserCog,
+  ShieldCheck,
+  Bell,
 } from "lucide-react";
 
 // Route title map for dynamic breadcrumbs
@@ -213,7 +216,12 @@ export default function AdminLayout({
 
 
           {/* Right Header: User Profile Dropdown */}
-          <div className="relative" ref={dropdownRef}>
+          <div className="flex items-center gap-4">
+            <Link href="/admin/notifications" className="p-2 rounded-full border border-slate-200 hover:bg-slate-50 text-slate-600 bg-white shadow-xs relative transition-colors">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-white"></span>
+            </Link>
+            <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setUserDropdownOpen((prev) => !prev)}
               className="flex items-center gap-2.5 p-1.5 pr-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800 border border-slate-800/80 hover:border-slate-700 transition-all select-none group shadow-2xs"
@@ -243,6 +251,25 @@ export default function AdminLayout({
                   <p className="text-[11px] text-slate-400 truncate">{user?.email || "admin@ispsync.id"}</p>
                 </div>
 
+                <div className="border-t border-slate-800 pt-1 mt-1 pb-1">
+                  <Link
+                    href="/admin/users"
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors text-left"
+                  >
+                    <UserCog className="w-4 h-4 text-slate-400" />
+                    Pengguna / Staf
+                  </Link>
+                  <Link
+                    href="/admin/roles"
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors text-left"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-slate-400" />
+                    Peran & Hak Akses
+                  </Link>
+                </div>
+
                 {/* Logout Action */}
                 <div className="border-t border-slate-800 pt-1 mt-1">
                   <button
@@ -255,6 +282,7 @@ export default function AdminLayout({
                 </div>
               </div>
             )}
+            </div>
           </div>
         </header>
 

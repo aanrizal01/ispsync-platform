@@ -169,24 +169,6 @@ const navSections: NavSection[] = [
     title: "SISTEM & KEAMANAN",
     items: [
       {
-        label: "Notifikasi",
-        href: "/admin/notifications",
-        icon: Bell,
-        permission: "admin:audit",
-      },
-      {
-        label: "Pengguna / Staf",
-        href: "/admin/users",
-        icon: UserCog,
-        permission: "admin:users",
-      },
-      {
-        label: "Peran & Hak Akses",
-        href: "/admin/roles",
-        icon: ShieldCheck,
-        permission: "admin:roles",
-      },
-      {
         label: "Audit Log",
         href: "/admin/audit-logs",
         icon: ClipboardList,
