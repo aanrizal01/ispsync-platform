@@ -12,6 +12,34 @@ export default function TicketsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({
+    title: "",
+    category: "Koneksi Internet",
+    priority: "MEDIUM",
+    description: "",
+  });
+
+  const handleCreateTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      await ticketsApi.createTicket({
+        ...form,
+        status: "OPEN"
+      });
+      setShowModal(false);
+      setForm({ title: "", category: "Koneksi Internet", priority: "MEDIUM", description: "" });
+      fetchTickets();
+    } catch (err) {
+      console.error(err);
+      alert("Gagal membuat tiket");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
 
   useEffect(() => {
     fetchTickets();
@@ -68,7 +96,7 @@ export default function TicketsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-2">
+          <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-2">
             <Plus className="w-4 h-4" />
             <span>Buat Tiket</span>
           </button>
@@ -148,6 +176,98 @@ export default function TicketsPage() {
           </div>
         </div>
       </div>
+    
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden border border-slate-200">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h2 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+                <LifeBuoy className="w-5 h-5 text-cyan-600" />
+                <span>Buat Tiket Baru</span>
+              </h2>
+              <button 
+                onClick={() => setShowModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateTicket} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Subjek / Judul Masalah</label>
+                <input 
+                  type="text" 
+                  required
+                  value={form.title}
+                  onChange={e => setForm({...form, title: e.target.value})}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500" 
+                  placeholder="Misal: Internet Lambat, Router Mati..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Kategori</label>
+                <select 
+                  value={form.category}
+                  onChange={e => setForm({...form, category: e.target.value})}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                >
+                  <option value="Koneksi Internet">Koneksi Internet</option>
+                  <option value="Gangguan Fisik (Kabel)">Gangguan Fisik (Kabel)</option>
+                  <option value="Router / Modem">Router / Modem</option>
+                  <option value="Billing / Tagihan">Billing / Tagihan</option>
+                  <option value="Lainnya">Lainnya</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Prioritas</label>
+                <select 
+                  value={form.priority}
+                  onChange={e => setForm({...form, priority: e.target.value})}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                >
+                  <option value="LOW">Rendah (Low)</option>
+                  <option value="MEDIUM">Sedang (Medium)</option>
+                  <option value="HIGH">Tinggi (High)</option>
+                  <option value="CRITICAL">Kritis (Critical)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Deskripsi Lengkap</label>
+                <textarea 
+                  required
+                  rows={4}
+                  value={form.description}
+                  onChange={e => setForm({...form, description: e.target.value})}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none" 
+                  placeholder="Jelaskan detail permasalahan yang dialami..."
+                />
+              </div>
+              
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors"
+                >
+                  Batal
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={submitting}
+                  className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-sm transition-all"
+                >
+                  {submitting ? "Menyimpan..." : "Buat Tiket"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
