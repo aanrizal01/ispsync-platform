@@ -102,7 +102,13 @@ type Storage interface {
 	// FreeRADIUS Live Sessions
 	GetLiveRadiusSessions(ctx context.Context, tenantID string) (map[string]domain.LiveSessionInfo, error)
 
+		// Tickets
+	ListTickets(ctx context.Context, tenantID string) ([]domain.Ticket, error)
+	CreateTicket(ctx context.Context, t *domain.Ticket) error
+	UpdateTicket(ctx context.Context, t *domain.Ticket) error
+
 	// Close
 	Close() error
 }
+
 

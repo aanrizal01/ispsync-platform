@@ -2723,3 +2723,54 @@ func (s *PostgresStorage) GetLiveRadiusSessions(ctx context.Context, tenantID st
 }
 
 
+
+
+// ── Tickets ────────────────────────────────────────────────────────────
+
+func (s *PostgresStorage) ListTickets(ctx context.Context, tenantID string) ([]domain.Ticket, error) {
+	rows, err := s.db.QueryContext(ctx, "SELECT id, tenant_id, customer_id, title, description, status, priority, category, assignee_id, created_at, updated_at FROM tickets WHERE tenant_id = $1 ORDER BY created_at DESC", tenantID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []domain.Ticket
+	for rows.Next() {
+		var t domain.Ticket
+		var custID, desc, cat, assignID sql.NullString
+		if err := rows.Scan(&t.ID, &t.TenantID, &custID, &t.Title, &desc, &t.Status, &t.Priority, &cat, &assignID, &t.CreatedAt, &t.UpdatedAt); err != nil {
+			return nil, err
+		}
+		t.CustomerID = custID.String
+		t.Description = desc.String
+		t.Category = cat.String
+		t.AssigneeID = assignID.String
+		list = append(list, t)
+	}
+	return list, nil
+}
+
+func (s *PostgresStorage) CreateTicket(ctx context.Context, t *domain.Ticket) error {
+	t.ID = uuid.New().String()
+	t.CreatedAt = time.Now()
+	t.UpdatedAt = time.Now()
+	if t.Status == "" {
+		t.Status = "OPEN"
+	}
+	if t.Priority == "" {
+		t.Priority = "MEDIUM"
+	}
+
+	_, err := s.db.ExecContext(ctx, 
+		"INSERT INTO tickets (id, tenant_id, customer_id, title, description, status, priority, category, assignee_id, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+		t.ID, t.TenantID, nilIfEmpty(t.CustomerID), t.Title, nilIfEmpty(t.Description), t.Status, t.Priority, nilIfEmpty(t.Category), nilIfEmpty(t.AssigneeID), t.CreatedAt, t.UpdatedAt)
+	return err
+}
+
+func (s *PostgresStorage) UpdateTicket(ctx context.Context, t *domain.Ticket) error {
+	t.UpdatedAt = time.Now()
+	_, err := s.db.ExecContext(ctx, 
+		"UPDATE tickets SET title = $1, description = $2, status = $3, priority = $4, category = $5, assignee_id = $6, updated_at = $7 WHERE id = $8 AND tenant_id = $9",
+		t.Title, nilIfEmpty(t.Description), t.Status, t.Priority, nilIfEmpty(t.Category), nilIfEmpty(t.AssigneeID), t.UpdatedAt, t.ID, t.TenantID)
+	return err
+}

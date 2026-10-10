@@ -4231,3 +4231,48 @@ func (h *APIHandler) AdminSmartOLTDiagnostics(w http.ResponseWriter, r *http.Req
 	h.successResponse(w, "Diagnostik sinyal optik SmartOLT", diag)
 }
 
+
+
+// ── TICKETS ────────────────────────────────────────────────────────────
+
+func (h *APIHandler) AdminListTickets(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Context().Value("tenant_id").(string)
+	tickets, err := h.store.ListTickets(r.Context(), tenantID)
+	if err != nil {
+		h.errorResponse(w, "Gagal memuat tiket", http.StatusInternalServerError)
+		return
+	}
+	h.jsonResponse(w, map[string]interface{}{"data": tickets})
+}
+
+func (h *APIHandler) AdminCreateTicket(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Context().Value("tenant_id").(string)
+	var t domain.Ticket
+	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
+		h.errorResponse(w, "Payload tidak valid", http.StatusBadRequest)
+		return
+	}
+	t.TenantID = tenantID
+	if err := h.store.CreateTicket(r.Context(), &t); err != nil {
+		h.errorResponse(w, "Gagal membuat tiket", http.StatusInternalServerError)
+		return
+	}
+	h.jsonResponse(w, map[string]interface{}{"message": "Tiket berhasil dibuat", "data": t})
+}
+
+func (h *APIHandler) AdminUpdateTicket(w http.ResponseWriter, r *http.Request) {
+	tenantID := r.Context().Value("tenant_id").(string)
+	id := chi.URLParam(r, "id")
+	var t domain.Ticket
+	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
+		h.errorResponse(w, "Payload tidak valid", http.StatusBadRequest)
+		return
+	}
+	t.ID = id
+	t.TenantID = tenantID
+	if err := h.store.UpdateTicket(r.Context(), &t); err != nil {
+		h.errorResponse(w, "Gagal mengupdate tiket", http.StatusInternalServerError)
+		return
+	}
+	h.jsonResponse(w, map[string]interface{}{"message": "Tiket berhasil diupdate", "data": t})
+}

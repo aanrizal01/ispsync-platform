@@ -3,42 +3,31 @@
 import { useState } from "react";
 import { Plus, Search, Filter, LifeBuoy, MoreVertical, MessageSquare, Clock, CheckCircle2, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { useEffect } from "react";
+import { ticketsApi, type Ticket } from "@/lib/api/tickets";
 
-const dummyTickets = [
-  {
-    id: "TKT-2610-001",
-    customer: "Budi Santoso",
-    title: "Lampu Merah LOS di Modem",
-    status: "OPEN",
-    priority: "CRITICAL",
-    createdAt: "Hari ini, 09:15 WIB",
-    assignee: "Belum Ditugaskan",
-    category: "Gangguan Fisik (Kabel)"
-  },
-  {
-    id: "TKT-2610-002",
-    customer: "Cafe Senja",
-    title: "Internet Lambat Saat Malam",
-    status: "IN_PROGRESS",
-    priority: "HIGH",
-    createdAt: "Kemarin, 19:30 WIB",
-    assignee: "Teknisi Anwar",
-    category: "Kualitas Sinyal (QoS)"
-  },
-  {
-    id: "TKT-2610-003",
-    customer: "PT Inovasi Digital",
-    title: "Request Pindah Tiang ODP",
-    status: "RESOLVED",
-    priority: "MEDIUM",
-    createdAt: "3 Hari yang lalu",
-    assignee: "Teknisi Budi",
-    category: "Administrasi"
-  }
-];
+
 
 export default function TicketsPage() {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    fetchTickets();
+  }, []);
+
+  const fetchTickets = async () => {
+    setLoading(true);
+    try {
+      const res = await ticketsApi.getTickets();
+      if (res.data) setTickets(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -116,11 +105,11 @@ export default function TicketsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {dummyTickets.map((ticket) => (
+              {tickets.map((ticket) => (
                 <tr key={ticket.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-5 py-4">
                     <div className="font-bold text-slate-900 text-xs">{ticket.id}</div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">{ticket.customer}</div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">{ticket.customer_id || "Pelanggan Umum"}</div>
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
@@ -130,14 +119,14 @@ export default function TicketsPage() {
                     <div className="text-[10px] font-medium text-slate-400 mt-1 flex items-center gap-2">
                       <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">{ticket.category}</span>
                       <span>&bull;</span>
-                      <span>{ticket.createdAt}</span>
+                      <span>{new Date(ticket.created_at).toLocaleDateString("id-ID")}</span>
                     </div>
                   </td>
                   <td className="px-5 py-4">
                     {getStatusBadge(ticket.status)}
                   </td>
                   <td className="px-5 py-4">
-                    <div className="text-xs font-medium text-slate-600">{ticket.assignee}</div>
+                    <div className="text-xs font-medium text-slate-600">{ticket.assignee_id ? "Ditugaskan" : "Belum Ditugaskan"}</div>
                   </td>
                   <td className="px-5 py-4 text-right">
                     <button className="p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-lg transition-colors">
@@ -151,7 +140,7 @@ export default function TicketsPage() {
         </div>
         
         <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
-          <span className="text-[11px] text-slate-500 font-medium">Menampilkan 3 tiket aktif</span>
+          <span className="text-[11px] text-slate-500 font-medium">Menampilkan {tickets.length} tiket aktif</span>
           <div className="flex items-center gap-1">
             <button className="px-2 py-1 border border-slate-200 rounded-md text-[11px] font-bold text-slate-400" disabled>Prev</button>
             <button className="px-2 py-1 border border-slate-200 rounded-md text-[11px] font-bold text-slate-600 bg-white">1</button>
@@ -162,3 +151,4 @@ export default function TicketsPage() {
     </div>
   );
 }
+

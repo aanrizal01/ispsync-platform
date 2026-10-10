@@ -241,7 +241,12 @@ func main() {
 		api.Route("/admin", func(adm chi.Router) {
 			adm.Use(adminOnly)
 			adm.Get("/customers/{id}/documents", apiH.AdminGetCustomerDocuments)
-			adm.Get("/registrations", apiH.AdminListRegistrations)
+						adm.Get("/registrations", apiH.AdminListRegistrations)
+			
+			// Tickets
+			adm.Get("/tickets", apiH.AdminListTickets)
+			adm.Post("/tickets", apiH.AdminCreateTicket)
+			adm.Put("/tickets/{id}", apiH.AdminUpdateTicket)
 			adm.Post("/registrations/{id}/uncovered", apiH.AdminMarkUncovered)
 			adm.Delete("/registrations/{id}", apiH.AdminDeleteRegistration)
 			adm.Post("/registrations/{id}/delete", apiH.AdminDeleteRegistration)
@@ -606,3 +611,4 @@ func main() {
 	}
 	log.Println("[ISPSYNC CORE] Stopped.")
 }
+
