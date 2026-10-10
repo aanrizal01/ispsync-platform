@@ -13,7 +13,7 @@ export default function VPNManagementPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/v1/tenant/mikrotik/generate", {
+      const res = await fetch("/internal-api/vpn-generate", {
         method: "POST",
       });
       if (!res.ok) {
