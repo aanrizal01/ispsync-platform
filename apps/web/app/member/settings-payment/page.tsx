@@ -95,6 +95,7 @@ export default function PaymentSettingsPage() {
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 >
                   <option value="midtrans">Midtrans (Default)</option>
+                  <option value="duitku">Duitku</option>
                   <option value="xendit">Xendit</option>
                   <option value="tripay">Tripay</option>
                 </select>
@@ -125,37 +126,39 @@ export default function PaymentSettingsPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                  Merchant ID
+                  {form.provider === "duitku" ? "Merchant Code" : "Merchant ID"}
                 </label>
                 <input
                   type="text"
-                  placeholder="G-XXXXXX"
+                  placeholder={form.provider === "duitku" ? "D12345" : "G-XXXXXX"}
                   value={form.midtransMerchantId}
                   onChange={e => setForm({...form, midtransMerchantId: e.target.value})}
                   className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                  Client Key (Public)
-                </label>
-                <input
-                  type="text"
-                  placeholder="SB-Mid-client-XXXXX"
-                  value={form.midtransClientKey}
-                  onChange={e => setForm({...form, midtransClientKey: e.target.value})}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                />
-              </div>
+              {form.provider !== "duitku" && (
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                    Client Key (Public)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="SB-Mid-client-XXXXX"
+                    value={form.midtransClientKey}
+                    onChange={e => setForm({...form, midtransClientKey: e.target.value})}
+                    className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                  Server Key (Secret)
+                  {form.provider === "duitku" ? "API Key / Secret Key" : "Server Key (Secret)"}
                 </label>
                 <input
                   type="password"
-                  placeholder="SB-Mid-server-XXXXX"
+                  placeholder={form.provider === "duitku" ? "32 karakter kunci API dari Merchant Duitku" : "SB-Mid-server-XXXXX"}
                   value={form.midtransServerKey}
                   onChange={e => setForm({...form, midtransServerKey: e.target.value})}
                   className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500"
