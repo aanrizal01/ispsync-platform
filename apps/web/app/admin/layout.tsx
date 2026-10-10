@@ -217,9 +217,9 @@ export default function AdminLayout({
 
           {/* Right Header: User Profile Dropdown */}
           <div className="flex items-center gap-4">
-            <Link href="/admin/notifications" className="p-2 rounded-full border border-slate-200 hover:bg-slate-50 text-slate-600 bg-white shadow-xs relative transition-colors">
+            <Link href="/admin/notifications" className="p-2 rounded-xl bg-slate-900/60 hover:bg-slate-800 border border-slate-800/80 hover:border-slate-700 text-slate-300 hover:text-white transition-all shadow-2xs relative">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-white"></span>
+              <span className="absolute top-1 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-slate-900 shadow-[0_0_8px_rgba(244,63,94,0.6)]"></span>
             </Link>
             <div className="relative" ref={dropdownRef}>
             <button
