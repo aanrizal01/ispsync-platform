@@ -4239,25 +4239,25 @@ func (h *APIHandler) AdminListTickets(w http.ResponseWriter, r *http.Request) {
 	tenantID := r.Context().Value("tenant_id").(string)
 	tickets, err := h.store.ListTickets(r.Context(), tenantID)
 	if err != nil {
-		h.errorResponse(w, "Gagal memuat tiket", http.StatusInternalServerError)
+		h.errorResponse(w, http.StatusInternalServerError, "Gagal memuat tiket")
 		return
 	}
-	h.jsonResponse(w, map[string]interface{}{"data": tickets})
+	h.jsonResponse(w, http.StatusOK, map[string]interface{}{"data": tickets})
 }
 
 func (h *APIHandler) AdminCreateTicket(w http.ResponseWriter, r *http.Request) {
 	tenantID := r.Context().Value("tenant_id").(string)
 	var t domain.Ticket
 	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
-		h.errorResponse(w, "Payload tidak valid", http.StatusBadRequest)
+		h.errorResponse(w, http.StatusBadRequest, "Payload tidak valid")
 		return
 	}
 	t.TenantID = tenantID
 	if err := h.store.CreateTicket(r.Context(), &t); err != nil {
-		h.errorResponse(w, "Gagal membuat tiket", http.StatusInternalServerError)
+		h.errorResponse(w, http.StatusInternalServerError, "Gagal membuat tiket")
 		return
 	}
-	h.jsonResponse(w, map[string]interface{}{"message": "Tiket berhasil dibuat", "data": t})
+	h.jsonResponse(w, http.StatusOK, map[string]interface{}{"message": "Tiket berhasil dibuat", "data": t})
 }
 
 func (h *APIHandler) AdminUpdateTicket(w http.ResponseWriter, r *http.Request) {
@@ -4265,14 +4265,14 @@ func (h *APIHandler) AdminUpdateTicket(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var t domain.Ticket
 	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
-		h.errorResponse(w, "Payload tidak valid", http.StatusBadRequest)
+		h.errorResponse(w, http.StatusBadRequest, "Payload tidak valid")
 		return
 	}
 	t.ID = id
 	t.TenantID = tenantID
 	if err := h.store.UpdateTicket(r.Context(), &t); err != nil {
-		h.errorResponse(w, "Gagal mengupdate tiket", http.StatusInternalServerError)
+		h.errorResponse(w, http.StatusInternalServerError, "Gagal mengupdate tiket")
 		return
 	}
-	h.jsonResponse(w, map[string]interface{}{"message": "Tiket berhasil diupdate", "data": t})
+	h.jsonResponse(w, http.StatusOK, map[string]interface{}{"message": "Tiket berhasil diupdate", "data": t})
 }
