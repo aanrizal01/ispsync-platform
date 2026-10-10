@@ -84,6 +84,7 @@ type Tenant = {
     fibergrid?: string;
     portal?: string;
   };
+  maxCustomers?: number;
 };
 
 type Stats = {
@@ -121,6 +122,7 @@ export default function SaaSAdminTenantsPage() {
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
   const [activeTenant, setActiveTenant] = useState<Partial<Tenant> | null>(null);
   const [formPassword, setFormPassword] = useState("");
+  const [maxCustomers, setMaxCustomers] = useState<number>(500);
   const [submitting, setSubmitting] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
@@ -316,6 +318,7 @@ export default function SaaSAdminTenantsPage() {
       expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
     });
     setFormPassword("");
+    setMaxCustomers(500);
     setIsModalOpen(true);
   }
 
@@ -323,6 +326,7 @@ export default function SaaSAdminTenantsPage() {
     setModalMode("edit");
     setActiveTenant({ ...tenant });
     setFormPassword("");
+    setMaxCustomers(tenant.maxCustomers || 500);
     setIsModalOpen(true);
   }
 
@@ -442,6 +446,7 @@ export default function SaaSAdminTenantsPage() {
     const payload: any = {
       action: modalMode === "edit" ? "update" : modalMode,
       ...activeTenant,
+      maxCustomers: Number(maxCustomers),
     };
     if (formPassword) {
       payload.password = formPassword;
@@ -647,6 +652,7 @@ export default function SaaSAdminTenantsPage() {
                   <th className="py-3.5 px-4">ID &amp; Entitas ISP</th>
                   <th className="py-3.5 px-4">PIC &amp; Kontak</th>
                   <th className="py-3.5 px-4">Paket &amp; Kapasitas</th>
+                  <th className="py-3.5 px-4">Kuota</th>
                   <th className="py-3.5 px-4">Masa Berlaku</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4 text-right">Aksi</th>
@@ -655,13 +661,13 @@ export default function SaaSAdminTenantsPage() {
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                    <td colSpan={7} className="py-12 text-center text-slate-400">
                       Memuat data pelanggan SaaS...
                     </td>
                   </tr>
                 ) : filteredTenants.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-400">
+                    <td colSpan={7} className="py-12 text-center text-slate-400">
                       Tidak ada data pelanggan SaaS yang sesuai dengan filter pencarian.
                     </td>
                   </tr>
@@ -747,6 +753,13 @@ export default function SaaSAdminTenantsPage() {
                             {formatRupiah(t.planPrice)} / bln
                           </div>
                           <div className="text-slate-400 text-[10px] mt-0.5">{t.planCapacity}</div>
+                        </td>
+
+                        {/* Kuota */}
+                        <td className="py-4 px-4 align-top">
+                          <span className="font-medium text-slate-800 text-xs">
+                            {t.maxCustomers ? `${t.maxCustomers} Pelanggan` : "Unlimited"}
+                          </span>
                         </td>
 
                         {/* Masa Berlaku */}
@@ -1214,6 +1227,22 @@ export default function SaaSAdminTenantsPage() {
                       <option value="active">Aktif (Active)</option>
                       <option value="suspended">Ditangguhkan (Suspended)</option>
                     </select>
+                  </div>
+
+                  {/* Kuota Pelanggan */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                      Kuota Pelanggan (Max Active Connections)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      value={maxCustomers}
+                      onChange={(e) => setMaxCustomers(Number(e.target.value))}
+                      placeholder="Contoh: 500"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                    />
                   </div>
                 </div>
 
