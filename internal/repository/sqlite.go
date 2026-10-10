@@ -1999,3 +1999,10 @@ func (s *SQLiteStorage) UpdateTicket(ctx context.Context, t *domain.Ticket) erro
 	return err
 }
 
+
+func nilIfEmpty(s string) interface{} {
+	if s == "" {
+		return nil
+	}
+	return s
+}
