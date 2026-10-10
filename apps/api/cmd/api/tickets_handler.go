@@ -264,11 +264,17 @@ func handleCreateTicketMessage(db *pgxpool.Pool, log *slog.Logger) http.HandlerF
 			}
 		}
 
-		// Ensure ticket exists
+		// Ensure ticket exists and check status
 		var currentTicketID string
-		err := db.QueryRow(r.Context(), `SELECT id FROM tickets WHERE id = $1`, ticketID).Scan(&currentTicketID)
+		var currentStatus string
+		err := db.QueryRow(r.Context(), `SELECT id, status FROM tickets WHERE id = $1`, ticketID).Scan(&currentTicketID, &currentStatus)
 		if err != nil {
 			middleware.JSONError(w, log, apperrors.NotFound("Tiket tidak ditemukan"))
+			return
+		}
+
+		if req.SenderType == "CUSTOMER" && (strings.ToUpper(currentStatus) == "CLOSED" || strings.ToUpper(currentStatus) == "RESOLVED") {
+			middleware.JSONError(w, log, apperrors.BadRequest("Tiket ini telah ditutup atau selesai ditangani. Percakapan baru tidak dapat dikirim."))
 			return
 		}
 

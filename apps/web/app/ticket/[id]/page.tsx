@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { 
   LifeBuoy, MessageSquare, Send, CheckCircle2, Clock, 
-  AlertCircle, ShieldCheck, User, RefreshCw, ChevronLeft
+  AlertCircle, ShieldCheck, User, RefreshCw, ChevronLeft, Lock
 } from "lucide-react";
 import { ticketsApi, type Ticket, type TicketMessage } from "@/lib/api/tickets";
 import Link from "next/link";
@@ -106,9 +106,11 @@ export default function PublicTicketTrackingPage() {
     chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const isTicketClosed = ticket?.status ? ["CLOSED", "RESOLVED"].includes(ticket.status.toUpperCase()) : false;
+
   const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ticketId || !replyText.trim()) return;
+    if (!ticketId || !replyText.trim() || isTicketClosed) return;
 
     setSending(true);
     try {
@@ -349,25 +351,49 @@ export default function PublicTicketTrackingPage() {
                 <div ref={chatBottomRef} />
               </div>
 
-              {/* Reply Form */}
-              <form onSubmit={handleSendReply} className="p-3 sm:p-4 border-t border-slate-100 bg-white flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-                <input
-                  type="text"
-                  required
-                  placeholder="Ketik pesan atau balasan untuk teknisi..."
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-600 focus:bg-white transition-all font-medium"
-                />
-                <button
-                  type="submit"
-                  disabled={sending || !replyText.trim()}
-                  className="px-5 py-2.5 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{sending ? "Mengirim..." : "Kirim Pesan"}</span>
-                </button>
-              </form>
+              {/* Closed State Banner or Reply Form */}
+              {isTicketClosed ? (
+                <div className="p-4 sm:p-5 border-t border-slate-200 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-slate-200 text-slate-600 flex items-center justify-center shrink-0">
+                      <Lock className="w-5 h-5 text-slate-500" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-800">Tiket Telah Selesai &amp; Ditutup</h4>
+                      <p className="text-[11px] text-slate-500 leading-normal">
+                        Percakapan pada tiket ini telah diarsipkan dan dikunci. Jika Anda masih mengalami kendala atau membutuhkan bantuan teknis baru, silakan buat tiket baru.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                    <Link
+                      href="/ticket"
+                      className="w-full sm:w-auto px-4 py-2 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 transition-colors shadow-2xs text-center inline-block"
+                    >
+                      Buka Tiket Baru
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleSendReply} className="p-3 sm:p-4 border-t border-slate-100 bg-white flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ketik pesan atau balasan untuk teknisi..."
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-600 focus:bg-white transition-all font-medium"
+                  />
+                  <button
+                    type="submit"
+                    disabled={sending || !replyText.trim()}
+                    className="px-5 py-2.5 bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 hover:from-cyan-500 hover:to-blue-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{sending ? "Mengirim..." : "Kirim Pesan"}</span>
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         ) : null}
