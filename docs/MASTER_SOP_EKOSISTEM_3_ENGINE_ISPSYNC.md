@@ -19,7 +19,7 @@
 3. [Bab III: Bagian I — SOP Infrastruktur Fisik & Core Optik (ISPSYNC FiberGrid)](#bab-iii-bagian-i--sop-infrastruktur-fisik--core-optik-fttx-engine)
    - [SOP-FTTX-01: Perencanaan & Pemasangan Tiang ODP / ODC Baru](#sop-fttx-01-perencanaan--pemasangan-tiang-odp--odc-baru)
    - [SOP-FTTX-02: Pemetaan Rute Kabel FO GIS (12/24/48 Core) & Ekspor KML](#sop-fttx-02-pemetaan-rute-kabel-fo-gis-122448-core--ekspor-kml)
-   - [SOP-FTTX-03: Sinkronisasi Aset ODP ke ISP Onboarding Engine](#sop-fttx-03-sinkronisasi-aset-odp-ke-isp-onboarding-engine)
+   - [SOP-FTTX-03: Sinkronisasi Aset ODP ke Nexus](#sop-fttx-03-sinkronisasi-aset-odp-ke-isp-onboarding-engine)
    - [SOP-FTTX-04: Standar Pengukuran Daya Optik SNMP & Ambang Batas dBm](#sop-fttx-04-standar-pengukuran-daya-optik-snmp--ambang-batas-dbm)
    - [SOP-FTTX-05: Zero-Touch Provisioning (SmartOLT) & TR-069 Remote Wi-Fi](#sop-fttx-05-zero-touch-provisioning-smartolt--tr-069-remote-wi-fi)
    - [SOP-FTTX-06: Manajemen Sewa Port Wholesale Jartaplok B2B](#sop-fttx-06-manajemen-sewa-port-wholesale-jartaplok-b2b)
@@ -85,7 +85,7 @@ Platform ISPSYNC menerapkan arsitektur domain pintu masuk tunggal terpadu per en
 
 ---
 
-## BAB III: BAGIAN I — SOP INFRASTRUKTUR FISIK & CORE OPTIK (FTTX ENGINE)
+## BAB III: BAGIAN I — SOP INFRASTRUKTUR FISIK & CORE OPTIK (FiberGrid)
 
 ### SOP-FTTX-01: Perencanaan & Pemasangan Tiang ODP / ODC Baru
 1. **Survei Lapangan**: Tim Fiber Engineering melakukan survei jalur jalan raya / perumahan yang belum terlayani.
@@ -103,7 +103,7 @@ Platform ISPSYNC menerapkan arsitektur domain pintu masuk tunggal terpadu per en
 3. Tentukan spesifikasi jenis kabel: `G.652D` (Loose Tube Outdoor) atau `G.657A2` (Bending Insensitive).
 4. Untuk kebutuhan dokumentasi perizinan dinas PUPR atau instansi daerah, gunakan tombol **`[Export KML]`** agar dapat langsung ditinjau pada aplikasi Google Earth Pro.
 
-### SOP-FTTX-03: Sinkronisasi Aset ODP ke ISP Onboarding Engine
+### SOP-FTTX-03: Sinkronisasi Aset ODP ke Nexus
 1. Setiap kali ada penambahan klaster tiang ODP baru yang telah selesai disambung (*splicing*), admin FTTX wajib membuka tab **Wholesale & Integration**.
 2. Klik tombol **`[Sinkron ODP ke Maps ISP]`**.
 3. Sistem secara instan mengirimkan metadata ODP (Kode, Nama, Lat/Lng, Kapasitas Port) ke database operasional ISPSYNC Nexus sehingga tim sales langsung bisa menjual layanan di lokasi tersebut.
@@ -134,7 +134,7 @@ Sistem FTTX menjalankan daemon SNMP Poller secara otomatis setiap **5 menit** un
 
 ---
 
-## BAB IV: BAGIAN II — SOP RITEL, SALES & OPERASIONAL LAPANGAN (ISP ENGINE)
+## BAB IV: BAGIAN II — SOP RITEL, SALES & OPERASIONAL LAPANGAN (Nexus)
 
 ### SOP-ISP-01: Registrasi Mandiri Pelanggan & Cek Coverage Radius 250m
 1. Calon pelanggan mengakses [https://portal.{tenant}.ispsync.id](https://portal.{tenant}.ispsync.id).
