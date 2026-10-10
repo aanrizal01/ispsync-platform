@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { 
   Plus, Search, Filter, LifeBuoy, MoreVertical, MessageSquare, 
-  Clock, CheckCircle2, AlertCircle, User, Wifi, FileText, ChevronRight, X 
+  Clock, CheckCircle2, AlertCircle, User, Wifi, FileText, ChevronRight, X,
+  Send, Share2, Copy, Check, Phone, MessageCircle, RefreshCw
 } from "lucide-react";
-import { ticketsApi, type Ticket } from "@/lib/api/tickets";
+import { ticketsApi, type Ticket, type TicketMessage } from "@/lib/api/tickets";
 import { customerApi, type Customer } from "@/lib/api/customers";
 import { subscriptionApi, type Subscription } from "@/lib/api/subscriptions";
 
@@ -17,10 +18,16 @@ export default function TicketsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Modals
+  // Modals & Chat States
   const [showModal, setShowModal] = useState(false);
   const [selectedTicketDetail, setSelectedTicketDetail] = useState<Ticket | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [messages, setMessages] = useState<TicketMessage[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const [form, setForm] = useState({
     customer_id: "",
@@ -34,6 +41,71 @@ export default function TicketsPage() {
   useEffect(() => {
     fetchInitialData();
   }, []);
+
+  const openTicketDetail = async (ticket: Ticket) => {
+    setSelectedTicketDetail(ticket);
+    setReplyText("");
+    await fetchTicketMessages(ticket.id);
+  };
+
+  const fetchTicketMessages = async (ticketId: string) => {
+    setLoadingMessages(true);
+    try {
+      const res = await ticketsApi.getMessages(ticketId);
+      if (res.data) {
+        setMessages(res.data);
+      }
+    } catch (err) {
+      console.error("Gagal memuat pesan tiket:", err);
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTicketDetail || !replyText.trim()) return;
+    setSendingMessage(true);
+    try {
+      const res = await ticketsApi.sendMessage(selectedTicketDetail.id, {
+        message: replyText.trim(),
+        sender_type: "STAFF",
+        sender_name: "Tim Helpdesk",
+      });
+      if (res.data) {
+        setMessages(prev => [...prev, res.data]);
+        setReplyText("");
+      }
+    } catch (err) {
+      console.error("Gagal mengirim pesan:", err);
+      alert("Gagal mengirim pesan. Silakan coba kembali.");
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  const handleUpdateStatus = async (newStatus: string) => {
+    if (!selectedTicketDetail) return;
+    setUpdatingStatus(true);
+    try {
+      await ticketsApi.updateTicket(selectedTicketDetail.id, { status: newStatus });
+      setSelectedTicketDetail(prev => prev ? { ...prev, status: newStatus } : null);
+      setTickets(prev => prev.map(t => t.id === selectedTicketDetail.id ? { ...t, status: newStatus } : t));
+    } catch (err) {
+      console.error("Gagal mengubah status:", err);
+      alert("Gagal mengubah status tiket.");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const handleCopyTrackingLink = () => {
+    if (!selectedTicketDetail) return;
+    const url = `${window.location.origin}/ticket/${selectedTicketDetail.id}`;
+    navigator.clipboard.writeText(url);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
 
   const fetchInitialData = async () => {
     setLoading(true);
@@ -255,7 +327,7 @@ export default function TicketsPage() {
                       </td>
                       <td className="px-5 py-4 text-right">
                         <button 
-                          onClick={() => setSelectedTicketDetail(ticket)}
+                          onClick={() => openTicketDetail(ticket)}
                           className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] rounded-lg transition-colors inline-flex items-center gap-1 cursor-pointer"
                         >
                           <span>Rincian</span>
@@ -426,62 +498,193 @@ export default function TicketsPage() {
         </div>
       )}
 
-      {/* MODAL: Rincian Tiket */}
-      {selectedTicketDetail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <div>
-                <div className="text-[10px] font-mono font-bold text-cyan-600">{selectedTicketDetail.id}</div>
-                <h3 className="text-sm font-black text-slate-900">{selectedTicketDetail.title}</h3>
-              </div>
-              <button 
-                onClick={() => setSelectedTicketDetail(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            
-            <div className="p-5 space-y-4">
-              <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl text-xs">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Pelanggan:</span>
-                  <div className="font-bold text-slate-800 mt-0.5">
-                    {(() => {
-                      const c = customers.find(item => item.id === selectedTicketDetail.customer_id);
-                      return c ? `${c.full_name} (${c.customer_number})` : (selectedTicketDetail.customer_id || "Pelanggan Umum");
-                    })()}
+      {/* MODAL: Rincian Tiket & Thread Percakapan (Two-Way Communication) */}
+      {selectedTicketDetail && (() => {
+        const cust = customers.find(item => item.id === selectedTicketDetail.customer_id);
+        const cleanPhone = cust?.phone?.replace(/\D/g, '') || '';
+        const waNumber = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
+        const waText = encodeURIComponent(`Halo Bapak/Ibu ${cust?.full_name || 'Pelanggan'}, kami dari Tim Helpdesk terkait tiket komplain #${selectedTicketDetail.id} (${selectedTicketDetail.title})...\n\nPelacakan tiket dapat diakses melalui: ${typeof window !== 'undefined' ? window.location.origin : ''}/ticket/${selectedTicketDetail.id}`);
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-150">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
+              {/* Header */}
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 flex items-center justify-center shrink-0">
+                    <LifeBuoy className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-mono font-bold text-cyan-600">{selectedTicketDetail.id}</span>
+                      <span className="text-slate-300">&bull;</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-700">{selectedTicketDetail.category || "Umum"}</span>
+                    </div>
+                    <h3 className="text-sm font-black text-slate-900 tracking-tight line-clamp-1">{selectedTicketDetail.title}</h3>
                   </div>
                 </div>
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Status &amp; Prioritas:</span>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    {getStatusBadge(selectedTicketDetail.status)}
-                    <span className="text-[11px] font-bold text-slate-600">{selectedTicketDetail.priority}</span>
-                  </div>
+                <button 
+                  onClick={() => setSelectedTicketDetail(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Status Bar & Action Bar */}
+              <div className="p-3 bg-slate-100/70 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-1">Status:</span>
+                  {(["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"] as const).map((st) => (
+                    <button
+                      key={st}
+                      disabled={updatingStatus}
+                      onClick={() => handleUpdateStatus(st)}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                        selectedTicketDetail.status === st
+                          ? st === "OPEN" ? "bg-amber-600 text-white shadow-xs"
+                          : st === "IN_PROGRESS" ? "bg-blue-600 text-white shadow-xs"
+                          : st === "RESOLVED" ? "bg-emerald-600 text-white shadow-xs"
+                          : "bg-slate-700 text-white shadow-xs"
+                          : "bg-white text-slate-600 hover:bg-slate-200 border border-slate-200"
+                      }`}
+                    >
+                      {st.replace("_", " ")}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  {waNumber && (
+                    <a
+                      href={`https://wa.me/${waNumber}?text=${waText}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors shadow-xs"
+                      title="Kirim pesan WhatsApp ke pelanggan"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>WhatsApp</span>
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleCopyTrackingLink}
+                    className="px-2.5 py-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-colors shadow-2xs cursor-pointer"
+                    title="Salin link pelacakan tiket untuk pelanggan"
+                  >
+                    {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
+                    <span>{copiedLink ? "Disalin!" : "Link Pelacakan"}</span>
+                  </button>
                 </div>
               </div>
 
-              <div>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Deskripsi &amp; Detail Layanan:</span>
-                <div className="mt-1.5 p-3.5 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-700 whitespace-pre-wrap leading-relaxed font-sans">
-                  {selectedTicketDetail.description || "Tidak ada deskripsi rinci."}
+              {/* Scrollable Content: Details + Chat Thread */}
+              <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
+                {/* Customer & Ticket Info Box */}
+                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 text-xs space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/60 pb-2">
+                    <div className="flex items-center gap-2">
+                      <User className="w-3.5 h-3.5 text-slate-400" />
+                      <span className="font-bold text-slate-800">
+                        {cust ? `${cust.full_name} (${cust.customer_number})` : (selectedTicketDetail.customer_id || "Pelanggan Umum")}
+                      </span>
+                      {cust?.phone && <span className="font-mono text-slate-500 font-medium">({cust.phone})</span>}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-slate-400">Dibuat:</span>
+                      <span className="font-mono text-[11px] text-slate-600">
+                        {new Date(selectedTicketDetail.created_at).toLocaleDateString("id-ID", { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Kronologi / Laporan Awal:</span>
+                    <p className="text-slate-700 whitespace-pre-wrap leading-relaxed font-sans bg-white p-2.5 rounded-lg border border-slate-100 text-xs">
+                      {selectedTicketDetail.description || "Tidak ada deskripsi rinci."}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Conversation Thread Header */}
+                <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-cyan-600" />
+                    <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">Percakapan &amp; Komunikasi ({messages.length})</span>
+                  </div>
+                  <button 
+                    type="button" 
+                    onClick={() => fetchTicketMessages(selectedTicketDetail.id)} 
+                    className="text-[11px] font-bold text-cyan-700 hover:text-cyan-800 flex items-center gap-1 cursor-pointer"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${loadingMessages ? 'animate-spin' : ''}`} />
+                    <span>Muat Ulang</span>
+                  </button>
+                </div>
+
+                {/* Message List */}
+                <div className="space-y-3 bg-slate-50/60 p-3 sm:p-4 rounded-xl border border-slate-200/80 min-h-[160px] max-h-[300px] overflow-y-auto">
+                  {loadingMessages ? (
+                    <div className="text-center py-8 text-xs text-slate-400">Memuat riwayat pesan...</div>
+                  ) : messages.length === 0 ? (
+                    <div className="text-center py-8 text-xs text-slate-400">
+                      <p className="font-medium">Belum ada percakapan pada tiket ini.</p>
+                      <p className="text-[11px] text-slate-400 mt-1">Kirim pesan balasan di bawah untuk berkomunikasi dengan pelanggan.</p>
+                    </div>
+                  ) : (
+                    messages.map((m) => {
+                      const isStaff = m.sender_type === "STAFF";
+                      return (
+                        <div key={m.id} className={`flex flex-col ${isStaff ? "items-end" : "items-start"}`}>
+                          <div className="flex items-center gap-1.5 mb-1 px-1">
+                            <span className={`text-[10px] font-bold uppercase tracking-wider ${isStaff ? "text-cyan-700" : "text-slate-600"}`}>
+                              {isStaff ? `👨‍💻 ${m.sender_name || "Staf Helpdesk"}` : `👤 ${m.sender_name || "Pelanggan"}`}
+                            </span>
+                            <span className="text-slate-300 text-[10px]">&bull;</span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {new Date(m.created_at).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <div
+                            className={`p-3 rounded-2xl text-xs max-w-[85%] leading-relaxed whitespace-pre-wrap shadow-2xs ${
+                              isStaff
+                                ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-tr-xs"
+                                : "bg-white text-slate-800 border border-slate-200 rounded-tl-xs"
+                            }`}
+                          >
+                            {m.message}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
-            </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
-              <button 
-                onClick={() => setSelectedTicketDetail(null)}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs rounded-xl transition-colors cursor-pointer"
-              >
-                Tutup
-              </button>
+              {/* Message Reply Input Box */}
+              <form onSubmit={handleSendMessage} className="p-3 sm:p-4 border-t border-slate-200 bg-white flex items-center gap-2 shrink-0">
+                <input
+                  type="text"
+                  required
+                  placeholder="Ketik balasan atau pesan bantuan untuk pelanggan..."
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  className="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-medium transition-all"
+                />
+                <button
+                  type="submit"
+                  disabled={sendingMessage || !replyText.trim()}
+                  className="px-4 py-2.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">{sendingMessage ? "Mengirim..." : "Kirim"}</span>
+                </button>
+              </form>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
+

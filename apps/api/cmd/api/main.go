@@ -654,9 +654,12 @@ func main() {
 			acsHandler.Routes(r, authMiddleware)
 		})
 
-		// Public ONT Self-Service (WiFi & Fiber Telemetry for Customer Portal)
+		// Public ONT Self-Service (WiFi & Fiber Telemetry for Customer Portal) & Public Ticket Tracking
 		r.Route("/public", func(r chi.Router) {
 			acsHandler.PublicRoutes(r)
+			r.Get("/tickets/{id}", handleGetPublicTicket(db, log))
+			r.Get("/tickets/{id}/messages", handleListTicketMessages(db, log))
+			r.Post("/tickets/{id}/messages", handleCreateTicketMessage(db, log))
 		})
 
 		// System Health & Service Status
@@ -690,12 +693,16 @@ func main() {
 			r.Get("/", handleListTickets(db, log))
 			r.Post("/", handleCreateTicket(db, log))
 			r.Put("/{id}", handleUpdateTicket(db, log))
+			r.Get("/{id}/messages", handleListTicketMessages(db, log))
+			r.Post("/{id}/messages", handleCreateTicketMessage(db, log))
 		})
 		r.Route("/tickets", func(r chi.Router) {
 			r.Use(authMiddleware.Authenticate)
 			r.Get("/", handleListTickets(db, log))
 			r.Post("/", handleCreateTicket(db, log))
 			r.Put("/{id}", handleUpdateTicket(db, log))
+			r.Get("/{id}/messages", handleListTicketMessages(db, log))
+			r.Post("/{id}/messages", handleCreateTicketMessage(db, log))
 		})
 
 		// Internal Admin Tenant Management (Auto-Purge & Auto-Provision)
