@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Users,
   Repeat,
+  LifeBuoy,
   Package,
   FileText,
   CreditCard,
@@ -68,6 +69,12 @@ const navSections: NavSection[] = [
         label: "Pelanggan",
         href: "/admin/customers",
         icon: Users,
+        permission: "customers:read",
+      },
+      {
+        label: "Ticketing (Support)",
+        href: "/admin/tickets",
+        icon: LifeBuoy,
         permission: "customers:read",
       },
       {
