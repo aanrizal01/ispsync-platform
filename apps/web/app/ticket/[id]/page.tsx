@@ -165,6 +165,8 @@ export default function PublicTicketTrackingPage() {
     } finally {
       setSending(false);
     }
+  };
+
   const renderMessageText = (content: string) => {
     if (!content) return null;
     const parts = content.split(/(\*\*[^*]+\*\*)/g);
