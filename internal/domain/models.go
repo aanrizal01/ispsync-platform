@@ -464,15 +464,15 @@ type CustomerDocumentsResponse struct {
 
 
 type Ticket struct {
-	ID          string    json:"id"
-	TenantID    string    json:"tenant_id"
-	CustomerID  string    json:"customer_id"
-	Title       string    json:"title"
-	Description string    json:"description"
-	Status      string    json:"status"
-	Priority    string    json:"priority"
-	Category    string    json:"category"
-	AssigneeID  string    json:"assignee_id"
-	CreatedAt   time.Time json:"created_at"
-	UpdatedAt   time.Time json:"updated_at"
+	ID          string    `json:"id"`
+	TenantID    string    `json:"tenant_id"`
+	CustomerID  string    `json:"customer_id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Status      string    `json:"status"`
+	Priority    string    `json:"priority"`
+	Category    string    `json:"category"`
+	AssigneeID  string    `json:"assignee_id"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
