@@ -684,6 +684,20 @@ func main() {
 			authHandler.RoleRoutes(r, authMiddleware)
 		})
 
+		// Trouble Ticketing & Customer Complaints
+		r.Route("/admin/tickets", func(r chi.Router) {
+			r.Use(authMiddleware.Authenticate)
+			r.Get("/", handleListTickets(db, log))
+			r.Post("/", handleCreateTicket(db, log))
+			r.Put("/{id}", handleUpdateTicket(db, log))
+		})
+		r.Route("/tickets", func(r chi.Router) {
+			r.Use(authMiddleware.Authenticate)
+			r.Get("/", handleListTickets(db, log))
+			r.Post("/", handleCreateTicket(db, log))
+			r.Put("/{id}", handleUpdateTicket(db, log))
+		})
+
 		// Internal Admin Tenant Management (Auto-Purge & Auto-Provision)
 		r.Route("/internal/tenants", func(r chi.Router) {
 			r.Post("/purge", handlePurgeTenant(db, cfg, log))
