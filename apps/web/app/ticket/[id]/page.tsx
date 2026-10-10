@@ -165,6 +165,19 @@ export default function PublicTicketTrackingPage() {
     } finally {
       setSending(false);
     }
+  const renderMessageText = (content: string) => {
+    if (!content) return null;
+    const parts = content.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map((part, idx) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return (
+          <strong key={idx} className="font-bold text-slate-900">
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      return part;
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -356,10 +369,10 @@ export default function PublicTicketTrackingPage() {
                       <div key={m.id} className={`flex flex-col ${isStaff || isBot ? "items-start" : "items-end"}`}>
                         <div className="flex items-center gap-1.5 mb-1 px-1">
                           {isBot ? (
-                            <span className="text-[10px] font-bold text-indigo-700 flex items-center gap-1">
-                              <Bot className="w-3.5 h-3.5 text-indigo-600" />
+                            <span className="text-[10px] font-bold text-slate-700 flex items-center gap-1">
+                              <Bot className="w-3.5 h-3.5 text-cyan-600" />
                               <span>{m.sender_name || "Asisten Virtual"}</span>
-                              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-600 border border-indigo-200 ml-0.5">AI BOT</span>
+                              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-200 text-slate-600 border border-slate-300 ml-0.5">SISTEM</span>
                             </span>
                           ) : isStaff ? (
                             <span className="text-[10px] font-bold text-cyan-700 flex items-center gap-1">
@@ -380,13 +393,13 @@ export default function PublicTicketTrackingPage() {
                         <div
                           className={`p-3.5 rounded-2xl text-xs max-w-[85%] sm:max-w-[75%] leading-relaxed whitespace-pre-wrap shadow-2xs ${
                             isBot
-                              ? "bg-slate-900 text-slate-100 border border-slate-800 rounded-tl-xs shadow-md selection:bg-indigo-500"
+                              ? "bg-slate-100/90 text-slate-800 border border-slate-200/90 rounded-tl-xs"
                               : isStaff
                               ? "bg-white text-slate-800 border border-slate-200 rounded-tl-xs"
                               : "bg-gradient-to-r from-cyan-600 via-blue-600 to-blue-700 text-white rounded-tr-xs"
                           }`}
                         >
-                          {m.message}
+                          {renderMessageText(m.message)}
                         </div>
                       </div>
                     );

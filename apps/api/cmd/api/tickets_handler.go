@@ -372,9 +372,9 @@ func handleGetPublicTicket(db *pgxpool.Pool, log *slog.Logger) http.HandlerFunc 
 				botName = "Asisten Virtual DEV LAB"
 			}
 			welcomeMsg := fmt.Sprintf(
-				"Halo Kak %s! 👋 Selamat datang di Layanan Dukungan Pelanggan Resmi.\n\n"+
-				"Laporan gangguan Anda terkait **%s** telah tersimpan dengan nomor tiket **#%s** (Prioritas: %s).\n\n"+
-				"Sembari tim teknis kami memeriksa konfigurasi jalur, Anda dapat memilih tombol bantuan cepat di bawah untuk melakukan diagnosa koneksi secara mandiri.",
+				"Halo Bapak/Ibu %s. Selamat datang di Layanan Bantuan Pelanggan Resmi.\n\n"+
+				"Laporan gangguan Anda terkait \"%s\" telah tercatat dengan nomor tiket #%s (Prioritas: %s).\n\n"+
+				"Sembari tim teknis kami memeriksa konfigurasi jalur, Anda dapat memilih tombol diagnosa cepat di bawah untuk melakukan pengecekan mandiri.",
 				cName, t.Title, t.ID, t.Priority,
 			)
 			botMsgID := "MSG-BOT-" + strings.ToUpper(uuid.New().String()[:8])
@@ -462,15 +462,14 @@ func generateBotReply(ctx context.Context, db *pgxpool.Pool, ticketID string, cu
 		}
 
 		botReplyText = fmt.Sprintf(
-			"Halo Kak %s! 🤖\n\n"+
-			"📊 **Hasil Diagnosa Cepat Sistem Jaringan:**\n"+
+			"Hasil diagnosa sistem jaringan untuk akun Bapak/Ibu %s:\n\n"+
 			"• Paket Langganan: **%s**\n"+
 			"• Status Layanan: **%s**\n\n"+
-			"🔍 **Pengecekan Fisik Mandiri:**\n"+
-			"1. Periksa lampu indikator **LOS** di modem (harus padam/mati, tidak boleh merah menyala).\n"+
-			"2. Lampu **PON** harus menyala hijau stabil tanpa kedip cepat.\n"+
+			"Pengecekan fisik perangkat modem ONT:\n"+
+			"1. Pastikan lampu indikator LOS pada modem tidak menyala merah.\n"+
+			"2. Lampu indikator PON harus menyala hijau stabil tanpa kedip cepat.\n"+
 			"3. Pastikan kabel optik patchcord kuning tidak terjepit atau tertekuk tajam.\n\n"+
-			"💡 Jika lampu indikator tidak normal, Anda dapat mencoba menu **'Restart Modem'** atau ketik **'Bantuan Teknisi'** untuk eskalasi kunjungan.",
+			"Jika indikator modem tidak normal, silakan coba menu 'Restart Modem' atau pilih 'Bantuan Teknisi' untuk eskalasi penanganan.",
 			custName, planName, subStatus,
 		)
 
@@ -495,31 +494,29 @@ func generateBotReply(ctx context.Context, db *pgxpool.Pool, ticketID string, cu
 
 		if hasUnpaid {
 			botReplyText = fmt.Sprintf(
-				"Halo Kak %s! 💳\n\n"+
-				"Sistem mendeteksi tagihan langganan yang belum diselesaikan:\n"+
+				"Informasi tagihan untuk akun Bapak/Ibu %s:\n\n"+
+				"Ditemukan tagihan aktif yang belum diselesaikan:\n"+
 				"• No. Invoice: **%s**\n"+
 				"• Total Tagihan: **Rp %s**\n"+
 				"• Jatuh Tempo: **%s**\n\n"+
-				"⚠️ Apabila layanan Anda saat ini terisolir, silakan lakukan pembayaran melalui menu billing atau hubungi tim administrasi kami agar koneksi langsung dibuka otomatis.",
+				"Jika layanan saat ini dialihkan/terisolir, silakan lakukan pembayaran melalui kasir atau staf administrasi agar koneksi internet dapat aktif kembali.",
 				custName, invNumber, formatRupiah(amountDue), dueDate.Format("02 Jan 2006"),
 			)
 		} else {
 			botReplyText = fmt.Sprintf(
-				"Halo Kak %s! 💳\n\n"+
-				"✅ **Semua tagihan Anda berstatus LUNAS.**\n"+
-				"Tidak ada tagihan tertunggak pada akun Anda. Kendala koneksi yang Anda laporkan murni gangguan teknis dan bukan karena penonaktifan administratif.",
+				"Informasi tagihan untuk akun Bapak/Ibu %s:\n\n"+
+				"Semua tagihan Anda saat ini berstatus LUNAS. Gangguan koneksi yang dilaporkan murni kendala teknis dan bukan karena kendala administrasi pembayaran.",
 				custName,
 			)
 		}
 
 	} else if strings.Contains(msgLower, "restart") || strings.Contains(msgLower, "reboot") || strings.Contains(msgLower, "matikan") {
 		botReplyText = fmt.Sprintf(
-			"Halo Kak %s! 🔄\n\n"+
-			"Berikut langkah **Restart Modem ONT** yang aman:\n"+
-			"1. Cabut jack adaptor daya di bagian belakang modem (atau matikan tombol power).\n"+
-			"2. Diamkan modem selama **15-20 detik** agar memori internal modem ter-reset bersih.\n"+
-			"3. Colokkan kembali adaptor dan tunggu **2-3 menit** hingga lampu PON & Internet menyala hijau stabil.\n\n"+
-			"Jika internet sudah normal kembali atau butuh bantuan lebih lanjut, beri tahu kami di sini ya!",
+			"Panduan restart modem ONT untuk Bapak/Ibu %s:\n\n"+
+			"1. Cabut kabel adaptor daya di bagian belakang modem (atau matikan tombol power).\n"+
+			"2. Diamkan modem selama 15–20 detik agar memori internal perangkat ter-refresh bersih.\n"+
+			"3. Colokkan kembali adaptor dan tunggu 2–3 menit hingga lampu PON & Internet menyala hijau stabil.\n\n"+
+			"Jika internet belum kembali normal setelah restart, silakan gunakan tombol 'Bantuan Teknisi'.",
 			custName,
 		)
 
@@ -528,37 +525,33 @@ func generateBotReply(ctx context.Context, db *pgxpool.Pool, ticketID string, cu
 		_, _ = db.Exec(ctx, `UPDATE tickets SET priority = 'HIGH', status = 'IN_PROGRESS', updated_at = NOW() WHERE id = $1`, ticketID)
 
 		botReplyText = fmt.Sprintf(
-			"Halo Kak %s! 👨‍🔧\n\n"+
-			"Laporan tiket Anda telah berhasil **DIESKALASI KE TIM TEKNISI LAPANGAN** dengan prioritas tinggi (HIGH).\n\n"+
-			"• ID Tiket: **%s**\n"+
-			"• Nomor Kontak: **%s**\n\n"+
-			"Staf teknis kami saat ini sedang meninjau jalur transmisi kabel optik dan konfigurasi port ODP terkait. Petugas kami akan menghubungi nomor terdaftar Anda jika diperlukan kunjungan langsung ke lokasi. Mohon menunggu kabar selanjutnya ya! 🙏",
-			custName, ticketID, custPhone,
+			"Laporan tiket #%s telah berhasil dialihkan ke Tim Teknisi Lapangan dengan prioritas penanganan tinggi (HIGH).\n\n"+
+			"• Pelanggan: **%s**\n"+
+			"• Kontak Terdaftar: **%s**\n\n"+
+			"Petugas teknis kami saat ini sedang meninjau jalur transmisi kabel optik dan konfigurasi port terkait. Tim lapangan akan menghubungi nomor terdaftar Anda jika diperlukan kunjungan langsung ke lokasi.",
+			ticketID, custName, custPhone,
 		)
 
 	} else if strings.Contains(msgLower, "halo") || strings.Contains(msgLower, "hai") || strings.Contains(msgLower, "pagi") || 
 			   strings.Contains(msgLower, "siang") || strings.Contains(msgLower, "sore") || strings.Contains(msgLower, "malam") || 
 			   strings.Contains(msgLower, "assalamualaikum") || strings.Contains(msgLower, "test") {
 		botReplyText = fmt.Sprintf(
-			"Halo Kak %s! 👋\n\n"+
-			"Saya asisten virtual resmi %s. Saya siap membantu Anda melakukan pemeriksaan koneksi secara cepat 24 jam.\n\n"+
-			"Silakan klik salah satu opsi bantuan cepat di bawah atau ketik langsung kebutuhan Anda:\n"+
-			"• Ketik **'Cek Koneksi'** untuk cek status paket & indikator modem\n"+
-			"• Ketik **'Cek Tagihan'** untuk cek status pembayaran invoice\n"+
-			"• Ketik **'Restart Modem'** untuk panduan reboot mandiri\n"+
-			"• Ketik **'Bantuan Teknisi'** untuk eskalasi kunjungan lapangan",
+			"Halo Bapak/Ibu %s. Layanan asisten virtual resmi %s siap membantu pengecekan kendala koneksi Anda secara mandiri.\n\n"+
+			"Silakan gunakan tombol diagnosa cepat di bawah atau sampaikan kendala yang Anda alami:\n"+
+			"• Cek Koneksi: Diagnosa paket dan indikator modem\n"+
+			"• Cek Tagihan: Informasi status pembayaran invoice\n"+
+			"• Restart Modem: Panduan reboot perangkat ONT\n"+
+			"• Bantuan Teknisi: Eskalasi langsung ke tim teknis lapangan",
 			custName, strings.ToUpper(tenantID),
 		)
 
 	} else {
 		botReplyText = fmt.Sprintf(
-			"Terima kasih atas pesannya Kak %s! 🤖\n\n"+
-			"Pesan Anda telah kami catat pada riwayat tiket ini. Sembari menunggu staf helpdesk kami menanggapi, Anda dapat memanfaatkan fitur pengecekan mandiri:\n\n"+
-			"• **Cek Koneksi** — Diagnosa paket & sinyal modem\n"+
-			"• **Cek Tagihan** — Cek status pembayaran langganan\n"+
-			"• **Restart Modem** — Panduan menyegarkan koneksi\n"+
-			"• **Bantuan Teknisi** — Eskalasi prioritas ke teknisi lapangan",
-			custName,
+			"Pesan Anda telah kami catat pada riwayat tiket ini. Sembari menunggu staf helpdesk kami menanggapi, Anda dapat memanfaatkan fitur diagnosa mandiri di bawah:\n\n"+
+			"• Cek Koneksi: Pengecekan paket dan sinyal modem\n"+
+			"• Cek Tagihan: Status pembayaran langganan\n"+
+			"• Restart Modem: Panduan menyegarkan koneksi\n"+
+			"• Bantuan Teknisi: Eskalasi prioritas ke teknisi lapangan",
 		)
 	}
 
