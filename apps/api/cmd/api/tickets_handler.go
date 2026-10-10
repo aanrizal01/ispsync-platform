@@ -313,7 +313,7 @@ func handleGetPublicTicket(db *pgxpool.Pool, log *slog.Logger) http.HandlerFunc 
 			SELECT t.id, t.tenant_id, t.customer_id, t.title, COALESCE(t.description, ''), t.status, t.priority, COALESCE(t.category, 'Umum'), t.assignee_id, t.created_at, t.updated_at,
 			       c.full_name, c.phone
 			FROM tickets t
-			LEFT JOIN customers c ON c.id = t.customer_id
+			LEFT JOIN customers c ON c.id::text = t.customer_id
 			WHERE t.id = $1
 		`, id).Scan(&t.ID, &t.TenantID, &t.CustomerID, &t.Title, &t.Description, &t.Status, &t.Priority, &t.Category, &t.AssigneeID, &t.CreatedAt, &t.UpdatedAt, &custName, &custPhone)
 		if err != nil {
