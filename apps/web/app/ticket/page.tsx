@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LifeBuoy, Search, ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { Search, ArrowRight } from "lucide-react";
 
 export default function TicketLookupPage() {
   const router = useRouter();
   const [ticketNumber, setTicketNumber] = useState("");
   const [tenantName, setTenantName] = useState("ISPSYNC");
+  const [tenantSlug, setTenantSlug] = useState("dev");
+  const [logoFallback, setLogoFallback] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -20,7 +21,22 @@ export default function TicketLookupPage() {
       } else if (parts.length === 3 && parts[1] === "ispsync") {
         slug = parts[0];
       }
-      setTenantName(slug.toUpperCase());
+      setTenantSlug(slug);
+      const upper = slug === "dev" ? "DEV LAB" : slug.toUpperCase();
+      setTenantName(upper);
+
+      // Set document title
+      document.title = `Pusat Bantuan & Lacak Tiket | ${upper}`;
+
+      // Update favicon dynamically
+      const iconEl = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+      if (iconEl) {
+        const favUrl = `/web/${slug}_favicon.svg`;
+        const testFavicon = new Image();
+        testFavicon.src = favUrl;
+        testFavicon.onload = () => { iconEl.href = favUrl; };
+        testFavicon.onerror = () => { iconEl.href = "/web/ispsync_favicon.svg"; };
+      }
     }
   }, []);
 
@@ -34,19 +50,33 @@ export default function TicketLookupPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-between font-sans selection:bg-cyan-600 selection:text-white">
-      {/* Header */}
-      <header className="border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 sm:px-8 py-4 shadow-xs sticky top-0 z-20">
+      {/* Header with dynamic tenant logo */}
+      <header className="border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 sm:px-8 py-3.5 shadow-xs sticky top-0 z-20">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white flex items-center justify-center font-black shadow-sm">
-              <LifeBuoy className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="font-black text-sm tracking-tight text-slate-900 uppercase">{tenantName}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider ml-2 px-2 py-0.5 rounded-md bg-slate-100 text-cyan-800 border border-slate-200">
-                HELP CENTER
-              </span>
-            </div>
+            <img
+              src={`/web/${tenantSlug}_logo.svg`}
+              alt={tenantName}
+              className="h-8 sm:h-9 w-auto max-w-[180px] object-contain shrink-0"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = "none";
+                setLogoFallback(true);
+              }}
+            />
+            {logoFallback && (
+              <div className="flex items-center gap-2.5">
+                <img
+                  src={`/web/${tenantSlug}_favicon.svg`}
+                  alt=""
+                  className="w-8 h-8 rounded-xl object-contain shrink-0"
+                  onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
+                />
+                <span className="font-black text-sm tracking-tight text-slate-900 uppercase">{tenantName}</span>
+              </div>
+            )}
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 text-cyan-800 border border-slate-200 shrink-0">
+              HELP CENTER
+            </span>
           </div>
         </div>
       </header>

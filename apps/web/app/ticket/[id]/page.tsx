@@ -29,6 +29,7 @@ export default function PublicTicketTrackingPage() {
   // Tenant dynamic resolution
   const [tenantName, setTenantName] = useState("ISPSYNC");
   const [tenantSlug, setTenantSlug] = useState("dev");
+  const [logoFallback, setLogoFallback] = useState(false);
 
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
@@ -43,9 +44,23 @@ export default function PublicTicketTrackingPage() {
         slug = parts[0];
       }
       setTenantSlug(slug);
-      setTenantName(slug.toUpperCase());
+      const upper = slug === "dev" ? "DEV LAB" : slug.toUpperCase();
+      setTenantName(upper);
+
+      // Set initial document title
+      document.title = ticketId ? `Tiket #${ticketId} | ${upper}` : `Lacak Tiket | ${upper}`;
+
+      // Update favicon dynamically
+      const iconEl = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+      if (iconEl) {
+        const favUrl = `/web/${slug}_favicon.svg`;
+        const testFavicon = new Image();
+        testFavicon.src = favUrl;
+        testFavicon.onload = () => { iconEl.href = favUrl; };
+        testFavicon.onerror = () => { iconEl.href = "/web/ispsync_favicon.svg"; };
+      }
     }
-  }, []);
+  }, [ticketId]);
 
   const loadTicketData = async (isManual = false) => {
     if (!ticketId) return;
@@ -60,6 +75,11 @@ export default function PublicTicketTrackingPage() {
         }
         setCustomerPhone(res.data.customer_phone || "");
         setMessages(res.data.messages || []);
+
+        if (typeof window !== "undefined") {
+          const upper = tenantSlug === "dev" ? "DEV LAB" : tenantSlug.toUpperCase();
+          document.title = `Tiket #${res.data.ticket.id} (${res.data.ticket.title}) | ${upper}`;
+        }
       }
       setError("");
     } catch (err: any) {
@@ -155,18 +175,29 @@ export default function PublicTicketTrackingPage() {
             >
               <ChevronLeft className="w-5 h-5" />
             </Link>
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 text-white flex items-center justify-center font-black shadow-sm">
-              <LifeBuoy className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
+            <img
+              src={`/web/${tenantSlug}_logo.svg`}
+              alt={tenantName}
+              className="h-8 sm:h-9 w-auto max-w-[180px] object-contain shrink-0"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = "none";
+                setLogoFallback(true);
+              }}
+            />
+            {logoFallback && (
+              <div className="flex items-center gap-2.5">
+                <img
+                  src={`/web/${tenantSlug}_favicon.svg`}
+                  alt=""
+                  className="w-8 h-8 rounded-xl object-contain shrink-0"
+                  onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
+                />
                 <span className="font-black text-sm tracking-tight text-slate-900 uppercase">{tenantName}</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 text-cyan-800 border border-slate-200">
-                  PORTAL PENGADUAN
-                </span>
               </div>
-              <p className="text-[11px] text-slate-500 font-sans">Pusat Bantuan &amp; Komunikasi Kendala Pelanggan</p>
-            </div>
+            )}
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 text-cyan-800 border border-slate-200 shrink-0">
+              PORTAL PENGADUAN
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
