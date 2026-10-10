@@ -1834,20 +1834,7 @@ export default function AdminSettingsPage() {
                     </div>
                   ) : (
                     /* ── STANDARD PHYSICAL A4 PAPER SHEET ───────── */
-                    <div className="relative w-full max-w-[560px] min-h-[792px] aspect-[210/297] bg-white text-slate-900 rounded-none shadow-[0_1px_3px_rgba(0,0,0,0.15),0_14px_32px_-4px_rgba(0,0,0,0.45),0_28px_64px_-12px_rgba(0,0,0,0.55),0_0_0_1px_rgba(0,0,0,0.08)] border border-slate-300/80 select-none overflow-hidden my-2 flex flex-col justify-between">
-                      {/* Paper Top Spec Header Line */}
-                      <div className="bg-slate-100/90 px-4 py-1 border-b border-slate-200 flex items-center justify-between text-[9px] font-mono text-slate-500">
-                        <span className="font-bold text-slate-700 flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          LEMBAR KERTAS A4 (210 × 297 MM)
-                        </span>
-                        <span>HVS 80 GSM &bull; MARGIN STANDAR 15MM</span>
-                      </div>
-
-                      {/* Paper 2-Hole Binder Punch Marks (Left Edge) */}
-                      <div className="absolute left-2 top-[32%] w-3 h-3 rounded-full bg-slate-900 shadow-inner border border-slate-400/40 pointer-events-none opacity-75 z-20" title="Lubang Binder Filing A4" />
-                      <div className="absolute left-2 top-[68%] w-3 h-3 rounded-full bg-slate-900 shadow-inner border border-slate-400/40 pointer-events-none opacity-75 z-20" title="Lubang Binder Filing A4" />
-
+                    <div className="relative w-full max-w-[560px] bg-white text-slate-900 rounded-sm shadow-[0_12px_40px_rgba(0,0,0,0.5),0_1px_3px_rgba(0,0,0,0.2)] border border-slate-300/80 select-none my-2 transition-all">
                       <InvoicePrintDocument
                         template={invoiceTemplate}
                         invoice={{

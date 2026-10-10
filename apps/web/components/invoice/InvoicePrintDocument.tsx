@@ -868,9 +868,9 @@ export function InvoicePrintDocument({
   return (
     <div
       id={elementId}
-      className={`bg-white text-slate-900 w-full h-full flex flex-col justify-between ${
+      className={`bg-white text-slate-900 w-full flex flex-col justify-between ${
         isCompactPreview
-          ? "p-6 sm:p-7 text-[10px] sm:text-[11px] rounded-none border-0 min-h-[720px]"
+          ? "p-6 sm:p-7 text-[10px] sm:text-[11px] rounded-none border-0"
           : "max-w-[210mm] min-h-[297mm] p-6 sm:p-10 shadow-2xl rounded-none border border-slate-300 print:shadow-none print:border-none print:p-0 print:m-0 print:w-full print:h-full print:min-h-0"
       }`}
     >
