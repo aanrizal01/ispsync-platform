@@ -82,14 +82,6 @@ const navSections: NavSection[] = [
         icon: Package,
         permission: "plans:read",
       },
-      {
-        label: "VPN Pelanggan",
-        href: "/admin/vpn",
-        icon: Network,
-        permission: "customers:read",
-        badge: "Baru",
-        badgeColor: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",
-      },
     ],
   },
   {

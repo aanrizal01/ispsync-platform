@@ -30,6 +30,7 @@ export default function SubscriptionsPage() {
   const [limit, setLimit] = useState(20);
   const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, total_pages: 1 });
   const [statusFilter, setStatusFilter] = useState("");
+  const [accessTypeFilter, setAccessTypeFilter] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -89,7 +90,7 @@ export default function SubscriptionsPage() {
     customer_id: string;
     plan_id: string;
     createAccessAccount: boolean;
-    access_type: "PPPOE" | "HOTSPOT";
+    access_type: "PPPOE" | "HOTSPOT" | "VPN";
     username: string;
     password: string;
     static_ip: string;
@@ -304,6 +305,11 @@ export default function SubscriptionsPage() {
     }
   };
 
+  const filteredSubscriptions = subscriptions.filter((s) => {
+    if (!accessTypeFilter) return true;
+    return s.access_accounts?.some((a) => a.access_type === accessTypeFilter);
+  });
+
   return (
     <div>
       {/* Header */}
@@ -363,6 +369,19 @@ export default function SubscriptionsPage() {
           </select>
 
           <select
+            value={accessTypeFilter}
+            onChange={(e) => {
+              setAccessTypeFilter(e.target.value);
+            }}
+            className="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500 bg-white text-slate-700"
+          >
+            <option value="">Semua Tipe Koneksi</option>
+            <option value="PPPOE">Internet Fiber (PPPoE)</option>
+            <option value="HOTSPOT">Internet Hotspot</option>
+            <option value="VPN">VPN (SSTP/L2TP)</option>
+          </select>
+
+          <select
             value={limit}
             onChange={(e) => {
               setLimit(Number(e.target.value));
@@ -407,14 +426,14 @@ export default function SubscriptionsPage() {
                     Memuat data langganan...
                   </td>
                 </tr>
-              ) : subscriptions.length === 0 ? (
+              ) : filteredSubscriptions.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
                     Belum ada langganan yang terdaftar
                   </td>
                 </tr>
               ) : (
-                subscriptions.map((s) => (
+                filteredSubscriptions.map((s) => (
                   <tr key={s.id} className="hover:bg-slate-50/70 transition-colors">
                     <td className="px-5 py-3.5">
                       <div className="font-semibold text-slate-900">{s.customer_name}</div>
@@ -784,6 +803,7 @@ export default function SubscriptionsPage() {
                       >
                         <option value="PPPOE">PPPoE</option>
                         <option value="HOTSPOT">Hotspot</option>
+                        <option value="VPN">VPN (SSTP/L2TP)</option>
                       </select>
                     </div>
                     <div className="grid grid-cols-2 gap-3">

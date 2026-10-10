@@ -4,7 +4,7 @@ export interface AccessAccount {
   id: string;
   customer_id: string;
   subscription_id?: string;
-  access_type: "PPPOE" | "HOTSPOT" | "VOUCHER" | "PASSPOINT" | "IPOE";
+  access_type: "PPPOE" | "HOTSPOT" | "VOUCHER" | "PASSPOINT" | "IPOE" | "VPN";
   identity: string;
   password?: string;
   display_name?: string;
@@ -60,7 +60,7 @@ export interface CreateSubscriptionInput {
   billing_cycle?: string;
   auto_renewal?: boolean;
   notes?: string;
-  initial_access_type?: "PPPOE" | "HOTSPOT" | "VOUCHER" | "PASSPOINT" | "IPOE";
+  initial_access_type?: "PPPOE" | "HOTSPOT" | "VOUCHER" | "PASSPOINT" | "IPOE" | "VPN";
   initial_username?: string;
   initial_password?: string;
   initial_static_ip?: string;
