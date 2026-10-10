@@ -50,7 +50,7 @@ type DnsStats = {
 };
 
 export default function DnsManagementPage() {
-  const { member } = useMember();
+  const { member, token } = useMember();
   const [loading, setLoading] = useState(true);
   const [zone, setZone] = useState("ispsync.id");
   const [nameservers, setNameservers] = useState<string[]>([]);
@@ -99,7 +99,12 @@ export default function DnsManagementPage() {
     setLoading(true);
     setActionError(null);
     try {
-      const res = await fetch("/api/member/dns");
+      const res = await fetch("/api/member/dns", {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        }
+      });
       const data = await res.json();
       if (data.success) {
         setZone(data.zone);
@@ -120,8 +125,10 @@ export default function DnsManagementPage() {
   };
 
   useEffect(() => {
-    fetchDnsData();
-  }, []);
+    if (token) {
+      fetchDnsData();
+    }
+  }, [token]);
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -178,7 +185,7 @@ export default function DnsManagementPage() {
 
       const res = await fetch("/api/member/dns", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload)
       });
       const data = await res.json();
@@ -204,7 +211,7 @@ export default function DnsManagementPage() {
     try {
       const res = await fetch("/api/member/dns", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ action: "delete", id: deleteTarget.id, force: true })
       });
       const data = await res.json();
@@ -229,7 +236,7 @@ export default function DnsManagementPage() {
     try {
       const res = await fetch("/api/member/dns", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ action: "quick_preset", preset: "google_workspace" })
       });
       const data = await res.json();
@@ -259,7 +266,7 @@ export default function DnsManagementPage() {
     try {
       const res = await fetch("/api/member/dns", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ action: "dig", domain: domainToTest, type: recordType })
       });
       const data = await res.json();
