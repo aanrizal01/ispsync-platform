@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
 import { headers } from "next/headers";
+import fs from "fs";
+import path from "path";
 
 const TENANT_LEGAL_MAP: Record<string, string> = {
   ispmu: "PT. Mitra Usaha Data",
@@ -25,12 +27,20 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
   if (slug && slug !== "ispsync") {
-    const upper = slug.toUpperCase();
+    const upper = slug === "dev" ? "DEV LAB" : slug.toUpperCase();
+    
+    // Check if custom favicon exists
+    const customFav = path.join(process.cwd(), "public", "web", `${slug}_favicon.svg`);
+    const hasFavicon = fs.existsSync(customFav);
+
     return {
       title: {
         absolute: `Masuk | ${upper} Ledger`,
       },
       description: `Login ke Backoffice Ledger & Management Platform ${upper}`,
+      icons: hasFavicon ? {
+        icon: `/web/${slug}_favicon.svg`,
+      } : undefined,
     };
   }
 
@@ -39,6 +49,9 @@ export async function generateMetadata(): Promise<Metadata> {
       absolute: "Masuk ke Dashboard",
     },
     description: "Login ke Backoffice Ledger & Management Platform",
+    icons: {
+      icon: "/web/ispsync_favicon.svg",
+    }
   };
 }
 
